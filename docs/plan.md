@@ -14,16 +14,14 @@ Current branch work/claude-qualification from mainf5dde1a. Origin is public by o
 D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
-NÄSTA HANDLING: Owner reports Claude running again. Interactive Claude in this
-same project was explicitly closed by owner; PID30644 confirmed stopped, clean
-mainf5dde1a and PR9 MERGED verified. Auth is claude.ai/firstParty/Max; no provider
-API-key override environment. Run one bounded read-only instruction/access probe
-<=90s with native restricted mode, Read only, empty strict MCP, no Chrome or slash
-commands; no automatic retry. Use configured model family claude-fable-5-1.
-Global/managed policy unchanged. Managed sandbox.enabled=false means the later
-Claude path must not rely on Bash sandboxing; evaluate restricted Read/Edit/Write
-only with explicit accepted-file edit allowances and host-run external tests.
-Global historic permissions do not grant Runtime rights. No new API billing.
+NÄSTA HANDLING: Claude qualification completed with actual subscription calls.
+Read evidence/claude-qualification/result.md and verification.json. Independently
+review the pinned restricted file-tool profile, preserve/integrate that small
+slice, then connect it to the existing report workflow with native replay and
+frozen whole-task acceptance. No model/engine/writer remains active; the unrelated
+historical tail process outside this project is untouched. Current profile uses
+native --append-system-prompt-file AGENTS.md, proven from root and subdirectory.
+Do not rely on automatic @ import in subdirectories or Claude Bash sandbox.
 
 Once access is verified, qualify Claude's constrained tool/stop/result path and
 connect it to the existing native workflow without replacing histories. Continue
@@ -95,7 +93,7 @@ until access changes, and no extra task invented to substitute for the real swap
 |---|---|
 | Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
-| Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
+| Replaceable execution | Claude access/profile qualified; Runtime swap NOT RUN |
 | Interruption/capacity | Real controlled model interruption; abrupt worker + bounded harmless writer recovery; supplied known-quota wait survives restart without calls. Arbitrary guardian kill/detached descendants and actual vendor quota not proven |
 | Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
 | Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |

@@ -332,3 +332,36 @@ real socket tests still refuse active listeners. Corrected native capacity-wait
 restart passed with zero provider calls. Capacity was supplied as a known fixture
 reason, not inferred from an actual vendor quota. Raw boundaries/limits and native
 backups: evidence/recovery-probe/result.md. Claude D015 remains unchanged.
+
+## D019 — 2026-09-19: qualified native Claude file-tool profile
+
+Owner restored Claude and explicitly closed the interactive project writer.
+Existing claude.ai/firstParty Max works with Claude Code2.1.257 and configured
+model family claude-fable-5-1. No API key, new billing or changed global/managed
+policy. Pin the observed binary SHA256 in runtime/claude_profile.py; a changed
+binary requires qualification. No package update was needed.
+
+Managed Bash sandbox is disabled, so use native --restricted with Read/Edit/Write
+only, exact accepted-file Edit grants, dontAsk, empty strict MCP, no Chrome/slash
+commands/plugins. Host runs tests after provider cleanup. Actual allowed write,
+context/unaccepted denial, external read/new-write denial and symlink read denial
+passed. Existing external/symlink writes stop at the read-first precondition;
+the necessary reads are denied. These proofs cover this file-tool profile,
+not arbitrary shell execution or a hostile host. Raw events and canary hashes:
+evidence/claude-qualification/verification.json.
+
+Automatic @AGENTS.md import passed from root but failed from tools/ because the
+parent import is external to that working directory and existing consent is
+absent. Restricted mode did not automatically inject project instructions.
+Use the documented native --append-system-prompt-file pointing at the SAME
+AGENTS.md source, preserving the default system prompt. Real tools-disabled probes
+recovered its unique marker and plan path from both directories. No instruction
+copy/sync system, trust relaxation, telemetry activation or hook policy change.
+The fixture's instruction file is an isolated snapshot for a one-off canary.
+
+Sources checked against actual CLI probes: official CLI reference
+https://code.claude.com/docs/en/cli-reference (restricted/file prompt loading),
+https://code.claude.com/docs/en/permissions (dontAsk and resolved file bounds),
+https://code.claude.com/docs/en/memory (external-import consent).
+Reported total_cost_usd is retained as CLI list-price usage metadata, not a claim
+of money charged under the existing subscription. Initial failures remain visible.
