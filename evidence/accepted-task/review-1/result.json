@@ -1,0 +1,20 @@
+{
+  "task": "runtime-run-report-1",
+  "attempt": 1,
+  "provider": "codex",
+  "provider_completed": true,
+  "exit_code": 0,
+  "thread_id": "01a0b9ae-eec2-7603-9f1f-c5286fcfde12",
+  "usage": {
+    "input_tokens": 57205,
+    "cached_input_tokens": 33408,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1186,
+    "reasoning_output_tokens": 193
+  },
+  "role": "review",
+  "interrupted": null,
+  "process_group_removed": true,
+  "elapsed_seconds": 26.755,
+  "evidence": "evidence/accepted-task/review-1"
+}

@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-09-19T12:46:03.485170+00:00",
+  "source_head": "d0464547501bed422d3e8a096248810b8a4a6313",
+  "branch": "work/runtime-v01-evidence",
+  "git_status_before_receipt": "",
+  "origin": "https://github.com/Nortropic/nortropic-runtime.git",
+  "recorded_writers_stopped": true,
+  "provider_worker_service_processes_absent": true,
+  "subscription": {
+    "loggedIn": true,
+    "authMethod": "claude.ai",
+    "apiProvider": "firstParty",
+    "subscriptionType": "max"
+  },
+  "scope": "Host preflight immediately before fresh Read-only Claude receiver. Receiver cannot inspect processes through shell; it must distinguish this supplied host measurement from its own file observations."
+}

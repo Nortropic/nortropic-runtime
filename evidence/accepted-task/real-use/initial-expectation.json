@@ -1,0 +1,6 @@
+{
+  "initial_expected_status_for_codex_attempt2": "completed",
+  "actual_status": "failed",
+  "initial_assertion_passed": false,
+  "diagnosis": "The accepted reporting rule treats any failed tool item as failed even if later turn.completed and host acceptance pass. Actual streams include failed diagnostic/permission/test commands. Correct the use-check expectation, not implementation or accepted tests. Runtime task completion and this conservative stream report are distinct."
+}

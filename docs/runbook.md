@@ -1,13 +1,12 @@
 # Running the qualified local route
 
 The living plan owns the current task, wait reason, attempt identity and next
-specific action. Read it before starting any process. Runtime v0.1 remains
-incomplete while required Claude and recovery proofs are missing.
+specific action. Read it before starting any process. Both accepted tasks are completed; see docs/runtime-v0.1.md for measured scope and limits.
 
 The current installation uses a pinned local Temporal 1.9.1 development service,
 Python 3.12 with temporalio1.33.0 in `.runtime/temporal-venv`, and Codex0.155.1
 under `.runtime/bin`. Dependency lock and recorded hashes are under config/ and
-evidence/startup/. Authentication uses the already authorized Codex subscription;
+evidence/startup/. Authentication uses the already authorized Codex and Claude Max subscriptions;
 GitHub authentication is available only to the host publication activity. No
 Temporal Cloud or paid API fallback is configured. This is a trusted local Mac
 installation, not a deployed multi-user service.
@@ -15,8 +14,8 @@ installation, not a deployed multi-user service.
 A new accepted task must have committed task JSON and brief in tasks/ plus a
 reviewed host-owned acceptance module under acceptance/. Its digest, exact current
 main base and explicit allowed paths are fixed before implementation. The qualified
-route supports one Codex implementation step and regular files under tools/.
-Do not imply general multiphase support from this route.
+route supports the measured Codex-only and Codex→Claude→Codex tasks with regular
+files under tools/. This is not qualification of arbitrary provider/task sequences.
 
 ```sh
 .runtime/temporal-venv/bin/python -m runtime.run tasks/evidence-index.json
@@ -73,9 +72,9 @@ Read/Edit/Write only, exact accepted file grants, strict empty MCP and native
 AGENTS.md file loading. Host runs tests after cleanup. A changed binary/auth path
 stops before model invocation; diagnose/requalify rather than enabling API fallback.
 
-After the adapter slice is integrated, the living plan directs creation of the
-same task's explicit continuation using `python3 -m scripts.prepare_report_continuation`
-on clean main. Preserve/review that input on a work branch, then invoke:
+Historical transition command (already completed; DO NOT run again for this task):
+the host generated, preserved and separately reviewed the same task's continuation
+on clean integrated main, then invoked:
 
 ```
 .runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json --resume --access-restored
@@ -87,3 +86,46 @@ an already-running step. Do not rerun preparation into partial state; inspect th
 preserved directories/receipt and native query before reconciling. After transition,
 ordinary observation uses the same input with `--resume` alone. Follow docs/plan.md
 for the actual current checkpoint; the command above is not a request to resubmit.
+
+### Selected dependencies and installation record
+
+The current workstation is installed and qualified. Do not reinstall or update it
+as part of ordinary resume. [dependencies.json](../evidence/v0.1/dependencies.json)
+records current binary hashes, Python3.12.13, macOS26.3 and arm64. Claude2.1.257's
+binary SHA256 is enforced by runtime/claude_profile.py; its native installed CLI
+uses existing account credentials. A changed version/auth route requires a new
+bounded qualification, never automatic API fallback.
+
+For a fresh isolated project installation, inspect these exact selected artifacts
+and their retained download/inspection records before extraction:
+
+- openai/codex release rust-v0.155.1: codex-aarch64-apple-darwin.tar.gz and
+  codex-code-mode-host-aarch64-apple-darwin.tar.gz; extract only selected regular
+  executables to .runtime/bin/codex-0.155.1 and .runtime/bin/codex-code-mode-host.
+  Commands and outcomes: evidence/startup/codex-download/ and codex-host-download/.
+- temporalio/cli release v1.9.1: temporal_cli_1.9.1_darwin_arm64.tar.gz; selected
+  regular temporal member to .runtime/bin/temporal-1.9.1. Download and inspected
+  archive hash/members: evidence/durable-probe/cli-download/ and cli-inspection.json.
+- Python SDK and every transitive package/version/hash are fixed by
+  config/temporal-probe-requirements.lock. The recorded installation used inspected
+  wheels, no source build or extra startup .pth code (wheel-inspection.json).
+
+The selected environment creation/install commands, for fresh paths only, are:
+
+```sh
+/opt/homebrew/bin/python3.12 -m venv .runtime/temporal-venv
+.runtime/temporal-venv/bin/python -m pip download --only-binary=:all: --require-hashes -r config/temporal-probe-requirements.lock --dest .runtime/temporal-wheels
+.runtime/temporal-venv/bin/python -m pip install --no-index --find-links .runtime/temporal-wheels --require-hashes -r config/temporal-probe-requirements.lock
+```
+
+No Symphony dependency is used by the delivered runner; its historical probe
+artifacts remain. Runtime starts pinned Temporal on loopback ports7339/7340/7341,
+namespace nortropic-runtime, task queue development, central SQLite and an exclusive
+engine.lock. It stops service/worker groups after bounded observation. Never start
+another service while a recorded writer or listener is alive.
+
+Routine support checks are `python3 -m unittest discover -s scripts -p "test_*.py" -v`
+and `git diff --check`. Native replay runs without provider calls using
+`.runtime/temporal-venv/bin/python -m scripts.replay_runtime`. Historical experiment
+scripts refuse their existing state/output paths; they are evidence reproductions,
+not restart commands. A new host restoration is not yet an end-to-end tested path.

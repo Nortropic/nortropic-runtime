@@ -1,0 +1,115 @@
+{
+  "original_task": {
+    "id": "runtime-run-report-1",
+    "target": "Nortropic/nortropic-runtime",
+    "base": "92780815dd0f128691948473373d9910af782c49",
+    "outcome": "A deterministic standard-library Python CLI that summarizes provider JSONL run status and usage, without claiming candidate acceptance.",
+    "allowed_paths": [
+      "tools/run_report.py",
+      "tools/test_run_report.py",
+      "tools/README.md"
+    ],
+    "acceptance": "acceptance/run_report_phase1.py",
+    "steps": [
+      {
+        "provider": "codex",
+        "prompt": "Implement the Codex phase in tools/run_report.py and useful tests in tools/test_run_report.py. Read TASK.md for the complete contract. Do not implement Claude yet; that is the next executor's substantive continuation. Leave tools/README.md explaining current state and next action. You may change only the three allowed files. Run your tests. This is a candidate; do not commit, publish or claim acceptance."
+      },
+      {
+        "provider": "claude",
+        "waiting_reason": "WAITING_ACCESS: known oauth_org_not_allowed, evidence/startup/claude-root; wait for owner-confirmed subscription access change, no API fallback",
+        "prompt": "Continue the existing run-report implementation with Claude stream-json semantics from TASK.md; preserve working Codex behavior. Read tools/README.md and prior artifacts."
+      },
+      {
+        "provider": "codex",
+        "prompt": "Complete the same run-report task: verify both provider paths and deterministic CLI failure handling, fix any genuine defects, update usage documentation and run the tests."
+      }
+    ],
+    "attempt_seconds": 300,
+    "automatic_retries": 0
+  },
+  "task": {
+    "id": "runtime-run-report-1",
+    "target": "Nortropic/nortropic-runtime",
+    "base": "531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d",
+    "outcome": "A deterministic standard-library Python CLI that summarizes provider JSONL run status and usage, without claiming candidate acceptance.",
+    "allowed_paths": [
+      "tools/run_report.py",
+      "tools/test_run_report.py",
+      "tools/README.md"
+    ],
+    "acceptance": "acceptance/run_report_complete.py",
+    "steps": [
+      {
+        "provider": "codex",
+        "prompt": "Implement the Codex phase in tools/run_report.py and useful tests in tools/test_run_report.py. Read TASK.md for the complete contract. Do not implement Claude yet; that is the next executor's substantive continuation. Leave tools/README.md explaining current state and next action. You may change only the three allowed files. Run your tests. This is a candidate; do not commit, publish or claim acceptance."
+      },
+      {
+        "provider": "claude",
+        "prompt": "Continue the existing run-report implementation with Claude stream-json semantics from TASK.md; preserve working Codex behavior. Read tools/README.md and prior artifacts."
+      },
+      {
+        "provider": "codex",
+        "prompt": "Complete the same run-report task: verify both provider paths and deterministic CLI failure handling, fix any genuine defects, update usage documentation and run the tests."
+      }
+    ],
+    "attempt_seconds": 300,
+    "automatic_retries": 0,
+    "brief": "tasks/run-report-complete.md",
+    "acceptance_sha256": "0fdb658c21ffd7401975e1c724c61392254d0419b193585fa9321b94c0a6f936",
+    "continuation": {
+      "previous_task_sha256": "39aaab70858d584402e52c355c61479b0a0a5e252653b9589196857d02b61c17",
+      "expected_attempt": 2,
+      "reason": "Owner restored Claude subscription; native restricted profile qualified in D019. Preserve Codex phase, update stale base and freeze the already accepted full contract before continuation.",
+      "evidence": "evidence/claude-qualification/verification.json"
+    }
+  },
+  "task_sha256": "c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c",
+  "runtime_source": "f70fe57fc5544866809f1cdf548e7c47b1cc6f1d",
+  "native_checkpoint": {
+    "attempts": 2,
+    "phase": "waiting_access",
+    "results": [
+      {
+        "exit_code": 1,
+        "provider_completed": false,
+        "reason": "attempt failed or interrupted",
+        "stderr": ""
+      },
+      {
+        "attempt": 2,
+        "candidate_files_sha256": {
+          "tools/README.md": "187b84f70fac6475e40caeb1ac885d3716f69abe9b81ce9e2f09d4449834afb4",
+          "tools/run_report.py": "a4143aabbe75c4222a83ffc386c8360756424e6e4f2f0ef8e234b4354791e67d",
+          "tools/test_run_report.py": "62dff3ac497593f20d5bb66a094eefb41eb63af66a9ec3f5a921769a79a4b3b0"
+        },
+        "elapsed_seconds": 134.029,
+        "evidence": "evidence/accepted-task/attempt-2",
+        "exit_code": 0,
+        "interrupted": null,
+        "phase_acceptance_passed": true,
+        "process_group_removed": true,
+        "provider": "codex",
+        "provider_completed": true,
+        "task": "runtime-run-report-1",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 202368,
+          "input_tokens": 240607,
+          "output_tokens": 6151,
+          "reasoning_output_tokens": 358
+        }
+      }
+    ],
+    "waiting_reason": "WAITING_ACCESS: known oauth_org_not_allowed, evidence/startup/claude-root; wait for owner-confirmed subscription access change, no API fallback"
+  },
+  "preserved_files_sha256": {
+    "tools/run_report.py": "a4143aabbe75c4222a83ffc386c8360756424e6e4f2f0ef8e234b4354791e67d",
+    "tools/test_run_report.py": "62dff3ac497593f20d5bb66a094eefb41eb63af66a9ec3f5a921769a79a4b3b0",
+    "tools/README.md": "187b84f70fac6475e40caeb1ac885d3716f69abe9b81ce9e2f09d4449834afb4"
+  },
+  "previous_candidate_base": "92780815dd0f128691948473373d9910af782c49",
+  "new_base": "531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d",
+  "brief_sha256": "01bbe061d63d28890b415c6779497e9a1da512c0872584b3242a7e3c122260ab",
+  "acceptance_sha256": "0fdb658c21ffd7401975e1c724c61392254d0419b193585fa9321b94c0a6f936"
+}

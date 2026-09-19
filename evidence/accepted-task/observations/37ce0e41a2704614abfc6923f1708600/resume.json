@@ -1,0 +1,175 @@
+{
+  "prior": {
+    "attempts": 4,
+    "continuations": [
+      {
+        "evidence": "evidence/claude-qualification/verification.json",
+        "expected_attempt": 2,
+        "previous_task_sha256": "39aaab70858d584402e52c355c61479b0a0a5e252653b9589196857d02b61c17",
+        "reason": "Owner restored Claude subscription; native restricted profile qualified in D019. Preserve Codex phase, update stale base and freeze the already accepted full contract before continuation."
+      }
+    ],
+    "integration": {
+      "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a",
+      "merge_commit": "98b92a72da2671c0a517f674f8b023667c070bcb",
+      "merged": true,
+      "tree": "659eb238b4a4425c660d25dae15c2b1f42128615",
+      "url": "https://github.com/Nortropic/nortropic-runtime/pull/12"
+    },
+    "phase": "completed",
+    "publication_attempts": 1,
+    "results": [
+      {
+        "exit_code": 1,
+        "provider_completed": false,
+        "reason": "attempt failed or interrupted",
+        "stderr": ""
+      },
+      {
+        "attempt": 2,
+        "candidate_files_sha256": {
+          "tools/README.md": "187b84f70fac6475e40caeb1ac885d3716f69abe9b81ce9e2f09d4449834afb4",
+          "tools/run_report.py": "a4143aabbe75c4222a83ffc386c8360756424e6e4f2f0ef8e234b4354791e67d",
+          "tools/test_run_report.py": "62dff3ac497593f20d5bb66a094eefb41eb63af66a9ec3f5a921769a79a4b3b0"
+        },
+        "elapsed_seconds": 134.029,
+        "evidence": "evidence/accepted-task/attempt-2",
+        "exit_code": 0,
+        "interrupted": null,
+        "phase_acceptance_passed": true,
+        "process_group_removed": true,
+        "provider": "codex",
+        "provider_completed": true,
+        "task": "runtime-run-report-1",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 202368,
+          "input_tokens": 240607,
+          "output_tokens": 6151,
+          "reasoning_output_tokens": 358
+        }
+      },
+      {
+        "attempt": 3,
+        "candidate": "7f5589dc433fc563d98e6f010479a1f2822b114b",
+        "candidate_files_sha256": {
+          "tools/README.md": "d0df86ae66521a17c8c2326d890bf71c145865302e256a9b7113293095369c9b",
+          "tools/run_report.py": "77646504fd8a6bde849ba60f139cac310f4639b048530fb58ce6ba5208bee17f",
+          "tools/test_run_report.py": "889efcc7718be7f1c4d792bd22b0c4106309c60766b8c67766384bda4ef03f1a"
+        },
+        "elapsed_seconds": 147.813,
+        "evidence": "evidence/accepted-task/attempt-3",
+        "exit_code": 0,
+        "interrupted": null,
+        "permission_denials": [],
+        "phase_acceptance_passed": true,
+        "process_group_removed": true,
+        "provider": "claude",
+        "provider_completed": true,
+        "reported_list_cost_usd": 1.1435075000000001,
+        "role": "implementation",
+        "task": "runtime-run-report-1",
+        "thread_id": "a3c76846-a130-4841-a97c-b8b14d19010a",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 21068,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 21068,
+          "cache_read_input_tokens": 41554,
+          "inference_geo": "not_available",
+          "input_tokens": 170,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 8986,
+                "ephemeral_5m_input_tokens": 0
+              },
+              "cache_creation_input_tokens": 8986,
+              "cache_read_input_tokens": 17120,
+              "input_tokens": 56,
+              "model": null,
+              "output_tokens": 1516,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 14181,
+          "output_tokens_details": {
+            "thinking_tokens": 2513
+          },
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "workspace_name": "commit-3"
+      },
+      {
+        "attempt": 4,
+        "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a",
+        "candidate_files_sha256": {
+          "tools/README.md": "ccbe799d5d1ac94095b2f0da0ab334db265dea2c04d02e511233b6cb02c1eae6",
+          "tools/run_report.py": "f96ac15a15281643ad8959e9b06e9e93d331d09bb45a0c6913501575dc7d156d",
+          "tools/test_run_report.py": "b9cf901b7ac283ef013fa1e28ec0fba40bf26ebfe630848e6ebd06854a2c2fc4"
+        },
+        "elapsed_seconds": 131.891,
+        "evidence": "evidence/accepted-task/attempt-4",
+        "exit_code": 0,
+        "interrupted": null,
+        "phase_acceptance_passed": true,
+        "process_group_removed": true,
+        "provider": "codex",
+        "provider_completed": true,
+        "role": "implementation",
+        "task": "runtime-run-report-1",
+        "thread_id": "01a0b9ac-d556-7390-b52a-ec10db57da57",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 352896,
+          "input_tokens": 392812,
+          "output_tokens": 5176,
+          "reasoning_output_tokens": 1067
+        },
+        "workspace_name": "commit-4"
+      }
+    ],
+    "review": {
+      "acceptance_sha256": "0fdb658c21ffd7401975e1c724c61392254d0419b193585fa9321b94c0a6f936",
+      "blocking_findings": [],
+      "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a",
+      "provider_result": {
+        "attempt": 1,
+        "elapsed_seconds": 26.755,
+        "evidence": "evidence/accepted-task/review-1",
+        "exit_code": 0,
+        "interrupted": null,
+        "process_group_removed": true,
+        "provider": "codex",
+        "provider_completed": true,
+        "role": "review",
+        "task": "runtime-run-report-1",
+        "thread_id": "01a0b9ae-eec2-7603-9f1f-c5286fcfde12",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 33408,
+          "input_tokens": 57205,
+          "output_tokens": 1186,
+          "reasoning_output_tokens": 193
+        }
+      },
+      "reviewer_run": "01a0b9ae-eec2-7603-9f1f-c5286fcfde12",
+      "scope": "whole_task",
+      "summary": "All three accepted files satisfy the brief. Verified status precedence, terminal counting, Claude\u2019s explicit-false requirement, usage/cost retention, CLI behavior, and handoff documentation. All 23 parser tests and 16 independent read-only CLI checks passed. No files changed.",
+      "task_id": "runtime-run-report-1",
+      "task_sha256": "c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c",
+      "terminal_status": "completed",
+      "verdict": "approved"
+    },
+    "waiting_reason": null
+  },
+  "diagnosis": null,
+  "reconcile": null,
+  "access_restored": false
+}

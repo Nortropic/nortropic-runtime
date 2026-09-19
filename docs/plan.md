@@ -1,110 +1,74 @@
 # Living plan — Runtime v0.1
 
-## Current step: connect the qualified Claude continuation
+## Current state: Runtime v0.1 verified; release checkpoint
 
-RESULTAT: One useful accepted Codex task completed automatically through external
-acceptance, fresh independent review and protected integration (PR7). Its evidence
-and runbook are integrated (PR8). Bounded abrupt-worker recovery and supplied-known-
-quota wait passed; separately approved service fix/evidence are delivered in PR9.
-Check PR9 server merged state and git origin/main when taking over; do not infer
-integration from backup branch existence. Runtime v0.1 is NOT complete.
+RESULTAT: Both useful accepted tasks completed and integrated through Runtime.
+Actual report Codex→Claude→Codex, external tests, separate fresh review and automatic
+protected PR12 merge succeeded. Restart of both tasks returned identical completed
+states with no new model attempts/publications. A fresh read-only Claude session located the mandate, current state, decisions,
+proofs and next action without owner retelling; no missing §1 evidence was found.
+This mandate is complete once the reviewed evidence/docs merge and v0.1.0 tag
+are present. Before that checkpoint, do only the final release action below.
 
-ARBETSYTA: Nortropic/nortropic-runtime, local /Users/elinhaggstrom/Nortropic Runtime.
-Current branch work/claude-transition from main287eb84 (PR10). Origin is public by owner
-D006, required exact-SHA tests/review protection active. Earlier branches remain
-preserved. No production changes, new API billing, purchases or expanded rights.
+ARBETSYTA: /Users/elinhaggstrom/Nortropic Runtime, Nortropic/nortropic-runtime.
+Current branch work/runtime-v01-evidence, based on integrated main98b92a7 (PR12).
+Completed evidence commits were cherry-picked from preserved backup branch
+work/report-continuation, without rewriting that branch. Origin public by owner
+D006; required exact-SHA tests/review, strict base/admin and linear protection.
+No production changes, new API billing, purchases or expanded external permissions.
 
-NÄSTA HANDLING: Review/integrate the bounded adapter slice after recorded tests.
-Claude profile qualification is separately approved and integrated via PR10 at
-287eb8430a04b922c9232b74f59ea04c19d64e9e. Adapter changes are not yet approved or
-integrated. Canonical Runtime database and real report candidate are untouched.
-Native replay passed report/evidence/recovery histories; isolated native fixture
-passed inherited Codex1/interrupted→Codex2→wait→Claude3→Codex4, wrong-attempt
-refusal, fresh worker reconstruction, duplicate signal and one simulated publish.
-Whole-task verifier correctly rejects preserved Codex-only source. Source/raw
-results: evidence/claude-transition/. Real model swap is still NOT RUN.
+NÄSTA HANDLING: Check `git rev-parse v0.1.0` and origin/main. If the tag points to
+the protected merge containing this final record, no further implementation is
+required by this mandate; report/inspect the delivered result and wait for a new
+accepted task. Do not start an optimization loop. If the tag is absent, finish
+separate final-documentation review, protected integration of work/runtime-v01-evidence,
+verify exact merged tree/base, create the tag on that reviewed merge and preserve
+the server receipt on state/v01-release-receipt. That receipt branch is observation,
+not an additional approved code integration. No owner decision is missing.
 
-After integration: from clean main run `python3 -m scripts.prepare_report_continuation`.
-This creates tasks/run-report-continuation.json once, with current integrated base,
-unchanged task ID/scope/prompts/limits and frozen whole-task verifier. Preserve it
-on a work branch and separately review exact accepted input before invoking
-`.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json
---resume --access-restored`. Native signal binds old task digest and attempt2;
-host retains original candidate directory and overlays byte-identical saved work
-on current base. No workflow resubmission, deleted attempt or replaced history.
-The same native workflow then runs real Claude and final Codex, host tests, fresh
-independent review and protected integration. Observe bounded run and preserve
-results immediately; failure waits for specific diagnosis, never blind repetition.
+Fresh Claude audit: evidence/v0.1/claude-receiver/assessment.md and verification.json.
+It inspected Git/source state itself and read the host's process/auth preflight,
+explicitly distinguishing those evidence sources. Latest README/audit were then
+preserved on origin. Source implementations already received independent review;
+this release step reviews final evidence/documentation rather than repeating code review.
 
-Then use the actual delivered report on saved real provider logs, restart both
-native tasks to prove retained completion, and audit every mandate§1/§9 row.
-The second accepted evidence task already used this DevelopmentTask/Publisher.
+UTFALL / EVIDENCE:
+- docs/runtime-v0.1.md maps every mandate§1 row and §9 report requirement.
+- evidence/v0.1/claude-receiver/verification.json records the fresh receiver audit,
+  bounded94.985s, Read only, successful terminal and complete process cleanup.
+- evidence/accepted-task/result.md: report candidatef86a85c27d7cb2567d3c600292f213fa45067b7a,
+  PR12 merge98b92a72da2671c0a517f674f8b023667c070bcb. Native4 attempts (first interrupted),
+  one publication. Old20 events remain exact prefix of final49. Claude147.813s,
+  final Codex131.891s, separate review26.755s; 33 host observations/30 candidate tests.
+- evidence/runs/runtime-evidence-index-1/result.md: candidate38ecdaf7, PR7 merge0fba283,
+  one attempt/publication, actual independent review and real manifest use.
+- evidence/v0.1/restart-and-state.json: fresh restart of both completed tasks,
+  unchanged counters/state and no new provider calls; final database backup/hashes.
+- evidence/accepted-task/real-use/result.json: delivered report used on actual
+  completed/error/interrupted streams. Failed tool items remain failed in this
+  conservative report even if later host task acceptance passes; details in result.md.
+- evidence/recovery-probe/result.md: actual worker SIGKILL with harmless bounded
+  sandbox writer, refusal of competing writer, preserved attempt/state, inspected
+  retry; supplied known-quota wait survives restart without calls. Real vendor quota,
+  arbitrary guardian SIGKILL/detached hostile children and host compromise unproven.
+- evidence/claude-qualification/result.md: actual Max access and native file tools,
+  root/subdirectory instruction loading, preserved initial failures and limits.
+  D019/D020 own qualified profile and explicit same-task continuation decisions.
 
-UTFALL: Evidence task candidate38ecdaf7 integrated as0fba283 through PR7.25 host
-observations including14 candidate tests passed. Actual independent model review
-had a different thread identity; one implementation and one publication. Real
-manifest use and fresh restart of both tasks passed (see result.md below).
-Abrupt worker SIGKILL fixture passed in155.773s: contender lock/start blocked,
-old sandbox writer bounded to3.063s, native attempt1 retained until153s timeout,
-explicit diagnosis continued preserved source as attempt2, one simulated publish.
-Known-quota-input wait survived engine restart with zero provider activities.
-SO_REUSEADDR preflight fix passed real active-listener/TIME_WAIT tests and native
-restarts. Independent reviewer approved source/evidence7723de2; final plan delta is
-separately checked before PR9 integration. No real vendor quota or arbitrary
-hostile detached-process/guardian-SIGKILL claim. D018 records limits.
+ÅTERUPPTAGNING: No model, controller, worker or service remains active after the
+recorded restarts. Fresh receivers still verify Git and recorded process state
+before writes. Canonical database .runtime/runtime.sqlite; both tasks completed.
+Do not resubmit either task or repeat --access-restored. Existing task inspection:
+`.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json --resume`
+or the same command with tasks/evidence-index.json. These are observations, not new
+work. Do not delete state/launch evidence to bypass a guard.
 
-ÅTERUPPTAGNING: No model, engine or worker remains active; actual process inspection
-and free engine lock were checked after fixtures. Fresh receivers still verify
-recorded launch PIDs/groups and Git before writes. Real canonical native database:
-.runtime/runtime.sqlite. Backup/hash: evidence/runs/runtime-evidence-index-1/state/.
-First report task: waiting_access, attempts2, retained candidate at
-.runtime/tasks/runtime-run-report-1/candidate; immutable Codex phase snapshot under
-evidence/accepted-task/attempt-2/candidate. Second task runtime-evidence-index-1:
-completed, attempts1, publication_attempts1. Never resubmit either existing task.
-No real-task Claude/model attempt is pending; no automatic retry is enabled.
-Only isolated no-model fixture/test processes ran for this adapter delivery.
+Frozen accepted input/verifiers, candidate and candidate-before-continuation remain
+under .runtime/tasks/runtime-run-report-1; all meaningful source/inputs/bundles/raw
+results are preserved in Git. Final SQLite backup: evidence/v0.1/runtime.sqlite.gz.
+Before any future execution verify old writers stopped, subscriptions still use
+the qualified route and exact selected binaries match. Follow docs/runbook.md.
+No project-wide time/token budget was invented; individual calls are bounded.
 
-Fixture databases are separate and backed up under evidence/recovery-probe/state/.
-Do not rerun historical experiments into existing output/state directories. They
-are preserved proofs, not resumption commands. Current use instructions:
-docs/runbook.md. Actual outcomes/usage/coordination: evidence/runs/runtime-evidence-index-1/result.md.
-Recovery limits/raw pointers: evidence/recovery-probe/result.md.
-
-## Completed delivery and evidence
-
-PR2 integrated d07fd7e. Exact reviewed candidate8743f56, separate reviewer
-/root/startup_review. Legitimate protected merge succeeded; real missing-check
-push and old-SHA-status merge rejected. Source and raw artifacts:
-- evidence/motor-probe/result.md: B1 file/coordination PASS, historical MCP-profile
-  restriction FAILED; later no-model corrected inventory passed. Do not conflate.
-- evidence/startup/operator-tests-final.log: six support tests passed.
-- evidence/startup/codex-root-0155 and codex-subdir: real instruction loading.
-- evidence/startup/claude-root: 403 oauth_org_not_allowed, 0 tokens/$0 reported.
-- evidence/integration: protection/readback, missing/stale status denial, merge.
-- evidence/reviews/startup-and-b1.md and PR2 body: separate review scope/findings.
-
-Initial protection setup mistakenly pushed4dec677 after a rejected PUT; D007
-records it. That event is not a approved-integration claim; corrected delivery
-went through PR2 with required checks on exact candidate and server acceptance.
-
-## Later steps (refine the next only)
-
-Qualify restored Claude access and constrained execution, then continue the same
-report task Codex→Claude→Codex through Runtime. Preserve its existing attempt
-history. Complete whole-task review/integration and audit every §1 row; keep actual
-proofs distinct from fixtures and scope limits. No repeated model/error probes
-until access changes, and no extra task invented to substitute for the real swap.
-
-## Mandate §1 evidence index
-
-| Capability | Current result |
-|---|---|
-| Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
-| Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
-| Replaceable execution | Claude access/profile qualified; Runtime swap NOT RUN |
-| Interruption/capacity | Real controlled model interruption; abrupt worker + bounded harmless writer recovery; supplied known-quota wait survives restart without calls. Arbitrary guardian kill/detached descendants and actual vendor quota not proven |
-| Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
-| Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |
-
-Runtime v0.1 is not complete. No project-wide time/token cap invented. Per-run
-limits are local safeguards; resource history and failed results remain preserved.
+After final release checks are complete, this mandate ends. Further improvements
+need a concrete accepted task; do not start an open-ended optimization loop.

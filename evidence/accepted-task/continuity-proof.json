@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "workflow": "runtime-run-report-1",
+  "old_history_events": 20,
+  "final_history_events": 49,
+  "old_history_exact_prefix": true,
+  "attempts": 4,
+  "publication_attempts": 1,
+  "distinct_provider_sessions": {
+    "attempt-1": [
+      "01a0b945-3f13-7b60-9490-d81bef974ef0"
+    ],
+    "attempt-2": [
+      "01a0b949-0bbb-7d23-9dd0-72c82b1fad33"
+    ],
+    "attempt-3": [
+      "a3c76846-a130-4841-a97c-b8b14d19010a"
+    ],
+    "attempt-4": [
+      "01a0b9ac-d556-7390-b52a-ec10db57da57"
+    ],
+    "review-1": [
+      "01a0b9ae-eec2-7603-9f1f-c5286fcfde12"
+    ]
+  },
+  "activities": [
+    {
+      "activity": "execute_codex",
+      "attempt": 1,
+      "candidate": null
+    },
+    {
+      "activity": "execute_codex",
+      "attempt": 2,
+      "candidate": null
+    },
+    {
+      "activity": "execute_claude",
+      "attempt": 3,
+      "candidate": null
+    },
+    {
+      "activity": "execute_codex",
+      "attempt": 4,
+      "candidate": null
+    },
+    {
+      "activity": "review_candidate",
+      "attempt": null,
+      "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a"
+    },
+    {
+      "activity": "publish_candidate",
+      "attempt": null,
+      "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a"
+    }
+  ],
+  "integration": {
+    "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a",
+    "merge_commit": "98b92a72da2671c0a517f674f8b023667c070bcb",
+    "merged": true,
+    "tree": "659eb238b4a4425c660d25dae15c2b1f42128615",
+    "url": "https://github.com/Nortropic/nortropic-runtime/pull/12"
+  }
+}
