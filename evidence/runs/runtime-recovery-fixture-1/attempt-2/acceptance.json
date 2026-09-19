@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "candidate_files_sha256": {
+    "tools/recovery.txt": "4a87db01c21623959c40c718220cb135476407da24aa20609e5da4abda46593c"
+  }
+}

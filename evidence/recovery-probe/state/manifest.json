@@ -1,0 +1,16 @@
+[
+  {
+    "name": "worker",
+    "source": ".runtime/recovery-probe/temporal.sqlite",
+    "raw_sha256": "61b9c76ac02c3dc9c71a64bb2f87e244ee3005d94d83cf6038ef4ffe46190645",
+    "raw_bytes": 692224,
+    "integrity_check": "ok"
+  },
+  {
+    "name": "capacity",
+    "source": ".runtime/recovery-capacity/temporal.sqlite",
+    "raw_sha256": "b50d7dc86d55462b050d5d113553a173c46846c02ff3c88a280f93a6c0cb22e5",
+    "raw_bytes": 663552,
+    "integrity_check": "ok"
+  }
+]

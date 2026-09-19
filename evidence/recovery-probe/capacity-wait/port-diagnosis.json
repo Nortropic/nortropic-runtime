@@ -1,0 +1,32 @@
+[
+  {
+    "port": 7339,
+    "reuseaddr": false,
+    "result": "[Errno 48] Address already in use"
+  },
+  {
+    "port": 7339,
+    "reuseaddr": true,
+    "result": "available"
+  },
+  {
+    "port": 7340,
+    "reuseaddr": false,
+    "result": "available"
+  },
+  {
+    "port": 7340,
+    "reuseaddr": true,
+    "result": "available"
+  },
+  {
+    "port": 7341,
+    "reuseaddr": false,
+    "result": "available"
+  },
+  {
+    "port": 7341,
+    "reuseaddr": true,
+    "result": "available"
+  }
+]

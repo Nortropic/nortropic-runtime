@@ -312,3 +312,23 @@ A new central SQLite location may be established by backup after all writers sto
 retain original database, verify existing waiting workflow, and run only one local
 server. Authority/test/review artifacts remain host-owned outside candidate write
 access. A live automatic merge is not claimed until this wiring is actually run.
+
+## D018 — 2026-09-19: prove bounded abrupt-worker recovery with existing primitives
+
+Actual one-step task completed and automatically integrated via PR7; PR8 preserved
+independently reviewed evidence/runbook. Next tested abrupt SIGKILL of a native
+worker with a harmless sandbox provider under the real attempt guardian. Existing
+flock, recorded-process inspection, guardian deadline, native history and retry1
+policy prevented concurrent/duplicate execution; explicit diagnosis resumed the
+same preserved work as attempt2. No new production recovery layer was needed.
+
+An inherited-FD prototype worked mechanically but was rejected because candidate
+tool descriptor exposure is not qualified. Keep authority outside candidate tools.
+Do not claim arbitrary guardian SIGKILL/detached hostile descendants are covered.
+
+One concrete service bug was exposed: preflight plain bind treated stopped-service
+TIME_WAIT as active. Use SO_REUSEADDR like the actual listener, no SO_REUSEPORT;
+real socket tests still refuse active listeners. Corrected native capacity-wait
+restart passed with zero provider calls. Capacity was supplied as a known fixture
+reason, not inferred from an actual vendor quota. Raw boundaries/limits and native
+backups: evidence/recovery-probe/result.md. Claude D015 remains unchanged.

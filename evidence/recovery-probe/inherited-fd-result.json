@@ -1,0 +1,7 @@
+{
+  "model_calls": 0,
+  "question": "Does pinned actual Codex app-server retain inherited writer lock?",
+  "alive_after_start": true,
+  "inherited_lock_blocks_contender": true,
+  "process_group_removed": true
+}

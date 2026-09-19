@@ -1,0 +1,13 @@
+{
+  "attempts": 1,
+  "phase": "waiting_diagnosis",
+  "results": [
+    {
+      "attempt": 1,
+      "provider_completed": false,
+      "reason": "Activity task timed out",
+      "requires_process_inspection": true
+    }
+  ],
+  "waiting_reason": "Phase incomplete or failed; preserved evidence, no automatic repetition"
+}

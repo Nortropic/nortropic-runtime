@@ -1,0 +1,5 @@
+{
+  "returncode": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/Users/elinhaggstrom/Nortropic Runtime/experiments/recovery_probe/fixture_attempt.py\", line 12, in <module>\n    raise SystemExit(attempt.execute(**request))\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/elinhaggstrom/Nortropic Runtime/runtime/attempt.py\", line 33, in execute\n    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)\nBlockingIOError: [Errno 35] Resource temporarily unavailable\n"
+}

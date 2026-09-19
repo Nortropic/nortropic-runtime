@@ -1,0 +1,53 @@
+{
+  "attempts": 2,
+  "integration": {
+    "fixture_only": true,
+    "merged": true,
+    "remote_publications": 0
+  },
+  "phase": "completed",
+  "publication_attempts": 1,
+  "results": [
+    {
+      "attempt": 1,
+      "provider_completed": false,
+      "reason": "Activity task timed out",
+      "requires_process_inspection": true
+    },
+    {
+      "attempt": 2,
+      "candidate": "a790e911df17c87eaf0acfb9a0153790df0dcf54",
+      "candidate_files_sha256": {
+        "tools/recovery.txt": "4a87db01c21623959c40c718220cb135476407da24aa20609e5da4abda46593c"
+      },
+      "elapsed_seconds": 0.148,
+      "evidence": "evidence/runs/runtime-recovery-fixture-1/attempt-2",
+      "exit_code": 0,
+      "interrupted": null,
+      "phase_acceptance_passed": true,
+      "process_group_removed": true,
+      "provider": "codex",
+      "provider_completed": true,
+      "role": "implementation",
+      "task": "runtime-recovery-fixture-1",
+      "thread_id": "fixture-author-2",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0
+      },
+      "workspace_name": "commit-2"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "9dc4632e3e3afc4c12ab7b54930e5d4a80eefbc60af080d2551211e23cc6b85b",
+    "blocking_findings": [],
+    "candidate": "a790e911df17c87eaf0acfb9a0153790df0dcf54",
+    "reviewer_run": "fixture-independent-review",
+    "scope": "whole_task",
+    "task_id": "runtime-recovery-fixture-1",
+    "task_sha256": "86026b0fbb276590d50ebb65eff3457f95a2dc26b53d08f04c45ad6f0e2ce51f",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "waiting_reason": null
+}

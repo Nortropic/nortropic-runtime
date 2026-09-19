@@ -1,0 +1,22 @@
+{
+  "model_calls": 0,
+  "remote_publications": 0,
+  "native_activity_timeout_seconds": 153,
+  "killed_worker_pid": 29311,
+  "active_writer_blocks_restart": "Unfinished recorded writer; inspect before starting: /Users/elinhaggstrom/Nortropic Runtime/evidence/runs/runtime-recovery-fixture-1/attempt-1/launch.json",
+  "concurrent_guardian_refused": true,
+  "old_writer_stopped": true,
+  "passed": true,
+  "attempts": 2,
+  "fixture_publications": 1,
+  "retained_work": true,
+  "process_groups_removed": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "elapsed_seconds": 155.773
+}

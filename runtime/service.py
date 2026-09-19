@@ -13,6 +13,16 @@ from scripts.bounded import stop_group
 from .profile import ROOT
 
 
+def require_ports_available(ports):
+    for port in ports:
+        with socket.socket() as sock:
+            # Match the service's ordinary listener reuse semantics: TIME_WAIT
+            # from a stopped service is not a live listener. A live listener on
+            # the same address still refuses this bind (no SO_REUSEPORT).
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(('127.0.0.1', port))
+
+
 class LocalService:
     def __init__(self, database, output, namespace='nortropic-runtime', seed_database=None):
         self.database, self.output = Path(database), Path(output)
@@ -26,8 +36,7 @@ class LocalService:
         self.lock = (ROOT / '.runtime/engine.lock').open('a')
         try:
             fcntl.flock(self.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            for port in (7339, 7340, 7341):
-                with socket.socket() as sock: sock.bind(('127.0.0.1', port))
+            require_ports_available((7339, 7340, 7341))
             self.database.parent.mkdir(parents=True, exist_ok=True)
             if not self.database.exists() and self.seed_database is not None:
                 with sqlite3.connect('file:' + str(self.seed_database) + '?mode=ro', uri=True) as source, sqlite3.connect(self.database) as target:

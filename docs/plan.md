@@ -1,55 +1,65 @@
 # Living plan — Runtime v0.1
 
-## Current step: run the accepted evidence integrity task through Runtime
+## Current step: preserved wait for changed Claude access
 
-RESULTAT: Deliver tools/evidence_index.py, tests and usage documentation through
-actual bounded implementation, external acceptance, fresh independent review and
-protected automatic integration. This is the second accepted useful task; the
-first report task is incomplete and waiting for Claude.
+RESULTAT: One useful accepted Codex task completed automatically through external
+acceptance, fresh independent review and protected integration (PR7). Its evidence
+and runbook are integrated (PR8). Bounded abrupt-worker recovery and supplied-known-
+quota wait passed; separately approved service fix/evidence are delivered in PR9.
+Check PR9 server merged state and git origin/main when taking over; do not infer
+integration from backup branch existence. Runtime v0.1 is NOT complete.
 
-VARFÖR NU: PR6 integrated reviewed connected support at 5e014099feeb0cec1a6954fc162e79d9a7a2f1e2.
-Sixteen support tests, preserved-input submission test, native fixtures/replay and
-actual no-model CLI resume passed. Receipt: evidence/connected-workflow/integration.json.
-Separate reviewer approved exact0c7f3e9. No live automatic task integration yet.
+ARBETSYTA: Nortropic/nortropic-runtime, local /Users/elinhaggstrom/Nortropic Runtime.
+Current recovery delivery branch work/inflight-recovery. Origin is public by owner
+D006, required exact-SHA tests/review protection active. Earlier branches remain
+preserved. No production changes, new API billing, purchases or expanded rights.
 
-METOD: Frozen task tasks/evidence-index.json, brief tasks/evidence-index.md and
-host verifier acceptance/evidence_index.py. Target three explicit tools/ files;
-base5e014099. Standard-library SHA256 create/verify CLI replaces manual evidence
-hash checking. Same DevelopmentTask and Publisher, no new scheduler/dependency.
+NÄSTA HANDLING: Await changed Claude access evidence from owner (D015). The latest
+observed Claude403 oauth_org_not_allowed means subscription/organization access
+was disabled; it was not a proven quota exhaustion. Buying usage is not assumed
+to repair it. Do not make periodic Claude calls or ask for a new work order.
+When access changes, inspect cached/auth account and organization state first,
+then choose one bounded minimal qualification call through the already authorized
+subscription. If rights/cost must change, take the exact decision to owner directly.
 
-ARBETSYTA: work/evidence-index-completion based on actual PR7 main0fba283.
-Earlier work/evidence-index-task is retained as a backup, never force-updated. Origin PUBLIC by D006;
-branch protection active. No costs/rights expanded; no Claude call (D015).
+Once access is verified, qualify Claude's constrained tool/stop/result path and
+connect it to the existing native workflow without replacing histories. Continue
+runtime-run-report-1 from its retained Codex implementation through real Claude
+work and back to Codex. Preserve native replay compatibility while adding that
+qualified provider transition. Its current permanent waiting condition deliberately
+has no unverified release shortcut: do not signal blind retries or edit accepted
+requirements to claim completion. Complete that task's whole-task acceptance,
+fresh review and protected integration, then finish remaining §1 evidence audit.
+The second accepted evidence task already used the same DevelopmentTask/Publisher.
 
-NÄSTA HANDLING: Independently inspect completed-run evidence and runbook, then integrate
-that documentation on top of PR7 without re-reviewing unchanged candidate code.
-Next independent capability is bounded abrupt in-flight writer recovery/fencing.
-Claude remains deferred; no new Claude calls or API fallback.
+UTFALL: Evidence task candidate38ecdaf7 integrated as0fba283 through PR7.25 host
+observations including14 candidate tests passed. Actual independent model review
+had a different thread identity; one implementation and one publication. Real
+manifest use and fresh restart of both tasks passed (see result.md below).
+Abrupt worker SIGKILL fixture passed in155.773s: contender lock/start blocked,
+old sandbox writer bounded to3.063s, native attempt1 retained until153s timeout,
+explicit diagnosis continued preserved source as attempt2, one simulated publish.
+Known-quota-input wait survived engine restart with zero provider activities.
+SO_REUSEADDR preflight fix passed real active-listener/TIME_WAIT tests and native
+restarts. Independent reviewer approved source/evidence7723de2; final plan delta is
+separately checked before PR9 integration. No real vendor quota or arbitrary
+hostile detached-process/guardian-SIGKILL claim. D018 records limits.
 
-KÖRGRÄNS: One Codex implementation invocation <=300 seconds; fresh review <=180
-seconds; zero automatic retries. Observable progress is emitted events/source
-changes, host verification and terminal usage. First report phase took134s with
-6151 output tokens; this somewhat larger file-integrity CLI is allotted300s.
-Usage will be recorded, monetary cost remains unknown under existing subscription.
-No project-wide cap or quota probing. Invalid/failed review prevents publication.
+ÅTERUPPTAGNING: No model, engine or worker remains active; actual process inspection
+and free engine lock were checked after fixtures. Fresh receivers still verify
+recorded launch PIDs/groups and Git before writes. Real canonical native database:
+.runtime/runtime.sqlite. Backup/hash: evidence/runs/runtime-evidence-index-1/state/.
+First report task: waiting_access, attempts2, retained candidate at
+.runtime/tasks/runtime-run-report-1/candidate; immutable Codex phase snapshot under
+evidence/accepted-task/attempt-2/candidate. Second task runtime-evidence-index-1:
+completed, attempts1, publication_attempts1. Never resubmit either existing task.
+No new Claude/model attempts are pending; no automatic retry is enabled.
 
-UTFALL: COMPLETE for runtime-evidence-index-1. Candidate38ecdaf7f989ab547740e23345c9cfbf8f69513c
-was independently reviewed and automatically merged as0fba283d5c6e19f30c9703eec88e6ea879435c16
-via PR7. One implementation174.901s, one fresh review34.25s, all25 host cases
-passed (including candidate14 tests). One publication attempt. No manual code
-edits, phase switches or retry after submission. Raw artifacts under
-evidence/runs/runtime-evidence-index-1, including candidate Git bundle, native
-history, model logs/usage, bound decisions and integration receipt.
-
-ÅTERUPPTAGNING: Root driver active. All implementation/review/worker/server groups
-reported removed. Canonical .runtime/runtime.sqlite; current backup/hash at
-evidence/runs/runtime-evidence-index-1/state/. Fresh native restarts returned the identical completed new task and identical
-waiting_access/attempts2 old report. No new model/review/publication occurred.
-Real evidence-manifest use passed for three preserved artifacts (result.md). Its completion and
-actual Claude swap remain unproven. Old DB/source/bundles are retained.
-Fresh receivers inspect Git and recorded process identities before writes.
-Do not resubmit accepted task or run historical pilot scripts. Current submission
-only needs --resume for observation; completed means no model retry is needed.
+Fixture databases are separate and backed up under evidence/recovery-probe/state/.
+Do not rerun historical experiments into existing output/state directories. They
+are preserved proofs, not resumption commands. Current use instructions:
+docs/runbook.md. Actual outcomes/usage/coordination: evidence/runs/runtime-evidence-index-1/result.md.
+Recovery limits/raw pointers: evidence/recovery-probe/result.md.
 
 ## Completed delivery and evidence
 
@@ -70,11 +80,11 @@ went through PR2 with required checks on exact candidate and server acceptance.
 
 ## Later steps (refine the next only)
 
-Select minimal existing engine path; connect official Codex/Claude programs.
-Prove real Codex→Claude→Codex continuation, interruption with one writer, durable
-capacity wait and retained attempt history. Complete candidate-authority isolation
-and automated exact-candidate review/test/integration. Then useful Customer Zero
-implementation plus another accepted task over the same route.
+Qualify restored Claude access and constrained execution, then continue the same
+report task Codex→Claude→Codex through Runtime. Preserve its existing attempt
+history. Complete whole-task review/integration and audit every §1 row; keep actual
+proofs distinct from fixtures and scope limits. No repeated model/error probes
+until access changes, and no extra task invented to substitute for the real swap.
 
 ## Mandate §1 evidence index
 
@@ -83,7 +93,7 @@ implementation plus another accepted task over the same route.
 | Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
 | Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
-| Interruption/capacity | Actual interrupted attempt and post-cleanup wait replay passed; in-flight crash fencing/quotas pending |
+| Interruption/capacity | Real controlled model interruption; abrupt worker + bounded harmless writer recovery; supplied known-quota wait survives restart without calls. Arbitrary guardian kill/detached descendants and actual vendor quota not proven |
 | Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
 | Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |
 
