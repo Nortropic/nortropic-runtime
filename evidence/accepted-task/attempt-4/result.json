@@ -1,0 +1,20 @@
+{
+  "task": "runtime-run-report-1",
+  "attempt": 4,
+  "provider": "codex",
+  "provider_completed": true,
+  "exit_code": 0,
+  "thread_id": "01a0b9ac-d556-7390-b52a-ec10db57da57",
+  "usage": {
+    "input_tokens": 392812,
+    "cached_input_tokens": 352896,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 5176,
+    "reasoning_output_tokens": 1067
+  },
+  "role": "implementation",
+  "interrupted": null,
+  "process_group_removed": true,
+  "elapsed_seconds": 131.891,
+  "evidence": "evidence/accepted-task/attempt-4"
+}
