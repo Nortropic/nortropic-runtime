@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/8",
+  "candidate": "e6821375a6a1cfcc8a831972d9ea24747cc63491",
+  "merge": {
+    "sha": "1b020b55e937e12853e811491e56e8e25ee7cd7a",
+    "merged": true,
+    "message": "Pull Request successfully merged"
+  },
+  "verified_merged": true,
+  "reviewer": "/root/startup_review",
+  "scope": "task evidence and runbook, tool already integrated via Runtime PR7"
+}

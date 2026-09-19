@@ -1,55 +1,50 @@
 # Living plan — Runtime v0.1
 
-## Current step: run the accepted evidence integrity task through Runtime
+## Current step: bounded in-flight interruption recovery
 
-RESULTAT: Deliver tools/evidence_index.py, tests and usage documentation through
-actual bounded implementation, external acceptance, fresh independent review and
-protected automatic integration. This is the second accepted useful task; the
-first report task is incomplete and waiting for Claude.
+RESULTAT: Kill an active native worker while a bounded isolated writer is running;
+verify observed old writers prevent concurrent startup, retained artifacts and
+native attempt count survive worker restart, and explicit diagnosis permits a
+new attempt only after old groups stop. No model calls or remote publication.
 
-VARFÖR NU: PR6 integrated reviewed connected support at 5e014099feeb0cec1a6954fc162e79d9a7a2f1e2.
-Sixteen support tests, preserved-input submission test, native fixtures/replay and
-actual no-model CLI resume passed. Receipt: evidence/connected-workflow/integration.json.
-Separate reviewer approved exact0c7f3e9. No live automatic task integration yet.
+VARFÖR NU: Real task runtime-evidence-index-1 completed through Runtime and PR7;
+its evidence/runbook integrated via PR8 at1b020b55. Existing interruption proof used
+controlled SIGTERM; the remaining abrupt-worker case needs concrete evidence.
 
-METOD: Frozen task tasks/evidence-index.json, brief tasks/evidence-index.md and
-host verifier acceptance/evidence_index.py. Target three explicit tools/ files;
-base5e014099. Standard-library SHA256 create/verify CLI replaces manual evidence
-hash checking. Same DevelopmentTask and Publisher, no new scheduler/dependency.
+METOD: Use actual Temporal DevelopmentTask, real attempt guardian and sandbox,
+with an explicitly injected harmless fixture provider. Kill only the recorded
+fixture worker PID, restart worker on the same native DB/history. Retry policy
+remains maximum_attempts1 and old process groups must stop within the per-attempt
+bound. Native activity timeout is deliberately retained, not shortened for green
+results. Fixture review/publication avoid models and remote writes.
 
-ARBETSYTA: work/evidence-index-completion based on actual PR7 main0fba283.
-Earlier work/evidence-index-task is retained as a backup, never force-updated. Origin PUBLIC by D006;
-branch protection active. No costs/rights expanded; no Claude call (D015).
+ARBETSYTA: work/inflight-recovery from main1b020b55. Only this project and isolated
+.runtime/recovery-probe plus evidence/recovery-probe. Owner defers Claude (D015).
 
-NÄSTA HANDLING: Independently inspect completed-run evidence and runbook, then integrate
-that documentation on top of PR7 without re-reviewing unchanged candidate code.
-Next independent capability is bounded abrupt in-flight writer recovery/fencing.
-Claude remains deferred; no new Claude calls or API fallback.
+PROV OCH KLART-NÄR: An active writer causes CLI process inspection to refuse a
+new start; a second same-task guardian cannot obtain the lock; abrupt worker death
+does not rerun the activity or reset attempts; after bounded old-group cleanup,
+same workflow reaches waiting_diagnosis. Explicit diagnosis starts attempt2, which
+preserves first work. No duplicate simulated publication. Inspect separate review
+before integrating experiment results or needed runtime corrections.
 
-KÖRGRÄNS: One Codex implementation invocation <=300 seconds; fresh review <=180
-seconds; zero automatic retries. Observable progress is emitted events/source
-changes, host verification and terminal usage. First report phase took134s with
-6151 output tokens; this somewhat larger file-integrity CLI is allotted300s.
-Usage will be recorded, monetary cost remains unknown under existing subscription.
-No project-wide cap or quota probing. Invalid/failed review prevents publication.
+NÄSTA HANDLING: Implement and run bounded fixture<=240s, model_calls0. Do not alter
+completed task histories, use real Claude, expand permissions or inherit a locking
+file descriptor into candidate tools. A small no-model probe found pinned Codex
+retains inherited FD locks, but that route is not adopted: descriptor exposure to
+candidate tools has not been qualified and would add avoidable authority.
 
-UTFALL: COMPLETE for runtime-evidence-index-1. Candidate38ecdaf7f989ab547740e23345c9cfbf8f69513c
-was independently reviewed and automatically merged as0fba283d5c6e19f30c9703eec88e6ea879435c16
-via PR7. One implementation174.901s, one fresh review34.25s, all25 host cases
-passed (including candidate14 tests). One publication attempt. No manual code
-edits, phase switches or retry after submission. Raw artifacts under
-evidence/runs/runtime-evidence-index-1, including candidate Git bundle, native
-history, model logs/usage, bound decisions and integration receipt.
+UTFALL: Abrupt-worker experiment NOT RUN. Inherited-FD prototype used no model
+turn and its app-server group was removed; preserve it as rejected design evidence.
+Real task evidence remains evidence/runs/runtime-evidence-index-1/result.md.
+25 host cases (including14 source tests), actual fresh review, protected automatic
+merge0fba283 and identical completed-state restart passed. One attempt/publication.
 
-ÅTERUPPTAGNING: Root driver active. All implementation/review/worker/server groups
-reported removed. Canonical .runtime/runtime.sqlite; current backup/hash at
-evidence/runs/runtime-evidence-index-1/state/. Fresh native restarts returned the identical completed new task and identical
-waiting_access/attempts2 old report. No new model/review/publication occurred.
-Real evidence-manifest use passed for three preserved artifacts (result.md). Its completion and
-actual Claude swap remain unproven. Old DB/source/bundles are retained.
-Fresh receivers inspect Git and recorded process identities before writes.
-Do not resubmit accepted task or run historical pilot scripts. Current submission
-only needs --resume for observation; completed means no model retry is needed.
+ÅTERUPPTAGNING: Root driver active. No model/engine processes remain. Canonical
+real-task DB .runtime/runtime.sqlite, backup/hash in evidence/runs/runtime-evidence-index-1/state/.
+Old report still waiting_access/attempt2 after fresh native restart. New task is
+completed; do not resubmit. Current fault experiment uses a separate native DB and
+never publishes. Earlier report completion and Codex→Claude→Codex remain pending.
 
 ## Completed delivery and evidence
 
