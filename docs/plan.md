@@ -1,24 +1,20 @@
 # Living plan — Runtime v0.1
 
-## Current step: one accepted Codex development task through Temporal
+## Current step: exact-candidate integration boundary
 
-RESULTAT: A real accepted task yields candidate source and raw provider results
-through a native Temporal activity, then waits durably for the next permitted
-executor. First phase only; v0.1 still requires real Claude continuation.
+RESULTAT: One host-only boundary rejects unfinished task or missing/failed/stale
+mandatory evidence before publishing. It rechecks remote base/head and reconciles
+an acknowledged or lost-response merge against the exact candidate Git tree.
 
-VARFÖR NU: PR3 integrated9278081 proves replay of completed steps and a waiting
-state after real server/worker death. Its `executions` counts steps, not failed
-model attempts. Need actual bounded development, preserved attempt history and a
-candidate that cannot alter host acceptance/publication authority.
+VARFÖR NU: PR4 integrated the first real Codex phase and persistent access wait;
+publication is still host-operated. Before wiring automatic candidate integration,
+prove its decision boundary and preserve the incomplete task's waiting state.
 
-METOD: Customer Zero needs a trustworthy run report: current Claude JSON result
-has subtype success yet is_error true, and manual extraction risks false passes.
-Accept a small provider-log reporting CLI; Codex implements Codex parsing, Claude
-adds Claude semantics, Codex finishes verification. No second status registry:
-Temporal history/query owns phase, attempt and waiting. Candidate source and raw
-artifacts live in isolated workspace/evidence, not editable acceptance state.
+METOD: D016 needs-driven reuse of selected prior negative test ideas. Test real
+local Git identities and counted remote effects, then inspect actual GitHub
+protection read-only. Do not treat fake remote tests as live Runtime publication.
 
-ARBETSYTA: work/accepted-codex-task based on integrated9278081 (PR3), own project
+ARBETSYTA: work/controlled-codex-integration based on integrated0ab88f1 (PR4), own project
 and isolated .runtime candidate only. Owner changed origin PUBLIC (D006).
 
 FÖRUTSÄTTNINGAR: Pinned local Temporal1.9.1/SDK1.33.0 and Codex0.155.1 with ChatGPT
@@ -26,30 +22,28 @@ subscription, no API fallback. Claude D005 WAITING_ACCESS remains: org disabled
 subscription access, no repeated call until new access evidence. Old Symphony and
 Temporal probe processes inspected stopped; B1 launch remains disabled.
 
-NÄSTA HANDLING: Obtain separate final review of the first Codex-phase delivery
-and actual evidence, then integrate it via exact-SHA protected PR. Continue a
-Codex-only slice for controlled candidate review/integration and recovery; owner
-D015 defers Claude purchase. Do not call Claude again or pretend v0.1 is complete.
+NÄSTA HANDLING: Separate review of runtime/integration.py and six targeted
+publication regression tests, then integrate this small component. Next connect
+it to actual independent review and a second accepted Codex task in Temporal;
+receipts must come from host-owned actual runs, not candidate-created dictionaries.
 
-PROV OCH KLART-NÄR: This slice has real candidate behavior, external immutable
-snapshot acceptance and durable attempt/wait evidence. Integration still requires
-separate review of this exact revision. Overall v0.1 criteria remain below.
+PROV OCH KLART-NÄR: Missing/failed/stale/wrong-scope/same-author review and incomplete
+whole task reject before publication. Changed base/head denies merge. Reconcile
+existing merge without publishing again, checking actual Git tree/parent identity.
 
-UTFALL: First Codex phase PASS at attempt2;12 host acceptance cases and15 candidate
-tests passed. Same native workflow retains interrupted attempt1 and successful
-phase2; waiting_access/count2/results survived actual worker/server restart.
-All recorded provider and engine groups stopped. See
-[evidence/accepted-task/result.md](../evidence/accepted-task/result.md) for raw links,
-usage, conservative reporter behavior and limitations. Claude task phase NOT RUN.
+UTFALL: Implemented;6 targeted tests passed with counted remote fixtures and real
+local Git objects. Current GitHub protection readback passed. New publisher live
+merge NOT RUN. See evidence/integration-gate/result.md. First phase remains PASS
+but entire run-report task waits for deferred Claude access; see accepted-task/result.md.
 
-ÅTERUPPTAGNING: Root driver active; no engine/model processes remain. Work exists
-on work/accepted-codex-task and pending evidence is preserved before review.
+ÅTERUPPTAGNING: Root driver active; no engine/model processes remain. Current work is on
+work/controlled-codex-integration; completed first-phase Runtime support is in main.
 Canonical SQLite .runtime/tasks/runtime-run-report-1/temporal.sqlite; portable
 backup+hashes evidence/accepted-task/state/. Candidate remains in same task
 workspace; immutable accepted phase snapshot is attempt-2/candidate under evidence.
 No further retries: workflow is waiting_access with attempts2. Current driver resume
 is ONLY for previous diagnosis attempt1 and MUST NOT be rerun against this state.
-Next step is review/integration of this completed slice, then independent Codex work.
+Next step is D016 boundary implementation; owner defers Claude usage per D015.
 
 ## Completed delivery and evidence
 
@@ -80,10 +74,10 @@ implementation plus another accepted task over the same route.
 
 | Capability | Current result |
 |---|---|
-| Autonomous development completion | B1 fixture dispatch/result preserved; real development NOT RUN |
+| Autonomous development completion | First real Codex development phase passed; complete task integration pending |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
 | Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
-| Interruption/capacity | Support limiter tested; runtime restart/quotas NOT RUN |
+| Interruption/capacity | Actual interrupted attempt and post-cleanup wait replay passed; in-flight crash fencing/quotas pending |
 | Controlled integration | Real host-led missing/stale rejection and legitimate PR merge; candidate rights/automatic gate NOT PROVEN |
 | Repeatable use / Customer Zero | NOT RUN |
 

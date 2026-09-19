@@ -266,3 +266,28 @@ server error D005 was oauth_org_not_allowed (subscription access disabled), not 
 quota-exhaustion result; check correct account/organization access before assuming
 additional usage will resolve it. Ask owner only when an actual access/cost choice
 is needed, not for routine continuation.
+
+## D016 — 2026-09-19: reuse publication checks, not old orchestration
+
+Concrete need: reject stale/missing/failed review or test evidence at the actual
+candidate publication boundary. Read only selected files in
+/Users/elinhaggstrom/kernel-arbete at clean revision
+2dfc58f362db100c179b7b738e9a720dae39a256:
+- tests/scripts/nortropic-codex-autopilot/publication-callers.py
+- scripts/nortropic-codex-autopilot.py publish/publication_authority sections.
+
+Useful test ideas: every real publication caller supplies mandatory authority;
+missing/wrong authority rejects; re-read exact base/head after push; final merged
+tree must match tested candidate. Reuse these cases in Runtime-specific tests.
+No old PASS imported; old tests were not executed. The old implementation depends
+on its roadmap stages, canonical tasks.spec and normal two-parent merge, whereas
+Runtime keeps acceptance outside candidate write access and uses protected linear
+integration. Copying that engine would add irrelevant coupling. No source imported.
+The briefly inspected nortropic-review.js is site/design/SEO-specific and has
+multiple verifier fan-outs; it is not appropriate for this neutral small code task.
+Originals remained untouched; no prior permissions/workflow mandates inherited.
+
+Next slice: bind whole-task completion, tests and independent review to exact
+candidate objects before any publishing action. A passed first phase must not
+publish the unfinished report task. Keep its native WAITING_ACCESS state intact.
+Then connect the same boundary to a second, Codex-only accepted task.
