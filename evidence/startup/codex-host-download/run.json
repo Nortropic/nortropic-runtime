@@ -7,17 +7,17 @@
     "--repo",
     "openai/codex",
     "--pattern",
-    "codex-aarch64-apple-darwin.tar.gz",
+    "codex-code-mode-host-aarch64-apple-darwin.tar.gz",
     "--dir",
     ".runtime/bin"
   ],
   "cwd": "/Users/elinhaggstrom/Nortropic Runtime",
-  "started_at": "2026-09-19T10:16:33.188569+00:00",
-  "limit_seconds": 240,
+  "started_at": "2026-09-19T10:18:34.431290+00:00",
+  "limit_seconds": 180,
   "automatic_retries": 0,
-  "pid": 21390,
+  "pid": 21632,
   "timed_out": false,
   "exit_code": 0,
-  "elapsed_seconds": 84.877,
-  "finished_at": "2026-09-19T10:17:58.066013+00:00"
+  "elapsed_seconds": 15.51,
+  "finished_at": "2026-09-19T10:18:49.941215+00:00"
 }

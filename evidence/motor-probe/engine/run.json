@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/symphony-nightly-macos_arm64",
+    "--i-understand-that-this-will-be-running-without-the-usual-guardrails",
+    "--logs-root",
+    "/Users/elinhaggstrom/Nortropic Runtime/evidence/motor-probe/engine/logs",
+    "/Users/elinhaggstrom/Nortropic Runtime/config/PROBE_WORKFLOW.md"
+  ],
+  "started_at_epoch": 1789813622.6141481,
+  "model_attempt_limit": 1,
+  "engine_seconds": 240,
+  "cleanup_grace_seconds": 4,
+  "automatic_model_retries": 0,
+  "pid": 22521,
+  "stop_reason": "preservation and tracker transition recorded",
+  "process_group_removed": true,
+  "elapsed_seconds": 21.04,
+  "engine_exit_code": 0
+}

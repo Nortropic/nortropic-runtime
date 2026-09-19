@@ -1,0 +1,16 @@
+{
+  "command": [
+    "env",
+    "SYMPHONY_INSTALL_DIR=/Users/elinhaggstrom/Nortropic Runtime/.runtime/symphony-install",
+    ".runtime/bin/symphony-nightly-macos_arm64"
+  ],
+  "cwd": "/Users/elinhaggstrom/Nortropic Runtime",
+  "started_at": "2026-09-19T10:17:11.053512+00:00",
+  "limit_seconds": 60,
+  "automatic_retries": 0,
+  "pid": 21456,
+  "timed_out": false,
+  "exit_code": 1,
+  "elapsed_seconds": 3.92,
+  "finished_at": "2026-09-19T10:17:14.973420+00:00"
+}

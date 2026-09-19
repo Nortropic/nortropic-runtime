@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/codex-0.155.1",
+    "exec",
+    "--ignore-user-config",
+    "-m",
+    "gpt-6-astra",
+    "-s",
+    "read-only",
+    "-c",
+    "approval_policy=\"never\"",
+    "--json",
+    "Without modifying files, report the instruction-loading probe identifier in the project instructions you received and the path of the living plan. Do not guess if unavailable."
+  ],
+  "cwd": "/Users/elinhaggstrom/Nortropic Runtime/docs",
+  "started_at": "2026-09-19T10:19:34.484313+00:00",
+  "limit_seconds": 240,
+  "automatic_retries": 0,
+  "pid": 21789,
+  "timed_out": false,
+  "exit_code": 0,
+  "elapsed_seconds": 8.548,
+  "finished_at": "2026-09-19T10:19:43.032412+00:00"
+}

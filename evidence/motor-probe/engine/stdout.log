@@ -1,0 +1,777 @@
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m0[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36mchecking now…[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│  [90mNo active agents[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33mn/a     [0m [35m0m 0s       [0m [33m         0[0m [36mn/a           [0m [34mno codex message yet                        [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 1s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34msession started                             [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 1s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mturn started (01a0b934-92ab-7492-b378-083...[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 1s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mmcpServer/startupStatus/updated             [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m3s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 2s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mmcpServer/startupStatus/updated             [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 3s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mmcpServer/startupStatus/updated             [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 3s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mitem started: user message (01a0b934-9ae)   [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 3s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mitem completed: user message (01a0b934-9ae) [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mitem completed: user message (01a0b934-9ae) [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mitem started: agent message (msg_01b6188a)  [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: I                  [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: `                  [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: and                [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: create             [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: `                  [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 4s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: .json              [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36mchecking now…[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 5s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: .json              [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 5s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34magent message streaming: `.                 [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 5s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mitem completed: agent message (msg_01b6188a)[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 6s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mitem completed: agent message (msg_01b6188a)[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 0[0m[90m | [0m[33mout 0[0m[90m | [0m[33mtotal 0[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 7s / 1   [0m [33m         0[0m [36m01a0...e2cb18 [0m [34mitem completed: command execution (exec-7...[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 18,848[0m[90m | [0m[33mout 85[0m[90m | [0m[33mtotal 18,933[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 7s / 1   [0m [33m    18,933[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m0 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 18,848[0m[90m | [0m[33mout 85[0m[90m | [0m[33mtotal 18,933[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m3s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 7s / 1   [0m [33m    18,933[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m4,209 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 18,848[0m[90m | [0m[33mout 85[0m[90m | [0m[33mtotal 18,933[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 8s / 1   [0m [33m    18,933[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m4,209 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 18,848[0m[90m | [0m[33mout 85[0m[90m | [0m[33mtotal 18,933[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 9s / 1   [0m [33m    18,933[0m [36m01a0...e2cb18 [0m [34mitem started: command execution (exec-231...[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m4,209 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 37,877[0m[90m | [0m[33mout 115[0m[90m | [0m[33mtotal 37,992[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 9s / 1   [0m [33m    37,992[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m7,675 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 37,877[0m[90m | [0m[33mout 115[0m[90m | [0m[33mtotal 37,992[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 9s / 1   [0m [33m    37,992[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m7,599 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 37,877[0m[90m | [0m[33mout 115[0m[90m | [0m[33mtotal 37,992[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36mchecking now…[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 10s / 1  [0m [33m    37,992[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m7,599 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 37,877[0m[90m | [0m[33mout 115[0m[90m | [0m[33mtotal 37,992[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 11s / 1  [0m [33m    37,992[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m8,168 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 37,877[0m[90m | [0m[33mout 115[0m[90m | [0m[33mtotal 37,992[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 11s / 1  [0m [33m    37,992[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m8,168 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 57,031[0m[90m | [0m[33mout 235[0m[90m | [0m[33mtotal 57,266[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 12s / 1  [0m [33m    57,266[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m11,561 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 57,031[0m[90m | [0m[33mout 235[0m[90m | [0m[33mtotal 57,266[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 12s / 1  [0m [33m    57,266[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m8,247 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 57,031[0m[90m | [0m[33mout 235[0m[90m | [0m[33mtotal 57,266[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m3s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 13s / 1  [0m [33m    57,266[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m4,146 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 57,031[0m[90m | [0m[33mout 235[0m[90m | [0m[33mtotal 57,266[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 14s / 1  [0m [33m    57,266[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m4,146 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 57,031[0m[90m | [0m[33mout 235[0m[90m | [0m[33mtotal 57,266[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 15s / 1  [0m [33m    57,266[0m [36m01a0...e2cb18 [0m [34mitem started: command execution (exec-618...[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m4,146 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 76,374[0m[90m | [0m[33mout 340[0m[90m | [0m[33mtotal 76,714[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m2s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 15s / 1  [0m [33m    76,714[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m8,291 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 76,374[0m[90m | [0m[33mout 340[0m[90m | [0m[33mtotal 76,714[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m1s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 15s / 1  [0m [33m    76,714[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m7,745 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 76,374[0m[90m | [0m[33mout 340[0m[90m | [0m[33mtotal 76,714[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36mchecking now…[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 16s / 1  [0m [33m    76,714[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m7,745 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 76,374[0m[90m | [0m[33mout 340[0m[90m | [0m[33mtotal 76,714[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 17s / 1  [0m [33m    76,714[0m [36m01a0...e2cb18 [0m [34mrate limits updated: primary 2% / 10080m    [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m7,745 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 96,010[0m[90m | [0m[33mout 364[0m[90m | [0m[33mtotal 96,374[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m5s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 17s / 1  [0m [33m    96,374[0m [36m01a0...e2cb18 [0m [34mturn completed (completed)                  [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m1[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m8,483 tps[0m
+[1m│ Runtime: [0m[35m0m 0s[0m
+[1m│ Tokens: [0m[33min 96,010[0m[90m | [0m[33mout 364[0m[90m | [0m[33mtotal 96,374[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│ [34m●[0m [36mGH-1    [0m [34mopen          [0m [33m22534   [0m [35m0m 18s / 1  [0m [33m    96,374[0m [36m01a0...e2cb18 [0m [34mturn completed (completed)                  [0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [90mNo queued retries[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[1m│ Agents: [0m[32m0[0m[90m/[0m[90m1[0m
+[1m│ Throughput: [0m[36m8,483 tps[0m
+[1m│ Runtime: [0m[35m0m 18s[0m
+[1m│ Tokens: [0m[33min 96,010[0m[90m | [0m[33mout 364[0m[90m | [0m[33mtotal 96,374[0m
+[1m│ Rate Limits: [0m[90munavailable[0m
+[1m│ Project: [0m[90mn/a[0m
+[1m│ Next refresh: [0m[36m4s[0m
+[1m├─ Running[0m
+│
+│   [90mID       STAGE          PID      AGE / TURN   TOKENS     SESSION        EVENT                                       [0m
+│   [90m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+│  [90mNo active agents[0m
+│
+[1m├─ Backoff queue[0m
+│
+│  [33m↻[0m [31mGH-1[0m [33mattempt=1[0m[2m in [0m[36m0.999s[0m
+╰─
+[H[2J[1m╭─ SYMPHONY STATUS[0m
+[31m│ app_status=offline[0m
+╰─

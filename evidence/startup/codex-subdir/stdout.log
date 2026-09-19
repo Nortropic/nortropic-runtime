@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01a0b92d-b43b-7ac1-8cba-90542d43b162"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"Probe identifier: `NR-CONTINUITY-7392`\n\nLiving plan: `/Users/elinhaggstrom/Nortropic Runtime/docs/plan.md`"}}
+{"type":"turn.completed","usage":{"input_tokens":17019,"cached_input_tokens":12160,"cache_write_input_tokens":0,"output_tokens":35,"reasoning_output_tokens":0}}
