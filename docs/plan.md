@@ -19,6 +19,8 @@ Root controller tool session85296, log .runtime/report-continuation-controller.l
 Native observation: evidence/accepted-task/observations/0e20e3c156bb48f5bd70180092ea1e65/.
 Workflow runtime-run-report-1 has advanced automatically from Claude attempt3
 (147.813s, successful terminal/cleanup, 33 host observations passed) to Codex attempt4.
+Codex4 completed in131.891s; 33 host observations and30 candidate tests passed.
+Native phase is now reviewing with a fresh read-only Codex session.
 Same working candidate; original workspace preserved as candidate-before-continuation.
 Actual Claude run a3c76846-a130-4841-a97c-b8b14d19010a, raw evidence and frozen Git
 candidate under evidence/accepted-task/attempt-3/. No parent source edits/handoff
@@ -31,7 +33,7 @@ and this operator plan while the isolated executor runs. If controller disappear
 inspect recorded launch PIDs/groups and native state before any resume; do not
 resubmit the task or repeat --access-restored. Ordinary observation thereafter:
 `.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json --resume`.
-Whole-task approval/publication remains pending; phase3 acceptance alone is not
+Whole-task separate-review approval/publication remains pending; phase tests are not
 permission to integrate. Max subscription path and exact source input approved in
 evidence/reviews/report-continuation-input.json; prestate DBbackup under access-prestate/.
 
