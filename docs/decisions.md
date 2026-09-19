@@ -202,3 +202,67 @@ a promised goal. Candidate workspace isolation, attempt semantics, side-effect
 reconciliation, independent review and exact GitHub integration remain to be built
 and tested in narrow activities. Do not claim Temporal automatically supplies them.
 If connecting those requires another generic engine, revisit instead of expanding.
+
+
+## D013 — 2026-09-19: first useful accepted task and candidate boundary
+
+Customer Zero task is a deterministic JSONL run-report CLI for actual provider
+evidence. Current manual extraction and Claude success-subtype/error conflict
+create a concrete false-pass risk. Use three meaningful implementation phases
+(Codex parsing, Claude parsing, Codex final CLI verification), one workspace and
+Temporal-owned task history. Claude phase waits on known server denial D005; no
+API fallback or repeated denied call. The first delivery connects only Codex.
+
+Use Codex's native named permissions profile with minimal reads, isolated workspace
+writes and network disabled, plus disabled apps/MCP/plugins. Host acceptance and
+GitHub authority remain outside candidate workspace. Test actual denial with
+nonsecret canaries before a live turn. Official reference consulted:
+https://learn.chatgpt.com/docs/config-file/config-reference (permissions filesystem
+and network options); local 0.155.1 CLI/schema decides invocation compatibility.
+No assertion of complete rights separation until observed, including escape routes.
+
+The first thread preflight exposed a real compatibility error: restricted reads
+blocked ancestor AGENTS discovery. Added read-only grants for AGENTS.md and
+AGENTS.override.md at ancestor paths; no directory-wide host read grant. Fresh
+thread now reports activePermissionProfile nr, writable roots exactly tools and
+.scratch, no network/tmp writes, and only disabled MCP servers with zero tools.
+The six harmless boundary checks also passed with this corrected profile. No model
+turn was used for either inventory. Raw evidence: evidence/accepted-task/profile-*
+and boundary-instructions.json. CLI sandbox syntax is `codex sandbox`, not the old
+`codex sandbox macos`; the mistaken help invocation failed before doing any work.
+
+## D014 — 2026-09-19: stop on verifier escape; preserve attempt and repair boundary
+
+Separate review of f61b84d found a real host-write escape: candidate-owned
+.scratch/sample.jsonl could be a symlink followed by host write_text. It also found
+check/use races in candidate hashing/copying. Interrupted live attempt1 by SIGTERM
+before acceptance, preserving raw events and source. Attempt result: interrupted,
+34.166s, no terminal usage (unknown, not0), provider group removed. Workflow reached
+waiting_diagnosis, attempt1 and same result survived server/worker restart. No
+acceptance occurred and no provider completion claimed; all four engine groups
+removed. evidence/accepted-task/engine and attempt-1 retain raw negative results.
+
+Correction: pass CLI data through stdin, never host-write in candidate-owned paths.
+Open every candidate path component with O_NOFOLLOW, require bounded regular fd,
+read/hash those bytes and freeze them in a new host-owned evidence directory.
+Execute acceptance against that snapshot with source read-only and no network.
+Kill/reap verifier process groups on completion/timeout. Regression tests show CLI
+stdin leaves candidate symlink target unchanged, frozen source write denied, and
+symlink/file-parent/FIFO snapshot refusal. These are bounded host-file-handling
+proofs, not a claim to fence deliberately detached hostile process trees.
+
+Resume the SAME workflow/candidate only after correction review, with an explicit
+native diagnosis signal carrying changed prerequisite. Attempt number increments
+rather than restarting history. Driver checks old recorded PIDs/group absence.
+No automatic repeated model attempt and no Claude call while D005 unchanged.
+
+## D015 — 2026-09-19: owner defers Claude usage purchase
+
+Owner plans to buy more Claude Code usage at a later time. Recommendation accepted
+for work planning: no need to buy now to continue independent Codex, recovery,
+review and integration work. No purchase, API fallback or periodic Claude calls.
+Real executor swap and final v0.1 acceptance remain pending, not waived. Observed
+server error D005 was oauth_org_not_allowed (subscription access disabled), not a
+quota-exhaustion result; check correct account/organization access before assuming
+additional usage will resolve it. Ask owner only when an actual access/cost choice
+is needed, not for routine continuation.

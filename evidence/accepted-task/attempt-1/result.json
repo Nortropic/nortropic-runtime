@@ -1,0 +1,12 @@
+{
+  "task": "runtime-run-report-1",
+  "attempt": 1,
+  "provider": "codex",
+  "provider_completed": false,
+  "exit_code": 130,
+  "interrupted": "signal",
+  "process_group_removed": true,
+  "usage": null,
+  "elapsed_seconds": 34.166,
+  "evidence": "evidence/accepted-task/attempt-1"
+}

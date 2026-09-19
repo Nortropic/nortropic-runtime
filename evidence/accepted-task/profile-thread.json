@@ -1,0 +1,91 @@
+{
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/codex-0.155.1",
+    "-c",
+    "model=\"gpt-6-astra\"",
+    "-c",
+    "approval_policy=\"never\"",
+    "-c",
+    "model_reasoning_effort=\"high\"",
+    "--disable",
+    "apps",
+    "--disable",
+    "computer_use",
+    "--disable",
+    "browser_use",
+    "--disable",
+    "browser_use_external",
+    "--disable",
+    "browser_use_full_cdp_access",
+    "--disable",
+    "in_app_browser",
+    "--disable",
+    "image_generation",
+    "--disable",
+    "multi_agent",
+    "--disable",
+    "plugins",
+    "-c",
+    "mcp_servers.node_repl.enabled=false",
+    "-c",
+    "mcp_servers.railway.enabled=false",
+    "-c",
+    "mcp_servers.computer-use.enabled=false",
+    "-c",
+    "plugins.\"browser@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"documents@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"pdf@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"presentations@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"spreadsheets@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"template-creator@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"visualize@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"codex-app-tools@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"unified-computer-use@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"computer-use@openai-bundled\".enabled=false",
+    "-c",
+    "permissions.nr.filesystem={\":minimal\"=\"read\",\"/opt/homebrew\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/tools\"=\"write\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/.scratch\"=\"write\"}",
+    "-c",
+    "permissions.nr.network.enabled=false",
+    "-c",
+    "default_permissions=\"nr\"",
+    "app-server"
+  ],
+  "model_turns": 0,
+  "responses": [
+    {
+      "id": 1,
+      "result": {
+        "userAgent": "codex_vscode/0.155.1 (Mac OS 26.3.0; arm64) dumb (nr; 0.1)",
+        "codexHome": "/Users/elinhaggstrom/.codex",
+        "platformFamily": "unix",
+        "platformOs": "macos"
+      }
+    },
+    {
+      "method": "remoteControl/status/changed",
+      "params": {
+        "status": "disabled",
+        "serverName": "MacBook-Pro.local",
+        "installationId": "0dc00a85-ddb9-4878-8797-62faf6b89ae0",
+        "environmentId": null
+      },
+      "emittedAtMs": 1789814630102
+    },
+    {
+      "error": {
+        "code": -32603,
+        "message": "error creating thread: Fatal error: Failed to initialize session: failed to load AGENTS.md instructions for environment `local`: Operation not permitted (os error 1)"
+      },
+      "id": 2
+    }
+  ]
+}

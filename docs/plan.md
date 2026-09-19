@@ -1,55 +1,55 @@
 # Living plan — Runtime v0.1
 
-## Current step: bounded durable-engine compatibility decision
+## Current step: one accepted Codex development task through Temporal
 
-RESULTAT: Determine whether an existing engine can preserve workflow position,
-attempt count and a waiting state across worker/server restart, without rebuilding
-these features around Symphony. This is a prerequisite experiment, not v0.1.
+RESULTAT: A real accepted task yields candidate source and raw provider results
+through a native Temporal activity, then waits durably for the next permitted
+executor. First phase only; v0.1 still requires real Claude continuation.
 
-VARFÖR NU: Symphony B1 proves discovery/dispatch/hooks but source inspection shows
-retry and blocked state reset on boot and a hard-coded Codex session boundary.
-A general new scheduler around it would violate the mandate's reuse constraint.
+VARFÖR NU: PR3 integrated9278081 proves replay of completed steps and a waiting
+state after real server/worker death. Its `executions` counts steps, not failed
+model attempts. Need actual bounded development, preserved attempt history and a
+candidate that cannot alter host acceptance/publication authority.
 
-METOD: Compare existing Symphony with a local Temporal workflow using the same
-criteria: persistence, explicit executor activity boundary, bounded retries,
-operational dependencies and cost/permissions. Run a deterministic no-model
-restart/signal experiment first. Stop the expansion if the proposed integration
-becomes a general new engine; no production/Cloud service is being introduced.
+METOD: Customer Zero needs a trustworthy run report: current Claude JSON result
+has subtype success yet is_error true, and manual extraction risks false passes.
+Accept a small provider-log reporting CLI; Codex implements Codex parsing, Claude
+adds Claude semantics, Codex finishes verification. No second status registry:
+Temporal history/query owns phase, attempt and waiting. Candidate source and raw
+artifacts live in isolated workspace/evidence, not editable acceptance state.
 
-ARBETSYTA: /Users/elinhaggstrom/Nortropic Runtime, work/durable-engine-probe,
-based on integrated d07fd7eb351d9b367bebfe25bae4e6963e843cc4 (PR #2).
-Remote PUBLIC by owner's explicit change, D006. Main protection is active.
+ARBETSYTA: work/accepted-codex-task based on integrated9278081 (PR3), own project
+and isolated .runtime candidate only. Owner changed origin PUBLIC (D006).
 
-FÖRUTSÄTTNINGAR: Existing Python3.12, pinned Temporal CLI1.9.1 official arm64
-binary (SHA256 41e0425378fcb4fb5766340b97435e20fe47bbff2d7bf644ec2d51f7662b7c56),
-SDK temporalio1.33.0 with reviewed wheel-only transitive dependencies. Install only
-under .runtime, no global changes or paid services. Local development service
-loopback127.0.0.1:7339 with explicit SQLite file and no UI. Check port before use.
-Sources and limits: D011. Claude is WAITING_ACCESS, D005, no repeated model calls.
+FÖRUTSÄTTNINGAR: Pinned local Temporal1.9.1/SDK1.33.0 and Codex0.155.1 with ChatGPT
+subscription, no API fallback. Claude D005 WAITING_ACCESS remains: org disabled
+subscription access, no repeated call until new access evidence. Old Symphony and
+Temporal probe processes inspected stopped; B1 launch remains disabled.
 
-NÄSTA HANDLING: Obtain separate review of probe/evidence and the limited engine
-choice D012, integrate this completed probe, then connect ONE accepted Codex task
-to native Temporal activities and persist its tested result. Do not build a new
-generic scheduler, second tracker or dashboard. Claude stays WAITING_ACCESS.
+NÄSTA HANDLING: Obtain separate final review of the first Codex-phase delivery
+and actual evidence, then integrate it via exact-SHA protected PR. Continue a
+Codex-only slice for controlled candidate review/integration and recovery; owner
+D015 defers Claude purchase. Do not call Claude again or pretend v0.1 is complete.
 
-PROV OCH KLART-NÄR: Persisted waiting workflow remains waiting after restart,
-attempt counter stays1 until deliberate continuation, side effect1 occurs once,
-continuation gives count2, unique workflow ID rejects duplicate start. A failed
-or empty history is not a pass. Server/workers stopped and SQLite retained after
-experiment. Next decision selects reuse path, not automatic architecture adoption.
+PROV OCH KLART-NÄR: This slice has real candidate behavior, external immutable
+snapshot acceptance and durable attempt/wait evidence. Integration still requires
+separate review of this exact revision. Overall v0.1 criteria remain below.
 
-UTFALL: PASS for the bounded compatibility property; see
-[evidence/durable-probe/result.md](../evidence/durable-probe/result.md). Both processes
-were abruptly killed; fresh instances restored waiting/count1; continuation ended
-at count2 with no repeated first effect. Duplicate running ID rejected. No models.
-Not proof of interrupted in-flight activity effects or any provider integration.
+UTFALL: First Codex phase PASS at attempt2;12 host acceptance cases and15 candidate
+tests passed. Same native workflow retains interrupted attempt1 and successful
+phase2; waiting_access/count2/results survived actual worker/server restart.
+All recorded provider and engine groups stopped. See
+[evidence/accepted-task/result.md](../evidence/accepted-task/result.md) for raw links,
+usage, conservative reporter behavior and limitations. Claude task phase NOT RUN.
 
-ÅTERUPPTAGNING: Root chain driver active. Temporal probe also finished: four process groups removed,
-no active service/worker. Local SQLite remains retained. No engine/model worker remains from B1;
-completed attempt2 process group removal measured. Check process records and PIDs
-before writes. Existing B1 workflow is execution_enabled=false; do not re-enable
-it blindly. Last integrated slice PR2 is complete and server merge readback is in
-evidence/integration/merged-pr-readback.json (new branch preserves this receipt).
+ÅTERUPPTAGNING: Root driver active; no engine/model processes remain. Work exists
+on work/accepted-codex-task and pending evidence is preserved before review.
+Canonical SQLite .runtime/tasks/runtime-run-report-1/temporal.sqlite; portable
+backup+hashes evidence/accepted-task/state/. Candidate remains in same task
+workspace; immutable accepted phase snapshot is attempt-2/candidate under evidence.
+No further retries: workflow is waiting_access with attempts2. Current driver resume
+is ONLY for previous diagnosis attempt1 and MUST NOT be rerun against this state.
+Next step is review/integration of this completed slice, then independent Codex work.
 
 ## Completed delivery and evidence
 

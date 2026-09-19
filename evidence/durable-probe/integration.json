@@ -1,0 +1,10 @@
+{
+  "pr": "https://github.com/Nortropic/nortropic-runtime/pull/3",
+  "candidate": "6b0f4bc91b3e96f62c96c6abbb3dfefb1318db03",
+  "merge": {
+    "sha": "92780815dd0f128691948473373d9910af782c49",
+    "merged": true,
+    "message": "Pull Request successfully merged"
+  },
+  "verified_merged": true
+}
