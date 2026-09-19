@@ -1,0 +1,24 @@
+{
+  "command": [
+    ".runtime/temporal-venv/bin/python",
+    "-m",
+    "pip",
+    "install",
+    "--no-index",
+    "--find-links",
+    ".runtime/temporal-wheels",
+    "--require-hashes",
+    "-r",
+    "config/temporal-probe-requirements.lock"
+  ],
+  "cwd": "/Users/elinhaggstrom/Nortropic Runtime",
+  "started_at": "2026-09-19T10:35:51.518548+00:00",
+  "limit_seconds": 60,
+  "automatic_retries": 0,
+  "pid": 23437,
+  "timed_out": false,
+  "process_group_removed": true,
+  "exit_code": 0,
+  "elapsed_seconds": 1.12,
+  "finished_at": "2026-09-19T10:35:52.638464+00:00"
+}

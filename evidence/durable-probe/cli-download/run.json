@@ -1,0 +1,24 @@
+{
+  "command": [
+    "gh",
+    "release",
+    "download",
+    "v1.9.1",
+    "--repo",
+    "temporalio/cli",
+    "--pattern",
+    "temporal_cli_1.9.1_darwin_arm64.tar.gz",
+    "--dir",
+    ".runtime/bin"
+  ],
+  "cwd": "/Users/elinhaggstrom/Nortropic Runtime",
+  "started_at": "2026-09-19T10:34:13.235001+00:00",
+  "limit_seconds": 180,
+  "automatic_retries": 0,
+  "pid": 23343,
+  "timed_out": false,
+  "process_group_removed": true,
+  "exit_code": 0,
+  "elapsed_seconds": 44.211,
+  "finished_at": "2026-09-19T10:34:57.445950+00:00"
+}

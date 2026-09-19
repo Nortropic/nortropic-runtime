@@ -1,0 +1,22 @@
+Collecting temporalio==1.33.0
+  Downloading temporalio-1.33.0-cp310-abi3-macosx_11_0_arm64.whl.metadata (109 kB)
+Collecting nexus-rpc==1.4.0 (from temporalio==1.33.0)
+  Downloading nexus_rpc-1.4.0-py3-none-any.whl.metadata (2.9 kB)
+Collecting protobuf<8.0.0,>=3.20 (from temporalio==1.33.0)
+  Downloading protobuf-7.36.2-cp310-abi3-macosx_10_9_universal2.whl.metadata (595 bytes)
+Collecting types-protobuf<8.0.0,>=3.20 (from temporalio==1.33.0)
+  Downloading types_protobuf-7.35.1.20260906-py3-none-any.whl.metadata (2.3 kB)
+Collecting typing-extensions<5,>=4.2.0 (from temporalio==1.33.0)
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Downloading temporalio-1.33.0-cp310-abi3-macosx_11_0_arm64.whl (13.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.6/13.6 MB 580.8 kB/s  0:00:23
+Downloading nexus_rpc-1.4.0-py3-none-any.whl (29 kB)
+Downloading protobuf-7.36.2-cp310-abi3-macosx_10_9_universal2.whl (456 kB)
+Downloading types_protobuf-7.35.1.20260906-py3-none-any.whl (86 kB)
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Saved ./.runtime/temporal-wheels/temporalio-1.33.0-cp310-abi3-macosx_11_0_arm64.whl
+Saved ./.runtime/temporal-wheels/nexus_rpc-1.4.0-py3-none-any.whl
+Saved ./.runtime/temporal-wheels/protobuf-7.36.2-cp310-abi3-macosx_10_9_universal2.whl
+Saved ./.runtime/temporal-wheels/types_protobuf-7.35.1.20260906-py3-none-any.whl
+Saved ./.runtime/temporal-wheels/typing_extensions-4.16.0-py3-none-any.whl
+Successfully downloaded temporalio nexus-rpc protobuf types-protobuf typing-extensions

@@ -1,0 +1,115 @@
+{
+  "passed": true,
+  "elapsed_seconds": 3.036,
+  "model_calls": 0,
+  "cleanup": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "observations": [
+    {
+      "event": "spawn",
+      "name": "server-before",
+      "pid": 23485,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/temporal-1.9.1",
+        "--disable-config-env",
+        "--disable-config-file",
+        "server",
+        "start-dev",
+        "--ip",
+        "127.0.0.1",
+        "--port",
+        "7339",
+        "--http-port",
+        "7340",
+        "--metrics-port",
+        "7341",
+        "--namespace",
+        "runtime-probe",
+        "--headless",
+        "--db-filename",
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/durable-probe/temporal.sqlite"
+      ]
+    },
+    {
+      "event": "spawn",
+      "name": "worker-before",
+      "pid": 23486,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/temporal-venv/bin/python",
+        "-m",
+        "experiments.durable_probe.worker"
+      ]
+    },
+    {
+      "event": "before_restart",
+      "state": {
+        "continuation_requested": false,
+        "executions": 1,
+        "phase": "waiting"
+      }
+    },
+    {
+      "event": "duplicate_start",
+      "rejected": true
+    },
+    {
+      "event": "abrupt_worker_and_server_stop",
+      "effects": "{\"label\": \"first\", \"activity_attempt\": 1}\n"
+    },
+    {
+      "event": "spawn",
+      "name": "server-after",
+      "pid": 23490,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/temporal-1.9.1",
+        "--disable-config-env",
+        "--disable-config-file",
+        "server",
+        "start-dev",
+        "--ip",
+        "127.0.0.1",
+        "--port",
+        "7339",
+        "--http-port",
+        "7340",
+        "--metrics-port",
+        "7341",
+        "--namespace",
+        "runtime-probe",
+        "--headless",
+        "--db-filename",
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/durable-probe/temporal.sqlite"
+      ]
+    },
+    {
+      "event": "spawn",
+      "name": "worker-after",
+      "pid": 23491,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/temporal-venv/bin/python",
+        "-m",
+        "experiments.durable_probe.worker"
+      ]
+    },
+    {
+      "event": "after_restart",
+      "state": {
+        "continuation_requested": false,
+        "executions": 1,
+        "phase": "waiting"
+      }
+    },
+    {
+      "event": "completed",
+      "result": {
+        "continuation_requested": true,
+        "executions": 2,
+        "phase": "done"
+      }
+    }
+  ]
+}
