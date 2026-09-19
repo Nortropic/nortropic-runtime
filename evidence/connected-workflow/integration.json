@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/6",
+  "candidate": "0c7f3e9f4babcda4c790744f2b469c4c20ec5d1e",
+  "merge": {
+    "sha": "5e014099feeb0cec1a6954fc162e79d9a7a2f1e2",
+    "merged": true,
+    "message": "Pull Request successfully merged"
+  },
+  "verified_merged": true,
+  "reviewer": "/root/startup_review",
+  "scope": "connected support path; actual live task pending"
+}
