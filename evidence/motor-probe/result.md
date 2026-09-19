@@ -17,8 +17,8 @@ GH-1/protocol.jsonl (84 protocol records); GH-1/verification.json (passed=true);
 GH-1/artifacts/result.json; GH-1/tracker-transition.json (exit_code=0).
 Last reported cumulative usage: input 96,010; cached input 88,704; output 364;
 reasoning output 0; total 96,374. These are protocol counters, not an inferred
-currency charge or entire-project usage. Weekly usage reported 2% before/within
-run; too coarse to assign incremental consumption. No API billing enabled.
+currency charge or entire-project usage. Weekly usage reported 2% initially and 3% in the last event;
+too coarse and account-wide to assign the full difference to this run. No API billing enabled.
 
 Model created the JSON file. Engine performed discovery, execution and lifecycle
 hook dispatch. Host hook verified, preserved and changed tracker routing. Driver
@@ -35,5 +35,15 @@ Limitations: no Claude execution; no restart/failover/duplicate publication proo
 no implementation task or Customer Zero integration; single known benign fixture;
 upstream scheduler state is volatile. Sandbox warning for rejected /tmp xcrun
 cache write occurred; actual task file was produced successfully. Model did not
-receive github_api dynamic tool. Removal of all possible plugin/config forms is
-not generally proven. No complete adversarial isolation claim.
+receive github_api dynamic tool. Observed profile failure: cua_repl and codex_apps reached ready despite the
+intended disabling. No completed MCP calls appear, but removal failed in this
+actual run. Artifact PASS and engine coordination stand; restricted-profile
+acceptance does NOT. Profile disabled pending a no-model inventory check and
+explicitly recorded corrected configuration. No complete adversarial isolation claim.
+
+
+Follow-up without a model: corrected worker command disables built-in providers
+and plugin loading for that invocation. Fresh full MCP inventory is retained in
+../startup/worker-profile-inventory-fixed.json: named servers disabled, zero
+available tools. This targeted check does not change the historical attempt2
+exposure or retroactively make its restricted-profile acceptance pass.

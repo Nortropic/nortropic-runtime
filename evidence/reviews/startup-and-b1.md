@@ -18,3 +18,10 @@ Reviewer process: /root/startup_review; read-only, no publication, not author.
   attempt history preserved. Attempt2 may run; live outcome still to be assessed.
 
 Review scope remains the bounded establishment/experiment delivery, not v0.1.
+
+- 4cc50b5 result review: BLOCKED summary, not artifact. Observed cua_repl/codex_apps
+  ready notifications contradicted intended MCP disabling; no completed MCP calls.
+  Reviewer validated files/hashes, dispatch, hook, tracker return, elapsed time and
+  token counts. Corrected historical report to show failed restricted-profile check,
+  2% initial / 3% final quota, and stale plan statements. Profile now disabled;
+  separate no-model fixed-profile inventory is new evidence, not revised history.

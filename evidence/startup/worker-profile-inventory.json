@@ -1,0 +1,443 @@
+{
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/codex-0.155.1",
+    "-c",
+    "model=\"gpt-6-astra\"",
+    "-c",
+    "approval_policy=\"never\"",
+    "-c",
+    "model_reasoning_effort=\"high\"",
+    "--disable",
+    "apps",
+    "--disable",
+    "computer_use",
+    "--disable",
+    "browser_use",
+    "--disable",
+    "browser_use_external",
+    "--disable",
+    "browser_use_full_cdp_access",
+    "--disable",
+    "in_app_browser",
+    "--disable",
+    "image_generation",
+    "--disable",
+    "multi_agent",
+    "-c",
+    "mcp_servers.node_repl.enabled=false",
+    "-c",
+    "mcp_servers.railway.enabled=false",
+    "-c",
+    "mcp_servers.computer-use.enabled=false",
+    "-c",
+    "plugins.\"browser@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"documents@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"pdf@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"presentations@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"spreadsheets@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"template-creator@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"visualize@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"codex-app-tools@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"unified-computer-use@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"computer-use@openai-bundled\".enabled=false",
+    "app-server"
+  ],
+  "complete": true,
+  "model_turns": 0,
+  "records": [
+    {
+      "direction": "request",
+      "message": {
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "clientInfo": {
+            "name": "nr-profile-preflight",
+            "version": "0.1"
+          },
+          "capabilities": {
+            "experimentalApi": true
+          }
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "id": 1,
+        "result": {
+          "userAgent": "codex_vscode/0.155.1 (Mac OS 26.3.0; arm64) dumb (nr-profile-preflight; 0.1)",
+          "codexHome": "/Users/elinhaggstrom/.codex",
+          "platformFamily": "unix",
+          "platformOs": "macos"
+        }
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "method": "initialized",
+        "params": {}
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "id": 2,
+        "method": "thread/start",
+        "params": {
+          "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1",
+          "model": "gpt-6-astra",
+          "approvalPolicy": "never",
+          "sandbox": "workspace-write",
+          "dynamicTools": []
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "method": "remoteControl/status/changed",
+        "params": {
+          "status": "disabled",
+          "serverName": "MacBook-Pro.local",
+          "installationId": "0dc00a85-ddb9-4878-8797-62faf6b89ae0",
+          "environmentId": null
+        },
+        "emittedAtMs": 1789813805904
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "id": 2,
+        "result": {
+          "thread": {
+            "id": "01a0b937-5974-7a12-aac8-1afcf38042bb",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1",
+                "runtimeWorkspaceRoots": [
+                  "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a0b937-5974-7a12-aac8-1afcf38042bb",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "",
+            "ephemeral": false,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-6-astra",
+            "reasoningEffort": "high",
+            "createdAt": 1789813807,
+            "updatedAt": 1789813807,
+            "recencyAt": 1789813807,
+            "status": {
+              "type": "idle"
+            },
+            "path": "/Users/elinhaggstrom/.codex/sessions/2026/09/19/rollout-2026-09-19T12-30-07-01a0b937-5974-7a12-aac8-1afcf38042bb.jsonl",
+            "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1",
+            "cliVersion": "0.155.1",
+            "originator": "codex_vscode",
+            "source": "vscode",
+            "canAcceptDirectInput": true,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          },
+          "model": "gpt-6-astra",
+          "modelProvider": "openai",
+          "serviceTier": "priority",
+          "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1",
+          "runtimeWorkspaceRoots": [
+            "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1"
+          ],
+          "instructionSources": [
+            "/Users/elinhaggstrom/Nortropic Runtime/AGENTS.md",
+            "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1/AGENTS.md"
+          ],
+          "approvalPolicy": "never",
+          "approvalsReviewer": "user",
+          "sandbox": {
+            "type": "workspaceWrite",
+            "writableRoots": [],
+            "networkAccess": false,
+            "excludeTmpdirEnvVar": false,
+            "excludeSlashTmp": false
+          },
+          "activePermissionProfile": null,
+          "reasoningEffort": "high",
+          "multiAgentMode": "explicitRequestOnly"
+        }
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "id": 3,
+        "method": "mcpServerStatus/list",
+        "params": {
+          "threadId": "01a0b937-5974-7a12-aac8-1afcf38042bb",
+          "detail": "full"
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "method": "thread/started",
+        "params": {
+          "thread": {
+            "id": "01a0b937-5974-7a12-aac8-1afcf38042bb",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1",
+                "runtimeWorkspaceRoots": [
+                  "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a0b937-5974-7a12-aac8-1afcf38042bb",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "",
+            "ephemeral": false,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-6-astra",
+            "reasoningEffort": "high",
+            "createdAt": 1789813807,
+            "updatedAt": 1789813807,
+            "recencyAt": 1789813807,
+            "status": {
+              "type": "idle"
+            },
+            "path": "/Users/elinhaggstrom/.codex/sessions/2026/09/19/rollout-2026-09-19T12-30-07-01a0b937-5974-7a12-aac8-1afcf38042bb.jsonl",
+            "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/workspaces/GH-1",
+            "cliVersion": "0.155.1",
+            "originator": "codex_vscode",
+            "source": "vscode",
+            "canAcceptDirectInput": true,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          }
+        },
+        "emittedAtMs": 1789813807684
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "method": "mcpServer/startupStatus/updated",
+        "params": {
+          "threadId": "01a0b937-5974-7a12-aac8-1afcf38042bb",
+          "name": "cua_repl",
+          "status": "starting",
+          "error": null,
+          "failureReason": null
+        },
+        "emittedAtMs": 1789813807685
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "method": "mcpServer/startupStatus/updated",
+        "params": {
+          "threadId": "01a0b937-5974-7a12-aac8-1afcf38042bb",
+          "name": "cua_repl",
+          "status": "ready",
+          "error": null,
+          "failureReason": null
+        },
+        "emittedAtMs": 1789813807919
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "id": 3,
+        "result": {
+          "data": [
+            {
+              "name": "codex_app",
+              "runtimeStatus": "disabled",
+              "pluginId": "codex-app-tools@openai-bundled",
+              "serverInfo": null,
+              "tools": {},
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            },
+            {
+              "name": "computer-use",
+              "runtimeStatus": "disabled",
+              "pluginId": null,
+              "serverInfo": null,
+              "tools": {},
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            },
+            {
+              "name": "cua_repl",
+              "runtimeStatus": "connected",
+              "pluginId": "unified-computer-use@openai-bundled",
+              "serverInfo": {
+                "name": "rmcp",
+                "title": null,
+                "version": "1.5.0",
+                "description": null,
+                "icons": null,
+                "websiteUrl": null
+              },
+              "tools": {
+                "js_reset": {
+                  "name": "js_reset",
+                  "description": "Reset the persistent cua_repl JavaScript session. All JavaScript bindings are discarded. The next cua_repl.js call initializes a fresh runtime for the enabled surfaces. This does not close browser tabs or native apps, or erase their state. This tool is part of plugin `unified-computer-use`.",
+                  "inputSchema": {
+                    "additionalProperties": false,
+                    "properties": {},
+                    "type": "object"
+                  },
+                  "annotations": {
+                    "readOnlyHint": true,
+                    "destructiveHint": false,
+                    "openWorldHint": false
+                  }
+                },
+                "turn_ended": {
+                  "name": "turn_ended",
+                  "description": "Notify trusted libraries that a Codex turn ended. Repeated notifications for the same session and turn are ignored. This tool is part of plugin `unified-computer-use`.",
+                  "inputSchema": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "hook_event_name": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "session_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "turn_id": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "hook_event_name",
+                      "session_id",
+                      "turn_id"
+                    ],
+                    "type": "object"
+                  },
+                  "annotations": {
+                    "idempotentHint": true
+                  },
+                  "_meta": {
+                    "ui": {
+                      "visibility": []
+                    }
+                  }
+                },
+                "js": {
+                  "name": "js",
+                  "description": "Control native apps or browsers on the user\u2019s computer by reading or operating UI. Prefer purpose-built skills, connectors, APIs, or CLIs when available.\n\nOn your first call, or after a reset, execute exactly one of the API calls shown below, optionally assigning its result to a variable. Do not add other API calls, waits, or snapshots to that invocation.\nThe tool result will include documentation and, when creating or selecting a tab or selecting an app, its initial UI state. Selecting a browser does not open a tab. Read that result before continuing.\nUse only APIs described in the tool instructions or returned documentation.\n\nWhen you need an inventory of available apps, browsers, and tabs, get a snapshot of all enabled surfaces. Otherwise, use the relevant entry point below:\n\n```javascript\nawait cua.getState();\n```\n\nUse the first matching browser control option from the user's request:\n\nFor a tab @-mention (`mention=tab-v1`):\nCall `cua.getState()` and find the tab whose `providerTabId`/`title`/`url` all match the mention\u2019s decoded `tabId`/`title`/`url`. Then call `cua.getTab(tabId, { browser: browserId })`, using the id fields from that tab and its browser.\n\nKnown tab ID (`tabId` or `providerTabId`) and browser (name or browser @-mention):\n\n```javascript\nlet tab = await cua.getTab(tabId, { browser: browserId });\n```\n\nKnown URL and in-app browser (`@Browser`):\n\n```javascript\nlet tab = await cua.createBrowserTab(\"iab\", url, { visible: boolean });\n```\n\nKnown URL and other named browser: pass its name directly; do not call `getBrowser` first.\n\n```javascript\nlet tab = await cua.createBrowserTab(browserName, url, browserOptions);\n```\n\nKnown URL, only when the user has not specified a browser by name or @-mention:\n\n```javascript\nlet browser = await cua.getBrowser({ url });\n```\n\nBrowser IDs and options:\n\n- `\"iab\"` (in-app browser): in `createBrowserTab`, use `visible: true` to show the browser; `false` to keep it hidden.\n- `\"chrome\"` (@Chrome), `\"edge\"` (@Edge): pass a short, emoji-prefixed `sessionName` (e.g. `\"\ud83d\udd0e Task\"`) to `createBrowserTab` when starting a task.\n\nIf the user specifies an app to use, get the app by name, bundle ID, or path:\n\n```javascript\nlet app = await cua.getApp(\"Example App\");\n```\n\nTo add other content to the tool result, use `nodeRepl.write(value)` for text or other values and `await nodeRepl.emitImage(image)` for images. The APIs listed above already display their documentation or UI state; do not wrap their results in `write` or `emitImage`.\n\nIf your context begins with a summary of an existing computer use task, call `await cua.rewriteDocumentation()` before continuing the computer use task to ensure you have a complete view of the necessary documentation. This tool is part of plugin `unified-computer-use`.",
+                  "inputSchema": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "description": "JavaScript to execute using the initialized cua_repl runtime.",
+                        "type": "string"
+                      },
+                      "timeout_ms": {
+                        "description": "Optional execution timeout in milliseconds. Defaults to 30000 (30 seconds) when omitted.",
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "title": {
+                        "description": "Short user-facing description of what the code does.",
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "code"
+                    ],
+                    "type": "object"
+                  },
+                  "annotations": {
+                    "readOnlyHint": true,
+                    "destructiveHint": false,
+                    "openWorldHint": false
+                  }
+                }
+              },
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            },
+            {
+              "name": "node_repl",
+              "runtimeStatus": "disabled",
+              "pluginId": null,
+              "serverInfo": null,
+              "tools": {},
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            },
+            {
+              "name": "railway",
+              "runtimeStatus": "disabled",
+              "pluginId": null,
+              "serverInfo": null,
+              "tools": {},
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    }
+  ]
+}

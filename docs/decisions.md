@@ -133,3 +133,24 @@ Attempt 2 explicitly changes policy encoding to never (no approval requests,
 sandbox retained), supported by generated 0.155.1 schema. Preserve attempt 1 and
 record attempt=2 in the contract and launch metadata. No automatic retry; no
 model usage in failed attempt. Same task, acceptance and artifacts remain.
+
+
+## D010 — 2026-09-19: review discovers built-in MCP exposure in attempt 2
+
+Separate result reviewer found cua_repl and codex_apps startup ready notifications
+in the actual protocol, despite named MCP/plugin configuration disable flags.
+Artifact and coordination proof remain valid; restricted-profile acceptance fails.
+No completed MCP call appears. Profile is disabled in contract and launch paths.
+Correct built-in feature flags (apps/computer_use/browser variants) per installed
+CLI feature list, then query mcpServerStatus/list in a fresh thread without a
+model turn. Do not rerun unchanged or describe intended isolation as observed.
+Also corrected quota readout from initial 2% to final 3%, without attribution.
+
+The first no-model correction removed codex_apps but still loaded plugin cua_repl
+(evidence/startup/worker-profile-inventory.json). Disabling plugin loading for this
+worker invocation, in addition to built-in app/browser/computer features, yielded
+only three disabled named servers with zero tools; fresh-thread full inventory
+passed (worker-profile-inventory-fixed.json), with no model turn. Global settings,
+managed rules and hook configuration remain unchanged; this profile contains no
+required safety plugin. The old fixture remains disabled; any later live profile
+claim must refer to its actual invocation, not retroactively rewrite attempt 2.

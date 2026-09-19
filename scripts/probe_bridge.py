@@ -37,22 +37,15 @@ def restrict_message(message, workspace):
     return message
 
 
-def main():
-    workspace = Path.cwd().resolve()
-    if workspace.parent != WORKSPACES.resolve():
-        raise RuntimeError('Not an isolated Symphony fixture workspace')
-    contract = json.loads((ROOT / 'config/motor-probe.json').read_text())
-    if workspace.name != 'GH-' + str(contract['issue_number']):
-        raise RuntimeError('Not the accepted fixture issue')
-    state = ROOT / 'evidence' / 'motor-probe' / workspace.name
-    state.mkdir(parents=True, exist_ok=True)
-    # Durable one-attempt marker: unchanged retries never invoke a model again.
-    with (state / 'launch.json').open('x') as f:
-        json.dump({'workspace': str(workspace), 'pid': os.getpid(),
-                   'started_at_epoch': time.time(), 'attempt': contract['attempt']}, f)
+def worker_command():
     command = [str(ROOT / '.runtime/bin/codex-0.155.1'),
                '-c', 'model="gpt-6-astra"', '-c', 'approval_policy="never"',
                '-c', 'model_reasoning_effort="high"']
+    # These built-in providers are not entries in [mcp_servers].
+    for feature in ('apps', 'computer_use', 'browser_use', 'browser_use_external',
+                    'browser_use_full_cdp_access', 'in_app_browser', 'image_generation',
+                    'multi_agent', 'plugins'):
+        command += ['--disable', feature]
     # Retain auth and safety rules, but do not give fixture workers desktop/app MCPs.
     config = (Path.home() / '.codex/config.toml').read_text()
     for name in re.findall(r'^\[mcp_servers\.([\w-]+)\]$', config, re.M):
@@ -60,6 +53,24 @@ def main():
     for name in re.findall(r'^\[plugins\."([^"\n]+)"\]$', config, re.M):
         command += ['-c', 'plugins.' + json.dumps(name) + '.enabled=false']
     command += ['app-server']
+    return command
+
+
+def main():
+    workspace = Path.cwd().resolve()
+    if workspace.parent != WORKSPACES.resolve():
+        raise RuntimeError('Not an isolated Symphony fixture workspace')
+    contract = json.loads((ROOT / 'config/motor-probe.json').read_text())
+    if workspace.name != 'GH-' + str(contract['issue_number']):
+        raise RuntimeError('Not the accepted fixture issue')
+    if not contract.get('execution_enabled', False):
+        raise RuntimeError('Fixture profile requires verified reauthorization')
+    state = ROOT / 'evidence' / 'motor-probe' / workspace.name
+    state.mkdir(parents=True, exist_ok=True)
+    with (state / 'launch.json').open('x') as f:
+        json.dump({'workspace': str(workspace), 'pid': os.getpid(),
+                   'started_at_epoch': time.time(), 'attempt': contract['attempt']}, f)
+    command = worker_command()
     environment = dict(os.environ)
     for key in list(environment):
         if key in ('GITHUB_TOKEN', 'GH_TOKEN', 'GITHUB_ENTERPRISE_TOKEN', 'GH_ENTERPRISE_TOKEN',

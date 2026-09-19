@@ -10,7 +10,7 @@ VARFÖR NU: Proves real tracker/executor compatibility before building adaptatio
 METOD: A bounded compatibility experiment; inspect upstream implementation and
 install hooks, define observable acceptance before first model invocation.
 
-ARBETSYTA: `/Users/elinhaggstrom/Nortropic Runtime`, new Git history, branch `main`.
+ARBETSYTA: `/Users/elinhaggstrom/Nortropic Runtime`, new Git history, branch `work/execution-probe`.
 Remote (initially private, now public by explicit owner decision D006): `https://github.com/Nortropic/nortropic-runtime`.
 Candidate engine: Symphony `be10a1b79df723d6d7612b5651c8522704dafb2e`.
 
@@ -19,7 +19,8 @@ Node 22 and system Python available. Elixir/mix/mise absent from PATH.
 GitHub account has repo scope; org reports Free plan and repository creation allowed.
 ChatGPT and Claude Max login observed; no paid API run authorized.
 
-NÄSTA HANDLING: Review measured B1 result at evidence/motor-probe/result.md, then
+NÄSTA HANDLING: Corrected worker full MCP inventory passed without model turn;
+old B1 experiment remains disabled (execution_enabled=false). Review corrected B1 result at evidence/motor-probe/result.md, then
 integrate the bounded establishment/experiment slice through protected PR with
 exact-SHA runtime/tests and runtime/review statuses. Exercise stale-status rejection
 before legitimate merge. Next technical decision: evaluate Symphony's volatile
@@ -36,13 +37,13 @@ Symphony source and official binary fetched; SHA256 matches. See
 [observations](../evidence/startup/observations.md), [remote](../evidence/startup/remote.json),
 [release](../evidence/startup/symphony-release.json). First Codex call failed in
 4.174 seconds with a CLI-version error; [raw run](../evidence/startup/codex-root/run.json)
-and adjacent stdout/stderr are preserved. No successful model usage metrics yet.
+and adjacent stdout/stderr are preserved. Successful later-call metrics follow below.
 Codex 0.155.1 + matching code-mode host installed locally. Root and docs instruction
 probes passed (evidence/startup/codex-root-0155 and codex-subdir); root used 17,016
 input/12,160 cached/28 output tokens, docs 17,019/12,160/35. Public main protection
 is active and a real missing-status/direct push was rejected; see D007 for first
 failed activation incident. Process-limiter regressions and fixture positive/
-negative checks pass in evidence/startup/operator-tests.log. Live B1 attempt2 PASSED; attempt1 failed before model and is preserved separately.
+negative checks pass in evidence/startup/operator-tests.log. Live B1 attempt2 artifact/coordination PASSED, restricted-profile check FAILED; attempt1 failed before model and is preserved separately.
 See [B1 result](../evidence/motor-probe/result.md) and [review record](../evidence/reviews/startup-and-b1.md).
 This is only a small fixture engine proof, not v0.1 or Customer Zero.
 

@@ -4,5 +4,6 @@
   "upstream_revision": "be10a1b79df723d6d7612b5651c8522704dafb2e",
   "attempt": 2,
   "previous_attempt": "evidence/motor-probe-attempt-1",
-  "changed_prerequisite": "Use Codex 0.155.1 supported approvalPolicy never; legacy reject was rejected before a model turn"
+  "changed_prerequisite": "Use Codex 0.155.1 supported approvalPolicy never; legacy reject was rejected before a model turn",
+  "execution_enabled": false
 }

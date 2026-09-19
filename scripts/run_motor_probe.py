@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     contract = json.loads((ROOT / 'config/motor-probe.json').read_text())
+    if not contract.get('execution_enabled', False):
+        raise RuntimeError('Fixture profile is disabled pending verified authorization')
     output = ROOT / 'evidence/motor-probe/engine'
     output.mkdir(parents=True, exist_ok=False)
     with (ROOT / '.runtime/engine.lock').open('a') as lock:
