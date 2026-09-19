@@ -1,0 +1,11 @@
+{
+  "candidate": "38ecdaf7f989ab547740e23345c9cfbf8f69513c",
+  "workspace_name": "commit-1",
+  "candidate_files_sha256": {
+    "tools/evidence_index.py": "3ff044dbf1ec0db71a5b4c7b94e40ce0b44cb038851eda004957629eb790b217",
+    "tools/test_evidence_index.py": "3e9fa7d712c122e418080c4658c0a171d89ee58983bd69fe81f013701b9f7814",
+    "tools/EVIDENCE_INDEX.md": "d0c3d475ab4b3c135cbd40c134266368828a09b2e99d961a34be556c468054cc"
+  },
+  "base": "5e014099feeb0cec1a6954fc162e79d9a7a2f1e2",
+  "task_sha256": "be76062bf3f55eb9af3f72f366e080e5dddcecd5e947eea322a3721312c122aa"
+}
