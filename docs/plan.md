@@ -1,58 +1,55 @@
 # Living plan — Runtime v0.1
 
-## Current step: connect controlled integration to the native task workflow
+## Current step: run the accepted evidence integrity task through Runtime
 
-RESULTAT: An accepted Codex-only development task can produce a frozen Git
-candidate, undergo actual external tests and fresh independent review, and pass
-the host-only publication boundary. The existing report task remains waiting.
+RESULTAT: Deliver tools/evidence_index.py, tests and usage documentation through
+actual bounded implementation, external acceptance, fresh independent review and
+protected automatic integration. This is the second accepted useful task; the
+first report task is incomplete and waiting for Claude.
 
-VARFÖR NU: PR5 integrated the six-test publication component at f7bf8f4. Its remote
-tests were simulated; actual receipt construction and independent review invocation
-must now be connected before a live automatic integration claim.
+VARFÖR NU: PR6 integrated reviewed connected support at 5e014099feeb0cec1a6954fc162e79d9a7a2f1e2.
+Sixteen support tests, preserved-input submission test, native fixtures/replay and
+actual no-model CLI resume passed. Receipt: evidence/connected-workflow/integration.json.
+Separate reviewer approved exact0c7f3e9. No live automatic task integration yet.
 
-METOD: Reuse Temporal activities/history and qualified candidate sandbox/snapshot.
-Generalize task parameters rather than add a scheduler. Use native history replay
-against existing report evidence before upgrading the workflow. Freeze the next
-task/acceptance before any model invocation. D016 records selected old test reuse;
-D017 scopes this connection and second useful evidence-hash CLI task.
+METOD: Frozen task tasks/evidence-index.json, brief tasks/evidence-index.md and
+host verifier acceptance/evidence_index.py. Target three explicit tools/ files;
+base5e014099. Standard-library SHA256 create/verify CLI replaces manual evidence
+hash checking. Same DevelopmentTask and Publisher, no new scheduler/dependency.
 
-ARBETSYTA: work/second-task-through-runtime based on integrated f7bf8f4 (PR5).
-Origin PUBLIC by owner decision D006; branch protection active. Own project and
-isolated test targets only. No new costs/rights; owner defers Claude usage (D015).
+ARBETSYTA: work/evidence-index-completion based on actual PR7 main0fba283.
+Earlier work/evidence-index-task is retained as a backup, never force-updated. Origin PUBLIC by D006;
+branch protection active. No costs/rights expanded; no Claude call (D015).
 
-NÄSTA HANDLING: Obtain separate review of connected workflow, task freezing,
-read-only review invocation and bounded submission/service entry point. Correct
-concrete findings and integrate reviewed support before accepting the next live task.
-Do not call Claude, discard report history, or invent approval from partial tests.
+NÄSTA HANDLING: Independently inspect completed-run evidence and runbook, then integrate
+that documentation on top of PR7 without re-reviewing unchanged candidate code.
+Next independent capability is bounded abrupt in-flight writer recovery/fencing.
+Claude remains deferred; no new Claude calls or API fallback.
 
-PROV OCH KLART-NÄR: Actual implementation/review runs differ; tests/review bind the
-same candidate and frozen acceptance; incomplete old report still waits at attempt2.
-Missing or invalid mandatory result cannot publish. A second accepted task must
-show the complete route before its successful integration is claimed.
+KÖRGRÄNS: One Codex implementation invocation <=300 seconds; fresh review <=180
+seconds; zero automatic retries. Observable progress is emitted events/source
+changes, host verification and terminal usage. First report phase took134s with
+6151 output tokens; this somewhat larger file-integrity CLI is allotted300s.
+Usage will be recorded, monetary cost remains unknown under existing subscription.
+No project-wide cap or quota probing. Invalid/failed review prevents publication.
 
-UTFALL: PR5 receipt evidence/integration-gate/integration.json. Connection and bounded CLI are implemented, not yet independently reviewed or
-live-qualified. Sixteen support tests passed. Real native engine with explicit
-no-model/no-remote fixtures passed seven cases, including failed tests, missing/
-rejected/stale/self review, and lost publication acknowledgement followed by
-reconciliation without duplicate simulated mutation. Evidence: native-fixtures-v2
-under evidence/connected-workflow; real Git freeze and review parsing tests in
-scripts/test_connected.py. Both older histories also replay under current code
-(replay-v2.json). All fixture engine groups stopped; no model calls were made.
-Native Replayer passed both preserved report histories with no model calls
-(evidence/connected-workflow/replay.json); the original waiting history is compatible. Prior first Codex phase passed12 host cases and15 source tests;
-post-cleanup restart preserved both attempts and waiting_access. Raw evidence and
-limits: evidence/accepted-task/result.md. Full v0.1/Claude swap remain pending.
+UTFALL: COMPLETE for runtime-evidence-index-1. Candidate38ecdaf7f989ab547740e23345c9cfbf8f69513c
+was independently reviewed and automatically merged as0fba283d5c6e19f30c9703eec88e6ea879435c16
+via PR7. One implementation174.901s, one fresh review34.25s, all25 host cases
+passed (including candidate14 tests). One publication attempt. No manual code
+edits, phase switches or retry after submission. Raw artifacts under
+evidence/runs/runtime-evidence-index-1, including candidate Git bundle, native
+history, model logs/usage, bound decisions and integration receipt.
 
-ÅTERUPPTAGNING: Root driver active. No model/engine processes remain. Current
-canonical SQLite: .runtime/runtime.sqlite, established by native SQLite backup.
-The actual bounded --resume CLI verified identical waiting_access/attempt2 and
-cleaned both worker/server groups; evidence/accepted-task/observations/b45c9c9259834b9490959e3b42a1c2d7.
-Backup/hash: evidence/connected-workflow/state/. Original old SQLite remains at
-.runtime/tasks/runtime-run-report-1/temporal.sqlite; prior remote backup/hash in
-evidence/accepted-task/state/. Report candidate and task ID
-unchanged; immutable phase snapshot at evidence/accepted-task/attempt-2/candidate.
-Do not run old launch/resume scripts: they are bounded historical experiments,
-not a safe command for the current waiting_access state. No automatic retries.
+ÅTERUPPTAGNING: Root driver active. All implementation/review/worker/server groups
+reported removed. Canonical .runtime/runtime.sqlite; current backup/hash at
+evidence/runs/runtime-evidence-index-1/state/. Fresh native restarts returned the identical completed new task and identical
+waiting_access/attempts2 old report. No new model/review/publication occurred.
+Real evidence-manifest use passed for three preserved artifacts (result.md). Its completion and
+actual Claude swap remain unproven. Old DB/source/bundles are retained.
+Fresh receivers inspect Git and recorded process identities before writes.
+Do not resubmit accepted task or run historical pilot scripts. Current submission
+only needs --resume for observation; completed means no model retry is needed.
 
 ## Completed delivery and evidence
 
@@ -83,12 +80,12 @@ implementation plus another accepted task over the same route.
 
 | Capability | Current result |
 |---|---|
-| Autonomous development completion | First real Codex development phase passed; complete task integration pending |
+| Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
 | Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
 | Interruption/capacity | Actual interrupted attempt and post-cleanup wait replay passed; in-flight crash fencing/quotas pending |
-| Controlled integration | Real host-led missing/stale rejection and legitimate PR merge; candidate rights/automatic gate NOT PROVEN |
-| Repeatable use / Customer Zero | NOT RUN |
+| Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
+| Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |
 
 Runtime v0.1 is not complete. No project-wide time/token cap invented. Per-run
 limits are local safeguards; resource history and failed results remain preserved.
