@@ -26,12 +26,11 @@ subscription, no API fallback. Claude D005 WAITING_ACCESS remains: org disabled
 subscription access, no repeated call until new access evidence. Old Symphony and
 Temporal probe processes inspected stopped; B1 launch remains disabled.
 
-NÄSTA HANDLING: Review D014 correction, then run
-`.runtime/temporal-venv/bin/python scripts/run_accepted_task.py --resume-after-diagnosis`
-from repository root. It restores existing SQLite/workspace, verifies stopped prior
-PIDs, signals a changed prerequisite, and records attempt2 in the SAME workflow.
-Do not rerun original launch or remove attempt1. Next report belongs in
-`evidence/accepted-task/engine-resume-2` and `attempt-2`.
+NÄSTA HANDLING: Attempt2 IS RUNNING after separate D014 correction approval.
+Observe evidence/accepted-task/engine-resume-2/state.json and attempt-2/events.jsonl;
+operator session48835 owns the bounded driver. Do not run launch/resume again.
+After completion inspect raw provider/acceptance and restart evidence, preserve
+candidate snapshot and update this plan; separate review before integration.
 
 PROV OCH KLART-NÄR: Useful candidate passes host-owned phase acceptance on immutable
 snapshot; invalid/missing provider terminal never passes; attempt1 retained and
@@ -42,14 +41,14 @@ UTFALL: Attempt1 interrupted by operator on separate review blockers before host
 acceptance (D014). Actual waiting_diagnosis/attempt1 survived worker+server restart.
 Provider group and all four engine groups removed. No usage terminal: tokens/cost
 unknown, not0. Boundary6 checks and fresh profile inventory passed. Two concrete
-review corrections now implemented with targeted regression, not yet reviewed.
+review corrections separately approved at a23d94e for bounded retry (not v0.1).
 PR3 receipt: evidence/durable-probe/integration.json.
 
-ÅTERUPPTAGNING: Root driver active. No engine/model writer remains from attempt1;
-PID24176 executor and provider PID in attempt-1/launch.json must be checked again
-before retry. SQLite: .runtime/tasks/runtime-run-report-1/temporal.sqlite.
-Candidate and task ID unchanged; source paths remain unaccepted. Engine state is
-waiting_diagnosis, attempt1. No unrecorded retry, no Claude/API fallback.
+ÅTERUPPTAGNING: Root driver active. Attempt2 running; process identities are in
+attempt-2/launch.json and engine-resume-2/processes.json. Do not infer writer death
+from lost UI/session. First attempt and engine groups stopped before signal.
+SQLite: .runtime/tasks/runtime-run-report-1/temporal.sqlite. Same workflow, same
+candidate. No further retry authorized without diagnosis/changed evidence.
 
 ## Completed delivery and evidence
 
