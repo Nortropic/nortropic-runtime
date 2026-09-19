@@ -1,0 +1,496 @@
+{
+  "passed": true,
+  "observations": [
+    {
+      "input": [
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "completed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [],
+      "expected_status": "incomplete",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"thread.started\"}"
+      ],
+      "expected_status": "incomplete",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.failed\"}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"error\"}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"item.completed\", \"item\": {\"status\": \"failed\"}}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.completed\"}"
+      ],
+      "expected_status": "completed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "[1]"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "null"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "case": "CLI",
+      "passed": true,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": {
+          "cached_input_tokens": 53,
+          "input_tokens": 101,
+          "output_tokens": 7
+        }
+      },
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "case": "claude-completed",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "completed",
+        "usage": {
+          "input_tokens": 17,
+          "output_tokens": 9,
+          "cache_read_input_tokens": 13,
+          "cache_creation_input_tokens": 4,
+          "nested": {
+            "reported": true
+          }
+        },
+        "total_cost_usd": 0.03125
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-actual-error-shape",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 17,
+          "output_tokens": 9,
+          "cache_read_input_tokens": 13,
+          "cache_creation_input_tokens": 4,
+          "nested": {
+            "reported": true
+          }
+        },
+        "total_cost_usd": 0.03125
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-error-subtype",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 17,
+          "output_tokens": 9,
+          "cache_read_input_tokens": 13,
+          "cache_creation_input_tokens": 4,
+          "nested": {
+            "reported": true
+          }
+        },
+        "total_cost_usd": 0.03125
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-missing",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "incomplete",
+        "usage": null,
+        "total_cost_usd": null
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-start-only",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "incomplete",
+        "usage": null,
+        "total_cost_usd": null
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-duplicate",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "invalid",
+        "usage": {
+          "input_tokens": 17,
+          "output_tokens": 9,
+          "cache_read_input_tokens": 13,
+          "cache_creation_input_tokens": 4,
+          "nested": {
+            "reported": true
+          }
+        },
+        "total_cost_usd": 0.03125
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-absent-usage",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "completed",
+        "usage": null,
+        "total_cost_usd": null
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-missing-error-flag",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "invalid",
+        "usage": null,
+        "total_cost_usd": null
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-wrong-error-flag",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "invalid",
+        "usage": {
+          "input_tokens": 17,
+          "output_tokens": 9,
+          "cache_read_input_tokens": 13,
+          "cache_creation_input_tokens": 4,
+          "nested": {
+            "reported": true
+          }
+        },
+        "total_cost_usd": 0.03125
+      },
+      "stderr": "",
+      "returncode": 0
+    },
+    {
+      "case": "claude-malformed-{",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "invalid",
+        "usage": null,
+        "total_cost_usd": null
+      },
+      "stderr": ""
+    },
+    {
+      "case": "claude-malformed-null",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "invalid",
+        "usage": null,
+        "total_cost_usd": null
+      },
+      "stderr": ""
+    },
+    {
+      "case": "claude-malformed-[]",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "invalid",
+        "usage": null,
+        "total_cost_usd": null
+      },
+      "stderr": ""
+    },
+    {
+      "case": "claude-CLI-0-1",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "completed",
+        "total_cost_usd": 0.03125,
+        "usage": {
+          "cache_creation_input_tokens": 4,
+          "cache_read_input_tokens": 13,
+          "input_tokens": 17,
+          "nested": {
+            "reported": true
+          },
+          "output_tokens": 9
+        }
+      },
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "case": "claude-CLI-1-1",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "failed",
+        "total_cost_usd": 0.03125,
+        "usage": {
+          "cache_creation_input_tokens": 4,
+          "cache_read_input_tokens": 13,
+          "input_tokens": 17,
+          "nested": {
+            "reported": true
+          },
+          "output_tokens": 9
+        }
+      },
+      "returncode": 1,
+      "stderr": ""
+    },
+    {
+      "case": "claude-CLI-1-0",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "incomplete",
+        "total_cost_usd": null,
+        "usage": null
+      },
+      "returncode": 1,
+      "stderr": ""
+    },
+    {
+      "case": "claude-CLI-1-2",
+      "passed": true,
+      "actual": {
+        "provider": "claude",
+        "status": "invalid",
+        "total_cost_usd": 0.03125,
+        "usage": {
+          "cache_creation_input_tokens": 4,
+          "cache_read_input_tokens": 13,
+          "input_tokens": 17,
+          "nested": {
+            "reported": true
+          },
+          "output_tokens": 9
+        }
+      },
+      "returncode": 1,
+      "stderr": ""
+    },
+    {
+      "case": "codex-CLI-1-0",
+      "passed": true,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "returncode": 1,
+      "stderr": ""
+    },
+    {
+      "case": "CLI-usage-file-error",
+      "args": [
+        "--provider",
+        "claude",
+        ".scratch/definitely-missing-input"
+      ],
+      "passed": true,
+      "returncode": 2,
+      "stderr": "run_report: [Errno 2] No such file or directory: '.scratch/definitely-missing-input'\n"
+    },
+    {
+      "case": "CLI-usage-file-error",
+      "args": [
+        "--provider",
+        "unsupported",
+        "/dev/stdin"
+      ],
+      "passed": true,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: argument --provider: invalid choice: 'unsupported' (choose from codex, claude)\n"
+    },
+    {
+      "case": "CLI-usage-file-error",
+      "args": [],
+      "passed": true,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: the following arguments are required: --provider, PATH\n"
+    },
+    {
+      "case": "candidate-regression-tests",
+      "passed": true,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "test_duplicate_result_is_invalid_and_keeps_first_evidence (test_run_report.ClaudeSummarizeTests.test_duplicate_result_is_invalid_and_keeps_first_evidence) ... ok\ntest_error_subtypes_are_failed_regardless_of_is_error (test_run_report.ClaudeSummarizeTests.test_error_subtypes_are_failed_regardless_of_is_error) ... ok\ntest_malformed_or_nonobject_json_overrides_other_statuses (test_run_report.ClaudeSummarizeTests.test_malformed_or_nonobject_json_overrides_other_statuses) ... ok\ntest_missing_result_is_incomplete (test_run_report.ClaudeSummarizeTests.test_missing_result_is_incomplete) ... ok\ntest_missing_usage_and_cost_remain_null_never_inferred (test_run_report.ClaudeSummarizeTests.test_missing_usage_and_cost_remain_null_never_inferred) ... ok\ntest_non_result_events_never_terminate_or_fail (test_run_report.ClaudeSummarizeTests.test_non_result_events_never_terminate_or_fail) ... ok\ntest_result_without_string_subtype_is_not_completed (test_run_report.ClaudeSummarizeTests.test_result_without_string_subtype_is_not_completed) ... ok\ntest_success_requires_explicit_false_is_error_and_keeps_usage_and_cost (test_run_report.ClaudeSummarizeTests.test_success_requires_explicit_false_is_error_and_keeps_usage_and_cost) ... ok\ntest_success_subtype_with_is_error_true_is_failed (test_run_report.ClaudeSummarizeTests.test_success_subtype_with_is_error_true_is_failed) ... ok\ntest_success_without_explicit_boolean_false_is_never_completed (test_run_report.ClaudeSummarizeTests.test_success_without_explicit_boolean_false_is_never_completed) ... ok\ntest_usage_dict_is_a_copy_of_the_reported_object (test_run_report.ClaudeSummarizeTests.test_usage_dict_is_a_copy_of_the_reported_object) ... ok\ntest_argument_errors_exit_two (test_run_report.CliTests.test_argument_errors_exit_two) ... ok\ntest_claude_cli_output_carries_top_level_cost (test_run_report.CliTests.test_claude_cli_output_carries_top_level_cost) ... ok\ntest_claude_status_exit_codes_single_json_and_unchanged_input (test_run_report.CliTests.test_claude_status_exit_codes_single_json_and_unchanged_input) ... ok\ntest_codex_status_exit_codes_single_json_and_unchanged_input (test_run_report.CliTests.test_codex_status_exit_codes_single_json_and_unchanged_input) ... ok\ntest_file_errors_exit_two_without_json (test_run_report.CliTests.test_file_errors_exit_two_without_json) ... ok\ntest_bad_item_shapes_do_not_crash_or_imply_failure (test_run_report.SummarizeTests.test_bad_item_shapes_do_not_crash_or_imply_failure) ... ok\ntest_codex_reports_do_not_grow_a_cost_field (test_run_report.SummarizeTests.test_codex_reports_do_not_grow_a_cost_field) ... ok\ntest_completion_preserves_exact_usage (test_run_report.SummarizeTests.test_completion_preserves_exact_usage) ... ok\ntest_empty_blank_and_nonterminal_streams_are_incomplete (test_run_report.SummarizeTests.test_empty_blank_and_nonterminal_streams_are_incomplete) ... ok\ntest_every_pair_of_terminal_events_is_invalid (test_run_report.SummarizeTests.test_every_pair_of_terminal_events_is_invalid) ... ok\ntest_failure_events_without_completion (test_run_report.SummarizeTests.test_failure_events_without_completion) ... ok\ntest_failure_is_sticky_before_or_after_completion (test_run_report.SummarizeTests.test_failure_is_sticky_before_or_after_completion) ... ok\ntest_malformed_or_nonobject_json_overrides_other_statuses (test_run_report.SummarizeTests.test_malformed_or_nonobject_json_overrides_other_statuses) ... ok\ntest_missing_usage_and_counters_remain_null (test_run_report.SummarizeTests.test_missing_usage_and_counters_remain_null) ... ok\ntest_summarize_is_silent_and_deterministic (test_run_report.SummarizeTests.test_summarize_is_silent_and_deterministic) ... ok\ntest_unknown_events_are_ignored_and_blanks_allowed (test_run_report.SummarizeTests.test_unknown_events_are_ignored_and_blanks_allowed) ... ok\ntest_unsupported_provider_is_explicit (test_run_report.SummarizeTests.test_unsupported_provider_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 28 tests in 0.945s\n\nOK\n"
+    }
+  ],
+  "candidate_files_sha256": {
+    "tools/run_report.py": "77646504fd8a6bde849ba60f139cac310f4639b048530fb58ce6ba5208bee17f",
+    "tools/test_run_report.py": "889efcc7718be7f1c4d792bd22b0c4106309c60766b8c67766384bda4ef03f1a",
+    "tools/README.md": "d0df86ae66521a17c8c2326d890bf71c145865302e256a9b7113293095369c9b"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "task": "runtime-run-report-1",
+  "attempt": 3,
+  "provider": "claude",
+  "provider_completed": true,
+  "exit_code": 0,
+  "thread_id": "a3c76846-a130-4841-a97c-b8b14d19010a",
+  "usage": {
+    "input_tokens": 170,
+    "cache_creation_input_tokens": 21068,
+    "cache_read_input_tokens": 41554,
+    "output_tokens": 14181,
+    "output_tokens_details": {
+      "thinking_tokens": 2513
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 21068,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 56,
+        "output_tokens": 1516,
+        "cache_read_input_tokens": 17120,
+        "cache_creation_input_tokens": 8986,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 8986
+        },
+        "type": "message",
+        "model": null
+      }
+    ],
+    "speed": "standard"
+  },
+  "reported_list_cost_usd": 1.1435075000000001,
+  "permission_denials": [],
+  "role": "implementation",
+  "interrupted": null,
+  "process_group_removed": true,
+  "elapsed_seconds": 147.813,
+  "evidence": "evidence/accepted-task/attempt-3"
+}

@@ -1,0 +1,11 @@
+{
+  "candidate": "7f5589dc433fc563d98e6f010479a1f2822b114b",
+  "workspace_name": "commit-3",
+  "candidate_files_sha256": {
+    "tools/run_report.py": "77646504fd8a6bde849ba60f139cac310f4639b048530fb58ce6ba5208bee17f",
+    "tools/test_run_report.py": "889efcc7718be7f1c4d792bd22b0c4106309c60766b8c67766384bda4ef03f1a",
+    "tools/README.md": "d0df86ae66521a17c8c2326d890bf71c145865302e256a9b7113293095369c9b"
+  },
+  "base": "531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d",
+  "task_sha256": "c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c"
+}
