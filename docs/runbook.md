@@ -65,3 +65,25 @@ isolation remains essential.
 No general hostile detached-process or arbitrary-host-compromise guarantee is
 claimed. Per-invocation deadlines and process-group cleanup are measured local
 safeguards. See the evidence index and current limitations in docs/plan.md.
+
+### Restored Claude access on the retained report task
+
+The qualified Claude path uses the existing Max subscription, pinned CLI2.1.257,
+Read/Edit/Write only, exact accepted file grants, strict empty MCP and native
+AGENTS.md file loading. Host runs tests after cleanup. A changed binary/auth path
+stops before model invocation; diagnose/requalify rather than enabling API fallback.
+
+After the adapter slice is integrated, the living plan directs creation of the
+same task's explicit continuation using `python3 -m scripts.prepare_report_continuation`
+on clean main. Preserve/review that input on a work branch, then invoke:
+
+```
+.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json --resume --access-restored
+```
+
+This is for the existing waiting checkpoint only. It keeps the native workflow,
+old workspace, attempt counter and resource history. A second signal cannot repeat
+an already-running step. Do not rerun preparation into partial state; inspect the
+preserved directories/receipt and native query before reconciling. After transition,
+ordinary observation uses the same input with `--resume` alone. Follow docs/plan.md
+for the actual current checkpoint; the command above is not a request to resubmit.

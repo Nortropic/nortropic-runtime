@@ -36,8 +36,6 @@ def validate(task):
     for step in task['steps']:
         if step.get('provider') not in ('codex', 'claude') or not isinstance(step.get('prompt'), str) or not step['prompt']:
             raise ValueError('Invalid provider step')
-        if step['provider'] == 'claude' and not step.get('waiting_reason'):
-            raise ValueError('Claude is not yet qualified: explicit waiting state required')
     if not re.fullmatch('[0-9a-f]{64}', task.get('acceptance_sha256', '')):
         raise ValueError('Frozen acceptance digest required')
     return task

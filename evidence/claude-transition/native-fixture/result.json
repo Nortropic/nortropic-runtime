@@ -1,0 +1,97 @@
+{
+  "passed": true,
+  "model_calls": 0,
+  "remote_publications": 0,
+  "state": {
+    "attempts": 4,
+    "continuations": [
+      {
+        "evidence": "fixture",
+        "expected_attempt": 2,
+        "previous_task_sha256": "5677b3ecc46adc9db137b10bde485ec2d50a528ef583bdddfd2c641a7c5fdb2c",
+        "reason": "Fixture qualified access"
+      }
+    ],
+    "integration": {
+      "fixture_only": true,
+      "merged": true
+    },
+    "phase": "completed",
+    "publication_attempts": 1,
+    "results": [
+      {
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "candidate_files_sha256": {},
+        "evidence": "fixture-only",
+        "phase_acceptance_passed": false,
+        "provider_completed": false,
+        "thread_id": "codex-1",
+        "workspace_name": "commit-1"
+      },
+      {
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "candidate_files_sha256": {},
+        "evidence": "fixture-only",
+        "phase_acceptance_passed": true,
+        "provider_completed": true,
+        "thread_id": "codex-2",
+        "workspace_name": "commit-2"
+      },
+      {
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "candidate_files_sha256": {},
+        "evidence": "fixture-only",
+        "phase_acceptance_passed": true,
+        "provider_completed": true,
+        "thread_id": "claude-3",
+        "workspace_name": "commit-3"
+      },
+      {
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "candidate_files_sha256": {},
+        "evidence": "fixture-only",
+        "phase_acceptance_passed": true,
+        "provider_completed": true,
+        "thread_id": "codex-4",
+        "workspace_name": "commit-4"
+      }
+    ],
+    "review": {
+      "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "blocking_findings": [],
+      "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "reviewer_run": "separate-fixture-review",
+      "scope": "whole_task",
+      "task_id": "fixture-access-transition",
+      "task_sha256": "c7f6fe4adc36156569dec4567266c4611220195735968ad7e908726189180b6f",
+      "terminal_status": "completed",
+      "verdict": "approved"
+    },
+    "waiting_reason": null
+  },
+  "calls": [
+    {
+      "number": 1,
+      "provider": "codex",
+      "inherited": ""
+    },
+    {
+      "number": 2,
+      "provider": "codex",
+      "inherited": "codex:1\n"
+    },
+    {
+      "number": 3,
+      "provider": "claude",
+      "inherited": "codex:1\ncodex:2\n"
+    },
+    {
+      "number": 4,
+      "provider": "codex",
+      "inherited": "codex:1\ncodex:2\nclaude:3\n"
+    },
+    {
+      "publication": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

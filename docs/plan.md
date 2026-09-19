@@ -1,6 +1,6 @@
 # Living plan — Runtime v0.1
 
-## Current step: qualify owner-restored Claude access
+## Current step: connect the qualified Claude continuation
 
 RESULTAT: One useful accepted Codex task completed automatically through external
 acceptance, fresh independent review and protected integration (PR7). Its evidence
@@ -10,28 +10,35 @@ Check PR9 server merged state and git origin/main when taking over; do not infer
 integration from backup branch existence. Runtime v0.1 is NOT complete.
 
 ARBETSYTA: Nortropic/nortropic-runtime, local /Users/elinhaggstrom/Nortropic Runtime.
-Current branch work/claude-qualification from mainf5dde1a. Origin is public by owner
+Current branch work/claude-transition from main287eb84 (PR10). Origin is public by owner
 D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
-NÄSTA HANDLING: Claude qualification completed with actual subscription calls.
-Read evidence/claude-qualification/result.md and verification.json. Independently
-review the pinned restricted file-tool profile, preserve/integrate that small
-slice, then connect it to the existing report workflow with native replay and
-frozen whole-task acceptance. No model/engine/writer remains active; the unrelated
-historical tail process outside this project is untouched. Current profile uses
-native --append-system-prompt-file AGENTS.md, proven from root and subdirectory.
-Do not rely on automatic @ import in subdirectories or Claude Bash sandbox.
+NÄSTA HANDLING: Review/integrate the bounded adapter slice after recorded tests.
+Claude profile qualification is separately approved and integrated via PR10 at
+287eb8430a04b922c9232b74f59ea04c19d64e9e. Adapter changes are not yet approved or
+integrated. Canonical Runtime database and real report candidate are untouched.
+Native replay passed report/evidence/recovery histories; isolated native fixture
+passed inherited Codex1/interrupted→Codex2→wait→Claude3→Codex4, wrong-attempt
+refusal, fresh worker reconstruction, duplicate signal and one simulated publish.
+Whole-task verifier correctly rejects preserved Codex-only source. Source/raw
+results: evidence/claude-transition/. Real model swap is still NOT RUN.
 
-Once access is verified, qualify Claude's constrained tool/stop/result path and
-connect it to the existing native workflow without replacing histories. Continue
-runtime-run-report-1 from its retained Codex implementation through real Claude
-work and back to Codex. Preserve native replay compatibility while adding that
-qualified provider transition. Its current permanent waiting condition deliberately
-has no unverified release shortcut: do not signal blind retries or edit accepted
-requirements to claim completion. Complete that task's whole-task acceptance,
-fresh review and protected integration, then finish remaining §1 evidence audit.
-The second accepted evidence task already used the same DevelopmentTask/Publisher.
+After integration: from clean main run `python3 -m scripts.prepare_report_continuation`.
+This creates tasks/run-report-continuation.json once, with current integrated base,
+unchanged task ID/scope/prompts/limits and frozen whole-task verifier. Preserve it
+on a work branch and separately review exact accepted input before invoking
+`.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json
+--resume --access-restored`. Native signal binds old task digest and attempt2;
+host retains original candidate directory and overlays byte-identical saved work
+on current base. No workflow resubmission, deleted attempt or replaced history.
+The same native workflow then runs real Claude and final Codex, host tests, fresh
+independent review and protected integration. Observe bounded run and preserve
+results immediately; failure waits for specific diagnosis, never blind repetition.
+
+Then use the actual delivered report on saved real provider logs, restart both
+native tasks to prove retained completion, and audit every mandate§1/§9 row.
+The second accepted evidence task already used this DevelopmentTask/Publisher.
 
 UTFALL: Evidence task candidate38ecdaf7 integrated as0fba283 through PR7.25 host
 observations including14 candidate tests passed. Actual independent model review
@@ -54,7 +61,8 @@ First report task: waiting_access, attempts2, retained candidate at
 .runtime/tasks/runtime-run-report-1/candidate; immutable Codex phase snapshot under
 evidence/accepted-task/attempt-2/candidate. Second task runtime-evidence-index-1:
 completed, attempts1, publication_attempts1. Never resubmit either existing task.
-No new Claude/model attempts are pending; no automatic retry is enabled.
+No real-task Claude/model attempt is pending; no automatic retry is enabled.
+Only isolated no-model fixture/test processes ran for this adapter delivery.
 
 Fixture databases are separate and backed up under evidence/recovery-probe/state/.
 Do not rerun historical experiments into existing output/state directories. They

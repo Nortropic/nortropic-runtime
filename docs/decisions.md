@@ -365,3 +365,45 @@ https://code.claude.com/docs/en/permissions (dontAsk and resolved file bounds),
 https://code.claude.com/docs/en/memory (external-import consent).
 Reported total_cost_usd is retained as CLI list-price usage metadata, not a claim
 of money charged under the existing subscription. Initial failures remain visible.
+
+## D020 — 2026-09-19: native access signal preserves the original task
+
+PR10 qualified Claude without new billing/rights. Add execute_claude through the
+same process guardian, lock, fixed deadline, frozen candidate, acceptance, review
+and Publisher. Require pinned CLI and existing Max auth before invocation. Parse
+one successful matching session/result with explicit false is_error, completed
+terminal reason and exact qualified tool inventory; never trust subtype alone.
+
+The report's original accepted base9278081 is stale after support deliveries.
+A host-owned continuation explicitly changes that base and replaces phase-only
+verification with the already accepted full contract. Outcome, ID, allowed paths,
+provider order, prompts, attempt bound and zero automatic retries are immutable.
+The original task JSON, native history, both attempts and old workspace remain.
+A signal binds prior task digest + expected attempt2; a mismatched or duplicate
+signal cannot reset/repeat work. Host freezes revised input/verifier outside the
+candidate and verifies inherited files against the last preserved phase before
+reconstructing the candidate on current base. Partial preparation stops for
+inspection; no automatic overwrite/repair. New acceptance and base require
+separate review before the real signal. This is an explicit acceptance-completion
+step for the same outcome, not permission for candidates to change their tests.
+
+Original brief required Claude usage dict and reported cost, but omitted cost
+field placement. Clarify top-level total_cost_usd, preserving usage unchanged;
+no new feature. A missing/nonboolean error flag cannot claim completed; the host
+allows conservative other statuses instead of inventing a stricter classification.
+Frozen partial Codex implementation fails full acceptance, as expected.
+
+Temporal native Signal/wait_condition and Replayer are reused, no second engine:
+https://docs.temporal.io/develop/python/workflows/message-passing and
+https://docs.temporal.io/develop/python/best-practices/testing-suite. Selected SDK
+remains1.33.0. Old report, completed evidence and recovery histories replay with
+no activities/model calls. Separate native fixture exercises invalid/duplicate
+signals and fresh worker reconstruction. These are structural proofs; only the
+subsequent real execution can prove substantive Codex→Claude→Codex completion.
+
+D020 pre-freeze correction: run candidate tests via unittest discovery, matching
+their existing sibling import, with TMPDIR in the permitted .scratch directory.
+Initial module-name invocation failed before testing code. Corrected isolated
+baseline passes15 candidate tests and still fails16/33 full-contract observations.
+Both raw runs are retained. Strengthen CLI status/usage/cost assertions before
+freezing the new verifier. No implementation has yet been run against it.

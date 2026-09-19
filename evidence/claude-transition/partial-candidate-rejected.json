@@ -1,0 +1,347 @@
+{
+  "passed": false,
+  "observations": [
+    {
+      "input": [
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "completed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [],
+      "expected_status": "incomplete",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"thread.started\"}"
+      ],
+      "expected_status": "incomplete",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.failed\"}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"error\"}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"item.completed\", \"item\": {\"status\": \"failed\"}}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.completed\"}"
+      ],
+      "expected_status": "completed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "[1]"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "null"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "case": "CLI",
+      "passed": true,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": {
+          "cached_input_tokens": 53,
+          "input_tokens": 101,
+          "output_tokens": 7
+        }
+      },
+      "returncode": 0,
+      "stderr": ""
+    },
+    {
+      "case": "claude-completed",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-actual-error-shape",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-error-subtype",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-missing",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-start-only",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-duplicate",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-absent-usage",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-missing-error-flag",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-wrong-error-flag",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n",
+      "returncode": 1
+    },
+    {
+      "case": "claude-malformed-{",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "claude-malformed-null",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "claude-malformed-[]",
+      "passed": false,
+      "actual": null,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/Users/elinhaggstrom/Nortropic Runtime/.runtime/full-report-acceptance-negative/tools/run_report.py\", line 22, in summarize\n    raise NotImplementedError(\"Claude reporting is not implemented yet\")\nNotImplementedError: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "claude-CLI-0-1",
+      "passed": false,
+      "actual": null,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "claude-CLI-1-1",
+      "passed": false,
+      "actual": null,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "claude-CLI-1-0",
+      "passed": false,
+      "actual": null,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "claude-CLI-1-2",
+      "passed": false,
+      "actual": null,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "codex-CLI-1-0",
+      "passed": true,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "returncode": 1,
+      "stderr": ""
+    },
+    {
+      "case": "CLI-usage-file-error",
+      "args": [
+        "--provider",
+        "claude",
+        ".scratch/definitely-missing-input"
+      ],
+      "passed": true,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: Claude reporting is not implemented yet\n"
+    },
+    {
+      "case": "CLI-usage-file-error",
+      "args": [
+        "--provider",
+        "unsupported",
+        "/dev/stdin"
+      ],
+      "passed": true,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: argument --provider: invalid choice: 'unsupported' (choose from codex, claude)\n"
+    },
+    {
+      "case": "CLI-usage-file-error",
+      "args": [],
+      "passed": true,
+      "returncode": 2,
+      "stderr": "usage: run_report.py [-h] --provider {codex,claude} PATH\nrun_report.py: error: the following arguments are required: --provider, PATH\n"
+    },
+    {
+      "case": "candidate-regression-tests",
+      "passed": true,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "test_argument_errors_exit_two (test_run_report.CliTests.test_argument_errors_exit_two) ... ok\ntest_claude_is_explicitly_unimplemented (test_run_report.CliTests.test_claude_is_explicitly_unimplemented) ... ok\ntest_file_errors_exit_two_without_json (test_run_report.CliTests.test_file_errors_exit_two_without_json) ... ok\ntest_status_exit_codes_single_json_and_unchanged_input (test_run_report.CliTests.test_status_exit_codes_single_json_and_unchanged_input) ... ok\ntest_bad_item_shapes_do_not_crash_or_imply_failure (test_run_report.SummarizeTests.test_bad_item_shapes_do_not_crash_or_imply_failure) ... ok\ntest_completion_preserves_exact_usage (test_run_report.SummarizeTests.test_completion_preserves_exact_usage) ... ok\ntest_empty_blank_and_nonterminal_streams_are_incomplete (test_run_report.SummarizeTests.test_empty_blank_and_nonterminal_streams_are_incomplete) ... ok\ntest_every_pair_of_terminal_events_is_invalid (test_run_report.SummarizeTests.test_every_pair_of_terminal_events_is_invalid) ... ok\ntest_failure_events_without_completion (test_run_report.SummarizeTests.test_failure_events_without_completion) ... ok\ntest_failure_is_sticky_before_or_after_completion (test_run_report.SummarizeTests.test_failure_is_sticky_before_or_after_completion) ... ok\ntest_malformed_or_nonobject_json_overrides_other_statuses (test_run_report.SummarizeTests.test_malformed_or_nonobject_json_overrides_other_statuses) ... ok\ntest_missing_usage_and_counters_remain_null (test_run_report.SummarizeTests.test_missing_usage_and_counters_remain_null) ... ok\ntest_summarize_is_silent_and_deterministic (test_run_report.SummarizeTests.test_summarize_is_silent_and_deterministic) ... ok\ntest_unknown_events_are_ignored_and_blanks_allowed (test_run_report.SummarizeTests.test_unknown_events_are_ignored_and_blanks_allowed) ... ok\ntest_unsupported_provider_and_deferred_claude_are_explicit (test_run_report.SummarizeTests.test_unsupported_provider_and_deferred_claude_are_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 0.463s\n\nOK\n"
+    }
+  ]
+}

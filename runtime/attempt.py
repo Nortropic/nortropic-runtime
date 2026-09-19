@@ -12,14 +12,18 @@ import time
 from scripts.bounded import stop_group
 from .profile import ROOT, command, environment
 from .task import load, task_directory, evidence_directory
+from .provider_result import parse as parse_provider
+from .claude_profile import command as claude_command, require_subscription
 
 
-def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=None, role="implementation", workspace_name=None):
+def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=None, role="implementation", workspace_name=None, provider="codex"):
     task = load(task_id, task_digest)
     if type(number) is not int or number < 1 or (number > 1 and not change_reason):
         raise ValueError('Explicit attempt and changed prerequisite required')
     if role not in ('implementation', 'review') or not 1 <= seconds <= task['attempt_seconds']:
         raise ValueError('Invalid role or invocation limit')
+    if provider not in ('codex','claude') or (role == 'review' and provider != 'codex'):
+        raise ValueError('Unqualified provider/role')
     state = task_directory(task_id)
     if role == 'review':
         if not isinstance(workspace_name, str) or not workspace_name.startswith('commit-') or not workspace_name[7:].isdigit():
@@ -32,10 +36,20 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
     with (state / 'writer.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         output.mkdir(exist_ok=False)
-        record = {'task': task_id, 'attempt': number, 'provider': 'codex',
+        try:
+            subscription = require_subscription() if provider == 'claude' else None
+            argv = claude_command(workspace, task['allowed_paths']) if provider == 'claude' else command(workspace, writable=role == 'implementation')
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            report = {'task':task_id,'attempt':number,'provider':provider,'provider_completed':False,
+                      'reason':'Provider preflight failed: '+str(error),'process_group_removed':True,
+                      'model_started':False,'evidence':str(output.relative_to(ROOT))}
+            (output/'result.json').write_text(json.dumps(report,indent=2)+'\n')
+            print(json.dumps(report))
+            return 1
+        record = {'task': task_id, 'attempt': number, 'provider': provider,
                   'executor_pid': os.getpid(), 'started_epoch': time.time(),
                   'seconds_limit': seconds, 'automatic_retries': 0,
-                  'command': command(workspace, writable=role == 'implementation'), 'workspace': str(workspace),
+                  'command': argv, 'workspace': str(workspace), 'subscription': subscription,
                   'role': role, 'task_sha256': task_digest,
                   'change_reason': change_reason,
                   'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest()}
@@ -75,17 +89,13 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                 records.append(event)
             except ValueError:
                 parse_error = True
-        threads = [x.get('thread_id') for x in records if x.get('type') == 'thread.started']
-        terminals = [x for x in records if x.get('type') in ('turn.completed', 'turn.failed')]
-        errors = [x for x in records if x.get('type') in ('error', 'turn.failed')]
-        finished = (code == 0 and removed and not interrupted and not parse_error and not errors
-                    and len(terminals) == 1 and terminals[0]['type'] == 'turn.completed'
-                    and len(threads) == 1 and isinstance(threads[0], str) and bool(threads[0]))
-        report = {'task': task_id, 'attempt': number, 'provider': 'codex',
+        parsed = parse_provider(provider, records)
+        valid_terminal = parsed.pop('valid_terminal')
+        finished = (code == 0 and removed and not interrupted and not parse_error and valid_terminal)
+        report = {'task': task_id, 'attempt': number, 'provider': provider,
                   'provider_completed': finished, 'exit_code': code,
-                  'thread_id': threads[0] if len(threads) == 1 else None, 'role': role,
+                  **parsed, 'role': role,
                   'interrupted': interrupted, 'process_group_removed': removed,
-                  'usage': terminals[-1].get('usage') if terminals else None,
                   'elapsed_seconds': round(time.monotonic() - started, 3),
                   'evidence': str(output.relative_to(ROOT))}
         (output / 'result.json').write_text(json.dumps(report, indent=2) + '\n')

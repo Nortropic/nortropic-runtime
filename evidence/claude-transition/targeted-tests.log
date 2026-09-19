@@ -1,0 +1,9 @@
+test_codex_keeps_original_terminal_rules (scripts.test_provider_result.ProviderResultTest) ... ok
+test_real_claude_terminal_and_fail_closed_variants (scripts.test_provider_result.ProviderResultTest) ... ok
+test_same_task_continues_with_bound_history (scripts.test_access_revision.AccessRevisionTest) ... ok
+test_scope_and_history_cannot_be_reset (scripts.test_access_revision.AccessRevisionTest) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.004s
+
+OK
