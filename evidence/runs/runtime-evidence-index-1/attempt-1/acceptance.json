@@ -1,0 +1,282 @@
+{
+  "passed": true,
+  "observations": [
+    {
+      "case": "create binary/unicode sorted",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "version": 1,
+        "files": [
+          {
+            "path": "a.txt",
+            "sha256": "25718360e05d3c2d0963d1381e9dd4dae5fca789244ee4b9f861adcc0cc96218",
+            "size": 9
+          },
+          {
+            "path": "nested/\u00e5.bin",
+            "sha256": "712450d3c4a79eea9509e75dc1dacdeff58034df538536cfae2da882bd8a0c50",
+            "size": 3
+          }
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "case": "create empty",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "version": 1,
+        "files": []
+      },
+      "stderr": ""
+    },
+    {
+      "case": "verify exact",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "ok": true,
+        "files": [
+          {
+            "path": "a.txt",
+            "status": "ok"
+          },
+          {
+            "path": "nested/\u00e5.bin",
+            "status": "ok"
+          }
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "case": "inspect all mismatches",
+      "passed": true,
+      "returncode": 1,
+      "actual": {
+        "ok": false,
+        "files": [
+          {
+            "path": "a.txt",
+            "status": "changed"
+          },
+          {
+            "path": "fifo",
+            "status": "unsafe"
+          },
+          {
+            "path": "link",
+            "status": "unsafe"
+          },
+          {
+            "path": "missing",
+            "status": "missing"
+          },
+          {
+            "path": "nested/\u00e5.bin",
+            "status": "ok"
+          }
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create ../a.txt",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "paths must be nonempty POSIX relative paths without dot components"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create /etc/passwd",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "paths must be nonempty POSIX relative paths without dot components"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create nested//\u00e5.bin",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "paths must be nonempty POSIX relative paths without dot components"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create nested/./\u00e5.bin",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "paths must be nonempty POSIX relative paths without dot components"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create C:/file",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "paths must be nonempty POSIX relative paths without dot components"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create link",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "not a regular file: link"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create dirlink/\u00e5.bin",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "cannot safely read dirlink/\u00e5.bin: [Errno 20] Not a directory: 'dirlink'"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create fifo",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "not a regular file: fifo"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "refuse create missing",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "missing path: missing"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "duplicate selected path",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "duplicate paths are invalid"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid manifest 0",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "manifest must contain exactly version and files"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid manifest 1",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "manifest version must be integer 1"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid manifest 2",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "paths must be nonempty POSIX relative paths without dot components"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid manifest 3",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "duplicate paths are invalid"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid manifest 4",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "size must be a nonnegative integer"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid manifest 5",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "sha256 must be 64 lowercase hexadecimal characters"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "duplicate JSON key",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "duplicate JSON key: version"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid JSON",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "invalid command",
+      "passed": true,
+      "returncode": 2,
+      "actual": {
+        "error": "usage: evidence_index.py create ROOT [PATH ...] | verify ROOT"
+      },
+      "stderr": ""
+    },
+    {
+      "case": "importable functions",
+      "passed": true,
+      "actual": {
+        "ok": true,
+        "files": [
+          {
+            "path": "empty",
+            "status": "ok"
+          }
+        ]
+      },
+      "stderr": ""
+    },
+    {
+      "case": "candidate tests",
+      "passed": true,
+      "stdout": "",
+      "stderr": "test_all_entries_inspected_after_changes (test_evidence_index.EvidenceIndexTests.test_all_entries_inspected_after_changes) ... ok\ntest_changes_during_read_are_reported (test_evidence_index.EvidenceIndexTests.test_changes_during_read_are_reported) ... ok\ntest_cli_invalid_invocations_and_stdin (test_evidence_index.EvidenceIndexTests.test_cli_invalid_invocations_and_stdin) ... ok\ntest_cli_roundtrip_and_exit_codes (test_evidence_index.EvidenceIndexTests.test_cli_roundtrip_and_exit_codes) ... ok\ntest_empty_manifest_and_empty_file (test_evidence_index.EvidenceIndexTests.test_empty_manifest_and_empty_file) ... ok\ntest_invalid_paths (test_evidence_index.EvidenceIndexTests.test_invalid_paths) ... ok\ntest_invalid_roots_even_with_no_files (test_evidence_index.EvidenceIndexTests.test_invalid_roots_even_with_no_files) ... ok\ntest_manifest_and_verification_binary_unicode_sorted (test_evidence_index.EvidenceIndexTests.test_manifest_and_verification_binary_unicode_sorted) ... ok\ntest_replacement_during_read_is_reported (test_evidence_index.EvidenceIndexTests.test_replacement_during_read_is_reported) ... ok\ntest_size_mismatch (test_evidence_index.EvidenceIndexTests.test_size_mismatch) ... ok\ntest_substitution_cannot_follow_symlinks_or_block_on_fifo (test_evidence_index.EvidenceIndexTests.test_substitution_cannot_follow_symlinks_or_block_on_fifo) ... ok\ntest_symlinks_directories_fifos_and_missing_components (test_evidence_index.EvidenceIndexTests.test_symlinks_directories_fifos_and_missing_components) ... ok\ntest_unreadable_is_unsafe (test_evidence_index.EvidenceIndexTests.test_unreadable_is_unsafe) ... ok\ntest_whole_manifest_validated_before_reads (test_evidence_index.EvidenceIndexTests.test_whole_manifest_validated_before_reads) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 0.581s\n\nOK\n"
+    }
+  ],
+  "candidate_files_sha256": {
+    "tools/evidence_index.py": "3ff044dbf1ec0db71a5b4c7b94e40ce0b44cb038851eda004957629eb790b217",
+    "tools/test_evidence_index.py": "3e9fa7d712c122e418080c4658c0a171d89ee58983bd69fe81f013701b9f7814",
+    "tools/EVIDENCE_INDEX.md": "d0c3d475ab4b3c135cbd40c134266368828a09b2e99d961a34be556c468054cc"
+  }
+}

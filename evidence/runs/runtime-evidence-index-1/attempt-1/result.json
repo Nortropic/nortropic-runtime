@@ -1,0 +1,20 @@
+{
+  "task": "runtime-evidence-index-1",
+  "attempt": 1,
+  "provider": "codex",
+  "provider_completed": true,
+  "exit_code": 0,
+  "thread_id": "01a0b96e-d6e8-7ae2-9ef0-fdf2bec12278",
+  "role": "implementation",
+  "interrupted": null,
+  "process_group_removed": true,
+  "usage": {
+    "input_tokens": 217881,
+    "cached_input_tokens": 183296,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 9431,
+    "reasoning_output_tokens": 797
+  },
+  "elapsed_seconds": 174.901,
+  "evidence": "evidence/runs/runtime-evidence-index-1/attempt-1"
+}
