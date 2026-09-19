@@ -202,3 +202,21 @@ a promised goal. Candidate workspace isolation, attempt semantics, side-effect
 reconciliation, independent review and exact GitHub integration remain to be built
 and tested in narrow activities. Do not claim Temporal automatically supplies them.
 If connecting those requires another generic engine, revisit instead of expanding.
+
+
+## D013 — 2026-09-19: first useful accepted task and candidate boundary
+
+Customer Zero task is a deterministic JSONL run-report CLI for actual provider
+evidence. Current manual extraction and Claude success-subtype/error conflict
+create a concrete false-pass risk. Use three meaningful implementation phases
+(Codex parsing, Claude parsing, Codex final CLI verification), one workspace and
+Temporal-owned task history. Claude phase waits on known server denial D005; no
+API fallback or repeated denied call. The first delivery connects only Codex.
+
+Use Codex's native named permissions profile with minimal reads, isolated workspace
+writes and network disabled, plus disabled apps/MCP/plugins. Host acceptance and
+GitHub authority remain outside candidate workspace. Test actual denial with
+nonsecret canaries before a live turn. Official reference consulted:
+https://learn.chatgpt.com/docs/config-file/config-reference (permissions filesystem
+and network options); local 0.155.1 CLI/schema decides invocation compatibility.
+No assertion of complete rights separation until observed, including escape routes.
