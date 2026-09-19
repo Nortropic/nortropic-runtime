@@ -10,8 +10,9 @@ Real local Git tests show scope rejection, immutable commit selection despite
 changed checkout bytes, and exact merged-tree/base verification. Counted remote
 fixtures show missing/failed/interrupted/stale/wrong-scope evidence rejects before
 push/API mutation, post-push changed base/head prevents merge, and a lost merge
-response is reconciled without another publication.5 tests passed, including
-multiple negative cases in local-tests.log. These are simulations at the remote
+response (injected after the simulated server mutation) is reconciled without
+another publication.6 tests passed, including
+multiple negative cases in rename-regression.log (initial5-test log retained). These are simulations at the remote
 boundary, not evidence of an actual automatic Runtime merge.
 
 Actual read-only GitHub protection lookup passed the publisher's prerequisites;
@@ -26,3 +27,11 @@ publication credentials. The next connected delivery must demonstrate that wirin
 independent review invocation, exact-source binding and receipt preservation.
 Current API limits target to this project, ordinary push, one commit on accepted
 base and protected squash integration. No deletion/submodule publication support.
+
+Separate review found a real rename-scope bypass in the initial candidate8976fef:
+Git --name-only reported only the allowed destination while deleting an unallowed
+source. Corrected to --no-renames plus NUL-separated paths, with a real local Git
+reproducer/regression. No publication was attempted from the rejected revision.
+Also refined lost-response test to actually raise after simulated merge mutation,
+then reconcile without a new remote mutation. This remains fault injection, not
+a measured network outage.

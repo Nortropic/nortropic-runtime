@@ -31,7 +31,7 @@ def fixture():
 class CountedPublisher(Publisher):
     def __init__(self):
         self.mutations=[];self.pr=None;self.base_checks=0
-        self.changed_base_at=None;self.lost_head=False;self.merged=False
+        self.changed_base_at=None;self.lost_head=False;self.merged=False;self.lose_merge_response=False
     def inspect_candidate(self,task,subject): return 'tree'
     def require_protection(self): pass
     def require_base(self,base):
@@ -48,7 +48,12 @@ class CountedPublisher(Publisher):
         if path=='pulls' and method=='POST':
             self.pr={'number':1,'head':{'sha':'b'*40},'base':{'ref':'main'},'state':'open'}
             return self.pr
-        if path=='pulls/1/merge': self.pr['merged']=True;self.merged=True;return {'merged':True}
+        if path=='pulls/1/merge':
+            self.pr['merged']=True;self.merged=True
+            if self.lose_merge_response:
+                self.lose_merge_response=False
+                raise TimeoutError('Simulated lost response after server merge')
+            return {'merged':True}
         if path=='pulls/1':
             if self.lost_head: return {**self.pr,'head':{'sha':'c'*40}}
             return self.pr
@@ -99,7 +104,9 @@ class IntegrationTest(unittest.TestCase):
         publisher=CountedPublisher();publisher.lost_head=True
         with self.assertRaises(GateClosed):publisher.publish(*fixture())
         self.assertFalse(publisher.merged)
-        publisher=CountedPublisher();self.assertTrue(publisher.publish(*fixture())['merged'])
+        publisher=CountedPublisher();publisher.lose_merge_response=True
+        with self.assertRaises(TimeoutError): publisher.publish(*fixture())
+        self.assertTrue(publisher.merged)
         before=list(publisher.mutations)
         self.assertTrue(publisher.publish(*fixture())['merged'])
         self.assertEqual(publisher.mutations,before,'recovery published twice')
@@ -143,3 +150,18 @@ class IntegrationTest(unittest.TestCase):
                 publisher.reconcile(pr,subject,git('rev-parse',base+'^{tree}'))
             with self.assertRaisesRegex(GateClosed,'base does not match'):
                 publisher.reconcile(pr,{'base':'c'*40,'candidate':candidate},tree)
+
+    def test_rename_cannot_hide_out_of_scope_source_deletion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo=Path(directory)
+            def git(*args):
+                return subprocess.check_output(['git','-C',str(repo),*args],text=True).strip()
+            git('init','-q');git('config','user.name','Runtime test');git('config','user.email','runtime@invalid.test')
+            git('config','diff.renames','true');git('remote','add','origin',Publisher.ORIGIN)
+            (repo/'protected-source').write_text('unchanged content\n')
+            git('add','protected-source');git('commit','-qm','base');base=git('rev-parse','HEAD')
+            (repo/'tools').mkdir();git('mv','protected-source','tools/value.txt');git('commit','-qm','rename')
+            candidate=git('rev-parse','HEAD')
+            self.assertEqual(git('diff','--name-only',base,candidate),'tools/value.txt')
+            task,subject,_,_=fixture();task['base']=base;subject.update(base=base,candidate=candidate)
+            with self.assertRaisesRegex(GateClosed,'file scope'):Publisher(repo).inspect_candidate(task,subject)

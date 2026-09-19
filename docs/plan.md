@@ -22,7 +22,7 @@ subscription, no API fallback. Claude D005 WAITING_ACCESS remains: org disabled
 subscription access, no repeated call until new access evidence. Old Symphony and
 Temporal probe processes inspected stopped; B1 launch remains disabled.
 
-NÄSTA HANDLING: Separate review of runtime/integration.py and five targeted
+NÄSTA HANDLING: Separate review of runtime/integration.py and six targeted
 publication regression tests, then integrate this small component. Next connect
 it to actual independent review and a second accepted Codex task in Temporal;
 receipts must come from host-owned actual runs, not candidate-created dictionaries.
@@ -31,7 +31,7 @@ PROV OCH KLART-NÄR: Missing/failed/stale/wrong-scope/same-author review and inc
 whole task reject before publication. Changed base/head denies merge. Reconcile
 existing merge without publishing again, checking actual Git tree/parent identity.
 
-UTFALL: Implemented;5 targeted tests passed with counted remote fixtures and real
+UTFALL: Implemented;6 targeted tests passed with counted remote fixtures and real
 local Git objects. Current GitHub protection readback passed. New publisher live
 merge NOT RUN. See evidence/integration-gate/result.md. First phase remains PASS
 but entire run-report task waits for deferred Claude access; see accepted-task/result.md.

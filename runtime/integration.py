@@ -72,7 +72,7 @@ class Publisher:
 
     def git(self, *args):
         return subprocess.run(['git', '-C', str(self.repository), *args], check=True,
-                              text=True, capture_output=True, timeout=30).stdout.strip()
+                              text=True, capture_output=True, timeout=30).stdout.rstrip("\n")
 
     def api(self, path, method='GET', body=None):
         argv = ['gh', 'api', 'repos/' + self.REPOSITORY + '/' + path, '-X', method]
@@ -88,13 +88,16 @@ class Publisher:
         parents = self.git('rev-list', '--parents', '-n', '1', candidate).split()
         if parents != [candidate, base]:
             raise GateClosed('Candidate is not one commit on the accepted base')
-        paths = self.git('diff', '--name-only', base, candidate).splitlines()
+        paths = [p for p in self.git('diff', '--no-renames', '--name-only', '-z', base, candidate).split('\0') if p]
         allowed = task.get('allowed_paths')
         if (not isinstance(allowed, list) or not allowed or not paths
                 or not set(paths).issubset(set(allowed))):
             raise GateClosed('Candidate exceeds accepted file scope')
         for path in paths:
-            mode = self.git('ls-tree', candidate, '--', path).split()[0]
+            entry = self.git('ls-tree', '-z', candidate, '--', path)
+            if not entry:
+                raise GateClosed('Deletion is not enabled for this publication profile')
+            mode = entry.split()[0]
             if mode not in ('100644', '100755'):
                 raise GateClosed('Only regular source files may be published')
         return self.git('rev-parse', candidate + '^{tree}')
