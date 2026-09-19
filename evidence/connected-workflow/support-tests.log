@@ -1,0 +1,21 @@
+test_stdin_does_not_follow_candidate_symlink (test_acceptance_boundary.AcceptanceBoundaryTest) ... ok
+test_normal_leader_exit_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_sigterm_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_timeout_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_frozen_git_and_scope (test_connected.ConnectedTests) ... ok
+test_review_missing_malformed_conflicting_or_duplicate (test_connected.ConnectedTests) ... ok
+test_base_and_head_rechecked_and_merge_reconciled (test_integration.IntegrationTest) ... ok
+test_partial_three_step_task_does_not_publish (test_integration.IntegrationTest) ... ok
+test_real_git_candidate_scope_and_immutable_identity (test_integration.IntegrationTest) ... ok
+test_real_git_reconciliation_checks_tree_and_parent (test_integration.IntegrationTest) ... ok
+test_rename_cannot_hide_out_of_scope_source_deletion (test_integration.IntegrationTest) ... ok
+test_required_evidence_blocks_before_publication (test_integration.IntegrationTest) ... ok
+test_host_tracker_tools_and_wide_sandbox_removed (test_probe.ProbeTest) ... ok
+test_missing_and_changed_instructions_fail (test_probe.ProbeTest) ... ok
+test_wrong_missing_and_legitimate_artifacts (test_probe.ProbeTest) ... ok
+test_regular_and_symlink_components (test_snapshot.SnapshotTest) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 9.043s
+
+OK

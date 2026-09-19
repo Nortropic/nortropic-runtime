@@ -1,49 +1,58 @@
 # Living plan — Runtime v0.1
 
-## Current step: exact-candidate integration boundary
+## Current step: connect controlled integration to the native task workflow
 
-RESULTAT: One host-only boundary rejects unfinished task or missing/failed/stale
-mandatory evidence before publishing. It rechecks remote base/head and reconciles
-an acknowledged or lost-response merge against the exact candidate Git tree.
+RESULTAT: An accepted Codex-only development task can produce a frozen Git
+candidate, undergo actual external tests and fresh independent review, and pass
+the host-only publication boundary. The existing report task remains waiting.
 
-VARFÖR NU: PR4 integrated the first real Codex phase and persistent access wait;
-publication is still host-operated. Before wiring automatic candidate integration,
-prove its decision boundary and preserve the incomplete task's waiting state.
+VARFÖR NU: PR5 integrated the six-test publication component at f7bf8f4. Its remote
+tests were simulated; actual receipt construction and independent review invocation
+must now be connected before a live automatic integration claim.
 
-METOD: D016 needs-driven reuse of selected prior negative test ideas. Test real
-local Git identities and counted remote effects, then inspect actual GitHub
-protection read-only. Do not treat fake remote tests as live Runtime publication.
+METOD: Reuse Temporal activities/history and qualified candidate sandbox/snapshot.
+Generalize task parameters rather than add a scheduler. Use native history replay
+against existing report evidence before upgrading the workflow. Freeze the next
+task/acceptance before any model invocation. D016 records selected old test reuse;
+D017 scopes this connection and second useful evidence-hash CLI task.
 
-ARBETSYTA: work/controlled-codex-integration based on integrated0ab88f1 (PR4), own project
-and isolated .runtime candidate only. Owner changed origin PUBLIC (D006).
+ARBETSYTA: work/second-task-through-runtime based on integrated f7bf8f4 (PR5).
+Origin PUBLIC by owner decision D006; branch protection active. Own project and
+isolated test targets only. No new costs/rights; owner defers Claude usage (D015).
 
-FÖRUTSÄTTNINGAR: Pinned local Temporal1.9.1/SDK1.33.0 and Codex0.155.1 with ChatGPT
-subscription, no API fallback. Claude D005 WAITING_ACCESS remains: org disabled
-subscription access, no repeated call until new access evidence. Old Symphony and
-Temporal probe processes inspected stopped; B1 launch remains disabled.
+NÄSTA HANDLING: Obtain separate review of connected workflow, task freezing,
+read-only review invocation and bounded submission/service entry point. Correct
+concrete findings and integrate reviewed support before accepting the next live task.
+Do not call Claude, discard report history, or invent approval from partial tests.
 
-NÄSTA HANDLING: Separate review of runtime/integration.py and six targeted
-publication regression tests, then integrate this small component. Next connect
-it to actual independent review and a second accepted Codex task in Temporal;
-receipts must come from host-owned actual runs, not candidate-created dictionaries.
+PROV OCH KLART-NÄR: Actual implementation/review runs differ; tests/review bind the
+same candidate and frozen acceptance; incomplete old report still waits at attempt2.
+Missing or invalid mandatory result cannot publish. A second accepted task must
+show the complete route before its successful integration is claimed.
 
-PROV OCH KLART-NÄR: Missing/failed/stale/wrong-scope/same-author review and incomplete
-whole task reject before publication. Changed base/head denies merge. Reconcile
-existing merge without publishing again, checking actual Git tree/parent identity.
+UTFALL: PR5 receipt evidence/integration-gate/integration.json. Connection and bounded CLI are implemented, not yet independently reviewed or
+live-qualified. Sixteen support tests passed. Real native engine with explicit
+no-model/no-remote fixtures passed seven cases, including failed tests, missing/
+rejected/stale/self review, and lost publication acknowledgement followed by
+reconciliation without duplicate simulated mutation. Evidence: native-fixtures-v2
+under evidence/connected-workflow; real Git freeze and review parsing tests in
+scripts/test_connected.py. Both older histories also replay under current code
+(replay-v2.json). All fixture engine groups stopped; no model calls were made.
+Native Replayer passed both preserved report histories with no model calls
+(evidence/connected-workflow/replay.json); the original waiting history is compatible. Prior first Codex phase passed12 host cases and15 source tests;
+post-cleanup restart preserved both attempts and waiting_access. Raw evidence and
+limits: evidence/accepted-task/result.md. Full v0.1/Claude swap remain pending.
 
-UTFALL: Implemented;6 targeted tests passed with counted remote fixtures and real
-local Git objects. Current GitHub protection readback passed. New publisher live
-merge NOT RUN. See evidence/integration-gate/result.md. First phase remains PASS
-but entire run-report task waits for deferred Claude access; see accepted-task/result.md.
-
-ÅTERUPPTAGNING: Root driver active; no engine/model processes remain. Current work is on
-work/controlled-codex-integration; completed first-phase Runtime support is in main.
-Canonical SQLite .runtime/tasks/runtime-run-report-1/temporal.sqlite; portable
-backup+hashes evidence/accepted-task/state/. Candidate remains in same task
-workspace; immutable accepted phase snapshot is attempt-2/candidate under evidence.
-No further retries: workflow is waiting_access with attempts2. Current driver resume
-is ONLY for previous diagnosis attempt1 and MUST NOT be rerun against this state.
-Next step is D016 boundary implementation; owner defers Claude usage per D015.
+ÅTERUPPTAGNING: Root driver active. No model/engine processes remain. Current
+canonical SQLite: .runtime/runtime.sqlite, established by native SQLite backup.
+The actual bounded --resume CLI verified identical waiting_access/attempt2 and
+cleaned both worker/server groups; evidence/accepted-task/observations/b45c9c9259834b9490959e3b42a1c2d7.
+Backup/hash: evidence/connected-workflow/state/. Original old SQLite remains at
+.runtime/tasks/runtime-run-report-1/temporal.sqlite; prior remote backup/hash in
+evidence/accepted-task/state/. Report candidate and task ID
+unchanged; immutable phase snapshot at evidence/accepted-task/attempt-2/candidate.
+Do not run old launch/resume scripts: they are bounded historical experiments,
+not a safe command for the current waiting_access state. No automatic retries.
 
 ## Completed delivery and evidence
 

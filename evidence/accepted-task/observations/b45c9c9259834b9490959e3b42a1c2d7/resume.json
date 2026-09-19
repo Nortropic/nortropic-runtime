@@ -1,0 +1,41 @@
+{
+  "prior": {
+    "attempts": 2,
+    "phase": "waiting_access",
+    "results": [
+      {
+        "exit_code": 1,
+        "provider_completed": false,
+        "reason": "attempt failed or interrupted",
+        "stderr": ""
+      },
+      {
+        "attempt": 2,
+        "candidate_files_sha256": {
+          "tools/README.md": "187b84f70fac6475e40caeb1ac885d3716f69abe9b81ce9e2f09d4449834afb4",
+          "tools/run_report.py": "a4143aabbe75c4222a83ffc386c8360756424e6e4f2f0ef8e234b4354791e67d",
+          "tools/test_run_report.py": "62dff3ac497593f20d5bb66a094eefb41eb63af66a9ec3f5a921769a79a4b3b0"
+        },
+        "elapsed_seconds": 134.029,
+        "evidence": "evidence/accepted-task/attempt-2",
+        "exit_code": 0,
+        "interrupted": null,
+        "phase_acceptance_passed": true,
+        "process_group_removed": true,
+        "provider": "codex",
+        "provider_completed": true,
+        "task": "runtime-run-report-1",
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 202368,
+          "input_tokens": 240607,
+          "output_tokens": 6151,
+          "reasoning_output_tokens": 358
+        }
+      }
+    ],
+    "waiting_reason": "WAITING_ACCESS: known oauth_org_not_allowed, evidence/startup/claude-root; wait for owner-confirmed subscription access change, no API fallback"
+  },
+  "diagnosis": null,
+  "reconcile": null
+}

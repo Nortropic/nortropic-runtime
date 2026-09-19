@@ -291,3 +291,24 @@ Next slice: bind whole-task completion, tests and independent review to exact
 candidate objects before any publishing action. A passed first phase must not
 publish the unfinished report task. Keep its native WAITING_ACCESS state intact.
 Then connect the same boundary to a second, Codex-only accepted task.
+
+## D017 — 2026-09-19: connect a second useful task without waiting for Claude
+
+PR5 integrated the separately reviewed publication boundary. Next connect it to
+native workflow activities: accepted task input, bounded implementation, frozen
+Git candidate, host acceptance, fresh independent read-only Codex review, then
+protected publication. Existing report workflow remains waiting for Claude; it
+must replay unchanged and must not publish as a completed task.
+
+Second useful task will verify evidence file hashes with a small standard-library
+CLI, replacing repeated manual backup/candidate hash checking. Its accepted scope
+and verifier will be frozen before invocation. This remains Runtime development
+Customer Zero, not a new method platform. Both tasks use the same DevelopmentTask
+workflow and local Temporal engine. No new API billing/dependencies/permissions.
+
+Generalize only task parameters and the missing reviewed activities. Preserve the
+old workflow history using Temporal's native Replayer before running revised code.
+A new central SQLite location may be established by backup after all writers stop;
+retain original database, verify existing waiting workflow, and run only one local
+server. Authority/test/review artifacts remain host-owned outside candidate write
+access. A live automatic merge is not claimed until this wiring is actually run.

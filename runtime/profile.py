@@ -22,11 +22,14 @@ def permissions(workspace, writable=True):
             '-c', 'default_permissions="nr"']
 
 
-def command(workspace):
-    return worker_command()[:-1] + permissions(workspace) + [
+def command(workspace, writable=True):
+    shell_env = {'PATH': '/opt/homebrew/bin:/usr/bin:/bin', 'PYTHONDONTWRITEBYTECODE': '1',
+                 'TMPDIR': str(Path(workspace).resolve() / '.scratch')}
+    env_table = '{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in shell_env.items()) + '}'
+    return worker_command()[:-1] + permissions(workspace, writable=writable) + [
         '-c', 'web_search="disabled"',
         '-c', 'shell_environment_policy.inherit="none"',
-        '-c', 'shell_environment_policy.set={PATH="/usr/bin:/bin:/opt/homebrew/bin"}',
+        '-c', 'shell_environment_policy.set=' + env_table,
         'exec', '--json', '--ephemeral', '-C', str(workspace), '-']
 
 

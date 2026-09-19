@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/5",
+  "candidate": "052f917ec42c42a90c42cefb0e28ca55d94b2c97",
+  "merge": {
+    "sha": "f7bf8f4616ca1c73c27c4105bd5f51e12fffaa26",
+    "merged": true,
+    "message": "Pull Request successfully merged"
+  },
+  "verified_merged": true,
+  "reviewer": "/root/startup_review",
+  "scope": "host publication component only; live Runtime wiring pending"
+}

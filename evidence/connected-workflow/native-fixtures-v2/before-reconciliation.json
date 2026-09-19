@@ -1,0 +1,28 @@
+{
+  "attempts": 1,
+  "phase": "waiting_publication_reconciliation",
+  "publication_attempts": 1,
+  "results": [
+    {
+      "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "candidate_files_sha256": {},
+      "evidence": "fixture-only",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "author-thread",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "blocking_findings": [],
+    "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "reviewer_run": "review-thread",
+    "scope": "whole_task",
+    "task_id": "fixture-ack-loss",
+    "task_sha256": "8a666fdf2abd86e617d9c2e4ca981c8f569310e6b95dcaeaa563e619b2deb8c3",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "waiting_reason": "Activity task failed"
+}
