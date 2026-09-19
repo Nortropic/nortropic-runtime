@@ -1,0 +1,73 @@
+{
+  "passed": true,
+  "model_calls": 0,
+  "remote_publications": 0,
+  "provider_fixtures": true,
+  "real_local_git_and_test_review_subprocesses": true,
+  "reports": [
+    {
+      "case": "rejected",
+      "passed": true,
+      "attempts": 2,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    },
+    {
+      "case": "nonobject",
+      "passed": true,
+      "attempts": 1,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    },
+    {
+      "case": "missing",
+      "passed": true,
+      "attempts": 1,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    },
+    {
+      "case": "stale",
+      "passed": true,
+      "attempts": 1,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    },
+    {
+      "case": "self-review",
+      "passed": true,
+      "attempts": 1,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    },
+    {
+      "case": "inconclusive",
+      "passed": true,
+      "attempts": 1,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    },
+    {
+      "case": "repair-test-failure",
+      "passed": true,
+      "attempts": 3,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    },
+    {
+      "case": "no-change",
+      "passed": true,
+      "attempts": 3,
+      "reviews": 2,
+      "local_integrations": 1,
+      "old_history_prefix_preserved": true
+    }
+  ]
+}

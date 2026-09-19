@@ -1,0 +1,12 @@
+{
+  "task_id": "review-proof-missing",
+  "task_sha256": "186ecf73e5d4c1298d3a2e26d2ffcec04dbb0722a998b24442a45d50c6e7eef4",
+  "candidate": "c70e622906b8d00e4da90fa376a3a64fc0073c8a",
+  "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "fixture-review-process-36581-1d6ff4db82b3431cb0ec2d4f01845e0f",
+  "verdict": "approved",
+  "blocking_findings": [],
+  "summary": "Separate verifier process checked the accepted zero requirement."
+}

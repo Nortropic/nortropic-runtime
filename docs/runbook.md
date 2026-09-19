@@ -45,14 +45,67 @@ files to bypass this check.
 After a concrete implementation diagnosis and materially changed prerequisite,
 resume the SAME task with `--resume --diagnosis "what changed and why"`. This
 signals native history and increments the implementation attempt. There are no
-automatic model retries. The present route does not yet automate remediation of
-a rejected review; it waits without publication.
+automatic model retries. The chain driver reads the failed attempt, acceptance
+and process receipts, identifies the actual cause, makes a scoped correction or
+restores the prerequisite, records it in the living plan, and sends this signal.
+A timeout or missing output alone is not evidence of a source defect. If no
+prerequisite changed, retain the wait; do not repeat the same call blindly.
 
 If a publication response is ambiguous, first inspect remote PR/head/base and
 preserved local evidence. Then use `--resume --reconcile "what was inspected"`.
 The Publisher reconciles an already merged exact candidate before another remote
 mutation; it rejects changed bases, heads, or inadequate receipts. Never post
 success statuses to bypass a failed or missing mandatory result.
+
+### Review continuation and chain-driver ownership
+
+At `waiting_review`, query state and read the numbered `review-N` receipts.
+`review_recovery=repair` means a completed, correctly bound independent rejection
+contains concrete blockers; it permits `--resume --review-repair "diagnosis and
+relevant correction"`. Runtime keeps the accepted task ID, base, paths, verifier
+and earlier results, runs the final accepted implementation provider with those
+findings, freezes a new candidate with changed file bytes, runs full acceptance,
+and starts a new independent review. Failed repair tests return to
+`waiting_diagnosis`; they do not bypass review. A repeated unchanged candidate
+also waits for diagnosis. Only fresh approval for the new exact subject can publish.
+
+`review_recovery=review_only` means missing, interrupted, inconclusive, malformed,
+stale or non-independent review. It does **not** establish a candidate defect.
+After diagnosing and correcting the review prerequisite, use `--resume
+--review-retry "what changed"`. The same candidate/tests are reviewed again;
+implementation attempts do not increase. Numbered outputs and native history
+preserve every prior result. Signals bind task digest, candidate, review round
+and attempt; stale, duplicate and mismatched actions cannot start extra work.
+
+The chain driver owns this inspection and technical continuation within the
+accepted task; the owner does not relay reviewer reports or fetch new prompts.
+Record the current wait, evidence paths, diagnosis, changed prerequisite and next
+command in docs/plan.md before leaving a task. A new receiver reads that record,
+verifies old writers stopped, and resumes the same workflow. These are explicit
+host decisions, not an unattended daemon or automatic retry policy.
+
+For `waiting_publication_reconciliation`, the chain driver inspects the exact
+candidate branch, PR/head/base, statuses, protection and server merge state before
+signalling reconciliation. A confirmed merge of the exact tree is reconciled,
+not published twice. If the PR is still open, retry only after the diagnosed
+publication prerequisite is restored. A changed main/base or scope is **not**
+fixed by blindly repeating `--reconcile`: preserve the rejected receipt and
+prepare a separately reviewed continuation/candidate with new tests/review. The
+current automated profile has no generic rebase continuation; the chain driver
+handles that bounded source/input change explicitly before resumption. Ask the
+owner only if it changes mandate, cost or business priority. Never manufacture
+approval/status evidence to get past a wait.
+
+### Actual target profile before the next useful task
+
+Runtime currently validates `Nortropic/nortropic-runtime`, explicit regular
+`tools/` files, a trusted exact base and this repository's host publisher. Its
+sandbox write boundary is also `tools/`; changing task JSON alone cannot qualify
+another target. A business task belongs in its actual business repository. Once
+that outcome/target is known, qualify only the necessary repository/path mapping,
+isolation and publication authority, preserving host-owned acceptance and review.
+An isolated test-target qualification does not grant production permissions.
+Do not place business code in Runtime to bypass the present validator.
 
 Candidate and reviewer have no publication tools, no network, and no host evidence
 write access. Reviewer source is read-only. A host creates exact Git objects,

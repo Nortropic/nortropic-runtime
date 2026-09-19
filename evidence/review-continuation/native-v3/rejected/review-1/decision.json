@@ -1,0 +1,14 @@
+{
+  "task_id": "review-proof-rejected",
+  "task_sha256": "f42cd8ee04bc170e38a84954dd2a0c4026a5c7837fccbc9a26186f4314f7f7f5",
+  "candidate": "7ecf02c9ee9708ab0651e6547e2d710fab414203",
+  "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "fixture-review-process-36481-8a8e693c978743d4835f39a51159f8fc",
+  "verdict": "rejected",
+  "blocking_findings": [
+    "tools/increment.py:2: accepted zero requirement fails: increment(0) returns 0, expected 1."
+  ],
+  "summary": "Separate verifier process checked the accepted zero requirement."
+}

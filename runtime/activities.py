@@ -99,10 +99,12 @@ def review_candidate(request: dict) -> dict:
               'inspect implementation and relevant edge cases. Existing Python is '
               '/opt/homebrew/bin/python3.12.\n\nFiles: ' + ', '.join(task['allowed_paths']) +
               '\n\nAccepted brief:\n' + brief)
-    result = invoke({'task_id': task['id'], 'number': 1, 'prompt': prompt,
+    number = request.get('review_number', 1)
+    result = invoke({'task_id': task['id'], 'number': number, 'prompt': prompt,
+                     'change_reason': request.get('change_reason'),
                      'seconds': min(180, task['attempt_seconds']), 'task_digest': digest(task),
                      'role': 'review', 'workspace_name': request['workspace_name']})
-    output = evidence_directory(task['id']) / 'review-1'
+    output = evidence_directory(task['id']) / ('review-' + str(number))
     if not result.get('provider_completed'):
         return {'terminal_status': 'incomplete', 'provider_result': result}
     decision = verdict(output / 'events.jsonl')

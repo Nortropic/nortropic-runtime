@@ -407,3 +407,22 @@ Initial module-name invocation failed before testing code. Corrected isolated
 baseline passes15 candidate tests and still fails16/33 full-contract observations.
 Both raw runs are retained. Strengthen CLI status/usage/cost assertions before
 freezing the new verifier. No implementation has yet been run against it.
+
+
+## D021 — Bounded continuation after independent review (owner mandate)
+
+The permanent waiting_review checkpoint gains two explicitly diagnosed actions.
+A completed independent rejection bound to the current task/candidate, with
+concrete findings, permits repair inside the same accepted task. Missing or
+invalid review permits only re-review of the unchanged candidate. Every repair
+must change candidate file bytes, pass the frozen whole-task verifier and receive
+a fresh independent approval. All attempts, reviews and signals remain in native
+history and numbered evidence; no automatic provider retries or engine change.
+
+The host chain driver owns diagnosis and publication reconciliation, records the
+next concrete action and proceeds within mandate without asking the owner to
+relay technical reports. See runbook for stop/inspect/resume conditions. Existing
+v0.1.0 tag and historical evidence are immutable. New proof explicitly separates
+native engine/real Git/test processes from provider fixtures and remote publishing.
+The next business task is qualified against its actual target; tools-only Runtime
+scope is not a reason to relocate business source into this repository.

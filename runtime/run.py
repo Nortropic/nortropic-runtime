@@ -95,7 +95,7 @@ def prepare(task_file):
     return task, output
 
 
-async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_restored=False):
+async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_restored=False, review_repair=None, review_retry=None):
     if resume:
         selected = json.loads(Path(task_file).read_text())
         if access_restored:
@@ -106,7 +106,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
         output = evidence_directory(task['id']) / 'observations' / uuid.uuid4().hex
         output.mkdir(parents=True, exist_ok=False)
     else:
-        if diagnosis or reconcile or access_restored: raise ValueError('Signals require --resume of an existing task')
+        if diagnosis or reconcile or access_restored or review_repair or review_retry: raise ValueError('Signals require --resume of an existing task')
         task, output = prepare(task_file)
     worker = None
     # Existing report workflow is retained when establishing the central DB.
@@ -125,7 +125,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
                     expected=json.loads((ROOT/'evidence/accepted-task/engine-resume-2/state.json').read_text())
                     if old != expected: raise ValueError('Existing report workflow state changed unexpectedly')
                     (output/'preserved-report-state.json').write_text(json.dumps(old,indent=2)+'\n')
-                required_attempt = required_publication = 0
+                required_attempt = required_publication = required_reviews = 0
                 if resume:
                     handle = client.get_workflow_handle(task['id'])
                     prior = await asyncio.wait_for(handle.query(DevelopmentTask.state),15)
@@ -145,7 +145,18 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
                         required_publication = prior.get('publication_attempts',1) + 1
                         await handle.signal(DevelopmentTask.reconcile_publication,
                                             {'candidate':prior['results'][-1]['candidate'],'reason':reconcile})
-                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile,'access_restored':access_restored},indent=2)+'\n')
+                    if review_repair or review_retry:
+                        action = 'repair' if review_repair else 'review_only'
+                        if prior['phase'] != 'waiting_review' or prior.get('review_recovery') != action:
+                            raise ValueError('Selected review continuation does not match diagnosed wait')
+                        number = prior['review_number']
+                        required_reviews = number + 1
+                        if action == 'repair': required_attempt = prior['attempts'] + 1
+                        await handle.signal(DevelopmentTask.continue_after_review,
+                            {'task_sha256': digest(task), 'candidate': prior['results'][-1]['candidate'],
+                             'review_number': number, 'expected_attempt': prior['attempts'],
+                             'action': action, 'reason': review_repair or review_retry})
+                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile,'access_restored':access_restored,'review_repair':review_repair,'review_retry':review_retry},indent=2)+'\n')
                 else:
                     handle=await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development',
                                                        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
@@ -155,7 +166,9 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
                     (output/'state.json').write_text(json.dumps(status,indent=2)+'\n')
                     if ((status['phase']=='completed' or status['phase'].startswith('waiting_'))
                             and status['attempts'] >= required_attempt
-                            and status.get('publication_attempts',0) >= required_publication):break
+                            and status.get('publication_attempts',0) >= required_publication
+                            and (len(status.get('reviews', [])) >= required_reviews
+                                 or status['phase'] == 'waiting_diagnosis')):break
                     if worker.poll() is not None:raise RuntimeError('Worker exited; inspect preserved state')
                     await asyncio.sleep(.5)
                 else:raise TimeoutError('Bounded observation ended; inspect existing workflow before retry')
@@ -184,5 +197,7 @@ if __name__=='__main__':
     signals.add_argument('--diagnosis', help='Materially changed prerequisite after an implementation diagnosis')
     signals.add_argument('--reconcile', help='Reason to inspect/reconcile a failed or ambiguous publication')
     signals.add_argument('--access-restored', action='store_true', help='Resume a reviewed frozen continuation at its native access checkpoint')
+    signals.add_argument('--review-repair', help='Diagnosed concrete rejection: repair same task, test and review again')
+    signals.add_argument('--review-retry', help='Changed prerequisite for missing/invalid review; keep candidate unchanged')
     args=parser.parse_args()
-    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile,access_restored=args.access_restored)))
+    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile,access_restored=args.access_restored,review_repair=args.review_repair,review_retry=args.review_retry)))

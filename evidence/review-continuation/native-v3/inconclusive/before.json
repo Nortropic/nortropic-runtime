@@ -1,0 +1,32 @@
+{
+  "attempts": 1,
+  "phase": "waiting_review",
+  "results": [
+    {
+      "candidate": "fbca3878b07d470aa9467738c03247fcfcc7cfc0",
+      "candidate_files_sha256": {
+        "tools/increment.py": "833556db828032d49efc4c58a380411c53465c917da89bf613a607a10cee2ba6"
+      },
+      "evidence": "evidence/review-continuation/native-v3/inconclusive/attempt-1",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "fixture-author-8da553603c5c4e18b4b108f1d80dff66",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blocking_findings": [],
+    "candidate": "fbca3878b07d470aa9467738c03247fcfcc7cfc0",
+    "reviewer_run": "fixture-review-process-36706-8923bdc33c7d44e5ab51c9c716996d04",
+    "scope": "whole_task",
+    "summary": "Injected unjudgeable review",
+    "task_id": "review-proof-inconclusive",
+    "task_sha256": "a6cdb5562110bc972676cf868cebeea876f83bd51995b7641cf0b80ef8fe6bf0",
+    "terminal_status": "completed",
+    "verdict": "inconclusive"
+  },
+  "review_number": 1,
+  "review_recovery": "review_only",
+  "waiting_reason": "Required review did not approve"
+}

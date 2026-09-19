@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "original_database_unchanged": true,
+  "resumed_same_workflow": "fixture-missing-review",
+  "wait_survived_service_and_worker_restart": true,
+  "old_history_prefix_preserved": true,
+  "calls": [
+    "review",
+    "simulated_publication"
+  ],
+  "model_calls": 0,
+  "remote_publications": 0,
+  "fixture_only": true
+}

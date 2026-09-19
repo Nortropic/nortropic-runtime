@@ -1,0 +1,123 @@
+{
+  "attempts": 1,
+  "integration": {
+    "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+    "local_fixture_only": true,
+    "merged": true,
+    "tree": "5285403811108edcf97679e0332ba7314d4db2be"
+  },
+  "phase": "completed",
+  "publication_attempts": 1,
+  "results": [
+    {
+      "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+      "candidate_files_sha256": {
+        "tools/increment.py": "833556db828032d49efc4c58a380411c53465c917da89bf613a607a10cee2ba6"
+      },
+      "evidence": "evidence/review-continuation/native-v3/stale/attempt-1",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "fixture-author-b79d023e9fe54b72909f48e250f61dcc",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blocking_findings": [],
+    "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+    "reviewer_run": "fixture-review-process-36629-c802ef077835492b94f6f4f9f5cde5bf",
+    "scope": "whole_task",
+    "summary": "Separate verifier process checked the accepted zero requirement.",
+    "task_id": "review-proof-stale",
+    "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "review_continuations": [
+    {
+      "action": "review_only",
+      "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+      "expected_attempt": 1,
+      "reason": "Injected review failure removed; same candidate can be independently reviewed",
+      "review_number": 1,
+      "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d"
+    }
+  ],
+  "reviews": [
+    {
+      "result": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "blocking_findings": [],
+        "candidate": "ffffffffffffffffffffffffffffffffffffffff",
+        "reviewer_run": "fixture-review-process-36626-cd16866990d14274992d0f628691428c",
+        "scope": "whole_task",
+        "summary": "Separate verifier process checked the accepted zero requirement.",
+        "task_id": "review-proof-stale",
+        "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d",
+        "terminal_status": "completed",
+        "verdict": "approved"
+      },
+      "subject": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base": "1025eb56093f6ad97f8ad4c44eb11e98b2a47973",
+        "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+        "completed_steps": [
+          0
+        ],
+        "implementation_runs": [
+          "fixture-author-b79d023e9fe54b72909f48e250f61dcc"
+        ],
+        "task_id": "review-proof-stale",
+        "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d"
+      },
+      "tests": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+        "passed": true,
+        "scope": "whole_task",
+        "source_evidence": "evidence/review-continuation/native-v3/stale/attempt-1/acceptance.json",
+        "task_id": "review-proof-stale",
+        "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d",
+        "terminal_status": "completed"
+      }
+    },
+    {
+      "result": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "blocking_findings": [],
+        "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+        "reviewer_run": "fixture-review-process-36629-c802ef077835492b94f6f4f9f5cde5bf",
+        "scope": "whole_task",
+        "summary": "Separate verifier process checked the accepted zero requirement.",
+        "task_id": "review-proof-stale",
+        "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d",
+        "terminal_status": "completed",
+        "verdict": "approved"
+      },
+      "subject": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base": "1025eb56093f6ad97f8ad4c44eb11e98b2a47973",
+        "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+        "completed_steps": [
+          0
+        ],
+        "implementation_runs": [
+          "fixture-author-b79d023e9fe54b72909f48e250f61dcc"
+        ],
+        "task_id": "review-proof-stale",
+        "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d"
+      },
+      "tests": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+        "passed": true,
+        "scope": "whole_task",
+        "source_evidence": "evidence/review-continuation/native-v3/stale/attempt-1/acceptance.json",
+        "task_id": "review-proof-stale",
+        "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d",
+        "terminal_status": "completed"
+      }
+    }
+  ],
+  "waiting_reason": null
+}

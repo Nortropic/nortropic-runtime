@@ -1,0 +1,20 @@
+{
+  "attempts": 1,
+  "phase": "waiting_review",
+  "results": [
+    {
+      "candidate": "7975c3215de447b02e68d41a4d7ce836fbd4b83e",
+      "candidate_files_sha256": {
+        "tools/increment.py": "833556db828032d49efc4c58a380411c53465c917da89bf613a607a10cee2ba6"
+      },
+      "evidence": "evidence/review-continuation/native-v2/nonobject/attempt-1",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "fixture-author-66e0ec74b85a434cbb703b2c25d4bb8e",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review_number": 1,
+  "review_recovery": "review_only",
+  "waiting_reason": "Missing or non-object mandatory evidence"
+}

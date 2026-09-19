@@ -1,0 +1,10 @@
+{
+  "reviewer": "/root/startup_review",
+  "candidate": "be157ed662a9c3333ea5a46e12d9d3de1a8df400",
+  "verdict": "approved",
+  "blocking_findings": [],
+  "scope": "bounded review continuation code, relevant raw evidence and operating instructions",
+  "previous_finding": "nonobject review recovery fixed and natively verified",
+  "evidence_limits": "provider fixtures and local Git are explicitly not model or GitHub proof",
+  "advisory": "preserve rejected.patch bytes despite diff-context whitespace warning"
+}

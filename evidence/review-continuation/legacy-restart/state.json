@@ -1,0 +1,110 @@
+{
+  "attempts": 1,
+  "integration": {
+    "fixture_only": true,
+    "merged": true
+  },
+  "phase": "completed",
+  "publication_attempts": 1,
+  "results": [
+    {
+      "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "candidate_files_sha256": {},
+      "evidence": "fixture-only",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "author-thread",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "blocking_findings": [],
+    "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "reviewer_run": "new-fixture-review",
+    "scope": "whole_task",
+    "summary": "Declared recovery fixture",
+    "task_id": "fixture-missing-review",
+    "task_sha256": "7feb60a7674f3936532be9f4952661fb2a91c662365e4d03a1d1c4d0f3a30068",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "review_continuations": [
+    {
+      "action": "review_only",
+      "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expected_attempt": 1,
+      "reason": "Legacy fixture missing evidence replaced by explicit valid fixture review",
+      "review_number": 1,
+      "task_sha256": "7feb60a7674f3936532be9f4952661fb2a91c662365e4d03a1d1c4d0f3a30068"
+    }
+  ],
+  "reviews": [
+    {
+      "result": {
+        "terminal_status": "incomplete"
+      },
+      "subject": {
+        "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "completed_steps": [
+          0
+        ],
+        "implementation_runs": [
+          "author-thread"
+        ],
+        "task_id": "fixture-missing-review",
+        "task_sha256": "7feb60a7674f3936532be9f4952661fb2a91c662365e4d03a1d1c4d0f3a30068"
+      },
+      "tests": {
+        "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "passed": true,
+        "scope": "whole_task",
+        "source_evidence": "fixture-only/acceptance.json",
+        "task_id": "fixture-missing-review",
+        "task_sha256": "7feb60a7674f3936532be9f4952661fb2a91c662365e4d03a1d1c4d0f3a30068",
+        "terminal_status": "completed"
+      }
+    },
+    {
+      "result": {
+        "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "blocking_findings": [],
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "reviewer_run": "new-fixture-review",
+        "scope": "whole_task",
+        "summary": "Declared recovery fixture",
+        "task_id": "fixture-missing-review",
+        "task_sha256": "7feb60a7674f3936532be9f4952661fb2a91c662365e4d03a1d1c4d0f3a30068",
+        "terminal_status": "completed",
+        "verdict": "approved"
+      },
+      "subject": {
+        "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "completed_steps": [
+          0
+        ],
+        "implementation_runs": [
+          "author-thread"
+        ],
+        "task_id": "fixture-missing-review",
+        "task_sha256": "7feb60a7674f3936532be9f4952661fb2a91c662365e4d03a1d1c4d0f3a30068"
+      },
+      "tests": {
+        "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "passed": true,
+        "scope": "whole_task",
+        "source_evidence": "fixture-only/acceptance.json",
+        "task_id": "fixture-missing-review",
+        "task_sha256": "7feb60a7674f3936532be9f4952661fb2a91c662365e4d03a1d1c4d0f3a30068",
+        "terminal_status": "completed"
+      }
+    }
+  ],
+  "waiting_reason": null
+}

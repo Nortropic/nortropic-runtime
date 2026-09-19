@@ -1,3 +1,58 @@
+# Living plan — bounded review continuation and next useful task
+
+## Current state / mandate
+
+Owner requests the known waiting_review gap fixed before relying on autonomous
+continuation, followed by a useful Project and Innovation Office task. No engine
+replacement, total audit or general hardening. v0.1.0 remains immutable at
+580630bcb9d46bb11e17e25053664eec4e23b8ae; its evidence remains valid.
+Current branch: work/review-continuation, based on that release/main.
+Read-only startup confirmed clean main, original tag and no recorded unfinished
+writers or live project worker/provider/service processes.
+
+## Coherent delivery plan
+
+1. Add explicitly diagnosed, identity-bound continuation at waiting_review.
+   A valid independent rejection with concrete blockers permits repair within the
+   same accepted task, a new immutable candidate, full tests and fresh review.
+   Missing/incomplete/inconclusive/invalid review permits review-only recovery;
+   it does not establish a candidate defect. Keep every attempt and review.
+2. Verify old histories still replay; exercise rejected→repair→tests→review→
+   controlled integration and missing-review recovery in bounded isolated runs.
+   Distinguish fixtures, actual model calls and actual remote integration.
+   Obtain separate review of exact source/evidence before protected integration.
+3. Document chain-driver ownership of diagnosis, review and publication waits:
+   inspect evidence/processes/remote identities, record a concrete changed
+   prerequisite, resume the same task; ask owner only real mandate/cost/priority.
+4. Define the next business outcome and target, then compare them with the actual
+   qualified profile. It currently admits only Runtime/tools regular files and
+   this repository's publisher. Qualify only capabilities the actual task needs;
+   never relocate business source into Runtime to circumvent that boundary.
+   The saved prior plan contains no concrete business brief or target. Owner was
+   asked only for that priority/outcome while the technical correction proceeds.
+
+## Next concrete action
+
+Implementation and focused verification are complete. Separate reviewer
+/root/startup_review approved be157ed662a9c3333ea5a46e12d9d3de1a8df400 without
+blockers after confirming the previous finding closed. PR14 is the bounded
+integration: https://github.com/Nortropic/nortropic-runtime/pull/14.
+If PR14 is not merged, finish exact-head review (including subsequent docs-only
+receipt), required statuses and protected integration; preserve the server receipt
+on state/review-continuation-receipt. If PR14 is merged with the reviewed tree,
+this correction is delivered: do not rerun fixtures or completed tasks. Continue
+with the pending business outcome/target decision and narrow profile qualification.
+The state receipt branch is observation, not extra approved source integration. Evidence: evidence/review-continuation/result.md.
+First independent review rejected nonobject handling; preserved patch/finding,
+scoped correction and eight-case native rerun now exist. One proof-harness failure
+is preserved explicitly, not erased. No model invocation was needed for native
+provider fixtures. Existing subscribed review agent supplied independent review.
+The business outcome/target question remains pending; no profile expansion or
+business source placement has been attempted. Existing completed workflows
+must not be resubmitted. Canonical DB: .runtime/runtime.sqlite.
+
+## Release baseline (historical checkpoint, retained)
+
 # Living plan — Runtime v0.1
 
 ## Current state: Runtime v0.1 verified; release checkpoint

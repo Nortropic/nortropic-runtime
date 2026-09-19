@@ -1,0 +1,12 @@
+{
+  "task_id": "review-proof-stale",
+  "task_sha256": "d900944b86cc45aa6e8fadb8b49eff837eb24826881bb7d10bb7f8ebec50149d",
+  "candidate": "7180c6a46f5ca2f20cf9b4678aca3196a80ab425",
+  "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "fixture-review-process-36629-c802ef077835492b94f6f4f9f5cde5bf",
+  "verdict": "approved",
+  "blocking_findings": [],
+  "summary": "Separate verifier process checked the accepted zero requirement."
+}

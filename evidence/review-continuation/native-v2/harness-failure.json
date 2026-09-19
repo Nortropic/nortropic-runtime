@@ -1,0 +1,9 @@
+{
+  "passed": false,
+  "kind": "proof_harness_assertion",
+  "error": "KeyError: review",
+  "location": "run.py:174",
+  "reason": "state() intentionally omits review key when receipt is None; harness incorrectly indexed it",
+  "native_nonobject_recovery": "completed; state.json preserved",
+  "correction": "Use before.get(review); no Runtime change needed"
+}

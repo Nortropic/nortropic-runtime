@@ -1,0 +1,12 @@
+{
+  "task_id": "review-proof-self-review",
+  "task_sha256": "130e57ea3a48cf1caae4c38d2a998c67997cab32ad38166f747e051c832b4c44",
+  "candidate": "1df0aa7a0a88c625c785536150e18205d4a227ec",
+  "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "fixture-author-d3ef975917414057b6eee39cf40b83db",
+  "verdict": "approved",
+  "blocking_findings": [],
+  "summary": "Separate verifier process checked the accepted zero requirement."
+}

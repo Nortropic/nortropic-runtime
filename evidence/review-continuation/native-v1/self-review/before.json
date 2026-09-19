@@ -1,0 +1,32 @@
+{
+  "attempts": 1,
+  "phase": "waiting_review",
+  "results": [
+    {
+      "candidate": "1df0aa7a0a88c625c785536150e18205d4a227ec",
+      "candidate_files_sha256": {
+        "tools/increment.py": "833556db828032d49efc4c58a380411c53465c917da89bf613a607a10cee2ba6"
+      },
+      "evidence": "evidence/review-continuation/native-v1/self-review/attempt-1",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "fixture-author-d3ef975917414057b6eee39cf40b83db",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blocking_findings": [],
+    "candidate": "1df0aa7a0a88c625c785536150e18205d4a227ec",
+    "reviewer_run": "fixture-author-d3ef975917414057b6eee39cf40b83db",
+    "scope": "whole_task",
+    "summary": "Separate verifier process checked the accepted zero requirement.",
+    "task_id": "review-proof-self-review",
+    "task_sha256": "130e57ea3a48cf1caae4c38d2a998c67997cab32ad38166f747e051c832b4c44",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "review_number": 1,
+  "review_recovery": "review_only",
+  "waiting_reason": "Independent review run missing"
+}
