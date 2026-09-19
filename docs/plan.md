@@ -20,8 +20,8 @@ hash checking. Same DevelopmentTask and Publisher, no new scheduler/dependency.
 ARBETSYTA: work/evidence-index-task based on PR6 main. Origin PUBLIC by D006;
 branch protection active. No costs/rights expanded; no Claude call (D015).
 
-NÄSTA HANDLING: Separately inspect the accepted brief/verifier for applicable
-requirements and sandbox safety, preserve exact inputs, then invoke:
+NÄSTA HANDLING: Accepted brief/verifier separately approved at a968d314 by
+/root/startup_review (evidence/reviews/evidence-index-inputs.md). Invoke:
 `.runtime/temporal-venv/bin/python -m runtime.run tasks/evidence-index.json`.
 Do not resubmit an existing task directory. Inspect native waiting state/evidence
 and materially changed prerequisite before any explicitly signalled retry.
@@ -33,7 +33,7 @@ changes, host verification and terminal usage. First report phase took134s with
 Usage will be recorded, monetary cost remains unknown under existing subscription.
 No project-wide cap or quota probing. Invalid/failed review prevents publication.
 
-UTFALL: Accepted inputs prepared, implementation NOT STARTED. All prior service
+UTFALL: Accepted inputs approved; attempt1 about to start with300s bound. All prior service
 and model process groups stopped. Verify launch/results before new writers.
 
 ÅTERUPPTAGNING: Root driver active. Canonical native SQLite .runtime/runtime.sqlite;
@@ -41,7 +41,8 @@ backup/hash evidence/connected-workflow/state/. Old original .runtime/tasks/runt
 retained. Actual CLI resume preserved exact waiting_access and attempts2; raw
 observation evidence/accepted-task/observations/b45c9c9259834b9490959e3b42a1c2d7.
 Old report candidate and frozen phase evidence unchanged. Do not rerun historical
-launch scripts. Next task accepted input has not yet created its state directory.
+launch scripts. Runtime will record launch PIDs and native state under evidence/runs/runtime-evidence-index-1.
+If interrupted, inspect these before any new writer; never blindly repeat submit.
 
 ## Completed delivery and evidence
 
