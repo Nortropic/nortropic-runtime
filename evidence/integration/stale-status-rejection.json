@@ -1,0 +1,24 @@
+{
+  "prior_subject": "f2863dfad202b00297dfe477ebe58b21a6da92ad",
+  "prior_statuses": [
+    {
+      "sha": "f2863dfad202b00297dfe477ebe58b21a6da92ad",
+      "context": "runtime/tests",
+      "state": "success",
+      "id": 54502548824
+    },
+    {
+      "sha": "f2863dfad202b00297dfe477ebe58b21a6da92ad",
+      "context": "runtime/review",
+      "state": "success",
+      "id": 54502554542
+    }
+  ],
+  "candidate": "8743f56d436325587a7a13d8d2fb104908105cfc",
+  "pr": "https://github.com/Nortropic/nortropic-runtime/pull/2",
+  "merge_attempt": {
+    "exit_code": 1,
+    "stdout": "{\"message\":\"2 of 2 required status checks are expected.\",\"documentation_url\":\"https://docs.github.com/articles/about-protected-branches\",\"status\":\"405\"}",
+    "stderr": "gh: 2 of 2 required status checks are expected. (HTTP 405)\n"
+  }
+}

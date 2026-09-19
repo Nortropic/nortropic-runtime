@@ -1,79 +1,88 @@
 # Living plan — Runtime v0.1
 
-## Current step A: establish reproducible execution and test compatibility
+## Current step: bounded durable-engine compatibility decision
 
-RESULTAT: The chain can locate this new project and its mandate, then run a pinned
-existing engine against an accepted harmless fixture using subscription access.
+RESULTAT: Determine whether an existing engine can preserve workflow position,
+attempt count and a waiting state across worker/server restart, without rebuilding
+these features around Symphony. This is a prerequisite experiment, not v0.1.
 
-VARFÖR NU: Proves real tracker/executor compatibility before building adaptations.
+VARFÖR NU: Symphony B1 proves discovery/dispatch/hooks but source inspection shows
+retry and blocked state reset on boot and a hard-coded Codex session boundary.
+A general new scheduler around it would violate the mandate's reuse constraint.
 
-METOD: A bounded compatibility experiment; inspect upstream implementation and
-install hooks, define observable acceptance before first model invocation.
+METOD: Compare existing Symphony with a local Temporal workflow using the same
+criteria: persistence, explicit executor activity boundary, bounded retries,
+operational dependencies and cost/permissions. Run a deterministic no-model
+restart/signal experiment first. Stop the expansion if the proposed integration
+becomes a general new engine; no production/Cloud service is being introduced.
 
-ARBETSYTA: `/Users/elinhaggstrom/Nortropic Runtime`, new Git history, branch `work/execution-probe`.
-Remote (initially private, now public by explicit owner decision D006): `https://github.com/Nortropic/nortropic-runtime`.
-Candidate engine: Symphony `be10a1b79df723d6d7612b5651c8522704dafb2e`.
+ARBETSYTA: /Users/elinhaggstrom/Nortropic Runtime, work/durable-engine-probe,
+based on integrated d07fd7eb351d9b367bebfe25bae4e6963e843cc4 (PR #2).
+Remote PUBLIC by owner's explicit change, D006. Main protection is active.
 
-FÖRUTSÄTTNINGAR: Git 2.55.0, gh 2.97.0, Codex 0.147.0, Claude 2.1.257,
-Node 22 and system Python available. Elixir/mix/mise absent from PATH.
-GitHub account has repo scope; org reports Free plan and repository creation allowed.
-ChatGPT and Claude Max login observed; no paid API run authorized.
+FÖRUTSÄTTNINGAR: Existing Python3.12, pinned Temporal CLI1.9.1 official arm64
+binary (SHA256 41e0425378fcb4fb5766340b97435e20fe47bbff2d7bf644ec2d51f7662b7c56),
+SDK temporalio1.33.0 with reviewed wheel-only transitive dependencies. Install only
+under .runtime, no global changes or paid services. Local development service
+loopback127.0.0.1:7339 with explicit SQLite file and no UI. Check port before use.
+Sources and limits: D011. Claude is WAITING_ACCESS, D005, no repeated model calls.
 
-NÄSTA HANDLING: Corrected worker full MCP inventory passed without model turn;
-old B1 experiment remains disabled (execution_enabled=false). Review corrected B1 result at evidence/motor-probe/result.md, then
-integrate the bounded establishment/experiment slice through protected PR with
-exact-SHA runtime/tests and runtime/review statuses. Exercise stale-status rejection
-before legitimate merge. Next technical decision: evaluate Symphony's volatile
-state and hard-coded Codex session boundary against D/C before adding more layers.
-Claude remains WAITING_ACCESS (D005); no repeated calls or paid API fallback.
+NÄSTA HANDLING: Download official CLI and SDK wheels with bounded commands; verify
+archive hash and inspect wheel metadata/.pth/lifecycle concerns before installation.
+Pin every installed wheel with hash. Then a minimal workflow performs activity1,
+waits for a signal, survives both worker and server termination/restart, and finishes
+activity2 without rerunning activity1. Export actual history and filesystem result.
+No model or GitHub publication during this compatibility test.
 
-PROV OCH KLART-NÄR: Private remote/identity verified; correct instruction probe from
-fresh root/subdirectory sessions; executable engine path and acceptance fixture
-identified. Wrong/missing access must be reported as failure, never a pass.
+PROV OCH KLART-NÄR: Persisted waiting workflow remains waiting after restart,
+attempt counter stays1 until deliberate continuation, side effect1 occurs once,
+continuation gives count2, unique workflow ID rejects duplicate start. A failed
+or empty history is not a pass. Server/workers stopped and SQLite retained after
+experiment. Next decision selects reuse path, not automatic architecture adoption.
 
-UTFALL: Private origin created, initial revision f2863dfad202b00297dfe477ebe58b21a6da92ad
-pushed and independently reviewed (no blockers for founding documents). Pinned
-Symphony source and official binary fetched; SHA256 matches. See
-[observations](../evidence/startup/observations.md), [remote](../evidence/startup/remote.json),
-[release](../evidence/startup/symphony-release.json). First Codex call failed in
-4.174 seconds with a CLI-version error; [raw run](../evidence/startup/codex-root/run.json)
-and adjacent stdout/stderr are preserved. Successful later-call metrics follow below.
-Codex 0.155.1 + matching code-mode host installed locally. Root and docs instruction
-probes passed (evidence/startup/codex-root-0155 and codex-subdir); root used 17,016
-input/12,160 cached/28 output tokens, docs 17,019/12,160/35. Public main protection
-is active and a real missing-status/direct push was rejected; see D007 for first
-failed activation incident. Process-limiter regressions and fixture positive/
-negative checks pass in evidence/startup/operator-tests.log. Live B1 attempt2 artifact/coordination PASSED, restricted-profile check FAILED; attempt1 failed before model and is preserved separately.
-See [B1 result](../evidence/motor-probe/result.md) and [review record](../evidence/reviews/startup-and-b1.md).
-This is only a small fixture engine proof, not v0.1 or Customer Zero.
+UTFALL: NOT RUN. Dependencies selected, download/installation not yet complete.
 
-ÅTERUPPTAGNING: Branch work/execution-probe; B1 code revision 3b5c3f4; main remains 4dec677 due to D007.
-Root chain driver active; separate review findings closed on 0c4117d and protocol
-delta reviewed on 3b5c3f4. Both engine attempts ended, process_group_removed=true;
-no residual matching worker found. No model/engine process remains. Download/probe
-processes all completed. Verify PIDs and `git status` before starting a fresh writer.
-Host dependencies under .runtime are reproducible from exact official revisions;
-raw experiment artifacts are under evidence and preserved on the work branch.
+ÅTERUPPTAGNING: Root chain driver active. No engine/model worker remains from B1;
+completed attempt2 process group removal measured. Check process records and PIDs
+before writes. Existing B1 workflow is execution_enabled=false; do not re-enable
+it blindly. Last integrated slice PR2 is complete and server merge readback is in
+evidence/integration/merged-pr-readback.json (new branch preserves this receipt).
 
-## Subsequent deliveries (refine only the next active step)
+## Completed delivery and evidence
 
-B. Existing engine automatically discovers accepted fixture, executes Codex,
-preserves tested result; measure engine vs agent vs manual actions; negative case.
-C. Claude official program interface through same path, including tools and errors.
-D. Real Codex → Claude → Codex continuation; persisted attempts, interruption,
-single writer, durable capacity wait, no duplicate publication.
-E. Exact-candidate tests and separate review; legitimate integration and rejection
-of missing/failed/stale evidence, actual server state reconciled after ambiguity.
-F. Useful Customer Zero task with executor swap, then another accepted task using
-same path. All mandate §1 rows need linked revision/environment/raw evidence.
+PR2 integrated d07fd7e. Exact reviewed candidate8743f56, separate reviewer
+/root/startup_review. Legitimate protected merge succeeded; real missing-check
+push and old-SHA-status merge rejected. Source and raw artifacts:
+- evidence/motor-probe/result.md: B1 file/coordination PASS, historical MCP-profile
+  restriction FAILED; later no-model corrected inventory passed. Do not conflate.
+- evidence/startup/operator-tests-final.log: six support tests passed.
+- evidence/startup/codex-root-0155 and codex-subdir: real instruction loading.
+- evidence/startup/claude-root: 403 oauth_org_not_allowed, 0 tokens/$0 reported.
+- evidence/integration: protection/readback, missing/stale status denial, merge.
+- evidence/reviews/startup-and-b1.md and PR2 body: separate review scope/findings.
 
-## Acceptance evidence index
+Initial protection setup mistakenly pushed4dec677 after a rejected PUT; D007
+records it. That event is not a approved-integration claim; corrected delivery
+went through PR2 with required checks on exact candidate and server acceptance.
 
-| §1 capability | Status / evidence |
+## Later steps (refine the next only)
+
+Select minimal existing engine path; connect official Codex/Claude programs.
+Prove real Codex→Claude→Codex continuation, interruption with one writer, durable
+capacity wait and retained attempt history. Complete candidate-authority isolation
+and automated exact-candidate review/test/integration. Then useful Customer Zero
+implementation plus another accepted task over the same route.
+
+## Mandate §1 evidence index
+
+| Capability | Current result |
 |---|---|
-| Autonomous completion | B1 fixture passed; real development/integration NOT RUN |
-| Persistent continuity | Fresh Codex root/docs probes and review navigation passed; Claude and full takeover NOT PROVEN |
-| Replaceable execution | NOT RUN |
-| Interruption/capacity | NOT RUN |
-| Controlled integration | Server rejects missing checks/direct push; legitimate/stale-candidate paths pending |
+| Autonomous development completion | B1 fixture dispatch/result preserved; real development NOT RUN |
+| Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
+| Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
+| Interruption/capacity | Support limiter tested; runtime restart/quotas NOT RUN |
+| Controlled integration | Real host-led missing/stale rejection and legitimate PR merge; candidate rights/automatic gate NOT PROVEN |
 | Repeatable use / Customer Zero | NOT RUN |
+
+Runtime v0.1 is not complete. No project-wide time/token cap invented. Per-run
+limits are local safeguards; resource history and failed results remain preserved.

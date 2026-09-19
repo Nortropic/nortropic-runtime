@@ -154,3 +154,26 @@ passed (worker-profile-inventory-fixed.json), with no model turn. Global setting
 managed rules and hook configuration remain unchanged; this profile contains no
 required safety plugin. The old fixture remains disabled; any later live profile
 claim must refer to its actual invocation, not retroactively rewrite attempt 2.
+
+
+## D011 — 2026-09-19: evaluate existing durable engine before more Symphony layers
+
+The source gaps in D008 are core requirements, not failures of the fixture. A
+Symphony-specific persistence/state/Claude orchestration layer risks becoming a
+second general engine. Evaluate Temporal as a replacement candidate in one bounded
+local no-model probe; do not run both orchestrators as the product or adopt a new
+product scope. Same development task/permissions/subscription mandate remains.
+
+Selected experimental dependencies: official Temporal CLI1.9.1 arm64 and Python
+SDK temporalio1.33.0 (Python>=3.10). No extras, cloud account, subscription or API
+usage. Local server supports an explicit SQLite persistence file; default without
+that flag is volatile. start-dev is documented for development, not production,
+and omits some HTTP security checks. Bind loopback and disable UI, no candidate
+network access if later selected. Durability claim still requires actual restart
+evidence; activity side effects and process fencing remain integration concerns.
+
+Sources consulted: https://docs.temporal.io/cli/command-reference/server (flags and
+development limits), https://docs.temporal.io/develop/python/best-practices/error-handling
+(timeouts/retry policy), https://docs.temporal.io/develop/python/workflows/message-passing
+(durable signals). Official release metadata and PyPI package metadata checked.
+Decision is only to run a compatibility experiment, not yet to adopt the engine.
