@@ -39,6 +39,16 @@ Preserved previous outcomes:
   harness-failure.json retained; harness uses get now. Runtime was not changed to
   hide this test error. native-v3 is the complete eight-case rerun.
 
-Separate final exact-revision review and protected integration are recorded by the
-host after this evidence candidate is committed. Until then this is a tested
-candidate, not an approved integration. No release tag is moved.
+Separate reviewer /root/startup_review approved source/evidence revision
+be157ed662a9c3333ea5a46e12d9d3de1a8df400 with no blockers. It inspected raw native
+histories, preservation, the corrected nonobject case, test/unchanged-candidate
+waits and the stated fixture limits. review-approval.json preserves that decision.
+PR14 controls integration; the host checks its exact reviewed head, required
+statuses, protection, base and final tree. Server receipt is preserved after merge
+on state/review-continuation-receipt. Until that merge, approval is not integration.
+No release tag is moved.
+
+The original rejected.patch is retained byte-for-byte as historical evidence;
+base-to-head whitespace checks flag its blank diff-context lines. Runtime/source
+whitespace checks pass. The original rejected evidence is not rewritten to remove
+this documentary warning.

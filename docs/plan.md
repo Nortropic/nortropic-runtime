@@ -33,9 +33,16 @@ writers or live project worker/provider/service processes.
 
 ## Next concrete action
 
-Implementation and focused verification are complete; obtain separate review of
-this committed source/evidence candidate, then perform protected exact-SHA
-integration and preserve its receipt. Evidence: evidence/review-continuation/result.md.
+Implementation and focused verification are complete. Separate reviewer
+/root/startup_review approved be157ed662a9c3333ea5a46e12d9d3de1a8df400 without
+blockers after confirming the previous finding closed. PR14 is the bounded
+integration: https://github.com/Nortropic/nortropic-runtime/pull/14.
+If PR14 is not merged, finish exact-head review (including subsequent docs-only
+receipt), required statuses and protected integration; preserve the server receipt
+on state/review-continuation-receipt. If PR14 is merged with the reviewed tree,
+this correction is delivered: do not rerun fixtures or completed tasks. Continue
+with the pending business outcome/target decision and narrow profile qualification.
+The state receipt branch is observation, not extra approved source integration. Evidence: evidence/review-continuation/result.md.
 First independent review rejected nonobject handling; preserved patch/finding,
 scoped correction and eight-case native rerun now exist. One proof-harness failure
 is preserved explicitly, not erased. No model invocation was needed for native
