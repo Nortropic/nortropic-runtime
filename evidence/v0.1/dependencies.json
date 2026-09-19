@@ -1,0 +1,11 @@
+{
+  "files": {
+    ".runtime/bin/codex-0.155.1": "8eaf1ad12fe6bf89b1710330f58900014322c7c5af677e43be116d8ac5fc0a9e",
+    ".runtime/bin/codex-code-mode-host": "59a702a68f1ef79fceaca644db46b8385ceefbb66035e78b8ade7cdcc21fda55",
+    ".runtime/bin/temporal-1.9.1": "33c298d41f6eefebf01a28a3511f444480e939e21d3518cb0c12a4abad467c4b",
+    "config/temporal-probe-requirements.lock": "f3016c9c33bb4877704057678f32e2f65c98eaf12ed7e009bb719b43b17c34fb"
+  },
+  "platform": "ProductName:\t\tmacOS\nProductVersion:\t\t26.3\nBuildVersion:\t\t25D125\n",
+  "architecture": "arm64",
+  "python": "Python 3.12.13"
+}

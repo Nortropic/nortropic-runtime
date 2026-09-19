@@ -1,0 +1,160 @@
+{
+  "passed": true,
+  "source_revision": "98b92a72da2671c0a517f674f8b023667c070bcb",
+  "rows": [
+    {
+      "provider": "codex",
+      "input": "evidence/accepted-task/attempt-2/events.jsonl",
+      "input_sha256": "71a9479ae704a52fea04b93ac3c43726a900b40fa9f0cca23e4bc1fbe056330a",
+      "exit_code": 1,
+      "report": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "cached_input_tokens": 202368,
+          "input_tokens": 240607,
+          "output_tokens": 6151
+        }
+      },
+      "expected_status": "failed",
+      "failed_items": [
+        {
+          "id": "item_5",
+          "type": "command_execution",
+          "command": "/bin/zsh -lc \"cat docs/plan.md; sed -n '130,290p' docs/UPPDRAG-NORTROPIC-RUNTIME.md; rg --files -g '*pid*' -g '*lock*' -g '*process*' -g '*test*.py' -g 'AGENTS.override.md'; ls -la .git .scratch; command -v python3; command -v git; ls /opt/homebrew/bin/git /opt/homebrew/bin/python3\"",
+          "exit_code": 1
+        },
+        {
+          "id": "item_11",
+          "type": "command_execution",
+          "command": "/bin/zsh -lc 'GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_OPTIONAL_LOCKS=0 /opt/homebrew/bin/git -c core.excludesFile=/dev/null status --short --branch; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_OPTIONAL_LOCKS=0 /opt/homebrew/bin/git -c core.excludesFile=/dev/null diff --check; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 /opt/homebrew/bin/git diff --no-index --check /dev/null tools/run_report.py; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 /opt/homebrew/bin/git diff --no-index --check /dev/null tools/test_run_report.py; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 /opt/homebrew/bin/git diff --no-index --check /dev/null tools/README.md'",
+          "exit_code": 1
+        }
+      ]
+    },
+    {
+      "provider": "claude",
+      "input": "evidence/accepted-task/attempt-3/events.jsonl",
+      "input_sha256": "e36f8368eae21687eb931ce81dbec96ee6b2246c8b3e9d2eb137d421d7a01e88",
+      "exit_code": 0,
+      "report": {
+        "provider": "claude",
+        "status": "completed",
+        "total_cost_usd": 1.1435075000000001,
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 21068,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 21068,
+          "cache_read_input_tokens": 41554,
+          "inference_geo": "not_available",
+          "input_tokens": 170,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 8986,
+                "ephemeral_5m_input_tokens": 0
+              },
+              "cache_creation_input_tokens": 8986,
+              "cache_read_input_tokens": 17120,
+              "input_tokens": 56,
+              "model": null,
+              "output_tokens": 1516,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 14181,
+          "output_tokens_details": {
+            "thinking_tokens": 2513
+          },
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        }
+      },
+      "expected_status": "completed",
+      "failed_items": []
+    },
+    {
+      "provider": "codex",
+      "input": "evidence/accepted-task/attempt-4/events.jsonl",
+      "input_sha256": "711b542a2eb40f8a2d62e664e2edcd70ab268173e25cfa59ad6ecfac2f490587",
+      "exit_code": 1,
+      "report": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "cached_input_tokens": 352896,
+          "input_tokens": 392812,
+          "output_tokens": 5176
+        }
+      },
+      "expected_status": "failed",
+      "failed_items": [
+        {
+          "id": "item_15",
+          "type": "command_execution",
+          "command": "/bin/zsh -lc 'PYTHONDONTWRITEBYTECODE=1 TMPDIR=\"$PWD/.scratch\" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null XDG_CONFIG_HOME=\"$PWD/.scratch\" /opt/homebrew/bin/python3.12 -B -m unittest discover -s scripts -p '\"'test_*.py' -v\"",
+          "exit_code": 1
+        },
+        {
+          "id": "item_18",
+          "type": "command_execution",
+          "command": "/bin/zsh -lc 'GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null XDG_CONFIG_HOME=\"$PWD/.scratch\" git status --short --branch; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null XDG_CONFIG_HOME=\"$PWD/.scratch\" git diff --check; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null XDG_CONFIG_HOME=\"$PWD/.scratch\" git diff --no-index --check /dev/null tools/run_report.py; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null XDG_CONFIG_HOME=\"$PWD/.scratch\" git diff --no-index --check /dev/null tools/test_run_report.py; GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null XDG_CONFIG_HOME=\"$PWD/.scratch\" git diff --no-index --check /dev/null tools/README.md'",
+          "exit_code": 1
+        }
+      ]
+    },
+    {
+      "provider": "claude",
+      "input": "evidence/startup/claude-root/stdout.log",
+      "input_sha256": "8177059eca39e0ccffca357746f8667a0ab2f480da81482ea6e4fbec9772dbf3",
+      "exit_code": 1,
+      "report": {
+        "provider": "claude",
+        "status": "failed",
+        "total_cost_usd": 0,
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "inference_geo": "",
+          "input_tokens": 0,
+          "iterations": [],
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        }
+      },
+      "expected_status": "failed",
+      "failed_items": []
+    },
+    {
+      "provider": "codex",
+      "input": "evidence/accepted-task/attempt-1/events.jsonl",
+      "input_sha256": "ed75bfc0c3009e533809fdd60566f6ba067b31b1f902842cd10650dbae4736d9",
+      "exit_code": 1,
+      "report": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "expected_status": "incomplete",
+      "failed_items": []
+    }
+  ]
+}

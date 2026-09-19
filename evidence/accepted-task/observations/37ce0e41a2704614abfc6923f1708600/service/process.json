@@ -1,0 +1,23 @@
+{
+  "pid": 34764,
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/temporal-1.9.1",
+    "--disable-config-env",
+    "--disable-config-file",
+    "server",
+    "start-dev",
+    "--ip",
+    "127.0.0.1",
+    "--port",
+    "7339",
+    "--http-port",
+    "7340",
+    "--metrics-port",
+    "7341",
+    "--namespace",
+    "nortropic-runtime",
+    "--headless",
+    "--db-filename",
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/runtime.sqlite"
+  ]
+}

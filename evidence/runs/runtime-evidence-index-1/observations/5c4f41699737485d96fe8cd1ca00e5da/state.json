@@ -1,0 +1,75 @@
+{
+  "attempts": 1,
+  "integration": {
+    "candidate": "38ecdaf7f989ab547740e23345c9cfbf8f69513c",
+    "merge_commit": "0fba283d5c6e19f30c9703eec88e6ea879435c16",
+    "merged": true,
+    "tree": "8597f79921cc38f2e4bb6219537f97a66c686ed5",
+    "url": "https://github.com/Nortropic/nortropic-runtime/pull/7"
+  },
+  "phase": "completed",
+  "publication_attempts": 1,
+  "results": [
+    {
+      "attempt": 1,
+      "candidate": "38ecdaf7f989ab547740e23345c9cfbf8f69513c",
+      "candidate_files_sha256": {
+        "tools/EVIDENCE_INDEX.md": "d0c3d475ab4b3c135cbd40c134266368828a09b2e99d961a34be556c468054cc",
+        "tools/evidence_index.py": "3ff044dbf1ec0db71a5b4c7b94e40ce0b44cb038851eda004957629eb790b217",
+        "tools/test_evidence_index.py": "3e9fa7d712c122e418080c4658c0a171d89ee58983bd69fe81f013701b9f7814"
+      },
+      "elapsed_seconds": 174.901,
+      "evidence": "evidence/runs/runtime-evidence-index-1/attempt-1",
+      "exit_code": 0,
+      "interrupted": null,
+      "phase_acceptance_passed": true,
+      "process_group_removed": true,
+      "provider": "codex",
+      "provider_completed": true,
+      "role": "implementation",
+      "task": "runtime-evidence-index-1",
+      "thread_id": "01a0b96e-d6e8-7ae2-9ef0-fdf2bec12278",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 183296,
+        "input_tokens": 217881,
+        "output_tokens": 9431,
+        "reasoning_output_tokens": 797
+      },
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "334d2d54bb6e2f1651aaf7a6d4b4c96c3a2d4f8be58d12bf90a24eda58a9f96d",
+    "blocking_findings": [],
+    "candidate": "38ecdaf7f989ab547740e23345c9cfbf8f69513c",
+    "provider_result": {
+      "attempt": 1,
+      "elapsed_seconds": 34.25,
+      "evidence": "evidence/runs/runtime-evidence-index-1/review-1",
+      "exit_code": 0,
+      "interrupted": null,
+      "process_group_removed": true,
+      "provider": "codex",
+      "provider_completed": true,
+      "role": "review",
+      "task": "runtime-evidence-index-1",
+      "thread_id": "01a0b971-89fa-7461-87c6-c9798029f8b2",
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 32384,
+        "input_tokens": 54856,
+        "output_tokens": 1421,
+        "reasoning_output_tokens": 648
+      }
+    },
+    "reviewer_run": "01a0b971-89fa-7461-87c6-c9798029f8b2",
+    "scope": "whole_task",
+    "summary": "All three files satisfy the accepted brief. Independent read-only checks passed for hashing, verification statuses, and CLI error handling. Tests cover the required filesystem edge cases; inspected but not executed because they create fixtures. No files changed.",
+    "task_id": "runtime-evidence-index-1",
+    "task_sha256": "be76062bf3f55eb9af3f72f366e080e5dddcecd5e947eea322a3721312c122aa",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "waiting_reason": null
+}
