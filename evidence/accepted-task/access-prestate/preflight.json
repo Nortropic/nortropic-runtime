@@ -1,0 +1,14 @@
+{
+  "database_sha256": "3331a6061e21e5890973bb561f99783c55041d033fb15cbb116da28d75ab8761",
+  "compressed_sha256": "95177ca72ba74b090daecb92d372a78ec1710464b873c4c2ee0aa9c695e16785",
+  "task_sha256": "c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c",
+  "subscription": {
+    "loggedIn": true,
+    "authMethod": "claude.ai",
+    "apiProvider": "firstParty",
+    "subscriptionType": "max"
+  },
+  "old_writers_stopped": true,
+  "engine_lock_free": true,
+  "base": "531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d"
+}

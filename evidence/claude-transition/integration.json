@@ -1,0 +1,10 @@
+{
+  "merged": true,
+  "candidate": "3cedc669f7015ed21c831bb2f9bcb5465d0fa709",
+  "merge_commit": "531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d",
+  "tree": "1cc153ab4a722d12a7bd306d891afe18cc7bc00d",
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/11",
+  "reviewer": "/root/startup_review",
+  "reviewed": "3cedc669f7015ed21c831bb2f9bcb5465d0fa709",
+  "blocking_findings": []
+}
