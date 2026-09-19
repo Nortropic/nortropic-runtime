@@ -1,0 +1,204 @@
+{
+  "passed": true,
+  "model_calls": 0,
+  "remote_publications": 0,
+  "reports": [
+    {
+      "task": "fixture-complete",
+      "state": {
+        "attempts": 1,
+        "integration": {
+          "fixture_only": true,
+          "merged": true
+        },
+        "phase": "completed",
+        "results": [
+          {
+            "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "candidate_files_sha256": {},
+            "evidence": "fixture-only",
+            "phase_acceptance_passed": true,
+            "provider_completed": true,
+            "thread_id": "author-thread",
+            "workspace_name": "commit-1"
+          }
+        ],
+        "review": {
+          "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "blocking_findings": [],
+          "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "reviewer_run": "review-thread",
+          "scope": "whole_task",
+          "task_id": "fixture-complete",
+          "task_sha256": "6c9df9e50c91545530ecf566891c2981df62bc420d47d47aa45d917b7b718205",
+          "terminal_status": "completed",
+          "verdict": "approved"
+        },
+        "waiting_reason": null
+      },
+      "calls": {
+        "implementation": 1,
+        "review": 1,
+        "publication": 1
+      }
+    },
+    {
+      "task": "fixture-failed-test",
+      "state": {
+        "attempts": 1,
+        "phase": "waiting_diagnosis",
+        "results": [
+          {
+            "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "candidate_files_sha256": {},
+            "evidence": "fixture-only",
+            "phase_acceptance_passed": false,
+            "provider_completed": true,
+            "thread_id": "author-thread",
+            "workspace_name": "commit-1"
+          }
+        ],
+        "waiting_reason": "Phase incomplete or failed; preserved evidence, no automatic repetition"
+      },
+      "calls": {
+        "implementation": 1,
+        "review": 0,
+        "publication": 0
+      }
+    },
+    {
+      "task": "fixture-rejected",
+      "state": {
+        "attempts": 1,
+        "phase": "waiting_review",
+        "results": [
+          {
+            "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "candidate_files_sha256": {},
+            "evidence": "fixture-only",
+            "phase_acceptance_passed": true,
+            "provider_completed": true,
+            "thread_id": "author-thread",
+            "workspace_name": "commit-1"
+          }
+        ],
+        "review": {
+          "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "blocking_findings": [
+            "fixture blocker"
+          ],
+          "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "reviewer_run": "review-thread",
+          "scope": "whole_task",
+          "task_id": "fixture-rejected",
+          "task_sha256": "f16aceb0b1488fd992b5a58da948fdd1035bdf7cd38ba29863f9b0ace1c37dc6",
+          "terminal_status": "completed",
+          "verdict": "rejected"
+        },
+        "waiting_reason": "Required review did not approve"
+      },
+      "calls": {
+        "implementation": 1,
+        "review": 1,
+        "publication": 0
+      }
+    },
+    {
+      "task": "fixture-missing-review",
+      "state": {
+        "attempts": 1,
+        "phase": "waiting_review",
+        "results": [
+          {
+            "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "candidate_files_sha256": {},
+            "evidence": "fixture-only",
+            "phase_acceptance_passed": true,
+            "provider_completed": true,
+            "thread_id": "author-thread",
+            "workspace_name": "commit-1"
+          }
+        ],
+        "review": {
+          "terminal_status": "incomplete"
+        },
+        "waiting_reason": "Stale or mismatched evidence: task_id"
+      },
+      "calls": {
+        "implementation": 1,
+        "review": 1,
+        "publication": 0
+      }
+    },
+    {
+      "task": "fixture-stale-review",
+      "state": {
+        "attempts": 1,
+        "phase": "waiting_review",
+        "results": [
+          {
+            "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "candidate_files_sha256": {},
+            "evidence": "fixture-only",
+            "phase_acceptance_passed": true,
+            "provider_completed": true,
+            "thread_id": "author-thread",
+            "workspace_name": "commit-1"
+          }
+        ],
+        "review": {
+          "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "blocking_findings": [],
+          "candidate": "cccccccccccccccccccccccccccccccccccccccc",
+          "reviewer_run": "review-thread",
+          "scope": "whole_task",
+          "task_id": "fixture-stale-review",
+          "task_sha256": "3e91a36fba53268e2a91056de5e8a3ae626d22119c7dbe0eaa1ec3c855f8cdf4",
+          "terminal_status": "completed",
+          "verdict": "approved"
+        },
+        "waiting_reason": "Stale or mismatched evidence: candidate"
+      },
+      "calls": {
+        "implementation": 1,
+        "review": 1,
+        "publication": 0
+      }
+    },
+    {
+      "task": "fixture-self-review",
+      "state": {
+        "attempts": 1,
+        "phase": "waiting_review",
+        "results": [
+          {
+            "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "candidate_files_sha256": {},
+            "evidence": "fixture-only",
+            "phase_acceptance_passed": true,
+            "provider_completed": true,
+            "thread_id": "author-thread",
+            "workspace_name": "commit-1"
+          }
+        ],
+        "review": {
+          "acceptance_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "blocking_findings": [],
+          "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "reviewer_run": "author-thread",
+          "scope": "whole_task",
+          "task_id": "fixture-self-review",
+          "task_sha256": "389dbd447ab57232b6a56a588048c985ab43968ed9c80c68dd54c0a7152fafc6",
+          "terminal_status": "completed",
+          "verdict": "approved"
+        },
+        "waiting_reason": "Independent review run missing"
+      },
+      "calls": {
+        "implementation": 1,
+        "review": 1,
+        "publication": 0
+      }
+    }
+  ]
+}

@@ -45,6 +45,8 @@ def execute_codex(request: dict) -> dict:
         if 'acceptance_sha256' in task:
             candidate = prepare(task, request['number'], workspace)
             frozen = task_directory(task['id']) / candidate['workspace_name']
+            (output / 'candidate.json').write_text(json.dumps({**candidate, 'base': task['base'], 'task_sha256': digest(task)}, indent=2)+'\n')
+            git(frozen, 'bundle', 'create', str(output / 'candidate.bundle'), 'HEAD', '^' + task['base'])
             validation = frozen_verifier(task)(frozen)
             files = candidate['candidate_files_sha256']
             # Preserve source bytes from the exact Git object, not mutable checkout.

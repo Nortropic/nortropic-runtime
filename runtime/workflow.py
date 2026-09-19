@@ -21,6 +21,7 @@ class DevelopmentTask:
         self.review = None
         self.integration = None
         self.reconciliation = None
+        self.publication_attempts = 0
 
     @workflow.signal
     def retry_after_diagnosis(self, request: dict):
@@ -95,6 +96,7 @@ class DevelopmentTask:
         publication = {**request, 'tests': tests, 'review': self.review,
                        'candidate_files_sha256': latest['candidate_files_sha256']}
         while True:
+            self.publication_attempts += 1
             self.phase = 'publishing'
             self.waiting_reason = None
             self.reconciliation = None
@@ -113,6 +115,7 @@ class DevelopmentTask:
     def state(self) -> dict:
         result = {'phase': self.phase, 'attempts': self.attempts,
                   'results': self.results, 'waiting_reason': self.waiting_reason}
+        if self.publication_attempts: result['publication_attempts'] = self.publication_attempts
         if self.review is not None: result['review'] = self.review
         if self.integration is not None: result['integration'] = self.integration
         return result

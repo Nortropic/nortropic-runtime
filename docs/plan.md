@@ -20,9 +20,9 @@ ARBETSYTA: work/second-task-through-runtime based on integrated f7bf8f4 (PR5).
 Origin PUBLIC by owner decision D006; branch protection active. Own project and
 isolated test targets only. No new costs/rights; owner defers Claude usage (D015).
 
-NÄSTA HANDLING: Exercise the connected workflow using no-model native-service
-fixtures and test real candidate preparation/structured review rejection. Add the
-bounded service/submission entry point, then separate review before live second task.
+NÄSTA HANDLING: Obtain separate review of connected workflow, task freezing,
+read-only review invocation and bounded submission/service entry point. Correct
+concrete findings and integrate reviewed support before accepting the next live task.
 Do not call Claude, discard report history, or invent approval from partial tests.
 
 PROV OCH KLART-NÄR: Actual implementation/review runs differ; tests/review bind the
@@ -30,7 +30,14 @@ same candidate and frozen acceptance; incomplete old report still waits at attem
 Missing or invalid mandatory result cannot publish. A second accepted task must
 show the complete route before its successful integration is claimed.
 
-UTFALL: PR5 receipt evidence/integration-gate/integration.json. Connection is implemented but not yet independently reviewed or run.
+UTFALL: PR5 receipt evidence/integration-gate/integration.json. Connection and bounded CLI are implemented, not yet independently reviewed or
+live-qualified. Sixteen support tests passed. Real native engine with explicit
+no-model/no-remote fixtures passed seven cases, including failed tests, missing/
+rejected/stale/self review, and lost publication acknowledgement followed by
+reconciliation without duplicate simulated mutation. Evidence: native-fixtures-v2
+under evidence/connected-workflow; real Git freeze and review parsing tests in
+scripts/test_connected.py. Both older histories also replay under current code
+(replay-v2.json). All fixture engine groups stopped; no model calls were made.
 Native Replayer passed both preserved report histories with no model calls
 (evidence/connected-workflow/replay.json); the original waiting history is compatible. Prior first Codex phase passed12 host cases and15 source tests;
 post-cleanup restart preserved both attempts and waiting_access. Raw evidence and
