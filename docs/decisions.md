@@ -36,3 +36,19 @@ candidate deliveries need relevant verification and separate review. GitHub org
 API reports Free plan. Server integration guarantees remain untested; do not
 claim branch protection is enforceable until tested. A local review is not a
 server permission boundary.
+
+
+## D004 — 2026-09-19: private origin and local dependency updates
+
+Private remote and first push verified; see evidence/startup. Server returns 403
+for branch protection on the current Free organization. Owner asked about making
+it public; recommended retaining privacy and GitHub Team (listed $4/user/month,
+actual seats/tax must be confirmed in billing). Decision pending; no paid plan or
+visibility change made. Sources: https://github.com/team and
+https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches.
+
+First Codex root probe failed: installed 0.147.0 cannot use requested gpt-6-astra.
+Do not substitute model or repeat unchanged. Official release 0.155.1 will be
+installed project-locally and checksummed before one new attempt. Global CLI and
+other projects remain untouched. This is a technical prerequisite adjustment,
+not new API billing.

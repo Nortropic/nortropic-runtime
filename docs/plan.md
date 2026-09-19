@@ -19,21 +19,31 @@ Node 22 and system Python available. Elixir/mix/mise absent from PATH.
 GitHub account has repo scope; org reports Free plan and repository creation allowed.
 ChatGPT and Claude Max login observed; no paid API run authorized.
 
-NÄSTA HANDLING: Create and verify private origin; fetch pinned Symphony into
-`.runtime/upstream/symphony`, read README, mix dependency/lifecycle configuration,
-tracker and app-server connection. Record minimum runnable path and constraints.
-Inspect managed policies; probe instruction loading and first-call usage with
-bounded, read-only fresh sessions. No unbounded automatic retries.
+NÄSTA HANDLING: Resolve measured Codex CLI incompatibility: 0.147.0 receives HTTP
+400 requiring a newer CLI for gpt-6-astra. Install official pinned 0.155.1 locally
+under `.runtime/bin` without changing the global CLI, then repeat the root probe
+once with this changed prerequisite. Claude root Read-only probe is underway;
+inspect its retained result before the subdirectory probe. Run the downloaded
+Symphony arm64 binary only after checksum validation and a constrained workflow.
+GitHub Team decision is pending with owner; never make the repository public.
 
 PROV OCH KLART-NÄR: Private remote/identity verified; correct instruction probe from
 fresh root/subdirectory sessions; executable engine path and acceptance fixture
 identified. Wrong/missing access must be reported as failure, never a pass.
 
-UTFALL: Mandate fully read; empty target verified; subscription login observed.
-No engine installation or model run yet. v0.1 rows all unproven.
+UTFALL: Private origin created, initial revision f2863dfad202b00297dfe477ebe58b21a6da92ad
+pushed and independently reviewed (no blockers for founding documents). Pinned
+Symphony source and official binary fetched; SHA256 matches. See
+[observations](../evidence/startup/observations.md), [remote](../evidence/startup/remote.json),
+[release](../evidence/startup/symphony-release.json). First Codex call failed in
+4.174 seconds with a CLI-version error; [raw run](../evidence/startup/codex-root/run.json)
+and adjacent stdout/stderr are preserved. No successful model usage metrics yet.
+All runtime acceptance rows remain unproven.
 
-ÅTERUPPTAGNING: No agent worker or runtime process launched. No older project
-modified. Read AGENTS, mandate, this plan, decisions; inspect Git, remote and
+ÅTERUPPTAGNING: Root chain driver active; startup_review agent finished its read-only
+review. No Symphony process launched. Old Codex probe exited (code 1); bounded
+Claude root probe may still be active—check run.json and PID before any relaunch.
+No older project modified. Read AGENTS, mandate, this plan, decisions; inspect Git, remote and
 current processes before writes. Evidence will be linked here as produced.
 
 ## Subsequent deliveries (refine only the next active step)
@@ -53,7 +63,7 @@ same path. All mandate §1 rows need linked revision/environment/raw evidence.
 | §1 capability | Status / evidence |
 |---|---|
 | Autonomous completion | NOT RUN |
-| Persistent continuity | Project entry points created; fresh-session test NOT RUN |
+| Persistent continuity | Separate read-only review located next action; Claude and full takeover NOT PROVEN |
 | Replaceable execution | NOT RUN |
 | Interruption/capacity | NOT RUN |
 | Controlled integration | NOT RUN |

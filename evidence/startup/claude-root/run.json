@@ -1,0 +1,29 @@
+{
+  "command": [
+    "claude",
+    "-p",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--include-hook-events",
+    "--strict-mcp-config",
+    "--mcp-config",
+    "{\"mcpServers\":{}}",
+    "--tools",
+    "Read",
+    "--allowedTools",
+    "Read",
+    "--permission-mode",
+    "dontAsk",
+    "Without modifying files, report the instruction-loading probe identifier in the project instructions you received and the path of the living plan. Do not guess if unavailable."
+  ],
+  "cwd": "/Users/elinhaggstrom/Nortropic Runtime",
+  "started_at": "2026-09-19T10:16:11.901622+00:00",
+  "limit_seconds": 240,
+  "automatic_retries": 0,
+  "pid": 21352,
+  "timed_out": false,
+  "exit_code": 1,
+  "elapsed_seconds": 2.107,
+  "finished_at": "2026-09-19T10:16:14.009565+00:00"
+}
