@@ -1,3 +1,45 @@
+# Living plan — bounded review continuation and next useful task
+
+## Current state / mandate
+
+Owner requests the known waiting_review gap fixed before relying on autonomous
+continuation, followed by a useful Project and Innovation Office task. No engine
+replacement, total audit or general hardening. v0.1.0 remains immutable at
+580630bcb9d46bb11e17e25053664eec4e23b8ae; its evidence remains valid.
+Current branch: work/review-continuation, based on that release/main.
+Read-only startup confirmed clean main, original tag and no recorded unfinished
+writers or live project worker/provider/service processes.
+
+## Coherent delivery plan
+
+1. Add explicitly diagnosed, identity-bound continuation at waiting_review.
+   A valid independent rejection with concrete blockers permits repair within the
+   same accepted task, a new immutable candidate, full tests and fresh review.
+   Missing/incomplete/inconclusive/invalid review permits review-only recovery;
+   it does not establish a candidate defect. Keep every attempt and review.
+2. Verify old histories still replay; exercise rejected→repair→tests→review→
+   controlled integration and missing-review recovery in bounded isolated runs.
+   Distinguish fixtures, actual model calls and actual remote integration.
+   Obtain separate review of exact source/evidence before protected integration.
+3. Document chain-driver ownership of diagnosis, review and publication waits:
+   inspect evidence/processes/remote identities, record a concrete changed
+   prerequisite, resume the same task; ask owner only real mandate/cost/priority.
+4. Define the next business outcome and target, then compare them with the actual
+   qualified profile. It currently admits only Runtime/tools regular files and
+   this repository's publisher. Qualify only capabilities the actual task needs;
+   never relocate business source into Runtime to circumvent that boundary.
+   The saved prior plan contains no concrete business brief or target. Owner was
+   asked only for that priority/outcome while the technical correction proceeds.
+
+## Next concrete action
+
+Implement the bounded native review continuation and receipt numbering; add
+focused state/identity/replay checks. Preserve work on origin after each slice.
+No model execution has started for this new task. Existing completed workflows
+must not be resubmitted. Canonical DB: .runtime/runtime.sqlite.
+
+## Release baseline (historical checkpoint, retained)
+
 # Living plan — Runtime v0.1
 
 ## Current state: Runtime v0.1 verified; release checkpoint
