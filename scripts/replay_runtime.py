@@ -11,6 +11,11 @@ async def main():
     sources=[('runtime-run-report-1','evidence/accepted-task/observations/cac8d5c56d044ea7a65f20180fee0252/history.json'),
              ('runtime-evidence-index-1','evidence/runs/runtime-evidence-index-1/history.json'),
              ('fixture-abrupt-worker','evidence/recovery-probe/history.json')]
+    sources += [('runtime-run-report-1', 'evidence/accepted-task/observations/0e20e3c156bb48f5bd70180092ea1e65/history.json'),
+                ('fixture-rejected', 'evidence/connected-workflow/native-fixtures-v2/fixture-rejected.json'),
+                ('fixture-missing-review', 'evidence/connected-workflow/native-fixtures-v2/fixture-missing-review.json')]
+    for path in sorted(Path('evidence/review-continuation').glob('native-v3/*/history.json')):
+        sources.append(('review-proof-' + path.parent.name, str(path)))
     results=[]
     for task,path in sources:
         events=json.loads(Path(path).read_text())

@@ -18,3 +18,9 @@ Delivered tools:
 
 Both existing Runtime tasks are completed. Follow the plan before running commands;
 do not resubmit them or delete state. New development needs a new accepted task.
+
+
+Bounded post-v0.1 review-continuation work is tracked in [the living plan](docs/plan.md),
+with measured fixtures and limits in [the continuation evidence](evidence/review-continuation/result.md).
+[The runbook](docs/runbook.md) assigns technical wait handling to the chain driver;
+review absence and candidate rejection have separate recovery paths.

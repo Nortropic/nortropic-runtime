@@ -1,6 +1,24 @@
 """Independent review protocol; host binds subject identities, never model echoes."""
 import json
 from pathlib import Path
+from .integration import GateClosed, require_gate
+
+
+def recovery_kind(task, subject, tests, review):
+    """A missing/invalid review is not evidence that implementation is defective."""
+    if (not isinstance(review, dict) or review.get('verdict') != 'rejected'
+            or not isinstance(review.get('blocking_findings'), list)
+            or not review['blocking_findings']
+            or not all(isinstance(x, str) and x.strip() for x in review['blocking_findings'])
+            or not isinstance(review.get('summary'), str) or not review['summary'].strip()):
+        return 'review_only'
+    try:
+        # Check all subject, test and independence requirements without pretending
+        # the rejection approved publication. This copy is never published.
+        require_gate(task, subject, tests, {**review, 'verdict': 'approved', 'blocking_findings': []})
+    except (GateClosed, TypeError, KeyError):
+        return 'review_only'
+    return 'repair'
 
 SCHEMA = {
     'type': 'object', 'additionalProperties': False,

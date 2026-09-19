@@ -1,0 +1,90 @@
+{
+  "passed": true,
+  "model_calls": 0,
+  "histories": [
+    {
+      "workflow": "runtime-run-report-1",
+      "history": "evidence/accepted-task/observations/cac8d5c56d044ea7a65f20180fee0252/history.json",
+      "events": 20,
+      "replay_passed": true
+    },
+    {
+      "workflow": "runtime-evidence-index-1",
+      "history": "evidence/runs/runtime-evidence-index-1/history.json",
+      "events": 23,
+      "replay_passed": true
+    },
+    {
+      "workflow": "fixture-abrupt-worker",
+      "history": "evidence/recovery-probe/history.json",
+      "events": 33,
+      "replay_passed": true
+    },
+    {
+      "workflow": "runtime-run-report-1",
+      "history": "evidence/accepted-task/observations/0e20e3c156bb48f5bd70180092ea1e65/history.json",
+      "events": 49,
+      "replay_passed": true
+    },
+    {
+      "workflow": "fixture-rejected",
+      "history": "evidence/connected-workflow/native-fixtures-v2/fixture-rejected.json",
+      "events": 16,
+      "replay_passed": true
+    },
+    {
+      "workflow": "fixture-missing-review",
+      "history": "evidence/connected-workflow/native-fixtures-v2/fixture-missing-review.json",
+      "events": 16,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-inconclusive",
+      "history": "evidence/review-continuation/native-v3/inconclusive/history.json",
+      "events": 43,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-missing",
+      "history": "evidence/review-continuation/native-v3/missing/history.json",
+      "events": 58,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-no-change",
+      "history": "evidence/review-continuation/native-v3/no-change/history.json",
+      "events": 59,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-nonobject",
+      "history": "evidence/review-continuation/native-v3/nonobject/history.json",
+      "events": 58,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-rejected",
+      "history": "evidence/review-continuation/native-v3/rejected/history.json",
+      "events": 64,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-repair-test-failure",
+      "history": "evidence/review-continuation/native-v3/repair-test-failure/history.json",
+      "events": 59,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-self-review",
+      "history": "evidence/review-continuation/native-v3/self-review/history.json",
+      "events": 58,
+      "replay_passed": true
+    },
+    {
+      "workflow": "review-proof-stale",
+      "history": "evidence/review-continuation/native-v3/stale/history.json",
+      "events": 58,
+      "replay_passed": true
+    }
+  ]
+}

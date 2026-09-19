@@ -33,9 +33,15 @@ writers or live project worker/provider/service processes.
 
 ## Next concrete action
 
-Implement the bounded native review continuation and receipt numbering; add
-focused state/identity/replay checks. Preserve work on origin after each slice.
-No model execution has started for this new task. Existing completed workflows
+Implementation and focused verification are complete; obtain separate review of
+this committed source/evidence candidate, then perform protected exact-SHA
+integration and preserve its receipt. Evidence: evidence/review-continuation/result.md.
+First independent review rejected nonobject handling; preserved patch/finding,
+scoped correction and eight-case native rerun now exist. One proof-harness failure
+is preserved explicitly, not erased. No model invocation was needed for native
+provider fixtures. Existing subscribed review agent supplied independent review.
+The business outcome/target question remains pending; no profile expansion or
+business source placement has been attempted. Existing completed workflows
 must not be resubmitted. Canonical DB: .runtime/runtime.sqlite.
 
 ## Release baseline (historical checkpoint, retained)

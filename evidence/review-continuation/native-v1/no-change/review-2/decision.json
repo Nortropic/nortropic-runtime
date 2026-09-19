@@ -1,0 +1,12 @@
+{
+  "task_id": "review-proof-no-change",
+  "task_sha256": "006e1f6289eb70e4d7873b7b121baa9432e889eb25304f90f1b24d2bb3c22f12",
+  "candidate": "3811cb0f5b5dc4388907eb983bfcd48207b7867d",
+  "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "fixture-review-process-36286-c624a66df7ab4209a2392ab1ccd6235d",
+  "verdict": "approved",
+  "blocking_findings": [],
+  "summary": "Separate verifier process checked the accepted zero requirement."
+}

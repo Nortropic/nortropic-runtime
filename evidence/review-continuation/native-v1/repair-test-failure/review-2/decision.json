@@ -1,0 +1,12 @@
+{
+  "task_id": "review-proof-repair-test-failure",
+  "task_sha256": "7b0b3bc31bf7d76d07c244e05daa4efe38e0d705215498b0f28e2b9342c710a8",
+  "candidate": "e43e53992e3830ec77339e36390c973167af9148",
+  "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "fixture-review-process-36220-67f920bafc9044e5a8ff91f9ca8ea423",
+  "verdict": "approved",
+  "blocking_findings": [],
+  "summary": "Separate verifier process checked the accepted zero requirement."
+}

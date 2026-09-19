@@ -1,0 +1,34 @@
+{
+  "attempts": 1,
+  "phase": "waiting_review",
+  "results": [
+    {
+      "candidate": "0efaac896a4b036e30a69bd4327a492620b3d98b",
+      "candidate_files_sha256": {
+        "tools/increment.py": "a41fb4378b234b6e04947042efebc6c9e60398413d8f3ce098c9ec2c978878e0"
+      },
+      "evidence": "evidence/review-continuation/native-v1/repair-test-failure/attempt-1",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "fixture-author-a4ab3ae9c102486bbed6b9cd7ae822e8",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blocking_findings": [
+      "tools/increment.py:2: accepted zero requirement fails: increment(0) returns 0, expected 1."
+    ],
+    "candidate": "0efaac896a4b036e30a69bd4327a492620b3d98b",
+    "reviewer_run": "fixture-review-process-36193-c1d02642207644b7a7577b9479f448b3",
+    "scope": "whole_task",
+    "summary": "Separate verifier process checked the accepted zero requirement.",
+    "task_id": "review-proof-repair-test-failure",
+    "task_sha256": "7b0b3bc31bf7d76d07c244e05daa4efe38e0d705215498b0f28e2b9342c710a8",
+    "terminal_status": "completed",
+    "verdict": "rejected"
+  },
+  "review_number": 1,
+  "review_recovery": "repair",
+  "waiting_reason": "Required review did not approve"
+}

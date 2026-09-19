@@ -1,0 +1,6 @@
+test_repeated_review_uses_new_guardian_identity_and_retains_prior_receipt (experiments.review_continuation.test_review_adapter.ReviewAdapterTest.test_repeated_review_uses_new_guardian_identity_and_retains_prior_receipt) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+OK

@@ -1,0 +1,112 @@
+{
+  "attempts": 1,
+  "integration": {
+    "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+    "local_fixture_only": true,
+    "merged": true,
+    "tree": "5285403811108edcf97679e0332ba7314d4db2be"
+  },
+  "phase": "completed",
+  "publication_attempts": 1,
+  "results": [
+    {
+      "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+      "candidate_files_sha256": {
+        "tools/increment.py": "833556db828032d49efc4c58a380411c53465c917da89bf613a607a10cee2ba6"
+      },
+      "evidence": "evidence/review-continuation/native-v3/nonobject/attempt-1",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "fixture-author-09c1d56952e44dd1a222b8bcae0422ba",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blocking_findings": [],
+    "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+    "reviewer_run": "fixture-review-process-36542-354f32efc9e44f49a073aea0afe90c3c",
+    "scope": "whole_task",
+    "summary": "Separate verifier process checked the accepted zero requirement.",
+    "task_id": "review-proof-nonobject",
+    "task_sha256": "fdf24c7fd4f373139b6638fb0d8ba707c0f3925f54289eb66a688d3c31de596a",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "review_continuations": [
+    {
+      "action": "review_only",
+      "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+      "expected_attempt": 1,
+      "reason": "Injected review failure removed; same candidate can be independently reviewed",
+      "review_number": 1,
+      "task_sha256": "fdf24c7fd4f373139b6638fb0d8ba707c0f3925f54289eb66a688d3c31de596a"
+    }
+  ],
+  "reviews": [
+    {
+      "result": null,
+      "subject": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base": "59af662157dc3e3e76bafb19a29c877fb87d593e",
+        "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+        "completed_steps": [
+          0
+        ],
+        "implementation_runs": [
+          "fixture-author-09c1d56952e44dd1a222b8bcae0422ba"
+        ],
+        "task_id": "review-proof-nonobject",
+        "task_sha256": "fdf24c7fd4f373139b6638fb0d8ba707c0f3925f54289eb66a688d3c31de596a"
+      },
+      "tests": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+        "passed": true,
+        "scope": "whole_task",
+        "source_evidence": "evidence/review-continuation/native-v3/nonobject/attempt-1/acceptance.json",
+        "task_id": "review-proof-nonobject",
+        "task_sha256": "fdf24c7fd4f373139b6638fb0d8ba707c0f3925f54289eb66a688d3c31de596a",
+        "terminal_status": "completed"
+      }
+    },
+    {
+      "result": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "blocking_findings": [],
+        "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+        "reviewer_run": "fixture-review-process-36542-354f32efc9e44f49a073aea0afe90c3c",
+        "scope": "whole_task",
+        "summary": "Separate verifier process checked the accepted zero requirement.",
+        "task_id": "review-proof-nonobject",
+        "task_sha256": "fdf24c7fd4f373139b6638fb0d8ba707c0f3925f54289eb66a688d3c31de596a",
+        "terminal_status": "completed",
+        "verdict": "approved"
+      },
+      "subject": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base": "59af662157dc3e3e76bafb19a29c877fb87d593e",
+        "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+        "completed_steps": [
+          0
+        ],
+        "implementation_runs": [
+          "fixture-author-09c1d56952e44dd1a222b8bcae0422ba"
+        ],
+        "task_id": "review-proof-nonobject",
+        "task_sha256": "fdf24c7fd4f373139b6638fb0d8ba707c0f3925f54289eb66a688d3c31de596a"
+      },
+      "tests": {
+        "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidate": "9d6935170dab657137bc6417f955f2e49d4834b4",
+        "passed": true,
+        "scope": "whole_task",
+        "source_evidence": "evidence/review-continuation/native-v3/nonobject/attempt-1/acceptance.json",
+        "task_id": "review-proof-nonobject",
+        "task_sha256": "fdf24c7fd4f373139b6638fb0d8ba707c0f3925f54289eb66a688d3c31de596a",
+        "terminal_status": "completed"
+      }
+    }
+  ],
+  "waiting_reason": null
+}

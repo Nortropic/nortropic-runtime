@@ -1,0 +1,12 @@
+{
+  "task_id": "review-proof-inconclusive",
+  "task_sha256": "a5b383ee020908c6777c5966170c8777915ef88098dc3f11e8286bc61f3b877f",
+  "candidate": "7ab641c3263b2a5ff242c3e3779d8dfcf99e3e73",
+  "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "fixture-review-process-36153-9acfb902620541f5b217e221a76be0ca",
+  "verdict": "inconclusive",
+  "blocking_findings": [],
+  "summary": "Injected unjudgeable review"
+}

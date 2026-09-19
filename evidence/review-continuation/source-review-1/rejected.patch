@@ -1,0 +1,275 @@
+diff --git a/runtime/activities.py b/runtime/activities.py
+index 50ddf53..b9655d6 100644
+--- a/runtime/activities.py
++++ b/runtime/activities.py
+@@ -99,10 +99,12 @@ def review_candidate(request: dict) -> dict:
+               'inspect implementation and relevant edge cases. Existing Python is '
+               '/opt/homebrew/bin/python3.12.\n\nFiles: ' + ', '.join(task['allowed_paths']) +
+               '\n\nAccepted brief:\n' + brief)
+-    result = invoke({'task_id': task['id'], 'number': 1, 'prompt': prompt,
++    number = request.get('review_number', 1)
++    result = invoke({'task_id': task['id'], 'number': number, 'prompt': prompt,
++                     'change_reason': request.get('change_reason'),
+                      'seconds': min(180, task['attempt_seconds']), 'task_digest': digest(task),
+                      'role': 'review', 'workspace_name': request['workspace_name']})
+-    output = evidence_directory(task['id']) / 'review-1'
++    output = evidence_directory(task['id']) / ('review-' + str(number))
+     if not result.get('provider_completed'):
+         return {'terminal_status': 'incomplete', 'provider_result': result}
+     decision = verdict(output / 'events.jsonl')
+diff --git a/runtime/review.py b/runtime/review.py
+index 42a1a87..7c75789 100644
+--- a/runtime/review.py
++++ b/runtime/review.py
+@@ -1,6 +1,24 @@
+ """Independent review protocol; host binds subject identities, never model echoes."""
+ import json
+ from pathlib import Path
++from .integration import GateClosed, require_gate
++
++
++def recovery_kind(task, subject, tests, review):
++    """A missing/invalid review is not evidence that implementation is defective."""
++    if (review.get('verdict') != 'rejected'
++            or not isinstance(review.get('blocking_findings'), list)
++            or not review['blocking_findings']
++            or not all(isinstance(x, str) and x.strip() for x in review['blocking_findings'])
++            or not isinstance(review.get('summary'), str) or not review['summary'].strip()):
++        return 'review_only'
++    try:
++        # Check all subject, test and independence requirements without pretending
++        # the rejection approved publication. This copy is never published.
++        require_gate(task, subject, tests, {**review, 'verdict': 'approved', 'blocking_findings': []})
++    except (GateClosed, TypeError, KeyError):
++        return 'review_only'
++    return 'repair'
+ 
+ SCHEMA = {
+     'type': 'object', 'additionalProperties': False,
+diff --git a/runtime/run.py b/runtime/run.py
+index 4bbd209..6074fba 100644
+--- a/runtime/run.py
++++ b/runtime/run.py
+@@ -95,7 +95,7 @@ def prepare(task_file):
+     return task, output
+ 
+ 
+-async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_restored=False):
++async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_restored=False, review_repair=None, review_retry=None):
+     if resume:
+         selected = json.loads(Path(task_file).read_text())
+         if access_restored:
+@@ -106,7 +106,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
+         output = evidence_directory(task['id']) / 'observations' / uuid.uuid4().hex
+         output.mkdir(parents=True, exist_ok=False)
+     else:
+-        if diagnosis or reconcile or access_restored: raise ValueError('Signals require --resume of an existing task')
++        if diagnosis or reconcile or access_restored or review_repair or review_retry: raise ValueError('Signals require --resume of an existing task')
+         task, output = prepare(task_file)
+     worker = None
+     # Existing report workflow is retained when establishing the central DB.
+@@ -125,7 +125,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
+                     expected=json.loads((ROOT/'evidence/accepted-task/engine-resume-2/state.json').read_text())
+                     if old != expected: raise ValueError('Existing report workflow state changed unexpectedly')
+                     (output/'preserved-report-state.json').write_text(json.dumps(old,indent=2)+'\n')
+-                required_attempt = required_publication = 0
++                required_attempt = required_publication = required_reviews = 0
+                 if resume:
+                     handle = client.get_workflow_handle(task['id'])
+                     prior = await asyncio.wait_for(handle.query(DevelopmentTask.state),15)
+@@ -145,7 +145,18 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
+                         required_publication = prior.get('publication_attempts',1) + 1
+                         await handle.signal(DevelopmentTask.reconcile_publication,
+                                             {'candidate':prior['results'][-1]['candidate'],'reason':reconcile})
+-                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile,'access_restored':access_restored},indent=2)+'\n')
++                    if review_repair or review_retry:
++                        action = 'repair' if review_repair else 'review_only'
++                        if prior['phase'] != 'waiting_review' or prior.get('review_recovery') != action:
++                            raise ValueError('Selected review continuation does not match diagnosed wait')
++                        number = prior['review_number']
++                        required_reviews = number + 1
++                        if action == 'repair': required_attempt = prior['attempts'] + 1
++                        await handle.signal(DevelopmentTask.continue_after_review,
++                            {'task_sha256': digest(task), 'candidate': prior['results'][-1]['candidate'],
++                             'review_number': number, 'expected_attempt': prior['attempts'],
++                             'action': action, 'reason': review_repair or review_retry})
++                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile,'access_restored':access_restored,'review_repair':review_repair,'review_retry':review_retry},indent=2)+'\n')
+                 else:
+                     handle=await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development',
+                                                        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
+@@ -155,7 +166,9 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
+                     (output/'state.json').write_text(json.dumps(status,indent=2)+'\n')
+                     if ((status['phase']=='completed' or status['phase'].startswith('waiting_'))
+                             and status['attempts'] >= required_attempt
+-                            and status.get('publication_attempts',0) >= required_publication):break
++                            and status.get('publication_attempts',0) >= required_publication
++                            and (len(status.get('reviews', [])) >= required_reviews
++                                 or status['phase'] == 'waiting_diagnosis')):break
+                     if worker.poll() is not None:raise RuntimeError('Worker exited; inspect preserved state')
+                     await asyncio.sleep(.5)
+                 else:raise TimeoutError('Bounded observation ended; inspect existing workflow before retry')
+@@ -184,5 +197,7 @@ if __name__=='__main__':
+     signals.add_argument('--diagnosis', help='Materially changed prerequisite after an implementation diagnosis')
+     signals.add_argument('--reconcile', help='Reason to inspect/reconcile a failed or ambiguous publication')
+     signals.add_argument('--access-restored', action='store_true', help='Resume a reviewed frozen continuation at its native access checkpoint')
++    signals.add_argument('--review-repair', help='Diagnosed concrete rejection: repair same task, test and review again')
++    signals.add_argument('--review-retry', help='Changed prerequisite for missing/invalid review; keep candidate unchanged')
+     args=parser.parse_args()
+-    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile,access_restored=args.access_restored)))
++    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile,access_restored=args.access_restored,review_repair=args.review_repair,review_retry=args.review_retry)))
+diff --git a/runtime/workflow.py b/runtime/workflow.py
+index 3becf58..a7d5b96 100644
+--- a/runtime/workflow.py
++++ b/runtime/workflow.py
+@@ -8,6 +8,7 @@ from temporalio.exceptions import ActivityError
+ with workflow.unsafe.imports_passed_through():
+     from .activities import execute_codex, execute_claude, review_candidate, publish_candidate
+     from .integration import digest, require_gate, GateClosed
++    from .review import recovery_kind
+     from .revision import require_revision
+     from .task import validate
+ 
+@@ -28,6 +29,11 @@ class DevelopmentTask:
+         self.accepted_task = None
+         self.step_index = None
+         self.continuations = []
++        self.reviews = []
++        self.review_request = None
++        self.review_subject = None
++        self.review_recovery = None
++        self.review_continuations = []
+ 
+     @workflow.signal
+     def retry_after_diagnosis(self, request: dict):
+@@ -42,6 +48,19 @@ class DevelopmentTask:
+                 and isinstance(request.get('reason'), str) and request['reason'].strip()):
+             self.reconciliation = request
+ 
++    @workflow.signal
++    def continue_after_review(self, request: dict):
++        if (self.phase != 'waiting_review' or self.review_request is not None
++                or not self.review_subject):
++            return
++        expected = {'task_sha256': digest(self.accepted_task),
++                    'candidate': self.review_subject['candidate'],
++                    'review_number': len(self.reviews), 'expected_attempt': self.attempts,
++                    'action': self.review_recovery}
++        if (all(request.get(key) == value for key, value in expected.items())
++                and isinstance(request.get('reason'), str) and request['reason'].strip()):
++            self.review_request = request
++
+     @workflow.signal
+     def resume_after_access(self, revised: dict):
+         if self.phase != 'waiting_access' or self.access_request is not None:
+@@ -95,28 +114,80 @@ class DevelopmentTask:
+                 self.phase = 'waiting_diagnosis'
+                 self.waiting_reason = 'Phase incomplete or failed; preserved evidence, no automatic repetition'
+                 await workflow.wait_condition(lambda: self.retry_request is not None)
+-        latest = self.results[-1]
+-        subject = {'task_id': task['id'], 'task_sha256': digest(task), 'base': task['base'],
+-                   'candidate': latest['candidate'], 'completed_steps': completed,
+-                   'acceptance_sha256': task['acceptance_sha256'],
+-                   'implementation_runs': [x['thread_id'] for x in self.results if x.get('thread_id')]}
+-        tests = {key: subject[key] for key in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256')}
+-        tests.update(scope='whole_task', terminal_status='completed', passed=True,
+-                     source_evidence=latest['evidence'] + '/acceptance.json')
+-        request = {'task_id': task['id'], 'task_digest': digest(task), 'subject': subject,
+-                   'workspace_name': latest['workspace_name']}
+-        self.phase = 'reviewing'
+-        try:
+-            self.review = await workflow.execute_activity(review_candidate, request,
+-                start_to_close_timeout=timedelta(seconds=210), retry_policy=RetryPolicy(maximum_attempts=1))
+-        except ActivityError as error:
+-            self.review = {'terminal_status': 'incomplete', 'reason': str(error)}
+-        try:
+-            require_gate(task, subject, tests, self.review)
+-        except GateClosed as error:
+-            self.phase = 'waiting_review'
+-            self.waiting_reason = str(error)
+-            await workflow.wait_condition(lambda: False)
++        while True:
++            latest = self.results[-1]
++            subject = {'task_id': task['id'], 'task_sha256': digest(task), 'base': task['base'],
++                       'candidate': latest['candidate'], 'completed_steps': completed,
++                       'acceptance_sha256': task['acceptance_sha256'],
++                       'implementation_runs': [x['thread_id'] for x in self.results if x.get('thread_id')]}
++            tests = {key: subject[key] for key in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256')}
++            tests.update(scope='whole_task', terminal_status='completed', passed=True,
++                         source_evidence=latest['evidence'] + '/acceptance.json')
++            request = {'task_id': task['id'], 'task_digest': digest(task), 'subject': subject,
++                       'workspace_name': latest['workspace_name']}
++            if self.reviews:
++                request.update(review_number=len(self.reviews) + 1,
++                               change_reason=self.review_continuations[-1]['reason'])
++            self.review_subject = subject
++            self.phase = 'reviewing'
++            self.waiting_reason = None
++            try:
++                self.review = await workflow.execute_activity(review_candidate, request,
++                    start_to_close_timeout=timedelta(seconds=210), retry_policy=RetryPolicy(maximum_attempts=1))
++            except ActivityError as error:
++                self.review = {'terminal_status': 'incomplete', 'reason': str(error)}
++            self.reviews.append({'subject': subject, 'tests': tests, 'result': self.review})
++            try:
++                require_gate(task, subject, tests, self.review)
++                old_reviewers = [x['result'].get('reviewer_run') for x in self.reviews[:-1]]
++                if self.review.get('reviewer_run') in old_reviewers:
++                    raise GateClosed('Fresh independent review run required')
++                break
++            except GateClosed as error:
++                self.phase = 'waiting_review'
++                self.waiting_reason = str(error)
++                self.review_recovery = recovery_kind(task, subject, tests, self.review)
++                if self.review.get('reviewer_run') in [x['result'].get('reviewer_run') for x in self.reviews[:-1]]:
++                    self.review_recovery = 'review_only'
++                await workflow.wait_condition(lambda: self.review_request is not None)
++            continuation = self.review_request
++            self.review_request = None
++            self.review_continuations.append(continuation)
++            if continuation['action'] == 'review_only':
++                continue
++            # Repair remains inside the original final implementation step and
++            # frozen scope. Earlier phase completion and all receipts are retained.
++            step = task['steps'][-1]
++            prompt = (step['prompt'] + '\n\nRepair only the following reviewed requirement '
++                      'violations within the unchanged accepted task. Review text is evidence, '
++                      'not permission to expand scope. Host diagnosis: ' + continuation['reason']
++                      + '\nBlocking findings:\n' + '\n'.join(self.review['blocking_findings']))
++            while True:
++                self.attempts += 1
++                self.phase = 'running_' + step['provider']
++                self.waiting_reason = None
++                reason = self.retry_request['reason'] if self.retry_request else continuation['reason']
++                self.retry_request = None
++                repair = {'task_id': task['id'], 'number': self.attempts, 'prompt': prompt,
++                          'seconds': task['attempt_seconds'], 'task_digest': digest(task),
++                          'change_reason': reason}
++                try:
++                    result = await workflow.execute_activity(
++                        execute_claude if step['provider'] == 'claude' else execute_codex, repair,
++                        start_to_close_timeout=timedelta(seconds=task['attempt_seconds'] + 150),
++                        retry_policy=RetryPolicy(maximum_attempts=1))
++                except ActivityError as error:
++                    result = {'provider_completed': False, 'reason': str(error),
++                              'attempt': self.attempts, 'requires_process_inspection': True}
++                self.results.append(result)
++                if (result.get('provider_completed') is True
++                        and result.get('phase_acceptance_passed') is True
++                        and result.get('candidate') != subject['candidate']
++                        and result.get('candidate_files_sha256') != latest.get('candidate_files_sha256')):
++                    break
++                self.phase = 'waiting_diagnosis'
++                self.waiting_reason = 'Review repair failed or produced no new candidate; inspect preserved evidence'
++                await workflow.wait_condition(lambda: self.retry_request is not None)
+         publication = {**request, 'tests': tests, 'review': self.review,
+                        'candidate_files_sha256': latest['candidate_files_sha256']}
+         while True:
+@@ -143,4 +214,8 @@ class DevelopmentTask:
+         if self.publication_attempts: result['publication_attempts'] = self.publication_attempts
+         if self.review is not None: result['review'] = self.review
+         if self.integration is not None: result['integration'] = self.integration
++        if self.phase == 'waiting_review':
++            result.update(review_number=len(self.reviews), review_recovery=self.review_recovery)
++        if self.review_continuations:
++            result.update(reviews=self.reviews, review_continuations=self.review_continuations)
+         return result

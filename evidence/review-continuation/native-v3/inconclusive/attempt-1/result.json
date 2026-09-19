@@ -1,0 +1,11 @@
+{
+  "candidate": "fbca3878b07d470aa9467738c03247fcfcc7cfc0",
+  "workspace_name": "commit-1",
+  "candidate_files_sha256": {
+    "tools/increment.py": "833556db828032d49efc4c58a380411c53465c917da89bf613a607a10cee2ba6"
+  },
+  "provider_completed": true,
+  "phase_acceptance_passed": true,
+  "evidence": "evidence/review-continuation/native-v3/inconclusive/attempt-1",
+  "thread_id": "fixture-author-8da553603c5c4e18b4b108f1d80dff66"
+}

@@ -1,0 +1,32 @@
+{
+  "attempts": 1,
+  "phase": "waiting_review",
+  "results": [
+    {
+      "candidate": "e763de853fe0f7cda98012071e386ef1174df782",
+      "candidate_files_sha256": {
+        "tools/increment.py": "833556db828032d49efc4c58a380411c53465c917da89bf613a607a10cee2ba6"
+      },
+      "evidence": "evidence/review-continuation/native-v1/stale/attempt-1",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "fixture-author-a5d70217bdd04833b8d6ce681d1a1a73",
+      "workspace_name": "commit-1"
+    }
+  ],
+  "review": {
+    "acceptance_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blocking_findings": [],
+    "candidate": "ffffffffffffffffffffffffffffffffffffffff",
+    "reviewer_run": "fixture-review-process-36075-030c5d6bbe824000a606a59977526c94",
+    "scope": "whole_task",
+    "summary": "Separate verifier process checked the accepted zero requirement.",
+    "task_id": "review-proof-stale",
+    "task_sha256": "1c3b2df03aea23133127da5f4a442a3d1fe9b15e16e1e6c64954ba9681f910a5",
+    "terminal_status": "completed",
+    "verdict": "approved"
+  },
+  "review_number": 1,
+  "review_recovery": "review_only",
+  "waiting_reason": "Stale or mismatched evidence: candidate"
+}
