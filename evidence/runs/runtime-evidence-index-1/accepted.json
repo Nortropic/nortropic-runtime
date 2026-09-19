@@ -1,0 +1,27 @@
+{
+  "task": {
+    "id": "runtime-evidence-index-1",
+    "target": "Nortropic/nortropic-runtime",
+    "base": "5e014099feeb0cec1a6954fc162e79d9a7a2f1e2",
+    "allowed_paths": [
+      "tools/evidence_index.py",
+      "tools/test_evidence_index.py",
+      "tools/EVIDENCE_INDEX.md"
+    ],
+    "brief": "tasks/evidence-index.md",
+    "acceptance": "acceptance/evidence_index.py",
+    "acceptance_sha256": "334d2d54bb6e2f1651aaf7a6d4b4c96c3a2d4f8be58d12bf90a24eda58a9f96d",
+    "attempt_seconds": 300,
+    "automatic_retries": 0,
+    "steps": [
+      {
+        "provider": "codex",
+        "prompt": "Implement the accepted task in TASK.md. You are the isolated implementation subprocess; the host already performs Runtime coordination, writer inspection, acceptance, review and publication. Do not run operator startup, edit host plans, use git write commands, publish or call external services. Read TASK.md and implement only the three allowed tools/ files. Use /opt/homebrew/bin/python3.12 and keep test temporary files under .scratch (TMPDIR is configured). Verify relevant behavior. Candidate acceptance and independent review are outside your write access. Report what you implemented and observed, with any remaining issue."
+      }
+    ]
+  },
+  "task_sha256": "be76062bf3f55eb9af3f72f366e080e5dddcecd5e947eea322a3721312c122aa",
+  "runtime_source": "90dad1e9baa85979ac09e18a98b0e3b04025476b",
+  "brief_sha256": "eedaf66f9aac8f7884e5190cfc89c28c2fc5ef2f0ca9080568b9d50713cfc2c4",
+  "acceptance_sha256": "334d2d54bb6e2f1651aaf7a6d4b4c96c3a2d4f8be58d12bf90a24eda58a9f96d"
+}
