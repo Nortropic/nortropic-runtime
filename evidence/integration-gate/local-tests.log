@@ -1,0 +1,10 @@
+test_base_and_head_rechecked_and_merge_reconciled (test_integration.IntegrationTest) ... ok
+test_partial_three_step_task_does_not_publish (test_integration.IntegrationTest) ... ok
+test_real_git_candidate_scope_and_immutable_identity (test_integration.IntegrationTest) ... ok
+test_real_git_reconciliation_checks_tree_and_parent (test_integration.IntegrationTest) ... ok
+test_required_evidence_blocks_before_publication (test_integration.IntegrationTest) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.368s
+
+OK
