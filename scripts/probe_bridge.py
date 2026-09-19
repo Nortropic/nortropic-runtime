@@ -41,6 +41,9 @@ def main():
     workspace = Path.cwd().resolve()
     if workspace.parent != WORKSPACES.resolve():
         raise RuntimeError('Not an isolated Symphony fixture workspace')
+    contract = json.loads((ROOT / 'config/motor-probe.json').read_text())
+    if workspace.name != 'GH-' + str(contract['issue_number']):
+        raise RuntimeError('Not the accepted fixture issue')
     state = ROOT / 'evidence' / 'motor-probe' / workspace.name
     state.mkdir(parents=True, exist_ok=True)
     # Durable one-attempt marker: unchanged retries never invoke a model again.

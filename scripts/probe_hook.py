@@ -10,12 +10,18 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 INPUT = 'name,value\nalpha,7\nbeta,-2\ngamma,5\n'
 EXPECTED = {'count': 3, 'sum': 10}
+INSTRUCTIONS = (
+    'This isolated fixture accepts only the task in the Symphony prompt.\n'
+    'Create result.json only; do not change input.csv or these instructions.\n'
+    'No network, publication, credentials or unrelated project work.\n')
 
 
 def verify(workspace):
     reasons = []
-    if (workspace / 'input.csv').read_text() != INPUT:
-        reasons.append('input changed')
+    for name, expected in (('input.csv', INPUT), ('AGENTS.md', INSTRUCTIONS)):
+        path = workspace / name
+        if path.is_symlink() or not path.is_file() or path.read_bytes() != expected.encode():
+            reasons.append(name + ' missing, changed or linked')
     try:
         result = json.loads((workspace / 'result.json').read_text())
         if result != EXPECTED:
@@ -35,10 +41,7 @@ def main():
     stage = sys.argv[1]
     if stage == 'create':
         (workspace / 'input.csv').write_text(INPUT)
-        (workspace / 'AGENTS.md').write_text(
-            'This isolated fixture accepts only the task in the Symphony prompt.\n'
-            'Create result.json only; do not change input.csv or these instructions.\n'
-            'No network, publication, credentials or unrelated project work.\n')
+        (workspace / 'AGENTS.md').write_text(INSTRUCTIONS)
     elif stage == 'preserve':
         destination = ROOT / 'evidence/motor-probe' / workspace.name
         destination.mkdir(parents=True, exist_ok=True)

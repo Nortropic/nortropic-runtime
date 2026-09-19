@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 from probe_bridge import restrict_message
-from probe_hook import INPUT, verify
+from probe_hook import INPUT, INSTRUCTIONS, verify
 
 
 class ProbeTest(unittest.TestCase):
@@ -12,7 +12,19 @@ class ProbeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d)
             (p / 'input.csv').write_text(INPUT)
+            (p / 'AGENTS.md').write_text(INSTRUCTIONS)
             self.assertFalse(verify(p)['passed'])
+
+    def test_missing_and_changed_instructions_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d)
+            (p / 'input.csv').write_text(INPUT)
+            (p / 'result.json').write_text('{"count":3,"sum":10}')
+            self.assertFalse(verify(p)['passed'])
+            (p / 'AGENTS.md').write_text('altered')
+            self.assertFalse(verify(p)['passed'])
+            (p / 'AGENTS.md').write_text(INSTRUCTIONS)
+            self.assertTrue(verify(p)['passed'])
             (p / 'result.json').write_text('{"count":3,"sum":999}')
             self.assertFalse(verify(p)['passed'])
             (p / 'result.json').write_text('{"count":3,"sum":10}')
