@@ -1,0 +1,18 @@
+test_input_must_be_preserved_before_preparation (experiments.connected_probe.test_submission.SubmissionTest.test_input_must_be_preserved_before_preparation) ... ERROR
+
+======================================================================
+ERROR: test_input_must_be_preserved_before_preparation (experiments.connected_probe.test_submission.SubmissionTest.test_input_must_be_preserved_before_preparation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/elinhaggstrom/Nortropic Runtime/experiments/connected_probe/test_submission.py", line 30, in test_input_must_be_preserved_before_preparation
+    with self.assertRaises(subprocess.CalledProcessError):run.prepare(selected)
+                                                          ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/elinhaggstrom/Nortropic Runtime/runtime/run.py", line 52, in prepare
+    if task_file.parent != ROOT / 'tasks': raise ValueError('Select a committed accepted task in tasks/')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Select a committed accepted task in tasks/
+
+----------------------------------------------------------------------
+Ran 1 test in 0.086s
+
+FAILED (errors=1)

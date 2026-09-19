@@ -64,6 +64,9 @@ def prepare(task_file):
         raise ValueError('Host verifier and brief must be selected from this project')
     acceptance = read_regular(ROOT, acceptance_path)
     brief = read_regular(ROOT, brief_path)
+    for name, content in ((acceptance_path, acceptance), (brief_path, brief)):
+        if content != git(ROOT, 'show', source_revision + ':' + name, raw=True):
+            raise ValueError('Accepted brief/verifier differs from preserved Git object')
     if hashlib.sha256(acceptance).hexdigest() != task['acceptance_sha256']:
         raise ValueError('Acceptance file changed after acceptance')
     state, output = task_directory(task['id']), evidence_directory(task['id'])
