@@ -1,0 +1,10 @@
+test_normal_leader_exit_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_sigterm_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_timeout_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_host_tracker_tools_and_wide_sandbox_removed (test_probe.ProbeTest) ... ok
+test_wrong_missing_and_legitimate_artifacts (test_probe.ProbeTest) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 7.601s
+
+OK

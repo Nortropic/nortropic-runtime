@@ -1,0 +1,13 @@
+{
+  "command": [
+    "git",
+    "push",
+    "origin",
+    "3e894eef571c7e1146fbfe51499a9f0ae5e95d81:refs/heads/main"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "remote: error: GH006: Protected branch update failed for refs/heads/main.        \nremote: \nremote: - Changes must be made through a pull request.        \nremote: \nremote: - 2 of 2 required status checks are expected.        \nTo https://github.com/Nortropic/nortropic-runtime.git\n ! [remote rejected] 3e894eef571c7e1146fbfe51499a9f0ae5e95d81 -> main (protected branch hook declined)\nerror: failed to push some refs to 'https://github.com/Nortropic/nortropic-runtime.git'\n",
+  "candidate": "3e894eef571c7e1146fbfe51499a9f0ae5e95d81",
+  "main_before": "4dec6777875caf9ca964bfa58004affd68c480c3"
+}
