@@ -1,6 +1,6 @@
 # Living plan — Runtime v0.1
 
-## Current step: preserved wait for changed Claude access
+## Current step: qualify owner-restored Claude access
 
 RESULTAT: One useful accepted Codex task completed automatically through external
 acceptance, fresh independent review and protected integration (PR7). Its evidence
@@ -10,17 +10,20 @@ Check PR9 server merged state and git origin/main when taking over; do not infer
 integration from backup branch existence. Runtime v0.1 is NOT complete.
 
 ARBETSYTA: Nortropic/nortropic-runtime, local /Users/elinhaggstrom/Nortropic Runtime.
-Current recovery delivery branch work/inflight-recovery. Origin is public by owner
+Current branch work/claude-qualification from mainf5dde1a. Origin is public by owner
 D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
-NÄSTA HANDLING: Await changed Claude access evidence from owner (D015). The latest
-observed Claude403 oauth_org_not_allowed means subscription/organization access
-was disabled; it was not a proven quota exhaustion. Buying usage is not assumed
-to repair it. Do not make periodic Claude calls or ask for a new work order.
-When access changes, inspect cached/auth account and organization state first,
-then choose one bounded minimal qualification call through the already authorized
-subscription. If rights/cost must change, take the exact decision to owner directly.
+NÄSTA HANDLING: Owner reports Claude running again. Interactive Claude in this
+same project was explicitly closed by owner; PID30644 confirmed stopped, clean
+mainf5dde1a and PR9 MERGED verified. Auth is claude.ai/firstParty/Max; no provider
+API-key override environment. Run one bounded read-only instruction/access probe
+<=90s with native restricted mode, Read only, empty strict MCP, no Chrome or slash
+commands; no automatic retry. Use configured model family claude-fable-5-1.
+Global/managed policy unchanged. Managed sandbox.enabled=false means the later
+Claude path must not rely on Bash sandboxing; evaluate restricted Read/Edit/Write
+only with explicit accepted-file edit allowances and host-run external tests.
+Global historic permissions do not grant Runtime rights. No new API billing.
 
 Once access is verified, qualify Claude's constrained tool/stop/result path and
 connect it to the existing native workflow without replacing histories. Continue
