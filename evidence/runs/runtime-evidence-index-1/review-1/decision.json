@@ -1,0 +1,32 @@
+{
+  "task_id": "runtime-evidence-index-1",
+  "task_sha256": "be76062bf3f55eb9af3f72f366e080e5dddcecd5e947eea322a3721312c122aa",
+  "candidate": "38ecdaf7f989ab547740e23345c9cfbf8f69513c",
+  "acceptance_sha256": "334d2d54bb6e2f1651aaf7a6d4b4c96c3a2d4f8be58d12bf90a24eda58a9f96d",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "01a0b971-89fa-7461-87c6-c9798029f8b2",
+  "provider_result": {
+    "task": "runtime-evidence-index-1",
+    "attempt": 1,
+    "provider": "codex",
+    "provider_completed": true,
+    "exit_code": 0,
+    "thread_id": "01a0b971-89fa-7461-87c6-c9798029f8b2",
+    "role": "review",
+    "interrupted": null,
+    "process_group_removed": true,
+    "usage": {
+      "input_tokens": 54856,
+      "cached_input_tokens": 32384,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 1421,
+      "reasoning_output_tokens": 648
+    },
+    "elapsed_seconds": 34.25,
+    "evidence": "evidence/runs/runtime-evidence-index-1/review-1"
+  },
+  "verdict": "approved",
+  "blocking_findings": [],
+  "summary": "All three files satisfy the accepted brief. Independent read-only checks passed for hashing, verification statuses, and CLI error handling. Tests cover the required filesystem edge cases; inspected but not executed because they create fixtures. No files changed."
+}

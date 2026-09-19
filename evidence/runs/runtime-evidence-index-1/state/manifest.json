@@ -1,0 +1,7 @@
+{
+  "raw_sha256": "4a13704274cbf6d09d965edf59789a664bac873801ccf674e71112e447afccce",
+  "raw_bytes": 729088,
+  "integrity_check": "ok",
+  "canonical": ".runtime/runtime.sqlite",
+  "writers_stopped": true
+}
