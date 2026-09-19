@@ -1,16 +1,7 @@
 {
-  "url": "https://github.com/Nortropic/nortropic-runtime/pull/4",
-  "candidate": "51fd932fd8e85ac182a53f90f7bb01fe6b5deb18",
-  "merged": {
-    "sha": "0ab88f1369c99374d1e6e4d2c21f70fa79bdfe36",
-    "merged": true,
-    "message": "Pull Request successfully merged"
-  },
-  "readback": {
-    "merged": true,
-    "merge_commit_sha": "0ab88f1369c99374d1e6e4d2c21f70fa79bdfe36",
-    "head": "51fd932fd8e85ac182a53f90f7bb01fe6b5deb18"
-  },
-  "reviewer": "/root/startup_review",
-  "review_scope": "bounded first Codex-phase delivery; no v0.1 claim"
+  "merged": true,
+  "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a",
+  "merge_commit": "98b92a72da2671c0a517f674f8b023667c070bcb",
+  "tree": "659eb238b4a4425c660d25dae15c2b1f42128615",
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/12"
 }

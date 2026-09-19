@@ -14,32 +14,21 @@ Current branch work/report-continuation from main531f097 (PR11). Origin is publi
 D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
-NÄSTA HANDLING: REAL CONTINUATION RUNNING; do not start a second controller.
-Root controller tool session85296, log .runtime/report-continuation-controller.log.
-Native observation: evidence/accepted-task/observations/0e20e3c156bb48f5bd70180092ea1e65/.
-Workflow runtime-run-report-1 has advanced automatically from Claude attempt3
-(147.813s, successful terminal/cleanup, 33 host observations passed) to Codex attempt4.
-Codex4 completed in131.891s; 33 host observations and30 candidate tests passed.
-Native phase is now reviewing with a fresh read-only Codex session.
-Same working candidate; original workspace preserved as candidate-before-continuation.
-Actual Claude run a3c76846-a130-4841-a97c-b8b14d19010a, raw evidence and frozen Git
-candidate under evidence/accepted-task/attempt-3/. No parent source edits/handoff
-between the two provider steps. Input and prior history remain preserved.
+NÄSTA HANDLING: Real report task COMPLETED through native Codex→Claude→Codex,
+whole-task tests, fresh read-only review and automatic protected integration.
+Canonical observation: evidence/accepted-task/observations/0e20e3c156bb48f5bd70180092ea1e65/.
+Old20 native events are byte-equivalent prefix of final history; attempts1..4
+retained; publication_attempts1. Controller, worker, service and provider groups
+stopped cleanly. Actual receipt: evidence/accepted-task/integration.json;
+continuity-proof.json records distinct sessions and native activity order.
 
-Observe native state/results until completed or a diagnosed waiting state. Each
-implementation call remains bounded300s; fresh review180s; zero automatic retries.
-Do not edit candidate or Runtime source. Root may preserve finished phase evidence
-and this operator plan while the isolated executor runs. If controller disappears,
-inspect recorded launch PIDs/groups and native state before any resume; do not
-resubmit the task or repeat --access-restored. Ordinary observation thereafter:
-`.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json --resume`.
-Whole-task separate-review approval/publication remains pending; phase tests are not
-permission to integrate. Max subscription path and exact source input approved in
-evidence/reviews/report-continuation-input.json; prestate DBbackup under access-prestate/.
-
-Then use the actual delivered report on saved real provider logs, restart both
-native tasks to prove retained completion, and audit every mandate§1/§9 row.
-The second accepted evidence task already used this DevelopmentTask/Publisher.
+Next preserve all completed evidence, bring integrated main source into a fresh
+work branch without losing this backup branch, use the delivered CLI on real
+saved logs, and restart BOTH existing native tasks with --resume only. Never
+resubmit or repeat --access-restored; both tasks have completed. Then produce
+§1/§9 final evidence index and a fresh read-only Claude developer-continuity audit,
+finish separately reviewed documentation and controlled final integration.
+Runtime v0.1 is not yet declared complete until those final checks are recorded.
 
 UTFALL: Evidence task candidate38ecdaf7 integrated as0fba283 through PR7.25 host
 observations including14 candidate tests passed. Actual independent model review
@@ -58,11 +47,11 @@ hostile detached-process/guardian-SIGKILL claim. D018 records limits.
 and free engine lock were checked after fixtures. Fresh receivers still verify
 recorded launch PIDs/groups and Git before writes. Real canonical native database:
 .runtime/runtime.sqlite. Backup/hash: evidence/runs/runtime-evidence-index-1/state/.
-First report task: waiting_access, attempts2, retained candidate at
+First report task: completed, attempts4/publication1; retained candidate at
 .runtime/tasks/runtime-run-report-1/candidate; immutable Codex phase snapshot under
 evidence/accepted-task/attempt-2/candidate. Second task runtime-evidence-index-1:
 completed, attempts1, publication_attempts1. Never resubmit either existing task.
-No real-task Claude/model attempt is pending; no automatic retry is enabled.
+No model, worker or controller remains active; no automatic retry is enabled.
 Only isolated no-model fixture/test processes ran for this adapter delivery.
 
 Fixture databases are separate and backed up under evidence/recovery-probe/state/.
@@ -102,10 +91,10 @@ until access changes, and no extra task invented to substitute for the real swap
 |---|---|
 | Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
-| Replaceable execution | Claude access/profile qualified; Runtime swap NOT RUN |
+| Replaceable execution | Actual Codex→Claude→Codex completed and automatically integrated; final audit pending |
 | Interruption/capacity | Real controlled model interruption; abrupt worker + bounded harmless writer recovery; supplied known-quota wait survives restart without calls. Arbitrary guardian kill/detached descendants and actual vendor quota not proven |
 | Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
-| Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |
+| Repeatable use / Customer Zero | Second accepted task completed; first report task also completed; fresh restart/final audit pending |
 
 Runtime v0.1 is not complete. No project-wide time/token cap invented. Per-run
 limits are local safeguards; resource history and failed results remain preserved.

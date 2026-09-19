@@ -1,0 +1,32 @@
+{
+  "task_id": "runtime-run-report-1",
+  "task_sha256": "c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c",
+  "candidate": "f86a85c27d7cb2567d3c600292f213fa45067b7a",
+  "acceptance_sha256": "0fdb658c21ffd7401975e1c724c61392254d0419b193585fa9321b94c0a6f936",
+  "scope": "whole_task",
+  "terminal_status": "completed",
+  "reviewer_run": "01a0b9ae-eec2-7603-9f1f-c5286fcfde12",
+  "provider_result": {
+    "task": "runtime-run-report-1",
+    "attempt": 1,
+    "provider": "codex",
+    "provider_completed": true,
+    "exit_code": 0,
+    "thread_id": "01a0b9ae-eec2-7603-9f1f-c5286fcfde12",
+    "usage": {
+      "input_tokens": 57205,
+      "cached_input_tokens": 33408,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 1186,
+      "reasoning_output_tokens": 193
+    },
+    "role": "review",
+    "interrupted": null,
+    "process_group_removed": true,
+    "elapsed_seconds": 26.755,
+    "evidence": "evidence/accepted-task/review-1"
+  },
+  "verdict": "approved",
+  "blocking_findings": [],
+  "summary": "All three accepted files satisfy the brief. Verified status precedence, terminal counting, Claude\u2019s explicit-false requirement, usage/cost retention, CLI behavior, and handoff documentation. All 23 parser tests and 16 independent read-only CLI checks passed. No files changed."
+}
