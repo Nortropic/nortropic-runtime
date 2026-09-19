@@ -3,6 +3,7 @@ import json
 import hashlib
 from pathlib import Path
 import shutil
+import subprocess
 
 MODEL = 'claude-fable-5-1'
 VERSION = '2.1.257'
@@ -35,3 +36,14 @@ def command(workspace, allowed_paths=(), writable=True):
             '--no-chrome','--disable-slash-commands','--no-session-persistence',
             '--settings',json.dumps(settings),
             '--append-system-prompt-file',str(workspace/'AGENTS.md')]
+
+
+def require_subscription():
+    from .profile import environment
+    result = subprocess.run([qualified_binary(), 'auth', 'status'], env=environment(),
+                            capture_output=True, text=True, check=True, timeout=10)
+    auth = json.loads(result.stdout)
+    safe = {k: auth.get(k) for k in ('loggedIn','authMethod','apiProvider','subscriptionType')}
+    if safe != {'loggedIn':True,'authMethod':'claude.ai','apiProvider':'firstParty','subscriptionType':'max'}:
+        raise ValueError('Previously qualified subscription path is not active; no API fallback')
+    return safe

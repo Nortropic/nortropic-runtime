@@ -47,7 +47,7 @@ def check_unfinished_writers():
                 else: raise RuntimeError('Unfinished provider group; inspect before starting: ' + str(path))
 
 
-def prepare(task_file):
+def read_input(task_file):
     task_file = Path(task_file).resolve()
     if task_file.parent != ROOT / 'tasks': raise ValueError('Select a committed accepted task in tasks/')
     relative = str(task_file.relative_to(ROOT))
@@ -69,6 +69,12 @@ def prepare(task_file):
             raise ValueError('Accepted brief/verifier differs from preserved Git object')
     if hashlib.sha256(acceptance).hexdigest() != task['acceptance_sha256']:
         raise ValueError('Acceptance file changed after acceptance')
+    return task, acceptance, brief, source_revision
+
+
+def prepare(task_file):
+    task, acceptance, brief, source_revision = read_input(task_file)
+    task_bytes = json.dumps(task, indent=2).encode()
     state, output = task_directory(task['id']), evidence_directory(task['id'])
     if state.exists() or output.exists(): raise ValueError('Task already exists; inspect native state instead of overwriting or resubmitting')
     check_unfinished_writers()
@@ -89,15 +95,18 @@ def prepare(task_file):
     return task, output
 
 
-async def main(task_file, resume=False, diagnosis=None, reconcile=None):
+async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_restored=False):
     if resume:
         selected = json.loads(Path(task_file).read_text())
-        task = load(selected['id'], digest(selected))
+        if access_restored:
+            task, acceptance, brief, source_revision = read_input(task_file)
+        else:
+            task = load(selected['id'], digest(selected))
         check_unfinished_writers()
         output = evidence_directory(task['id']) / 'observations' / uuid.uuid4().hex
         output.mkdir(parents=True, exist_ok=False)
     else:
-        if diagnosis or reconcile: raise ValueError('Signals require --resume of an existing task')
+        if diagnosis or reconcile or access_restored: raise ValueError('Signals require --resume of an existing task')
         task, output = prepare(task_file)
     worker = None
     # Existing report workflow is retained when establishing the central DB.
@@ -120,6 +129,12 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None):
                 if resume:
                     handle = client.get_workflow_handle(task['id'])
                     prior = await asyncio.wait_for(handle.query(DevelopmentTask.state),15)
+                    if access_restored:
+                        from .continuation import prepare as prepare_continuation
+                        receipt = prepare_continuation(task, acceptance, brief, source_revision, prior)
+                        (output/'continuation.json').write_text(json.dumps(receipt,indent=2)+'\n')
+                        required_attempt = prior['attempts'] + 1
+                        await handle.signal(DevelopmentTask.resume_after_access, task)
                     if diagnosis:
                         if prior['phase'] != 'waiting_diagnosis': raise ValueError('Task is not waiting for implementation diagnosis')
                         required_attempt = prior['attempts'] + 1
@@ -130,11 +145,11 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None):
                         required_publication = prior.get('publication_attempts',1) + 1
                         await handle.signal(DevelopmentTask.reconcile_publication,
                                             {'candidate':prior['results'][-1]['candidate'],'reason':reconcile})
-                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile},indent=2)+'\n')
+                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile,'access_restored':access_restored},indent=2)+'\n')
                 else:
                     handle=await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development',
                                                        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
-                end=asyncio.get_running_loop().time()+task['attempt_seconds']+420
+                end=asyncio.get_running_loop().time()+task['attempt_seconds']*len(task['steps'])+420
                 while asyncio.get_running_loop().time()<end:
                     status=await asyncio.wait_for(handle.query(DevelopmentTask.state),10)
                     (output/'state.json').write_text(json.dumps(status,indent=2)+'\n')
@@ -168,5 +183,6 @@ if __name__=='__main__':
     signals = parser.add_mutually_exclusive_group()
     signals.add_argument('--diagnosis', help='Materially changed prerequisite after an implementation diagnosis')
     signals.add_argument('--reconcile', help='Reason to inspect/reconcile a failed or ambiguous publication')
+    signals.add_argument('--access-restored', action='store_true', help='Resume a reviewed frozen continuation at its native access checkpoint')
     args=parser.parse_args()
-    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile)))
+    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile,access_restored=args.access_restored)))

@@ -34,8 +34,7 @@ def invoke(request):
     return result
 
 
-@activity.defn
-def execute_codex(request: dict) -> dict:
+def execute_implementation(request: dict) -> dict:
     task = load(request['task_id'], request.get('task_digest'))
     result = invoke(request)
     if not result.get('provider_completed'): return result
@@ -67,6 +66,16 @@ def execute_codex(request: dict) -> dict:
     (output / 'acceptance.json').write_text(json.dumps(validation, indent=2) + '\n')
     result.update(phase_acceptance_passed=validation['passed'], candidate_files_sha256=files)
     return result
+
+
+@activity.defn
+def execute_codex(request: dict) -> dict:
+    return execute_implementation(request)
+
+
+@activity.defn
+def execute_claude(request: dict) -> dict:
+    return execute_implementation({**request, 'provider':'claude'})
 
 
 @activity.defn

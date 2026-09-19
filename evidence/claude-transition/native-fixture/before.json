@@ -1,0 +1,25 @@
+{
+  "attempts": 2,
+  "phase": "waiting_access",
+  "results": [
+    {
+      "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "candidate_files_sha256": {},
+      "evidence": "fixture-only",
+      "phase_acceptance_passed": false,
+      "provider_completed": false,
+      "thread_id": "codex-1",
+      "workspace_name": "commit-1"
+    },
+    {
+      "candidate": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "candidate_files_sha256": {},
+      "evidence": "fixture-only",
+      "phase_acceptance_passed": true,
+      "provider_completed": true,
+      "thread_id": "codex-2",
+      "workspace_name": "commit-2"
+    }
+  ],
+  "waiting_reason": "WAITING_ACCESS: known oauth_org_not_allowed, evidence/startup/claude-root; wait for owner-confirmed subscription access change, no API fallback"
+}

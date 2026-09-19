@@ -1,0 +1,1 @@
+{"passed": true, "attempts": 4, "calls": [{"number": 1, "provider": "codex", "inherited": ""}, {"number": 2, "provider": "codex", "inherited": "codex:1\n"}, {"number": 3, "provider": "claude", "inherited": "codex:1\ncodex:2\n"}, {"number": 4, "provider": "codex", "inherited": "codex:1\ncodex:2\nclaude:3\n"}, {"publication": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]}
