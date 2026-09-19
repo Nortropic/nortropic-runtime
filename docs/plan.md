@@ -1,6 +1,6 @@
 # Living plan — Runtime v0.1
 
-## Current step: preserved wait for changed Claude access
+## Current step: qualify owner-restored Claude access
 
 RESULTAT: One useful accepted Codex task completed automatically through external
 acceptance, fresh independent review and protected integration (PR7). Its evidence
@@ -10,17 +10,18 @@ Check PR9 server merged state and git origin/main when taking over; do not infer
 integration from backup branch existence. Runtime v0.1 is NOT complete.
 
 ARBETSYTA: Nortropic/nortropic-runtime, local /Users/elinhaggstrom/Nortropic Runtime.
-Current recovery delivery branch work/inflight-recovery. Origin is public by owner
+Current branch work/claude-qualification from mainf5dde1a. Origin is public by owner
 D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
-NÄSTA HANDLING: Await changed Claude access evidence from owner (D015). The latest
-observed Claude403 oauth_org_not_allowed means subscription/organization access
-was disabled; it was not a proven quota exhaustion. Buying usage is not assumed
-to repair it. Do not make periodic Claude calls or ask for a new work order.
-When access changes, inspect cached/auth account and organization state first,
-then choose one bounded minimal qualification call through the already authorized
-subscription. If rights/cost must change, take the exact decision to owner directly.
+NÄSTA HANDLING: Claude qualification completed with actual subscription calls.
+Read evidence/claude-qualification/result.md and verification.json. Independently
+review the pinned restricted file-tool profile, preserve/integrate that small
+slice, then connect it to the existing report workflow with native replay and
+frozen whole-task acceptance. No model/engine/writer remains active; the unrelated
+historical tail process outside this project is untouched. Current profile uses
+native --append-system-prompt-file AGENTS.md, proven from root and subdirectory.
+Do not rely on automatic @ import in subdirectories or Claude Bash sandbox.
 
 Once access is verified, qualify Claude's constrained tool/stop/result path and
 connect it to the existing native workflow without replacing histories. Continue
@@ -92,7 +93,7 @@ until access changes, and no extra task invented to substitute for the real swap
 |---|---|
 | Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
-| Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
+| Replaceable execution | Claude access/profile qualified; Runtime swap NOT RUN |
 | Interruption/capacity | Real controlled model interruption; abrupt worker + bounded harmless writer recovery; supplied known-quota wait survives restart without calls. Arbitrary guardian kill/detached descendants and actual vendor quota not proven |
 | Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
 | Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |
