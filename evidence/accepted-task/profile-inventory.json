@@ -1,0 +1,316 @@
+{
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/codex-0.155.1",
+    "-c",
+    "model=\"gpt-6-astra\"",
+    "-c",
+    "approval_policy=\"never\"",
+    "-c",
+    "model_reasoning_effort=\"high\"",
+    "--disable",
+    "apps",
+    "--disable",
+    "computer_use",
+    "--disable",
+    "browser_use",
+    "--disable",
+    "browser_use_external",
+    "--disable",
+    "browser_use_full_cdp_access",
+    "--disable",
+    "in_app_browser",
+    "--disable",
+    "image_generation",
+    "--disable",
+    "multi_agent",
+    "--disable",
+    "plugins",
+    "-c",
+    "mcp_servers.node_repl.enabled=false",
+    "-c",
+    "mcp_servers.railway.enabled=false",
+    "-c",
+    "mcp_servers.computer-use.enabled=false",
+    "-c",
+    "plugins.\"browser@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"documents@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"pdf@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"presentations@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"spreadsheets@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"template-creator@openai-primary-runtime\".enabled=false",
+    "-c",
+    "plugins.\"visualize@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"codex-app-tools@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"unified-computer-use@openai-bundled\".enabled=false",
+    "-c",
+    "plugins.\"computer-use@openai-bundled\".enabled=false",
+    "-c",
+    "permissions.nr.filesystem={\":minimal\"=\"read\",\"/opt/homebrew\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/tools\"=\"write\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/.scratch\"=\"write\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/AGENTS.override.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/AGENTS.override.md\"=\"read\",\"/Users/elinhaggstrom/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/AGENTS.override.md\"=\"read\",\"/Users/AGENTS.md\"=\"read\",\"/Users/AGENTS.override.md\"=\"read\",\"/AGENTS.md\"=\"read\",\"/AGENTS.override.md\"=\"read\"}",
+    "-c",
+    "permissions.nr.network.enabled=false",
+    "-c",
+    "default_permissions=\"nr\"",
+    "app-server"
+  ],
+  "model_turns": 0,
+  "passed": true,
+  "records": [
+    {
+      "direction": "request",
+      "message": {
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "clientInfo": {
+            "name": "nr-profile-preflight",
+            "version": "0.1"
+          },
+          "capabilities": {
+            "experimentalApi": true
+          }
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "id": 1,
+        "result": {
+          "userAgent": "codex_vscode/0.155.1 (Mac OS 26.3.0; arm64) dumb (nr-profile-preflight; 0.1)",
+          "codexHome": "/Users/elinhaggstrom/.codex",
+          "platformFamily": "unix",
+          "platformOs": "macos"
+        }
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "method": "initialized",
+        "params": {}
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "id": 2,
+        "method": "thread/start",
+        "params": {
+          "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate",
+          "model": "gpt-6-astra",
+          "approvalPolicy": "never",
+          "dynamicTools": []
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "method": "remoteControl/status/changed",
+        "params": {
+          "status": "disabled",
+          "serverName": "MacBook-Pro.local",
+          "installationId": "0dc00a85-ddb9-4878-8797-62faf6b89ae0",
+          "environmentId": null
+        },
+        "emittedAtMs": 1789814650535
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "id": 2,
+        "result": {
+          "thread": {
+            "id": "01a0b944-3a01-7fc3-aaa8-8cd8a2c3cc77",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate",
+                "runtimeWorkspaceRoots": [
+                  "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a0b944-3a01-7fc3-aaa8-8cd8a2c3cc77",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "",
+            "ephemeral": false,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-6-astra",
+            "reasoningEffort": "high",
+            "createdAt": 1789814651,
+            "updatedAt": 1789814651,
+            "recencyAt": 1789814651,
+            "status": {
+              "type": "idle"
+            },
+            "path": "/Users/elinhaggstrom/.codex/sessions/2026/09/19/rollout-2026-09-19T12-44-11-01a0b944-3a01-7fc3-aaa8-8cd8a2c3cc77.jsonl",
+            "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate",
+            "cliVersion": "0.155.1",
+            "originator": "codex_vscode",
+            "source": "vscode",
+            "canAcceptDirectInput": true,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          },
+          "model": "gpt-6-astra",
+          "modelProvider": "openai",
+          "serviceTier": "priority",
+          "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate",
+          "runtimeWorkspaceRoots": [
+            "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate"
+          ],
+          "instructionSources": [
+            "/Users/elinhaggstrom/Nortropic Runtime/AGENTS.md",
+            "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/AGENTS.md"
+          ],
+          "approvalPolicy": "never",
+          "approvalsReviewer": "user",
+          "sandbox": {
+            "type": "workspaceWrite",
+            "writableRoots": [
+              "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/.scratch",
+              "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/tools"
+            ],
+            "networkAccess": false,
+            "excludeTmpdirEnvVar": true,
+            "excludeSlashTmp": true
+          },
+          "activePermissionProfile": {
+            "id": "nr",
+            "extends": null
+          },
+          "reasoningEffort": "high",
+          "multiAgentMode": "explicitRequestOnly"
+        }
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "id": 3,
+        "method": "mcpServerStatus/list",
+        "params": {
+          "threadId": "01a0b944-3a01-7fc3-aaa8-8cd8a2c3cc77",
+          "detail": "full"
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "method": "thread/started",
+        "params": {
+          "thread": {
+            "id": "01a0b944-3a01-7fc3-aaa8-8cd8a2c3cc77",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate",
+                "runtimeWorkspaceRoots": [
+                  "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a0b944-3a01-7fc3-aaa8-8cd8a2c3cc77",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "",
+            "ephemeral": false,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-6-astra",
+            "reasoningEffort": "high",
+            "createdAt": 1789814651,
+            "updatedAt": 1789814651,
+            "recencyAt": 1789814651,
+            "status": {
+              "type": "idle"
+            },
+            "path": "/Users/elinhaggstrom/.codex/sessions/2026/09/19/rollout-2026-09-19T12-44-11-01a0b944-3a01-7fc3-aaa8-8cd8a2c3cc77.jsonl",
+            "cwd": "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate",
+            "cliVersion": "0.155.1",
+            "originator": "codex_vscode",
+            "source": "vscode",
+            "canAcceptDirectInput": true,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          }
+        },
+        "emittedAtMs": 1789814651636
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "id": 3,
+        "result": {
+          "data": [
+            {
+              "name": "computer-use",
+              "runtimeStatus": "disabled",
+              "pluginId": null,
+              "serverInfo": null,
+              "tools": {},
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            },
+            {
+              "name": "node_repl",
+              "runtimeStatus": "disabled",
+              "pluginId": null,
+              "serverInfo": null,
+              "tools": {},
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            },
+            {
+              "name": "railway",
+              "runtimeStatus": "disabled",
+              "pluginId": null,
+              "serverInfo": null,
+              "tools": {},
+              "toolsError": null,
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "unsupported"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    }
+  ]
+}

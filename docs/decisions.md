@@ -220,3 +220,13 @@ nonsecret canaries before a live turn. Official reference consulted:
 https://learn.chatgpt.com/docs/config-file/config-reference (permissions filesystem
 and network options); local 0.155.1 CLI/schema decides invocation compatibility.
 No assertion of complete rights separation until observed, including escape routes.
+
+The first thread preflight exposed a real compatibility error: restricted reads
+blocked ancestor AGENTS discovery. Added read-only grants for AGENTS.md and
+AGENTS.override.md at ancestor paths; no directory-wide host read grant. Fresh
+thread now reports activePermissionProfile nr, writable roots exactly tools and
+.scratch, no network/tmp writes, and only disabled MCP servers with zero tools.
+The six harmless boundary checks also passed with this corrected profile. No model
+turn was used for either inventory. Raw evidence: evidence/accepted-task/profile-*
+and boundary-instructions.json. CLI sandbox syntax is `codex sandbox`, not the old
+`codex sandbox macos`; the mistaken help invocation failed before doing any work.

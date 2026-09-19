@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "model_calls": 0,
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/codex-0.155.1",
+    "sandbox",
+    "-c",
+    "permissions.nr.filesystem={\":minimal\"=\"read\",\"/opt/homebrew\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/tools\"=\"write\",\"/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate/.scratch\"=\"write\"}",
+    "-c",
+    "permissions.nr.network.enabled=false",
+    "-c",
+    "default_permissions=\"nr\"",
+    "-P",
+    "nr",
+    "-C",
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/boundary-candidate",
+    "/opt/homebrew/bin/python3.12",
+    "-c",
+    "import json,socket\nfrom pathlib import Path\nr={}\nPath('tools/allowed.txt').write_text('ok')\nr['allowed_write']=Path('tools/allowed.txt').read_text()=='ok'\nfor label,path,operation in [('host_read','/Users/elinhaggstrom/Nortropic Runtime/.runtime/host-boundary-canary','read'),('host_write','/Users/elinhaggstrom/Nortropic Runtime/.runtime/host-boundary-canary','write'),('context_write','AGENTS.md','write'),('symlink_write','tools/escape','write')]:\n try:\n  p=Path(path)\n  if operation=='read': p.read_text()\n  else: p.write_text('changed')\n  r[label+'_denied']=False\n except PermissionError: r[label+'_denied']=True\ntry:\n s=socket.create_connection(('127.0.0.1',59032),timeout=1); s.close(); r['network_denied']=False\nexcept PermissionError: r['network_denied']=True\nprint(json.dumps(r))\n"
+  ],
+  "returncode": 0,
+  "stdout": "{\"allowed_write\": true, \"host_read_denied\": true, \"host_write_denied\": true, \"context_write_denied\": true, \"symlink_write_denied\": true, \"network_denied\": true}\n",
+  "stderr": "",
+  "observations": {
+    "allowed_write": true,
+    "host_read_denied": true,
+    "host_write_denied": true,
+    "context_write_denied": true,
+    "symlink_write_denied": true,
+    "network_denied": true
+  }
+}
