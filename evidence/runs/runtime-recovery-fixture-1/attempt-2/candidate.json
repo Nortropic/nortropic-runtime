@@ -1,0 +1,9 @@
+{
+  "candidate": "a790e911df17c87eaf0acfb9a0153790df0dcf54",
+  "workspace_name": "commit-2",
+  "candidate_files_sha256": {
+    "tools/recovery.txt": "4a87db01c21623959c40c718220cb135476407da24aa20609e5da4abda46593c"
+  },
+  "base": "1b020b55e937e12853e811491e56e8e25ee7cd7a",
+  "task_sha256": "86026b0fbb276590d50ebb65eff3457f95a2dc26b53d08f04c45ad6f0e2ce51f"
+}

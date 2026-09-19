@@ -1,0 +1,17 @@
+{
+  "task": "runtime-recovery-fixture-1",
+  "attempt": 2,
+  "provider": "codex",
+  "provider_completed": true,
+  "exit_code": 0,
+  "thread_id": "fixture-author-2",
+  "role": "implementation",
+  "interrupted": null,
+  "process_group_removed": true,
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "elapsed_seconds": 0.148,
+  "evidence": "evidence/runs/runtime-recovery-fixture-1/attempt-2"
+}

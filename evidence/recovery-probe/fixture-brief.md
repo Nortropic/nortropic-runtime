@@ -1,0 +1,1 @@
+Harmless recovery fixture; no model or remote publication.

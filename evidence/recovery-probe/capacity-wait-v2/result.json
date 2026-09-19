@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "model_calls": 0,
+  "provider_activity_calls": 0,
+  "states": [
+    {
+      "attempts": 0,
+      "phase": "waiting_access",
+      "results": [],
+      "waiting_reason": "Known fixture quota exhausted; retain work and await changed capacity evidence"
+    },
+    {
+      "attempts": 0,
+      "phase": "waiting_access",
+      "results": [],
+      "waiting_reason": "Known fixture quota exhausted; retain work and await changed capacity evidence"
+    }
+  ],
+  "scope": "known quota supplied as frozen input, not an actual provider quota response"
+}

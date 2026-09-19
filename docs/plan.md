@@ -28,28 +28,25 @@ same workflow reaches waiting_diagnosis. Explicit diagnosis starts attempt2, whi
 preserves first work. No duplicate simulated publication. Inspect separate review
 before integrating experiment results or needed runtime corrections.
 
-NÄSTA HANDLING: Implement and run bounded fixture<=240s, model_calls0. Do not alter
-completed task histories, use real Claude, expand permissions or inherit a locking
-file descriptor into candidate tools. A small no-model probe found pinned Codex
-retains inherited FD locks, but that route is not adopted: descriptor exposure to
-candidate tools has not been qualified and would add avoidable authority.
+NÄSTA HANDLING: Separately review the recovery/capacity evidence and the small
+service-port correction, then integrate the exact approved candidate. Remaining
+executor work depends on changed Claude access; no periodic calls or purchase.
 
-UTFALL: Abrupt-worker experiment ACTIVE: worker1 SIGKILLed, old guardian stopped
-its provider at3.063s, a concurrent guardian failed the lock, and CLI inspection
-refused active-writer restart. Worker2 is observing native activity timeout153s;
-state remains running_codex/attempt1 with no duplicate launch. Service/worker2
-may be active; inspect evidence/recovery-probe and recorded launches before writes. Inherited-FD prototype used no model
-turn and its app-server group was removed; preserve it as rejected design evidence.
-Real task evidence remains evidence/runs/runtime-evidence-index-1/result.md.
-25 host cases (including14 source tests), actual fresh review, protected automatic
-merge0fba283 and identical completed-state restart passed. One attempt/publication.
+UTFALL: Abrupt-worker fixture PASSED in155.773s: competing guardian refused,
+old provider stopped at3.063s, native timeout retained attempt1, explicit signal
+continued same file as attempt2, one simulated publication. All groups removed.
+Known-quota fixture retained exact wait across service restart with zero activities.
+The first capacity start exposed TCP TIME_WAIT preflight false positive; corrected
+SO_REUSEADDR check passes real active-listener and stopped-listener tests, then
+native two-start fixture. Raw result/limits: evidence/recovery-probe/result.md.
+No production recovery layer or inherited lock descriptor was added.
 
-ÅTERUPPTAGNING: Root driver active. No model processes run. The explicitly isolated recovery fixture engine/worker
-may remain active until its bounded controller finishes; do not start another server. Canonical
-real-task DB .runtime/runtime.sqlite, backup/hash in evidence/runs/runtime-evidence-index-1/state/.
-Old report still waiting_access/attempt2 after fresh native restart. New task is
-completed; do not resubmit. Current fault experiment uses a separate native DB and
-never publishes. Earlier report completion and Codex→Claude→Codex remain pending.
+ÅTERUPPTAGNING: Root driver active. No model/engine processes remain. Real tasks'
+canonical DB .runtime/runtime.sqlite and backup in evidence/runs/runtime-evidence-index-1/state/.
+Fixture DBs are separate; compressed native backups/hash in evidence/recovery-probe/state/.
+First report remains waiting_access/attempt2; evidence CLI task completed with
+actual independent review/protected merge. Do not rerun historical experiments or
+resubmit completed tasks. Recovery/capacity evidence is awaiting independent review.
 
 ## Completed delivery and evidence
 
@@ -83,7 +80,7 @@ implementation plus another accepted task over the same route.
 | Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
 | Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
-| Interruption/capacity | Actual interrupted attempt and post-cleanup wait replay passed; in-flight crash fencing/quotas pending |
+| Interruption/capacity | Real controlled model interruption; abrupt worker + bounded harmless writer recovery; supplied known-quota wait survives restart without calls. Arbitrary guardian kill/detached descendants and actual vendor quota not proven |
 | Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
 | Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |
 
