@@ -1,0 +1,14 @@
+{
+  "merged": true,
+  "candidate": "f0b545d1a373e6b32c73887711e2e9698f61710b",
+  "merge_commit": "a941207a9ca57697967cf33dcd1c3ea5d884051a",
+  "tree": "e84383605fe41fc8bd4370ab9a8b5591412a05f7",
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/14",
+  "source_review": "be157ed662a9c3333ea5a46e12d9d3de1a8df400",
+  "final_review": "f0b545d1a373e6b32c73887711e2e9698f61710b",
+  "reviewer": "/root/startup_review",
+  "v01_tag_unchanged": true,
+  "old_evidence_unchanged": true,
+  "post_merge_unfinished_writer_check": "passed with qualified SDK interpreter",
+  "handoff_check_initial_error": "System python3 lacks google.protobuf; retried with existing qualified .runtime/temporal-venv/bin/python, no installation or source changes"
+}
