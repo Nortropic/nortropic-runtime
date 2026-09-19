@@ -43,7 +43,7 @@ try:
 except PermissionError: r['network_denied']=True
 print(json.dumps(r))
 '''.replace('OUT', repr(str(outside))).replace('PORT', str(port))
-        cmd = sandbox_command(ws, ['/opt/homebrew/bin/python3.12', '-c', code])
+        cmd = sandbox_command(ws, ['/opt/homebrew/bin/python3.12', '-c', code], writable=True)
         r = subprocess.run(cmd, capture_output=True, text=True, env=environment(), timeout=15)
     data = json.loads(r.stdout) if r.returncode == 0 else {}
     passed = len(data) == 6 and all(data.values()) and outside.read_text() == 'nonsecret authority canary\n'

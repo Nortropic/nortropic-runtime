@@ -230,3 +230,28 @@ The six harmless boundary checks also passed with this corrected profile. No mod
 turn was used for either inventory. Raw evidence: evidence/accepted-task/profile-*
 and boundary-instructions.json. CLI sandbox syntax is `codex sandbox`, not the old
 `codex sandbox macos`; the mistaken help invocation failed before doing any work.
+
+## D014 — 2026-09-19: stop on verifier escape; preserve attempt and repair boundary
+
+Separate review of f61b84d found a real host-write escape: candidate-owned
+.scratch/sample.jsonl could be a symlink followed by host write_text. It also found
+check/use races in candidate hashing/copying. Interrupted live attempt1 by SIGTERM
+before acceptance, preserving raw events and source. Attempt result: interrupted,
+34.166s, no terminal usage (unknown, not0), provider group removed. Workflow reached
+waiting_diagnosis, attempt1 and same result survived server/worker restart. No
+acceptance occurred and no provider completion claimed; all four engine groups
+removed. evidence/accepted-task/engine and attempt-1 retain raw negative results.
+
+Correction: pass CLI data through stdin, never host-write in candidate-owned paths.
+Open every candidate path component with O_NOFOLLOW, require bounded regular fd,
+read/hash those bytes and freeze them in a new host-owned evidence directory.
+Execute acceptance against that snapshot with source read-only and no network.
+Kill/reap verifier process groups on completion/timeout. Regression tests show CLI
+stdin leaves candidate symlink target unchanged, frozen source write denied, and
+symlink/file-parent/FIFO snapshot refusal. These are bounded host-file-handling
+proofs, not a claim to fence deliberately detached hostile process trees.
+
+Resume the SAME workflow/candidate only after correction review, with an explicit
+native diagnosis signal carrying changed prerequisite. Attempt number increments
+rather than restarting history. Driver checks old recorded PIDs/group absence.
+No automatic repeated model attempt and no Claude call while D005 unchanged.

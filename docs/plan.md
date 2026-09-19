@@ -26,23 +26,30 @@ subscription, no API fallback. Claude D005 WAITING_ACCESS remains: org disabled
 subscription access, no repeated call until new access evidence. Old Symphony and
 Temporal probe processes inspected stopped; B1 launch remains disabled.
 
-NÄSTA HANDLING: Freeze the accepted reporting task and external verifier; prove
-restricted worker filesystem/network with harmless canaries; connect one Codex
-phase to native activity and retain provider events. Separate review before merge.
+NÄSTA HANDLING: Review D014 correction, then run
+`.runtime/temporal-venv/bin/python scripts/run_accepted_task.py --resume-after-diagnosis`
+from repository root. It restores existing SQLite/workspace, verifies stopped prior
+PIDs, signals a changed prerequisite, and records attempt2 in the SAME workflow.
+Do not rerun original launch or remove attempt1. Next report belongs in
+`evidence/accepted-task/engine-resume-2` and `attempt-2`.
 
-PROV OCH KLART-NÄR: Useful candidate passes frozen phase acceptance; raw terminal
-status and usage retained; invalid/missing terminal result never passes; same task
-ID rejects duplicate launch; known blocked next executor causes durable wait
-without call. Actual interrupted in-flight writer fencing remains a later test.
+PROV OCH KLART-NÄR: Useful candidate passes host-owned phase acceptance on immutable
+snapshot; invalid/missing provider terminal never passes; attempt1 retained and
+attempt2 explicit; blocked next executor waits without call across restart.
+Interrupted in-flight worker death/escaped-process fencing remains unproven.
 
-UTFALL: Not run. PR3 merge receipt: evidence/durable-probe/integration.json.
-The prior restart result proves completed-step replay, not exactly-once external
-side effects or failed model-attempt persistence.
+UTFALL: Attempt1 interrupted by operator on separate review blockers before host
+acceptance (D014). Actual waiting_diagnosis/attempt1 survived worker+server restart.
+Provider group and all four engine groups removed. No usage terminal: tokens/cost
+unknown, not0. Boundary6 checks and fresh profile inventory passed. Two concrete
+review corrections now implemented with targeted regression, not yet reviewed.
+PR3 receipt: evidence/durable-probe/integration.json.
 
-ÅTERUPPTAGNING: Root driver active, no engine/model workers left from prior slices.
-Do not start another writer while current one exists. Candidate is not yet made.
-Read this plan and inspect actual processes before resuming. Next engine invocation
-will have bounded startup/run/cleanup and record PIDs; no daemon left unattended.
+ÅTERUPPTAGNING: Root driver active. No engine/model writer remains from attempt1;
+PID24176 executor and provider PID in attempt-1/launch.json must be checked again
+before retry. SQLite: .runtime/tasks/runtime-run-report-1/temporal.sqlite.
+Candidate and task ID unchanged; source paths remain unaccepted. Engine state is
+waiting_diagnosis, attempt1. No unrecorded retry, no Claude/API fallback.
 
 ## Completed delivery and evidence
 

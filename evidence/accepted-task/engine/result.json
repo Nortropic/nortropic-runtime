@@ -1,0 +1,111 @@
+{
+  "passed": false,
+  "cleanup": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "observations": [
+    {
+      "spawn": "server-before",
+      "pid": 24164,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/temporal-1.9.1",
+        "--disable-config-env",
+        "--disable-config-file",
+        "server",
+        "start-dev",
+        "--ip",
+        "127.0.0.1",
+        "--port",
+        "7339",
+        "--http-port",
+        "7340",
+        "--metrics-port",
+        "7341",
+        "--namespace",
+        "nortropic-runtime",
+        "--headless",
+        "--db-filename",
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/tasks/runtime-run-report-1/temporal.sqlite"
+      ]
+    },
+    {
+      "spawn": "worker-before",
+      "pid": 24168,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/temporal-venv/bin/python",
+        "-m",
+        "runtime.worker"
+      ]
+    },
+    {
+      "duplicate_start_rejected": true
+    },
+    {
+      "before_restart": {
+        "attempts": 1,
+        "phase": "waiting_diagnosis",
+        "results": [
+          {
+            "exit_code": 1,
+            "provider_completed": false,
+            "reason": "attempt failed or interrupted",
+            "stderr": ""
+          }
+        ],
+        "waiting_reason": "Phase incomplete or failed; preserved evidence, no automatic repetition"
+      }
+    },
+    {
+      "spawn": "server-after",
+      "pid": 24347,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/temporal-1.9.1",
+        "--disable-config-env",
+        "--disable-config-file",
+        "server",
+        "start-dev",
+        "--ip",
+        "127.0.0.1",
+        "--port",
+        "7339",
+        "--http-port",
+        "7340",
+        "--metrics-port",
+        "7341",
+        "--namespace",
+        "nortropic-runtime",
+        "--headless",
+        "--db-filename",
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/tasks/runtime-run-report-1/temporal.sqlite"
+      ]
+    },
+    {
+      "spawn": "worker-after",
+      "pid": 24348,
+      "command": [
+        "/Users/elinhaggstrom/Nortropic Runtime/.runtime/temporal-venv/bin/python",
+        "-m",
+        "runtime.worker"
+      ]
+    },
+    {
+      "after_restart": {
+        "attempts": 1,
+        "phase": "waiting_diagnosis",
+        "results": [
+          {
+            "exit_code": 1,
+            "provider_completed": false,
+            "reason": "attempt failed or interrupted",
+            "stderr": ""
+          }
+        ],
+        "waiting_reason": "Phase incomplete or failed; preserved evidence, no automatic repetition"
+      }
+    }
+  ],
+  "scope": "first Codex phase and preserved access wait only; not complete task/v0.1"
+}

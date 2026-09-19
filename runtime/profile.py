@@ -6,12 +6,12 @@ from pathlib import Path
 from scripts.probe_bridge import ROOT, worker_command
 
 
-def permissions(workspace):
+def permissions(workspace, writable=True):
     workspace = Path(workspace).resolve()
     # Candidate code is writable; context, Git metadata and host are not.
     filesystem = {':minimal': 'read', '/opt/homebrew': 'read',
                   str(ROOT / 'AGENTS.md'): 'read',
-                  str(workspace): 'read', str(workspace / 'tools'): 'write',
+                  str(workspace): 'read', str(workspace / 'tools'): 'write' if writable else 'read',
                   str(workspace / '.scratch'): 'write'}
     for ancestor in workspace.parents:
         for name in ('AGENTS.md', 'AGENTS.override.md'):
@@ -36,6 +36,6 @@ def environment():
             if key in ('PATH', 'HOME', 'USER', 'LOGNAME', 'LANG', 'TMPDIR')}
 
 
-def sandbox_command(workspace, argv):
+def sandbox_command(workspace, argv, writable=False):
     return [str(ROOT / '.runtime/bin/codex-0.155.1'), 'sandbox',
-            *permissions(workspace), '-P', 'nr', '-C', str(workspace), *argv]
+            *permissions(workspace, writable=writable), '-P', 'nr', '-C', str(workspace), *argv]

@@ -1,0 +1,13 @@
+test_stdin_does_not_follow_candidate_symlink (test_acceptance_boundary.AcceptanceBoundaryTest) ... ok
+test_normal_leader_exit_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_sigterm_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_timeout_with_term_ignoring_child (test_bounded.BoundedTest) ... ok
+test_host_tracker_tools_and_wide_sandbox_removed (test_probe.ProbeTest) ... ok
+test_missing_and_changed_instructions_fail (test_probe.ProbeTest) ... ok
+test_wrong_missing_and_legitimate_artifacts (test_probe.ProbeTest) ... ok
+test_regular_and_symlink_components (test_snapshot.SnapshotTest) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 8.164s
+
+OK

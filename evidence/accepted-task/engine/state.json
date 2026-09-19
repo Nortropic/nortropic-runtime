@@ -1,0 +1,13 @@
+{
+  "attempts": 1,
+  "phase": "waiting_diagnosis",
+  "results": [
+    {
+      "exit_code": 1,
+      "provider_completed": false,
+      "reason": "attempt failed or interrupted",
+      "stderr": ""
+    }
+  ],
+  "waiting_reason": "Phase incomplete or failed; preserved evidence, no automatic repetition"
+}

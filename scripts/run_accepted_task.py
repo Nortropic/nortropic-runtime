@@ -2,6 +2,7 @@
 import asyncio
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import signal
@@ -21,21 +22,32 @@ from scripts.bounded import stop_group
 
 TASK = ROOT / 'tasks/run-report.json'
 STATE = ROOT / '.runtime/tasks/runtime-run-report-1'
-OUTPUT = ROOT / 'evidence/accepted-task/engine'
+RESUME = sys.argv[1:] == ['--resume-after-diagnosis']
+OUTPUT = ROOT / ('evidence/accepted-task/engine-resume-2' if RESUME else 'evidence/accepted-task/engine')
 
 
 async def main():
     for port in (7339, 7340, 7341):
         with socket.socket() as s: s.bind(('127.0.0.1', port))
     task = json.loads(TASK.read_text())
-    STATE.mkdir(parents=True, exist_ok=False)
     OUTPUT.mkdir(exist_ok=False)
     workspace = STATE / 'candidate'
-    subprocess.run(['git', 'clone', '--no-hardlinks', '--no-checkout', str(ROOT), str(workspace)], check=True, capture_output=True, timeout=30)
-    subprocess.run(['git', '-C', str(workspace), 'checkout', '--detach', task['base']], check=True, capture_output=True, timeout=30)
-    subprocess.run(['git', '-C', str(workspace), 'remote', 'remove', 'origin'], check=True, timeout=5)
-    for folder in ('tools', '.scratch'): (workspace / folder).mkdir(exist_ok=False)
-    shutil.copyfile(ROOT / 'tasks/run-report.md', workspace / 'TASK.md')
+    if RESUME:
+        previous = json.loads((ROOT / 'evidence/accepted-task/attempt-1/launch.json').read_text())
+        for field in ('executor_pid', 'provider_pid'):
+            try: os.kill(previous[field], 0)
+            except ProcessLookupError: pass
+            else: raise RuntimeError('Previous writer PID still exists; inspect before resuming')
+        try: os.killpg(previous['provider_pid'], 0)
+        except ProcessLookupError: pass
+        else: raise RuntimeError('Previous provider group still exists')
+    else:
+        STATE.mkdir(parents=True, exist_ok=False)
+        subprocess.run(['git', 'clone', '--no-hardlinks', '--no-checkout', str(ROOT), str(workspace)], check=True, capture_output=True, timeout=30)
+        subprocess.run(['git', '-C', str(workspace), 'checkout', '--detach', task['base']], check=True, capture_output=True, timeout=30)
+        subprocess.run(['git', '-C', str(workspace), 'remote', 'remove', 'origin'], check=True, timeout=5)
+        for folder in ('tools', '.scratch'): (workspace / folder).mkdir(exist_ok=False)
+        shutil.copyfile(ROOT / 'tasks/run-report.md', workspace / 'TASK.md')
     # Exact acceptance/input identities are host evidence, not candidate-owned metadata.
     identities = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
                   for p in (TASK, ROOT / 'tasks/run-report.md', ROOT / task['acceptance'])}
@@ -64,17 +76,25 @@ async def main():
         service=server('server-before')
         client=await connect()
         worker=spawn([sys.executable,'-m','runtime.worker'],'worker-before')
-        handle=await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development',
-                                            id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
-        try:
-            await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development')
-            raise AssertionError('duplicate task started')
-        except WorkflowAlreadyStartedError: observations.append({'duplicate_start_rejected':True})
+        if RESUME:
+            handle=client.get_workflow_handle(task['id'])
+            prior=await asyncio.wait_for(handle.query(DevelopmentTask.state),15)
+            assert prior['phase']=='waiting_diagnosis' and prior['attempts']==1
+            reason='D014: verifier stdin replaces unsafe write; nofollow immutable source snapshot; reviewed correction'
+            await handle.signal(DevelopmentTask.retry_after_diagnosis,{'expected_attempt':1,'reason':reason})
+            observations.append({'resumed_same_task':True,'prior':prior,'change_reason':reason})
+        else:
+            handle=await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development',
+                                                id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
+            try:
+                await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development')
+                raise AssertionError('duplicate task started')
+            except WorkflowAlreadyStartedError: observations.append({'duplicate_start_rejected':True})
         end=time.monotonic()+task['attempt_seconds']+130
         while time.monotonic()<end:
             state=await asyncio.wait_for(handle.query(DevelopmentTask.state),10)
             (OUTPUT/'state.json').write_text(json.dumps(state,indent=2)+'\n')
-            if state['phase'].startswith('waiting_'): break
+            if state['phase'].startswith('waiting_') and state['attempts'] == (2 if RESUME else 1): break
             await asyncio.sleep(1)
         else: raise TimeoutError('workflow did not reach a waiting state')
         observations.append({'before_restart':state})
@@ -89,13 +109,8 @@ async def main():
         restored=await asyncio.wait_for(client.get_workflow_handle(task['id']).query(DevelopmentTask.state),15)
         observations.append({'after_restart':restored})
         assert restored==state
-        assert restored['attempts']==1
+        assert restored['attempts']==(2 if RESUME else 1)
         passed=state['phase']=='waiting_access'
-        for name in task['allowed_paths']:
-            path=workspace/name
-            if path.is_file() and not path.is_symlink():
-                target=OUTPUT/'candidate'/name; target.parent.mkdir(parents=True,exist_ok=True)
-                shutil.copyfile(path,target)
     finally:
         cleanup=[stop_group(proc) for proc in reversed(processes)]
         for stream in streams: stream.close()

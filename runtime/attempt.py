@@ -13,8 +13,8 @@ from scripts.bounded import stop_group
 from .profile import ROOT, command, environment
 
 
-def execute(task_id, number, prompt, seconds):
-    if task_id != 'runtime-run-report-1' or number != 1:
+def execute(task_id, number, prompt, seconds, change_reason=None):
+    if task_id != 'runtime-run-report-1' or number < 1 or (number > 1 and not change_reason):
         raise ValueError('Only the accepted first phase is enabled in this delivery')
     state = ROOT / '.runtime/tasks' / task_id
     workspace = state / 'candidate'
@@ -27,6 +27,7 @@ def execute(task_id, number, prompt, seconds):
                   'executor_pid': os.getpid(), 'started_epoch': time.time(),
                   'seconds_limit': seconds, 'automatic_retries': 0,
                   'command': command(workspace), 'workspace': str(workspace),
+                  'change_reason': change_reason,
                   'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest()}
         (output / 'launch.json').write_text(json.dumps(record, indent=2) + '\n')
         started = time.monotonic()

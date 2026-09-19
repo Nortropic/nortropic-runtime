@@ -1,9 +1,20 @@
 """Host-owned behavioral assertions. Candidate runs only in a child sandbox."""
 import json
-from pathlib import Path
 import subprocess
 
 from runtime.profile import sandbox_command, environment
+from scripts.bounded import stop_group
+
+
+def run(workspace, argv, text_input=None):
+    proc = subprocess.Popen(sandbox_command(workspace, argv), env=environment(),
+                            text=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, start_new_session=True)
+    try:
+        out, err = proc.communicate(text_input, timeout=10)
+    finally:
+        removed = stop_group(proc)
+    return subprocess.CompletedProcess(argv, proc.returncode if removed else 125, out, err)
 
 
 def verify(workspace):
@@ -24,8 +35,7 @@ def verify(workspace):
     for lines, status, values in inputs:
         code = ('import json; from tools.run_report import summarize; '
                 'print(json.dumps(summarize("codex", ' + repr(lines) + ')))')
-        result = subprocess.run(sandbox_command(workspace, ['/opt/homebrew/bin/python3.12', '-B', '-c', code]),
-                                env=environment(), text=True, capture_output=True, timeout=10)
+        result = run(workspace, ['/opt/homebrew/bin/python3.12', '-B', '-c', code])
         try:
             actual = json.loads(result.stdout)
         except ValueError:
@@ -36,11 +46,9 @@ def verify(workspace):
                   (status == 'invalid' or actual.get('usage') == values))
         observations.append({'input': lines, 'expected_status': status, 'passed': passed,
                              'returncode': result.returncode, 'actual': actual, 'stderr': result.stderr})
-    path = Path(workspace) / '.scratch/sample.jsonl'
-    path.write_text(json.dumps(done) + '\n')
-    result = subprocess.run(sandbox_command(workspace, ['/opt/homebrew/bin/python3.12', '-B',
-                            'tools/run_report.py', '--provider', 'codex', str(path)]),
-                            env=environment(), text=True, capture_output=True, timeout=10)
+    result = run(workspace, ['/opt/homebrew/bin/python3.12', '-B',
+                            'tools/run_report.py', '--provider', 'codex', '/dev/stdin'],
+                            json.dumps(done) + '\n')
     try:
         actual = json.loads(result.stdout)
     except ValueError:
