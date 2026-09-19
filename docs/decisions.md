@@ -400,3 +400,10 @@ remains1.33.0. Old report, completed evidence and recovery histories replay with
 no activities/model calls. Separate native fixture exercises invalid/duplicate
 signals and fresh worker reconstruction. These are structural proofs; only the
 subsequent real execution can prove substantive Codex→Claude→Codex completion.
+
+D020 pre-freeze correction: run candidate tests via unittest discovery, matching
+their existing sibling import, with TMPDIR in the permitted .scratch directory.
+Initial module-name invocation failed before testing code. Corrected isolated
+baseline passes15 candidate tests and still fails16/33 full-contract observations.
+Both raw runs are retained. Strengthen CLI status/usage/cost assertions before
+freezing the new verifier. No implementation has yet been run against it.

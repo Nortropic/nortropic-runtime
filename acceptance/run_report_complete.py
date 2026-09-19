@@ -1,8 +1,11 @@
 """Whole accepted report contract, host-owned and frozen before continuation."""
 import json
-from acceptance.run_report_phase1 import verify as verify_codex, run
+from acceptance.run_report_phase1 import verify as verify_codex, run as isolated_run
 
 PYTHON='/opt/homebrew/bin/python3.12'
+
+def run(workspace, argv, text_input=None):
+    return isolated_run(workspace, ['/usr/bin/env', 'TMPDIR='+str(workspace/'.scratch'), *argv], text_input)
 
 
 def verify(workspace):
@@ -53,7 +56,7 @@ def verify(workspace):
         proc=run(workspace,[PYTHON,'-B','tools/run_report.py',*args])
         observations.append({'case':'CLI-usage-file-error','args':args,'passed':proc.returncode==2,
                              'returncode':proc.returncode,'stderr':proc.stderr})
-    proc=run(workspace,[PYTHON,'-B','-m','unittest','tools.test_run_report','-v'])
+    proc=run(workspace,[PYTHON,'-B','-m','unittest','discover','-s','tools','-p','test_run_report.py','-v'])
     observations.append({'case':'candidate-regression-tests','passed':proc.returncode==0,
                          'returncode':proc.returncode,'stdout':proc.stdout,'stderr':proc.stderr})
     return {'passed':all(x['passed'] for x in observations),'observations':observations}
