@@ -1,0 +1,8 @@
+{
+  "reviewer": "/root/startup_review",
+  "reviewed_commit": "c702728eacea4b4e6438d4ff5a2fd35f844e971b",
+  "task_sha256": "c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c",
+  "verdict": "approved",
+  "blocking_findings": [],
+  "scope": "Same task input, preserved scope/prompts/limits, previous digest/attempt2, current base, approved verifier/brief and prestate backup; not execution outcome."
+}
