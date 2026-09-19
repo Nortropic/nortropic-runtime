@@ -1,0 +1,8 @@
+{
+  "database": ".runtime/runtime.sqlite",
+  "raw_sha256": "35c9b42b0b7aaa82173019362e501f565f6d1ff02bed5ca8c6244fd09a81b6ad",
+  "raw_bytes": 704512,
+  "integrity_check": "ok",
+  "old_database_preserved": true,
+  "writers_stopped": true
+}

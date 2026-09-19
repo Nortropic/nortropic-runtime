@@ -44,8 +44,12 @@ post-cleanup restart preserved both attempts and waiting_access. Raw evidence an
 limits: evidence/accepted-task/result.md. Full v0.1/Claude swap remain pending.
 
 ÅTERUPPTAGNING: Root driver active. No model/engine processes remain. Current
-canonical old SQLite: .runtime/tasks/runtime-run-report-1/temporal.sqlite; retained
-remote backup/hash in evidence/accepted-task/state/. Report candidate and task ID
+canonical SQLite: .runtime/runtime.sqlite, established by native SQLite backup.
+The actual bounded --resume CLI verified identical waiting_access/attempt2 and
+cleaned both worker/server groups; evidence/accepted-task/observations/b45c9c9259834b9490959e3b42a1c2d7.
+Backup/hash: evidence/connected-workflow/state/. Original old SQLite remains at
+.runtime/tasks/runtime-run-report-1/temporal.sqlite; prior remote backup/hash in
+evidence/accepted-task/state/. Report candidate and task ID
 unchanged; immutable phase snapshot at evidence/accepted-task/attempt-2/candidate.
 Do not run old launch/resume scripts: they are bounded historical experiments,
 not a safe command for the current waiting_access state. No automatic retries.
