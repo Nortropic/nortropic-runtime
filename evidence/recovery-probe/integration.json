@@ -1,0 +1,14 @@
+{
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/9",
+  "candidate": "4f0c530b07e2228759a878b762044313645cd4cd",
+  "merge": {
+    "sha": "f5dde1a511b9efc06da211ef5fea3860dcf58cc3",
+    "merged": true,
+    "message": "Pull Request successfully merged"
+  },
+  "verified_merged": true,
+  "reviewer": "/root/startup_review",
+  "scope": "bounded recovery evidence and service preflight correction; v0.1 waits for actual Claude path",
+  "independent_final_plan_approval": "4f0c530b07e2228759a878b762044313645cd4cd",
+  "preservation_note": "Post-merge server receipt; this backup branch is not another approved integration."
+}
