@@ -21,11 +21,7 @@ agent:
   max_retry_backoff_ms: 300000
 codex:
   command: python3 "/Users/elinhaggstrom/Nortropic Runtime/scripts/probe_bridge.py"
-  approval_policy:
-    reject:
-      sandbox_approval: true
-      rules: true
-      mcp_elicitations: true
+  approval_policy: never
   thread_sandbox: workspace-write
   turn_timeout_ms: 90000
   stall_timeout_ms: 90000

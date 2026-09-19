@@ -118,3 +118,18 @@ initialize empty (orchestrator.ex:24–75); cleanup ignores before_remove failur
 (workspace.ex:159–162,331–352); AgentRunner directly depends on Codex.AppServer.
 After the small live probe, assess whether narrow integration can cover the mandate
 or choose a smaller reuse route. Do not incrementally build a general replacement.
+
+
+## D009 — 2026-09-19: B1 attempt 1 failed before model; bounded compatibility fix
+
+Symphony found GH-1, created workspace, started app-server, called after_run and
+preserved missing-result FAIL, then host removed dispatch label. No model turn
+started: Codex 0.155.1 rejected upstream's legacy approvalPolicy reject (-32600);
+its generated schema accepts never or granular. Raw traces are under
+evidence/motor-probe-attempt-1. Engine returned 0 while verifier failed; no success
+claimed. Process group removal measured true, no residual matching workers found.
+
+Attempt 2 explicitly changes policy encoding to never (no approval requests,
+sandbox retained), supported by generated 0.155.1 schema. Preserve attempt 1 and
+record attempt=2 in the contract and launch metadata. No automatic retry; no
+model usage in failed attempt. Same task, acceptance and artifacts remain.

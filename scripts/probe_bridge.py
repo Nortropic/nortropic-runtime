@@ -23,7 +23,7 @@ def restrict_message(message, workspace):
     if method in ('thread/start', 'turn/start'):
         params = message.setdefault('params', {})
         params['cwd'] = str(workspace)
-        params['approvalPolicy'] = {'reject': {'sandbox_approval': True, 'rules': True, 'mcp_elicitations': True}}
+        params['approvalPolicy'] = 'never'
         if method == 'thread/start':
             params['dynamicTools'] = []
             params['sandbox'] = 'workspace-write'
@@ -49,7 +49,7 @@ def main():
     # Durable one-attempt marker: unchanged retries never invoke a model again.
     with (state / 'launch.json').open('x') as f:
         json.dump({'workspace': str(workspace), 'pid': os.getpid(),
-                   'started_at_epoch': time.time(), 'attempt': 1}, f)
+                   'started_at_epoch': time.time(), 'attempt': contract['attempt']}, f)
     command = [str(ROOT / '.runtime/bin/codex-0.155.1'),
                '-c', 'model="gpt-6-astra"', '-c', 'approval_policy="never"',
                '-c', 'model_reasoning_effort="high"']
