@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "reasons": [],
+  "expected": {
+    "count": 3,
+    "sum": 10
+  },
+  "sha256": {
+    "AGENTS.md": "9d6807148bae3ca738ea7d482d2c16e9374f6c1123a0310eb554f760721a4b03",
+    "input.csv": "e4338c7e27602df15c2ff6cca7f42e45cef5671b2ff74512893418b5eb60e69e",
+    "result.json": "ff1db594408f824ae3c15f2f8c82b1c37b42a11e9ac72eb88bf8f4a4e062445e"
+  }
+}

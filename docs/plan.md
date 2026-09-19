@@ -19,12 +19,12 @@ Node 22 and system Python available. Elixir/mix/mise absent from PATH.
 GitHub account has repo scope; org reports Free plan and repository creation allowed.
 ChatGPT and Claude Max login observed; no paid API run authorized.
 
-NÄSTA HANDLING: Obtain separate review of the corrected process limiter and narrow
-B1 fixture scripts, then run `python3 scripts/run_motor_probe.py` from repo root.
-Accepted source: https://github.com/Nortropic/nortropic-runtime/issues/1.
-Acceptance, coordination baseline and limits: docs/probe-b1.md. Inspect actual
-protocol/artifacts/tracker transition and negative verifier results before calling
-B1 successful. Claude remains WAITING_ACCESS (D005), no repeat calls.
+NÄSTA HANDLING: Review measured B1 result at evidence/motor-probe/result.md, then
+integrate the bounded establishment/experiment slice through protected PR with
+exact-SHA runtime/tests and runtime/review statuses. Exercise stale-status rejection
+before legitimate merge. Next technical decision: evaluate Symphony's volatile
+state and hard-coded Codex session boundary against D/C before adding more layers.
+Claude remains WAITING_ACCESS (D005); no repeated calls or paid API fallback.
 
 PROV OCH KLART-NÄR: Private remote/identity verified; correct instruction probe from
 fresh root/subdirectory sessions; executable engine path and acceptance fixture
@@ -42,11 +42,14 @@ probes passed (evidence/startup/codex-root-0155 and codex-subdir); root used 17,
 input/12,160 cached/28 output tokens, docs 17,019/12,160/35. Public main protection
 is active and a real missing-status/direct push was rejected; see D007 for first
 failed activation incident. Process-limiter regressions and fixture positive/
-negative checks pass in evidence/startup/operator-tests.log. No live engine yet.
+negative checks pass in evidence/startup/operator-tests.log. Live B1 attempt2 PASSED; attempt1 failed before model and is preserved separately.
+See [B1 result](../evidence/motor-probe/result.md) and [review record](../evidence/reviews/startup-and-b1.md).
+This is only a small fixture engine proof, not v0.1 or Customer Zero.
 
-ÅTERUPPTAGNING: Branch work/execution-probe, main currently 4dec677 due to D007.
-Root chain driver active; separate reviewer finished first limiter review, fix
-awaits delta review. No engine launched or model process active. Download/probe
+ÅTERUPPTAGNING: Branch work/execution-probe; B1 code revision 3b5c3f4; main remains 4dec677 due to D007.
+Root chain driver active; separate review findings closed on 0c4117d and protocol
+delta reviewed on 3b5c3f4. Both engine attempts ended, process_group_removed=true;
+no residual matching worker found. No model/engine process remains. Download/probe
 processes all completed. Verify PIDs and `git status` before starting a fresh writer.
 Host dependencies under .runtime are reproducible from exact official revisions;
 raw experiment artifacts are under evidence and preserved on the work branch.
@@ -67,9 +70,9 @@ same path. All mandate §1 rows need linked revision/environment/raw evidence.
 
 | §1 capability | Status / evidence |
 |---|---|
-| Autonomous completion | NOT RUN |
-| Persistent continuity | Separate read-only review located next action; Claude and full takeover NOT PROVEN |
+| Autonomous completion | B1 fixture passed; real development/integration NOT RUN |
+| Persistent continuity | Fresh Codex root/docs probes and review navigation passed; Claude and full takeover NOT PROVEN |
 | Replaceable execution | NOT RUN |
 | Interruption/capacity | NOT RUN |
-| Controlled integration | NOT RUN |
+| Controlled integration | Server rejects missing checks/direct push; legitimate/stale-candidate paths pending |
 | Repeatable use / Customer Zero | NOT RUN |
