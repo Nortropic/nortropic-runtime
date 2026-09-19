@@ -1,12 +1,14 @@
 # Living plan — Runtime v0.1
 
-## Current step: final continuity audit and release documentation
+## Current state: Runtime v0.1 verified; release checkpoint
 
 RESULTAT: Both useful accepted tasks completed and integrated through Runtime.
 Actual report Codex→Claude→Codex, external tests, separate fresh review and automatic
 protected PR12 merge succeeded. Restart of both tasks returned identical completed
-states with no new model attempts/publications. Runtime v0.1 awaits the final
-fresh-session audit and separately reviewed documentation integration.
+states with no new model attempts/publications. A fresh read-only Claude session located the mandate, current state, decisions,
+proofs and next action without owner retelling; no missing §1 evidence was found.
+This mandate is complete once the reviewed evidence/docs merge and v0.1.0 tag
+are present. Before that checkpoint, do only the final release action below.
 
 ARBETSYTA: /Users/elinhaggstrom/Nortropic Runtime, Nortropic/nortropic-runtime.
 Current branch work/runtime-v01-evidence, based on integrated main98b92a7 (PR12).
@@ -15,17 +17,25 @@ work/report-continuation, without rewriting that branch. Origin public by owner
 D006; required exact-SHA tests/review, strict base/admin and linear protection.
 No production changes, new API billing, purchases or expanded external permissions.
 
-NÄSTA HANDLING: Preserve the final record/docs and receiver preflight, then run one
-fresh read-only Claude developer-context audit (<=180s, zero retries) using the
-qualified native instruction loader. It must locate mandate, current Git/work state,
-relevant decisions, evidence, limitations and next permitted action from project
-files, without owner retelling. This is a continuity/acceptance-evidence audit,
-not a duplicate full code review. Full code was independently reviewed before
-integration. Then record outcome, obtain separate final-documentation review,
-integrate through protected PR and identify the delivered revision/tag.
+NÄSTA HANDLING: Check `git rev-parse v0.1.0` and origin/main. If the tag points to
+the protected merge containing this final record, no further implementation is
+required by this mandate; report/inspect the delivered result and wait for a new
+accepted task. Do not start an optimization loop. If the tag is absent, finish
+separate final-documentation review, protected integration of work/runtime-v01-evidence,
+verify exact merged tree/base, create the tag on that reviewed merge and preserve
+the server receipt on state/v01-release-receipt. That receipt branch is observation,
+not an additional approved code integration. No owner decision is missing.
+
+Fresh Claude audit: evidence/v0.1/claude-receiver/assessment.md and verification.json.
+It inspected Git/source state itself and read the host's process/auth preflight,
+explicitly distinguishing those evidence sources. Latest README/audit were then
+preserved on origin. Source implementations already received independent review;
+this release step reviews final evidence/documentation rather than repeating code review.
 
 UTFALL / EVIDENCE:
 - docs/runtime-v0.1.md maps every mandate§1 row and §9 report requirement.
+- evidence/v0.1/claude-receiver/verification.json records the fresh receiver audit,
+  bounded94.985s, Read only, successful terminal and complete process cleanup.
 - evidence/accepted-task/result.md: report candidatef86a85c27d7cb2567d3c600292f213fa45067b7a,
   PR12 merge98b92a72da2671c0a517f674f8b023667c070bcb. Native4 attempts (first interrupted),
   one publication. Old20 events remain exact prefix of final49. Claude147.813s,

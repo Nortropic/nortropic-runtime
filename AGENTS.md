@@ -11,8 +11,8 @@ Use separate review before integration. Preserve evidence and work on the config
 origin continuously. Do not treat backup branches as approved integrations.
 
 Operator support tests: `python3 -m unittest discover -s scripts -p "test_*.py" -v`.
-Repository checks: `git status --short --branch`, `git diff --check`. Runtime v0.1
-is not yet delivered; run the live experiment only from the current plan.
+Repository checks: `git status --short --branch`, `git diff --check`. Read
+`docs/runtime-v0.1.md` for the qualified release scope and `docs/runbook.md` for use.
 Fresh receivers first read and inspect without writes and verify old writers have
 stopped. The living plan owns next actions and run state; do not duplicate it here.
 

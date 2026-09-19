@@ -1,0 +1,47 @@
+{
+  "passed": true,
+  "purpose": "Fresh developer-context continuity and evidence audit, not repeated full code review",
+  "source_head": "d0464547501bed422d3e8a096248810b8a4a6313",
+  "session_id": "f7ea7a62-668d-4328-ab22-c88d5a0db694",
+  "elapsed_seconds": 94.985,
+  "read_tool_calls": 36,
+  "process_group_removed": true,
+  "stdout_sha256": "fd10d970dff2c8be2687cdbae8ed29c4ac4beea30f2d7414e06f6970ec075f1d",
+  "usage": {
+    "input_tokens": 226,
+    "cache_creation_input_tokens": 76525,
+    "cache_read_input_tokens": 161971,
+    "output_tokens": 7180,
+    "output_tokens_details": {
+      "thinking_tokens": 2097
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 76525,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 56,
+        "output_tokens": 2945,
+        "cache_read_input_tokens": 65196,
+        "cache_creation_input_tokens": 11329,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11329
+        },
+        "type": "message",
+        "model": null
+      }
+    ],
+    "speed": "standard"
+  },
+  "reported_list_cost_usd": 1.9339157500000002,
+  "assessment": "Audit complete. Everything below comes from files read in the working tree and `.git` metadata; no writes, processes or engine runs were used.\n\n**Instruction-loading identifier:** `NR-CONTINUITY-7392`, present in `AGENTS.md:19`.\n\n**Purpose and mandate.** The mandate in `docs/UPPDRAG-NORTROPIC-RUNTIME.md` asks for a business-neutral runner that takes accepted, bounded development tasks to controlled integration using existing Codex and Claude subscriptions, with six acceptance rows in \u00a71 and a final report per \u00a79. The plan in `docs/plan.md` says both useful tasks are complete and the remaining release checks are this fresh audit plus separately reviewed documentation integration.\n\n**Repo, branch and source state (from Git metadata I read myself).**\n\n| Item | Observed |\n|---|---|\n| Origin | `https://github.com/Nortropic/nortropic-runtime.git` (`.git/config:9`) |\n| HEAD | `work/runtime-v01-evidence` at `d046454` |\n| origin/work/runtime-v01-evidence | `49a8259`, one commit behind local HEAD |\n| origin/main | `98b92a7` (PR12 merge, reached by fetch per `.git/logs/refs/remotes/origin/main:13`) |\n| Local `main` ref | `531f097`, stale against origin/main |\n| Untracked | `evidence/v0.1/claude-receiver/`, `evidence/v0.1/receiver-preflight.json` |\n\nThe branch was built by cherry-picking from the preserved backup branch `work/report-continuation` onto `98b92a7`, exactly as the plan states, and the HEAD reflog confirms no rewrite of that branch.\n\n**Preflight versus my own observation.** The supplied preflight claims writers stopped, no provider or service processes, Max subscription logged in, and a clean tree at `d046454`. I cannot inspect processes, auth or the working-tree diff with Read. I can confirm only that HEAD is `d046454` and that the two untracked paths exist. Process and auth state remain the host's measurement, not mine.\n\n**Proofs of both task completions and the real executor swap.**\n- Report task: `evidence/accepted-task/observations/37ce0e41a2704614abfc6923f1708600/state.json` shows phase completed, four attempts, one publication, candidate `f86a85c` merged as `98b92a7` via PR12, reviewer thread distinct from all four implementation threads.\n- Executor swap: `evidence/accepted-task/continuity-proof.json` records activity order Codex1, Codex2, Claude3, Codex4, review, publish, with the old twenty events an exact prefix of the final forty-nine. Attempt 3's raw result names provider `claude` with its own session ID and usage.\n- Evidence-index task: `evidence/runs/runtime-evidence-index-1/observations/5c4f41699737485d96fe8cd1ca00e5da/state.json` shows one attempt, one publication, candidate `38ecdaf` merged as `0fba283` via PR7, distinct reviewer thread.\n- Restart: `evidence/v0.1/restart-and-state.json` reports both tasks unchanged with no active writers and a database hash.\n- Corroboration: origin/main advanced to `0fba283` and later `98b92a7` by fetch, which matches both merge receipts. Actual GitHub server state was not re-checked by me.\n\n**Mandate completion rows.** Every \u00a71 row in `docs/runtime-v0.1.md` links to evidence that exists and that I opened. No row lacks its claimed evidence. The \"persistent continuity\" row explicitly defers to this fresh audit, which is now the pending piece, not a missing one.\n\n**Unresolved limitations and findings.**\n- Latest commit `d046454` is not yet on origin per local remote-tracking refs. This contradicts the \"preserve on origin continuously\" instruction until pushed. The precise missing evidence is a remote-tracking update for `d046454`.\n- `evidence/runs/runtime-evidence-index-1/result.md:51-54` still states the report task is incomplete and v0.1 is not complete. That was true when written and is superseded by `docs/runtime-v0.1.md`. It should not be rewritten, but a reader needs the newer record to resolve it.\n- `AGENTS.md:14` still says v0.1 is not delivered. That is correct today because final integration is pending.\n- The delivered report CLI marks Codex attempts 2 and 4 as failed because their streams contain failed tool items. This is the accepted conservative rule, not a failed task.\n- Documented and untested: real vendor quota exhaustion, guardian SIGKILL, hostile detached children, another-host restore.\n\n**Decisions needed for takeover.** None from the owner. D006, D019 and D020 already cover visibility, the Claude route and the continuation. The only open decision is the driver's own: accept this audit outcome and proceed.\n\n**Exact next permitted action.** Per the plan: preserve this audit's output under `evidence/v0.1/claude-receiver/` together with the preflight, push the branch so `d046454` and the new commit reach origin, obtain the separate final-documentation review, then integrate through a protected PR and identify the delivered revision or tag. Nothing is integrated yet, and no task or signal should be rerun.\n\n**Continuity assessment.** The project supplied enough context to reconstruct purpose, state, evidence and next step without owner retelling. Documentation integration is pending, not failed.",
+  "remaining_action": "Push the latest entry-point/audit commits; separate final docs review and protected integration/tag. No owner decision needed."
+}

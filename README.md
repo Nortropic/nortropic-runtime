@@ -3,7 +3,8 @@
 A local runner for accepted, bounded development tasks using Temporal and existing
 Codex/Claude subscriptions. Two useful tasks have completed through external tests,
 independent review and protected integration, including a real Codex → Claude → Codex
-continuation. Final v0.1 release checks are tracked in [the living plan](docs/plan.md).
+continuation. Runtime v0.1 is identified by the protected, reviewed `v0.1.0` release tag.
+The [living plan](docs/plan.md) records the verified state and handover boundary.
 
 Start with the plan, [mandate](docs/UPPDRAG-NORTROPIC-RUNTIME.md) and
 [decisions](docs/decisions.md). Shared executor instructions are in `AGENTS.md`.
