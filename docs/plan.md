@@ -17,12 +17,13 @@ host verifier acceptance/evidence_index.py. Target three explicit tools/ files;
 base5e014099. Standard-library SHA256 create/verify CLI replaces manual evidence
 hash checking. Same DevelopmentTask and Publisher, no new scheduler/dependency.
 
-ARBETSYTA: work/evidence-index-task based on PR6 main. Origin PUBLIC by D006;
+ARBETSYTA: work/evidence-index-completion based on actual PR7 main0fba283.
+Earlier work/evidence-index-task is retained as a backup, never force-updated. Origin PUBLIC by D006;
 branch protection active. No costs/rights expanded; no Claude call (D015).
 
-NÄSTA HANDLING: Preserve completed engine/provider evidence, use the integrated
-CLI on actual project evidence, then verify a native restart returns completed
-without new model/review/publication. Integrate the reviewed evidence/runbook.
+NÄSTA HANDLING: Independently inspect completed-run evidence and runbook, then integrate
+that documentation on top of PR7 without re-reviewing unchanged candidate code.
+Next independent capability is bounded abrupt in-flight writer recovery/fencing.
 Claude remains deferred; no new Claude calls or API fallback.
 
 KÖRGRÄNS: One Codex implementation invocation <=300 seconds; fresh review <=180
@@ -42,8 +43,9 @@ history, model logs/usage, bound decisions and integration receipt.
 
 ÅTERUPPTAGNING: Root driver active. All implementation/review/worker/server groups
 reported removed. Canonical .runtime/runtime.sqlite; current backup/hash at
-evidence/runs/runtime-evidence-index-1/state/. Previous report workflow is retained;
-its native state was waiting_access/attempts2 before this task. Its completion and
+evidence/runs/runtime-evidence-index-1/state/. Fresh native restarts returned the identical completed new task and identical
+waiting_access/attempts2 old report. No new model/review/publication occurred.
+Real evidence-manifest use passed for three preserved artifacts (result.md). Its completion and
 actual Claude swap remain unproven. Old DB/source/bundles are retained.
 Fresh receivers inspect Git and recorded process identities before writes.
 Do not resubmit accepted task or run historical pilot scripts. Current submission
