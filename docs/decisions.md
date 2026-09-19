@@ -177,3 +177,28 @@ development limits), https://docs.temporal.io/develop/python/best-practices/erro
 (timeouts/retry policy), https://docs.temporal.io/develop/python/workflows/message-passing
 (durable signals). Official release metadata and PyPI package metadata checked.
 Decision is only to run a compatibility experiment, not yet to adopt the engine.
+
+
+## D012 — 2026-09-19: select Temporal for next bounded execution slice
+
+Comparison against required properties: Symphony has measured GitHub discovery and
+Codex dispatch but volatile retry/waiting maps, no provider boundary, and cleanup
+that proceeds despite failed preservation hook. Filling all three with host-side
+state would duplicate orchestration. Temporal's existing history/signals/replay
+preserved completed work and waiting in the actual abrupt-restart probe (9b770d1);
+Python activities are a documented arbitrary executor boundary. This removes the
+need to implement scheduler persistence or a general Codex↔Claude protocol server.
+
+Choose Temporal for the next small Codex-connected task. It replaces Symphony as
+the engine candidate, not a second running orchestrator. Reuse B1 learnings and
+verified worker configuration; keep Symphony evidence and disabled experiment.
+Task input remains accepted outcome/underlay/permissions/acceptance; native engine
+workflow owns state. No second method schema/status registry or business logic.
+
+This is limited technical replanning under mandate§2: same scope, no new billing,
+no new external rights. Local pinned dependencies only. Existing dev-server SQLite
+profile limits v0.1 to a single trusted local host if qualified; production is not
+a promised goal. Candidate workspace isolation, attempt semantics, side-effect
+reconciliation, independent review and exact GitHub integration remain to be built
+and tested in narrow activities. Do not claim Temporal automatically supplies them.
+If connecting those requires another generic engine, revisit instead of expanding.

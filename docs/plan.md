@@ -27,12 +27,10 @@ under .runtime, no global changes or paid services. Local development service
 loopback127.0.0.1:7339 with explicit SQLite file and no UI. Check port before use.
 Sources and limits: D011. Claude is WAITING_ACCESS, D005, no repeated model calls.
 
-NÄSTA HANDLING: Download official CLI and SDK wheels with bounded commands; verify
-archive hash and inspect wheel metadata/.pth/lifecycle concerns before installation.
-Pin every installed wheel with hash. Then a minimal workflow performs activity1,
-waits for a signal, survives both worker and server termination/restart, and finishes
-activity2 without rerunning activity1. Export actual history and filesystem result.
-No model or GitHub publication during this compatibility test.
+NÄSTA HANDLING: Obtain separate review of probe/evidence and the limited engine
+choice D012, integrate this completed probe, then connect ONE accepted Codex task
+to native Temporal activities and persist its tested result. Do not build a new
+generic scheduler, second tracker or dashboard. Claude stays WAITING_ACCESS.
 
 PROV OCH KLART-NÄR: Persisted waiting workflow remains waiting after restart,
 attempt counter stays1 until deliberate continuation, side effect1 occurs once,
@@ -40,9 +38,14 @@ continuation gives count2, unique workflow ID rejects duplicate start. A failed
 or empty history is not a pass. Server/workers stopped and SQLite retained after
 experiment. Next decision selects reuse path, not automatic architecture adoption.
 
-UTFALL: NOT RUN. Dependencies selected, download/installation not yet complete.
+UTFALL: PASS for the bounded compatibility property; see
+[evidence/durable-probe/result.md](../evidence/durable-probe/result.md). Both processes
+were abruptly killed; fresh instances restored waiting/count1; continuation ended
+at count2 with no repeated first effect. Duplicate running ID rejected. No models.
+Not proof of interrupted in-flight activity effects or any provider integration.
 
-ÅTERUPPTAGNING: Root chain driver active. No engine/model worker remains from B1;
+ÅTERUPPTAGNING: Root chain driver active. Temporal probe also finished: four process groups removed,
+no active service/worker. Local SQLite remains retained. No engine/model worker remains from B1;
 completed attempt2 process group removal measured. Check process records and PIDs
 before writes. Existing B1 workflow is execution_enabled=false; do not re-enable
 it blindly. Last integrated slice PR2 is complete and server merge readback is in
