@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/opt/homebrew/bin/python3.12",
+    "-m",
+    "pip",
+    "download",
+    "--only-binary=:all:",
+    "--dest",
+    ".runtime/temporal-wheels",
+    "temporalio==1.33.0"
+  ],
+  "cwd": "/Users/elinhaggstrom/Nortropic Runtime",
+  "started_at": "2026-09-19T10:34:13.234998+00:00",
+  "limit_seconds": 180,
+  "automatic_retries": 0,
+  "pid": 23344,
+  "timed_out": false,
+  "process_group_removed": true,
+  "exit_code": 0,
+  "elapsed_seconds": 31.025,
+  "finished_at": "2026-09-19T10:34:44.260378+00:00"
+}

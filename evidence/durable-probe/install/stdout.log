@@ -1,0 +1,9 @@
+Looking in links: .runtime/temporal-wheels
+Processing ./.runtime/temporal-wheels/nexus_rpc-1.4.0-py3-none-any.whl (from -r config/temporal-probe-requirements.lock (line 1))
+Processing ./.runtime/temporal-wheels/protobuf-7.36.2-cp310-abi3-macosx_10_9_universal2.whl (from -r config/temporal-probe-requirements.lock (line 2))
+Processing ./.runtime/temporal-wheels/temporalio-1.33.0-cp310-abi3-macosx_11_0_arm64.whl (from -r config/temporal-probe-requirements.lock (line 3))
+Processing ./.runtime/temporal-wheels/types_protobuf-7.35.1.20260906-py3-none-any.whl (from -r config/temporal-probe-requirements.lock (line 4))
+Processing ./.runtime/temporal-wheels/typing_extensions-4.16.0-py3-none-any.whl (from -r config/temporal-probe-requirements.lock (line 5))
+Installing collected packages: typing_extensions, types-protobuf, protobuf, nexus-rpc, temporalio
+
+Successfully installed nexus-rpc-1.4.0 protobuf-7.36.2 temporalio-1.33.0 types-protobuf-7.35.1.20260906 typing_extensions-4.16.0
