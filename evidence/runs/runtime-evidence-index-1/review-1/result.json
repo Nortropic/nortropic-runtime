@@ -1,0 +1,20 @@
+{
+  "task": "runtime-evidence-index-1",
+  "attempt": 1,
+  "provider": "codex",
+  "provider_completed": true,
+  "exit_code": 0,
+  "thread_id": "01a0b971-89fa-7461-87c6-c9798029f8b2",
+  "role": "review",
+  "interrupted": null,
+  "process_group_removed": true,
+  "usage": {
+    "input_tokens": 54856,
+    "cached_input_tokens": 32384,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1421,
+    "reasoning_output_tokens": 648
+  },
+  "elapsed_seconds": 34.25,
+  "evidence": "evidence/runs/runtime-evidence-index-1/review-1"
+}

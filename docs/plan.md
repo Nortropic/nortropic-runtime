@@ -20,11 +20,10 @@ hash checking. Same DevelopmentTask and Publisher, no new scheduler/dependency.
 ARBETSYTA: work/evidence-index-task based on PR6 main. Origin PUBLIC by D006;
 branch protection active. No costs/rights expanded; no Claude call (D015).
 
-NÄSTA HANDLING: Accepted brief/verifier separately approved at a968d314 by
-/root/startup_review (evidence/reviews/evidence-index-inputs.md). Invoke:
-`.runtime/temporal-venv/bin/python -m runtime.run tasks/evidence-index.json`.
-Do not resubmit an existing task directory. Inspect native waiting state/evidence
-and materially changed prerequisite before any explicitly signalled retry.
+NÄSTA HANDLING: Preserve completed engine/provider evidence, use the integrated
+CLI on actual project evidence, then verify a native restart returns completed
+without new model/review/publication. Integrate the reviewed evidence/runbook.
+Claude remains deferred; no new Claude calls or API fallback.
 
 KÖRGRÄNS: One Codex implementation invocation <=300 seconds; fresh review <=180
 seconds; zero automatic retries. Observable progress is emitted events/source
@@ -33,16 +32,22 @@ changes, host verification and terminal usage. First report phase took134s with
 Usage will be recorded, monetary cost remains unknown under existing subscription.
 No project-wide cap or quota probing. Invalid/failed review prevents publication.
 
-UTFALL: Accepted inputs approved; attempt1 about to start with300s bound. All prior service
-and model process groups stopped. Verify launch/results before new writers.
+UTFALL: COMPLETE for runtime-evidence-index-1. Candidate38ecdaf7f989ab547740e23345c9cfbf8f69513c
+was independently reviewed and automatically merged as0fba283d5c6e19f30c9703eec88e6ea879435c16
+via PR7. One implementation174.901s, one fresh review34.25s, all25 host cases
+passed (including candidate14 tests). One publication attempt. No manual code
+edits, phase switches or retry after submission. Raw artifacts under
+evidence/runs/runtime-evidence-index-1, including candidate Git bundle, native
+history, model logs/usage, bound decisions and integration receipt.
 
-ÅTERUPPTAGNING: Root driver active. Canonical native SQLite .runtime/runtime.sqlite;
-backup/hash evidence/connected-workflow/state/. Old original .runtime/tasks/runtime-run-report-1/temporal.sqlite
-retained. Actual CLI resume preserved exact waiting_access and attempts2; raw
-observation evidence/accepted-task/observations/b45c9c9259834b9490959e3b42a1c2d7.
-Old report candidate and frozen phase evidence unchanged. Do not rerun historical
-launch scripts. Runtime will record launch PIDs and native state under evidence/runs/runtime-evidence-index-1.
-If interrupted, inspect these before any new writer; never blindly repeat submit.
+ÅTERUPPTAGNING: Root driver active. All implementation/review/worker/server groups
+reported removed. Canonical .runtime/runtime.sqlite; current backup/hash at
+evidence/runs/runtime-evidence-index-1/state/. Previous report workflow is retained;
+its native state was waiting_access/attempts2 before this task. Its completion and
+actual Claude swap remain unproven. Old DB/source/bundles are retained.
+Fresh receivers inspect Git and recorded process identities before writes.
+Do not resubmit accepted task or run historical pilot scripts. Current submission
+only needs --resume for observation; completed means no model retry is needed.
 
 ## Completed delivery and evidence
 
@@ -73,12 +78,12 @@ implementation plus another accepted task over the same route.
 
 | Capability | Current result |
 |---|---|
-| Autonomous development completion | First real Codex development phase passed; complete task integration pending |
+| Autonomous development completion | Evidence integrity task completed through actual implementation/test/review/protected merge (PR7) |
 | Persistent continuity | Fresh Codex instruction probes and review navigation passed; full takeover/Claude pending |
 | Replaceable execution | Claude blocked by server access; Runtime swap NOT RUN |
 | Interruption/capacity | Actual interrupted attempt and post-cleanup wait replay passed; in-flight crash fencing/quotas pending |
-| Controlled integration | Real host-led missing/stale rejection and legitimate PR merge; candidate rights/automatic gate NOT PROVEN |
-| Repeatable use / Customer Zero | NOT RUN |
+| Controlled integration | Actual isolated candidate/read-only review and automatic exact-subject protected merge (PR7); negative fixtures and prior live missing/stale rejection |
+| Repeatable use / Customer Zero | Second accepted task completed; first report task still waits for Claude, so two complete tasks not yet proven |
 
 Runtime v0.1 is not complete. No project-wide time/token cap invented. Per-run
 limits are local safeguards; resource history and failed results remain preserved.
