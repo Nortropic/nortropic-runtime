@@ -1,0 +1,14 @@
+{
+  "merged": true,
+  "candidate": "58cf17c9ae46436ebefc8335d0cbed6279525800",
+  "merge_commit": "580630bcb9d46bb11e17e25053664eec4e23b8ae",
+  "tree": "04e5ddc3a22e76482429281ed0cde1fa96447872",
+  "url": "https://github.com/Nortropic/nortropic-runtime/pull/13",
+  "tag": "v0.1.0",
+  "tag_remote": "82ae89938bd7fbceaa4bc7c6a9a7673f415d7c99\trefs/tags/v0.1.0\n580630bcb9d46bb11e17e25053664eec4e23b8ae\trefs/tags/v0.1.0^{}",
+  "reviewer": "/root/startup_review",
+  "reviewed_commit": "58cf17c9ae46436ebefc8335d0cbed6279525800",
+  "blocking_findings": [],
+  "review_scope": "Final evidence/docs for mandate1/9; actual histories, accepted sources, hashes, restart state, real-use interpretation and fresh receiver audit independently checked.",
+  "post_merge_protection_verified": true
+}
