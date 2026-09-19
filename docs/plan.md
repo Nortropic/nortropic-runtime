@@ -1,6 +1,6 @@
 # Living plan — Runtime v0.1
 
-## Current step: connect the qualified Claude continuation
+## Current step: execute the reviewed continuation on the original task
 
 RESULTAT: One useful accepted Codex task completed automatically through external
 acceptance, fresh independent review and protected integration (PR7). Its evidence
@@ -10,31 +10,29 @@ Check PR9 server merged state and git origin/main when taking over; do not infer
 integration from backup branch existence. Runtime v0.1 is NOT complete.
 
 ARBETSYTA: Nortropic/nortropic-runtime, local /Users/elinhaggstrom/Nortropic Runtime.
-Current branch work/claude-transition from main287eb84 (PR10). Origin is public by owner
+Current branch work/report-continuation from main531f097 (PR11). Origin is public by owner
 D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
-NÄSTA HANDLING: Review/integrate the bounded adapter slice after recorded tests.
-Claude profile qualification is separately approved and integrated via PR10 at
-287eb8430a04b922c9232b74f59ea04c19d64e9e. Adapter changes are not yet approved or
-integrated. Canonical Runtime database and real report candidate are untouched.
-Native replay passed report/evidence/recovery histories; isolated native fixture
-passed inherited Codex1/interrupted→Codex2→wait→Claude3→Codex4, wrong-attempt
-refusal, fresh worker reconstruction, duplicate signal and one simulated publish.
-Whole-task verifier correctly rejects preserved Codex-only source. Source/raw
-results: evidence/claude-transition/. Real model swap is still NOT RUN.
+NÄSTA HANDLING: Exact continuation input tasks/run-report-continuation.json is
+prepared and preserved for separate input review. Adapter/full verifier are
+approved and integrated via PR11 at531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d.
+Input SHA256 c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c;
+original task SHA25639aaab70858d584402e52c355c61479b0a0a5e252653b9589196857d02b61c17;
+expected native attempt2. No real task mutation or model launch yet.
+Preflight confirms old writers stopped, engine lock free, same qualified Max auth;
+canonical DB backed up and hashed under evidence/accepted-task/access-prestate/.
 
-After integration: from clean main run `python3 -m scripts.prepare_report_continuation`.
-This creates tasks/run-report-continuation.json once, with current integrated base,
-unchanged task ID/scope/prompts/limits and frozen whole-task verifier. Preserve it
-on a work branch and separately review exact accepted input before invoking
+After exact input review approves, launch ONCE from clean tracked worktree:
 `.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json
---resume --access-restored`. Native signal binds old task digest and attempt2;
-host retains original candidate directory and overlays byte-identical saved work
-on current base. No workflow resubmission, deleted attempt or replaced history.
-The same native workflow then runs real Claude and final Codex, host tests, fresh
-independent review and protected integration. Observe bounded run and preserve
-results immediately; failure waits for specific diagnosis, never blind repetition.
+--resume --access-restored`. The controller owns model transitions/testing/review/
+publication. Do not edit root source or candidate while running. Observe native
+state under evidence/accepted-task/observations/<new id>/state.json and attempts3/4.
+After any failure inspect preserved state and process groups; no blind rerun.
+Candidate-before-continuation will preserve the original workspace when host
+preparation runs. No history reset, resubmission, new subscription or API fallback.
+Each implementation call remains bounded300s; review180s; zero automatic retries.
+CLI observation is bounded to the accepted step count plus review/publication time.
 
 Then use the actual delivered report on saved real provider logs, restart both
 native tasks to prove retained completion, and audit every mandate§1/§9 row.
