@@ -1,0 +1,196 @@
+{
+  "passed": true,
+  "observations": [
+    {
+      "input": [
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "completed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [],
+      "expected_status": "incomplete",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"thread.started\"}"
+      ],
+      "expected_status": "incomplete",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.failed\"}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"error\"}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"item.completed\", \"item\": {\"status\": \"failed\"}}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "failed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}",
+        "{\"type\": \"turn.completed\", \"usage\": {\"input_tokens\": 101, \"cached_input_tokens\": 53, \"output_tokens\": 7}}"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": {
+          "input_tokens": 101,
+          "cached_input_tokens": 53,
+          "output_tokens": 7
+        }
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{\"type\": \"turn.completed\"}"
+      ],
+      "expected_status": "completed",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "[1]"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "{"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "input": [
+        "null"
+      ],
+      "expected_status": "invalid",
+      "passed": true,
+      "returncode": 0,
+      "actual": {
+        "provider": "codex",
+        "status": "invalid",
+        "usage": null
+      },
+      "stderr": ""
+    },
+    {
+      "case": "CLI",
+      "passed": true,
+      "actual": {
+        "provider": "codex",
+        "status": "completed",
+        "usage": {
+          "cached_input_tokens": 53,
+          "input_tokens": 101,
+          "output_tokens": 7
+        }
+      },
+      "returncode": 0,
+      "stderr": ""
+    }
+  ],
+  "candidate_files_sha256": {
+    "tools/run_report.py": "a4143aabbe75c4222a83ffc386c8360756424e6e4f2f0ef8e234b4354791e67d",
+    "tools/test_run_report.py": "62dff3ac497593f20d5bb66a094eefb41eb63af66a9ec3f5a921769a79a4b3b0",
+    "tools/README.md": "187b84f70fac6475e40caeb1ac885d3716f69abe9b81ce9e2f09d4449834afb4"
+  }
+}

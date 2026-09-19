@@ -26,29 +26,30 @@ subscription, no API fallback. Claude D005 WAITING_ACCESS remains: org disabled
 subscription access, no repeated call until new access evidence. Old Symphony and
 Temporal probe processes inspected stopped; B1 launch remains disabled.
 
-NÄSTA HANDLING: Attempt2 IS RUNNING after separate D014 correction approval.
-Observe evidence/accepted-task/engine-resume-2/state.json and attempt-2/events.jsonl;
-operator session48835 owns the bounded driver. Do not run launch/resume again.
-After completion inspect raw provider/acceptance and restart evidence, preserve
-candidate snapshot and update this plan; separate review before integration.
+NÄSTA HANDLING: Obtain separate final review of the first Codex-phase delivery
+and actual evidence, then integrate it via exact-SHA protected PR. Continue a
+Codex-only slice for controlled candidate review/integration and recovery; owner
+D015 defers Claude purchase. Do not call Claude again or pretend v0.1 is complete.
 
-PROV OCH KLART-NÄR: Useful candidate passes host-owned phase acceptance on immutable
-snapshot; invalid/missing provider terminal never passes; attempt1 retained and
-attempt2 explicit; blocked next executor waits without call across restart.
-Interrupted in-flight worker death/escaped-process fencing remains unproven.
+PROV OCH KLART-NÄR: This slice has real candidate behavior, external immutable
+snapshot acceptance and durable attempt/wait evidence. Integration still requires
+separate review of this exact revision. Overall v0.1 criteria remain below.
 
-UTFALL: Attempt1 interrupted by operator on separate review blockers before host
-acceptance (D014). Actual waiting_diagnosis/attempt1 survived worker+server restart.
-Provider group and all four engine groups removed. No usage terminal: tokens/cost
-unknown, not0. Boundary6 checks and fresh profile inventory passed. Two concrete
-review corrections separately approved at a23d94e for bounded retry (not v0.1).
-PR3 receipt: evidence/durable-probe/integration.json.
+UTFALL: First Codex phase PASS at attempt2;12 host acceptance cases and15 candidate
+tests passed. Same native workflow retains interrupted attempt1 and successful
+phase2; waiting_access/count2/results survived actual worker/server restart.
+All recorded provider and engine groups stopped. See
+[evidence/accepted-task/result.md](../evidence/accepted-task/result.md) for raw links,
+usage, conservative reporter behavior and limitations. Claude task phase NOT RUN.
 
-ÅTERUPPTAGNING: Root driver active. Attempt2 running; process identities are in
-attempt-2/launch.json and engine-resume-2/processes.json. Do not infer writer death
-from lost UI/session. First attempt and engine groups stopped before signal.
-SQLite: .runtime/tasks/runtime-run-report-1/temporal.sqlite. Same workflow, same
-candidate. No further retry authorized without diagnosis/changed evidence.
+ÅTERUPPTAGNING: Root driver active; no engine/model processes remain. Work exists
+on work/accepted-codex-task and pending evidence is preserved before review.
+Canonical SQLite .runtime/tasks/runtime-run-report-1/temporal.sqlite; portable
+backup+hashes evidence/accepted-task/state/. Candidate remains in same task
+workspace; immutable accepted phase snapshot is attempt-2/candidate under evidence.
+No further retries: workflow is waiting_access with attempts2. Current driver resume
+is ONLY for previous diagnosis attempt1 and MUST NOT be rerun against this state.
+Next step is review/integration of this completed slice, then independent Codex work.
 
 ## Completed delivery and evidence
 

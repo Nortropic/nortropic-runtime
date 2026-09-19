@@ -1,0 +1,31 @@
+{
+  "reports": [
+    {
+      "attempt": 1,
+      "exit_code": 1,
+      "report": {
+        "provider": "codex",
+        "status": "incomplete",
+        "usage": null
+      },
+      "stderr": "",
+      "process_group_removed": true
+    },
+    {
+      "attempt": 2,
+      "exit_code": 1,
+      "report": {
+        "provider": "codex",
+        "status": "failed",
+        "usage": {
+          "cached_input_tokens": 202368,
+          "input_tokens": 240607,
+          "output_tokens": 6151
+        }
+      },
+      "stderr": "",
+      "process_group_removed": true
+    }
+  ],
+  "exploratory_check": "Initial operator assertion expected attempt2 completed and failed. Raw stream contains two failed command items; task contract explicitly makes these override completed terminal. Correct expected outcome is failed. No code/contract changed to obtain pass. Provider terminal completion, individual command outcomes and phase acceptance are separate facts."
+}

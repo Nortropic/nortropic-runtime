@@ -1,0 +1,13 @@
+{
+  "workflow_id": "runtime-run-report-1",
+  "phase": "waiting_access",
+  "attempts": 2,
+  "database_sha256": "b5c3ce1e250110916e29a8e5ff0a881c34c6d514f181c5350bec913909250fc0",
+  "gzip_sha256": "0cd1babb8e75e1390157bf782890c89ce80c4a7b8b130bdb1c002491009c8fba",
+  "bytes": 700416,
+  "gzip_bytes": 32838,
+  "sqlite_integrity_check": "ok",
+  "temporal_cli": "1.9.1",
+  "temporal_sdk": "1.33.0",
+  "restore_constraint": "Never overwrite existing state; verify no old writers/services, restore on isolated path and verify hashes. Current canonical DB remains in .runtime/tasks/runtime-run-report-1/temporal.sqlite."
+}

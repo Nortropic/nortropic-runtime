@@ -255,3 +255,14 @@ Resume the SAME workflow/candidate only after correction review, with an explici
 native diagnosis signal carrying changed prerequisite. Attempt number increments
 rather than restarting history. Driver checks old recorded PIDs/group absence.
 No automatic repeated model attempt and no Claude call while D005 unchanged.
+
+## D015 — 2026-09-19: owner defers Claude usage purchase
+
+Owner plans to buy more Claude Code usage at a later time. Recommendation accepted
+for work planning: no need to buy now to continue independent Codex, recovery,
+review and integration work. No purchase, API fallback or periodic Claude calls.
+Real executor swap and final v0.1 acceptance remain pending, not waived. Observed
+server error D005 was oauth_org_not_allowed (subscription access disabled), not a
+quota-exhaustion result; check correct account/organization access before assuming
+additional usage will resolve it. Ask owner only when an actual access/cost choice
+is needed, not for routine continuation.

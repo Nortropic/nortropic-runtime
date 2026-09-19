@@ -1,0 +1,30 @@
+{
+  "command": [
+    "/Users/elinhaggstrom/Nortropic Runtime/.runtime/bin/codex-0.155.1",
+    "sandbox",
+    "-c",
+    "permissions.nr.filesystem={\":minimal\"=\"read\",\"/opt/homebrew\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/attempt-2/candidate\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/attempt-2/candidate/tools\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/attempt-2/candidate/.scratch\"=\"write\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/attempt-2/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/attempt-2/AGENTS.override.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/AGENTS.override.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/evidence/AGENTS.override.md\"=\"read\",\"/Users/elinhaggstrom/Nortropic Runtime/AGENTS.override.md\"=\"read\",\"/Users/elinhaggstrom/AGENTS.md\"=\"read\",\"/Users/elinhaggstrom/AGENTS.override.md\"=\"read\",\"/Users/AGENTS.md\"=\"read\",\"/Users/AGENTS.override.md\"=\"read\",\"/AGENTS.md\"=\"read\",\"/AGENTS.override.md\"=\"read\"}",
+    "-c",
+    "permissions.nr.network.enabled=false",
+    "-c",
+    "default_permissions=\"nr\"",
+    "-P",
+    "nr",
+    "-C",
+    "/Users/elinhaggstrom/Nortropic Runtime/evidence/accepted-task/attempt-2/candidate",
+    "/opt/homebrew/bin/python3.12",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "exit_code": 0,
+  "process_group_removed": true,
+  "stdout": "",
+  "stderr": "test_argument_errors_exit_two (test_run_report.CliTests.test_argument_errors_exit_two) ... ok\ntest_claude_is_explicitly_unimplemented (test_run_report.CliTests.test_claude_is_explicitly_unimplemented) ... ok\ntest_file_errors_exit_two_without_json (test_run_report.CliTests.test_file_errors_exit_two_without_json) ... ok\ntest_status_exit_codes_single_json_and_unchanged_input (test_run_report.CliTests.test_status_exit_codes_single_json_and_unchanged_input) ... ok\ntest_bad_item_shapes_do_not_crash_or_imply_failure (test_run_report.SummarizeTests.test_bad_item_shapes_do_not_crash_or_imply_failure) ... ok\ntest_completion_preserves_exact_usage (test_run_report.SummarizeTests.test_completion_preserves_exact_usage) ... ok\ntest_empty_blank_and_nonterminal_streams_are_incomplete (test_run_report.SummarizeTests.test_empty_blank_and_nonterminal_streams_are_incomplete) ... ok\ntest_every_pair_of_terminal_events_is_invalid (test_run_report.SummarizeTests.test_every_pair_of_terminal_events_is_invalid) ... ok\ntest_failure_events_without_completion (test_run_report.SummarizeTests.test_failure_events_without_completion) ... ok\ntest_failure_is_sticky_before_or_after_completion (test_run_report.SummarizeTests.test_failure_is_sticky_before_or_after_completion) ... ok\ntest_malformed_or_nonobject_json_overrides_other_statuses (test_run_report.SummarizeTests.test_malformed_or_nonobject_json_overrides_other_statuses) ... ok\ntest_missing_usage_and_counters_remain_null (test_run_report.SummarizeTests.test_missing_usage_and_counters_remain_null) ... ok\ntest_summarize_is_silent_and_deterministic (test_run_report.SummarizeTests.test_summarize_is_silent_and_deterministic) ... ok\ntest_unknown_events_are_ignored_and_blanks_allowed (test_run_report.SummarizeTests.test_unknown_events_are_ignored_and_blanks_allowed) ... ok\ntest_unsupported_provider_and_deferred_claude_are_explicit (test_run_report.SummarizeTests.test_unsupported_provider_and_deferred_claude_are_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 0.464s\n\nOK\n"
+}
