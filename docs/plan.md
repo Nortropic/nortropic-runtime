@@ -15,7 +15,8 @@ D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
 NÄSTA HANDLING: Exact continuation input tasks/run-report-continuation.json is
-prepared and preserved for separate input review. Adapter/full verifier are
+prepared, preserved and separately approved atc702728. Review receipt:
+evidence/reviews/report-continuation-input.json. Adapter/full verifier are
 approved and integrated via PR11 at531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d.
 Input SHA256 c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c;
 original task SHA25639aaab70858d584402e52c355c61479b0a0a5e252653b9589196857d02b61c17;
@@ -23,7 +24,7 @@ expected native attempt2. No real task mutation or model launch yet.
 Preflight confirms old writers stopped, engine lock free, same qualified Max auth;
 canonical DB backed up and hashed under evidence/accepted-task/access-prestate/.
 
-After exact input review approves, launch ONCE from clean tracked worktree:
+Input review approved. Next launch ONCE from clean tracked worktree:
 `.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json
 --resume --access-restored`. The controller owns model transitions/testing/review/
 publication. Do not edit root source or candidate while running. Observe native
