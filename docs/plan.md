@@ -14,26 +14,26 @@ Current branch work/report-continuation from main531f097 (PR11). Origin is publi
 D006, required exact-SHA tests/review protection active. Earlier branches remain
 preserved. No production changes, new API billing, purchases or expanded rights.
 
-NÄSTA HANDLING: Exact continuation input tasks/run-report-continuation.json is
-prepared, preserved and separately approved atc702728. Review receipt:
-evidence/reviews/report-continuation-input.json. Adapter/full verifier are
-approved and integrated via PR11 at531f097c85a42ac5afc86ace6bd8ee7f37fc5b8d.
-Input SHA256 c892b92f1f1c5879b2b06021ee1b914be3ed8f8b049a6a75a7c617ebde4ab29c;
-original task SHA25639aaab70858d584402e52c355c61479b0a0a5e252653b9589196857d02b61c17;
-expected native attempt2. No real task mutation or model launch yet.
-Preflight confirms old writers stopped, engine lock free, same qualified Max auth;
-canonical DB backed up and hashed under evidence/accepted-task/access-prestate/.
+NÄSTA HANDLING: REAL CONTINUATION RUNNING; do not start a second controller.
+Root controller tool session85296, log .runtime/report-continuation-controller.log.
+Native observation: evidence/accepted-task/observations/0e20e3c156bb48f5bd70180092ea1e65/.
+Workflow runtime-run-report-1 has advanced automatically from Claude attempt3
+(147.813s, successful terminal/cleanup, 33 host observations passed) to Codex attempt4.
+Same working candidate; original workspace preserved as candidate-before-continuation.
+Actual Claude run a3c76846-a130-4841-a97c-b8b14d19010a, raw evidence and frozen Git
+candidate under evidence/accepted-task/attempt-3/. No parent source edits/handoff
+between the two provider steps. Input and prior history remain preserved.
 
-Input review approved. Next launch ONCE from clean tracked worktree:
-`.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json
---resume --access-restored`. The controller owns model transitions/testing/review/
-publication. Do not edit root source or candidate while running. Observe native
-state under evidence/accepted-task/observations/<new id>/state.json and attempts3/4.
-After any failure inspect preserved state and process groups; no blind rerun.
-Candidate-before-continuation will preserve the original workspace when host
-preparation runs. No history reset, resubmission, new subscription or API fallback.
-Each implementation call remains bounded300s; review180s; zero automatic retries.
-CLI observation is bounded to the accepted step count plus review/publication time.
+Observe native state/results until completed or a diagnosed waiting state. Each
+implementation call remains bounded300s; fresh review180s; zero automatic retries.
+Do not edit candidate or Runtime source. Root may preserve finished phase evidence
+and this operator plan while the isolated executor runs. If controller disappears,
+inspect recorded launch PIDs/groups and native state before any resume; do not
+resubmit the task or repeat --access-restored. Ordinary observation thereafter:
+`.runtime/temporal-venv/bin/python -m runtime.run tasks/run-report-continuation.json --resume`.
+Whole-task approval/publication remains pending; phase3 acceptance alone is not
+permission to integrate. Max subscription path and exact source input approved in
+evidence/reviews/report-continuation-input.json; prestate DBbackup under access-prestate/.
 
 Then use the actual delivered report on saved real provider logs, restart both
 native tasks to prove retained completion, and audit every mandate§1/§9 row.
