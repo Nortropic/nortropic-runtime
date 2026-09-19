@@ -36,8 +36,8 @@ def verify(workspace):
         try:actual=json.loads(proc.stdout)
         except ValueError:actual=None
         observations.append({'case':'claude-malformed-'+line,'passed':proc.returncode==0 and isinstance(actual,dict) and actual.get('status')=='invalid','actual':actual,'stderr':proc.stderr})
-    for provider,events,code in [('claude',[done],0),('claude',[{**done,'is_error':True}],1),
-                                  ('claude',[],1),('claude',[done,done],1),('codex',[],1)]:
+    for provider,events,code,status in [('claude',[done],0,'completed'),('claude',[{**done,'is_error':True}],1,'failed'),
+                                        ('claude',[],1,'incomplete'),('claude',[done,done],1,'invalid'),('codex',[],1,'incomplete')]:
         text='\n'.join(json.dumps(e) for e in events)+'\n'
         argv=[PYTHON,'-B','tools/run_report.py','--provider',provider,'/dev/stdin']
         first=run(workspace,argv,text);second=run(workspace,argv,text)
@@ -45,7 +45,9 @@ def verify(workspace):
         except ValueError:actual=None
         observations.append({'case':provider+'-CLI-'+str(code)+'-'+str(len(events)),
             'passed':first.returncode==second.returncode==code and first.stdout==second.stdout
-                     and isinstance(actual,dict) and actual.get('provider')==provider,
+                     and isinstance(actual,dict) and actual.get('provider')==provider and actual.get('status')==status
+                     and (status=='invalid' or actual.get('usage')==(usage if events else None))
+                     and (provider!='claude' or status=='invalid' or actual.get('total_cost_usd')==(0.03125 if events else None)),
             'actual':actual,'returncode':first.returncode,'stderr':first.stderr})
     for args in (['--provider','claude','.scratch/definitely-missing-input'],['--provider','unsupported','/dev/stdin'],[]):
         proc=run(workspace,[PYTHON,'-B','tools/run_report.py',*args])
