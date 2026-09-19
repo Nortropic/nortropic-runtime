@@ -34,13 +34,18 @@ file descriptor into candidate tools. A small no-model probe found pinned Codex
 retains inherited FD locks, but that route is not adopted: descriptor exposure to
 candidate tools has not been qualified and would add avoidable authority.
 
-UTFALL: Abrupt-worker experiment NOT RUN. Inherited-FD prototype used no model
+UTFALL: Abrupt-worker experiment ACTIVE: worker1 SIGKILLed, old guardian stopped
+its provider at3.063s, a concurrent guardian failed the lock, and CLI inspection
+refused active-writer restart. Worker2 is observing native activity timeout153s;
+state remains running_codex/attempt1 with no duplicate launch. Service/worker2
+may be active; inspect evidence/recovery-probe and recorded launches before writes. Inherited-FD prototype used no model
 turn and its app-server group was removed; preserve it as rejected design evidence.
 Real task evidence remains evidence/runs/runtime-evidence-index-1/result.md.
 25 host cases (including14 source tests), actual fresh review, protected automatic
 merge0fba283 and identical completed-state restart passed. One attempt/publication.
 
-ÅTERUPPTAGNING: Root driver active. No model/engine processes remain. Canonical
+ÅTERUPPTAGNING: Root driver active. No model processes run. The explicitly isolated recovery fixture engine/worker
+may remain active until its bounded controller finishes; do not start another server. Canonical
 real-task DB .runtime/runtime.sqlite, backup/hash in evidence/runs/runtime-evidence-index-1/state/.
 Old report still waiting_access/attempt2 after fresh native restart. New task is
 completed; do not resubmit. Current fault experiment uses a separate native DB and
