@@ -1,0 +1,9 @@
+{
+  "archive": "local/office-result-1-completed.tar.gz",
+  "sha256": "808c20551f92656ca854336244e7d3a96dd6adbe8608abd322e9b589493ebd51",
+  "files": 329,
+  "sqlite_integrity": "ok",
+  "archive_reread_matches": true,
+  "raw_history_published": false,
+  "scope": "Local native task, evidence and consistent engine database backup; same-disk preservation only"
+}

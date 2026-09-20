@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "checks": [
+    "valid delivery retains exact identities",
+    "missing completion evidence refuses delivery",
+    "invalid or unverified completion refuses delivery",
+    "mismatched integration refuses delivery",
+    "noncompleted states never claim delivery",
+    "malformed and missing evidence exposed"
+  ],
+  "candidate_files_sha256": {
+    "tools/kontor_result.py": "50c295eba76d579a2979e6a94a25b462ea72b27dfb5fe7cc12661a91d64fbd62",
+    "tools/test_kontor_result.py": "cb647da681941fe0201f128172cab2871c1183dfc0e7784a30491d83ff62f59f"
+  }
+}

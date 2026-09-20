@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "task": "office-result-1",
+  "runtime_used": "09268df5f59a180afe863d4cf7f95c9ad95f8639",
+  "office_input": "0693a4c7429b6f7068fb887a5469bd4c48ba2279",
+  "office_base": "71e90f01f9ee3c8fb4ca003b879fc74bc4206b17",
+  "office_merge": "5a6084ee156bb2d12537f5e58af62e125d83be14",
+  "candidate": "e3eb7e93c936b4d69e19d967e90d87d1f291785b",
+  "tree": "1dd335b63a54ede503e4913dc85a12ba33e95f6b",
+  "url": "https://github.com/Nortropic/nortropic-projektkontor/pull/2",
+  "read_commands_files_unchanged": 329,
+  "history_initial_events": 10,
+  "history_final_events": 33,
+  "history_prefix_preserved": true,
+  "attempts": 2,
+  "publication_attempts": 1,
+  "review_run": "01a0c004-c252-7ff0-a8f4-a1a80cce280a",
+  "acceptance_sha256": "5f193ad4f0648ed7532b78e315c31d8bda3c6ba16c01517143c273b7477d83c1",
+  "checked_at_epoch": 1789928047.9010408,
+  "limits": [
+    "Read commands consume saved observations; remote independently checked by this host verification."
+  ],
+  "completed_resume": {
+    "same_attempts": 2,
+    "same_publication_attempts": 1,
+    "new_model_attempts": 0,
+    "new_publications": 0
+  },
+  "attempts_detail": [
+    {
+      "attempt": 1,
+      "provider": "codex",
+      "provider_completed": false,
+      "exit_code": 130,
+      "interrupted": "signal",
+      "process_group_removed": true,
+      "thread_id": "01a0c000-591c-73f3-988d-cbafd8196286"
+    },
+    {
+      "attempt": 2,
+      "provider": "codex",
+      "provider_completed": true,
+      "exit_code": 0,
+      "interrupted": null,
+      "process_group_removed": true,
+      "thread_id": "01a0c002-a3df-7921-8049-5f2d881261f5"
+    }
+  ],
+  "review": {
+    "task_id": "office-result-1",
+    "task_sha256": "122868aaec56998b4a0815ebf47a0ffd031f8ecbffb7aff22e25d7d4de49f0da",
+    "candidate": "e3eb7e93c936b4d69e19d967e90d87d1f291785b",
+    "acceptance_sha256": "5f193ad4f0648ed7532b78e315c31d8bda3c6ba16c01517143c273b7477d83c1",
+    "scope": "whole_task",
+    "terminal_status": "completed",
+    "reviewer_run": "01a0c004-c252-7ff0-a8f4-a1a80cce280a",
+    "verdict": "approved",
+    "blocking_findings": [],
+    "summary": "Both allowed files satisfy the accepted brief. All 13 unit tests and 282 independent edge-case checks passed, covering delivery gating, malformed inputs, JSON serialization, and input immutability. Import/render purity was also verified. No files changed or external services contacted."
+  },
+  "negative_cases": {
+    "named_target_and_scope": "scripts/test_office_target.py",
+    "native_write_denials": "tools/kontor.py, AGENTS.md, host verifier, unaccepted new file, symlink escape",
+    "changed_acceptance_and_missing_attempt": "scripts/test_office_target.py",
+    "missing_review_and_stale_base": "scripts/test_office_target.py",
+    "real_stale_base": {
+      "case": "actual remote main differs from deliberately stale accepted base",
+      "result": "rejected",
+      "message": "Remote main changed; new candidate/test/review required",
+      "observed_remote_main": "71e90f01f9ee3c8fb4ca003b879fc74bc4206b17",
+      "model_calls": 0,
+      "remote_mutations": 0,
+      "observed_at_epoch": 1789927902.987571
+    },
+    "server_missing_checks": {
+      "message": "2 of 2 required status checks are expected.",
+      "documentation_url": "https://docs.github.com/articles/about-protected-branches",
+      "status": "405"
+    }
+  }
+}
