@@ -426,3 +426,14 @@ v0.1.0 tag and historical evidence are immutable. New proof explicitly separates
 native engine/real Git/test processes from provider fixtures and remote publishing.
 The next business task is qualified against its actual target; tools-only Runtime
 scope is not a reason to relocate business source into this repository.
+
+## AP04 — named Project Office target, owner accepted 2026-09-20
+
+Owner AP04-ACCEPT in Nortropic/nortropic-projektkontor/docs/decisions.md permits
+only the required office-target adapter, frozen inputs, instruction/write boundaries,
+candidate/publication paths and relevant tests/docs. Existing histories/evidence
+stay. Office business code stays in its repo. Start connection is separately reviewed
+before Runtime builds office result retrieval through it. No additional targets,
+accounts, billing, daemon or permissions. Existing Runtime protected integration
+continues; office receives the same server gates. This is not a general hardening
+mandate or resolution of historical audit findings.

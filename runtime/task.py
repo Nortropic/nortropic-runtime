@@ -7,6 +7,7 @@ import re
 from .integration import digest
 from .profile import ROOT
 from .snapshot import read_regular
+from .targets import TARGETS, OFFICE
 
 
 def task_directory(task_id):
@@ -17,7 +18,7 @@ def task_directory(task_id):
 
 def validate(task):
     task_directory(task['id'])
-    if task.get('target') != 'Nortropic/nortropic-runtime' or not re.fullmatch('[0-9a-f]{40}', task.get('base', '')):
+    if task.get('target') not in TARGETS or not re.fullmatch('[0-9a-f]{40}', task.get('base', '')):
         raise ValueError('Authorized target and exact accepted base required')
     paths = task.get('allowed_paths')
     if not isinstance(paths, list) or not paths or len(paths) != len(set(paths)):
@@ -27,6 +28,13 @@ def validate(task):
                 any(part in ('', '.', '..') for part in path.split('/')) or
                 not re.fullmatch('[A-Za-z0-9_./-]+', path)):
             raise ValueError('This qualified profile supports explicit tools/ source files only')
+    if task['target'] == OFFICE:
+        if not re.fullmatch('[0-9a-f]{40}', task.get('runtime_revision', '')):
+            raise ValueError('Office task requires exact reviewed Runtime revision')
+        if task.get('continuation') or any(s.get('waiting_reason') for s in task.get('steps', [])):
+            raise ValueError('Legacy access/base revision is not qualified for office tasks')
+    if task['target'] == OFFICE and any(p in ('tools/kontor.py',) for p in paths):
+        raise ValueError('Active office entry is host-owned, not candidate-writable')
     if type(task.get('attempt_seconds')) is not int or not 1 <= task['attempt_seconds'] <= 3600:
         raise ValueError('Bound each individual invocation to 1..3600 seconds')
     if task.get('automatic_retries') != 0:

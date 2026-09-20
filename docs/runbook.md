@@ -182,3 +182,27 @@ and `git diff --check`. Native replay runs without provider calls using
 `.runtime/temporal-venv/bin/python -m scripts.replay_runtime`. Historical experiment
 scripts refuse their existing state/output paths; they are evidence reproductions,
 not restart commands. A new host restoration is not yet an end-to-end tested path.
+
+## AP04: named office target
+
+The host allowlist additionally maps `Nortropic/nortropic-projektkontor` to the
+sibling checkout named `nortropic-projektkontor`. No task may supply a local root
+or arbitrary remote. Its inputs must be committed under that checkout's tasks/
+and acceptance/. Both input and Runtime revisions are recorded; office tasks pin
+`runtime_revision`. Dirty host source/inputs refuse start. Existing accepted bases
+remain immutable; publishing rechecks current remote main.
+
+Office entry: `python3 -B tools/kontor.py start --task resultat.json` in the office.
+`status` and later `resultat` read saved Runtime snapshots only and never call
+`runtime.run`. Their age is explicit; they are not live engine/remote queries.
+`fortsatt` invokes the existing resume path. Diagnosis/review repair/review retry/
+publication reconciliation require the same explicit reasons as before. Legacy
+Claude access/base replacement is not enabled for office tasks. Do not use
+`--resume` as a read-only status query.
+
+Office candidates receive exact-file write grants, plus scratch. The active entry
+`tools/kontor.py` is host-owned and excluded from task write scope. Host verifier,
+engine/publication source and authority remain outside the candidate workspace.
+Acceptance must execute candidate code through the existing read-only sandbox,
+never import it into privileged host Python. The result module is only loaded
+by the office CLI's explicit read-only `resultat` action after delivery.

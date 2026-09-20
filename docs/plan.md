@@ -1,3 +1,30 @@
+# Living plan — AP04 named office target
+
+CURRENT STEP: Implement and separately review the minimal named-target connection.
+Owner AP04-ACCEPT in Nortropic/nortropic-projektkontor authorizes only this target
+extension and its tests/docs. Original v0.1 histories/evidence remain immutable.
+NEXT ACTION: Finish focused tests and obtain independent exact-candidate review,
+then integrate through existing protected main. No office model task before this.
+RESUME: work/ap04-target from a941207; office work/ap04-start from cbd7290.
+Read both project plans and inspect processes before taking writing ownership.
+The office plan owns package sequencing. Runtime owns engine state as before.
+
+Scope: host allowlist adds Nortropic/nortropic-projektkontor; frozen inputs from
+its reviewed Git revision, candidate clones and publisher use that binding.
+Codex office grants are exact files. Active office entry and all host authority
+remain outside candidate write scope. Read-only inspection never starts workers.
+Office tasks pin Runtime revision. Legacy access/base migration remains Runtime-only;
+office uses existing diagnosis, review repair/retry and publication reconciliation.
+
+Evidence: evidence/ap04. Raw/local logs excluded from publication. No new costs,
+services, daemon, arbitrary target support or business logic in Runtime.
+Separate preliminary review by /root/ap04_review identified boundaries now tested.
+A3/A6 and preparation findings are unaffected.
+
+---
+
+## Prior delivered plan (historical)
+
 # Living plan — bounded review continuation and next useful task
 
 ## Current state / mandate

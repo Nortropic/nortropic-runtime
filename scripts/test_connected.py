@@ -25,8 +25,8 @@ class ConnectedTests(unittest.TestCase):
             base = candidate.git(origin, 'rev-parse', 'HEAD')
             subprocess.run(['git','clone','-q',str(origin),str(source)], check=True)
             (source/'tools').mkdir(); (source/'tools/tool.py').write_text('print(42)\n')
-            task = {'id':'fixture','base':base,'allowed_paths':['tools/tool.py']}
-            with patch.object(candidate,'ROOT',origin), patch.object(candidate,'task_directory',return_value=state):
+            task = {'id':'fixture','target':'Nortropic/nortropic-runtime','base':base,'allowed_paths':['tools/tool.py']}
+            with patch.object(candidate,'repository',return_value=origin), patch.object(candidate,'task_directory',return_value=state):
                 result = candidate.prepare(task, 1, source)
                 frozen = state/result['workspace_name']
                 self.assertEqual(candidate.git(frozen,'rev-parse','HEAD^'),base)

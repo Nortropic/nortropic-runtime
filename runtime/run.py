@@ -24,6 +24,7 @@ from .service import LocalService
 from .snapshot import read_regular
 from .task import validate, task_directory, evidence_directory, load
 from .workflow import DevelopmentTask
+from .targets import repository, origin, TARGETS, OFFICE
 from scripts.bounded import stop_group
 
 
@@ -49,23 +50,33 @@ def check_unfinished_writers():
 
 def read_input(task_file):
     task_file = Path(task_file).resolve()
-    if task_file.parent != ROOT / 'tasks': raise ValueError('Select a committed accepted task in tasks/')
-    relative = str(task_file.relative_to(ROOT))
+    input_root = task_file.parent.parent
+    if task_file.parent.name != 'tasks' or input_root not in [repository(t).resolve() for t in TARGETS]:
+        raise ValueError('Select a committed accepted task in an authorized project tasks/')
+    relative = str(task_file.relative_to(input_root))
     source_revision = git(ROOT, 'rev-parse', 'HEAD')
-    if git(ROOT, 'diff', '--name-only') or git(ROOT, 'diff', '--cached', '--name-only'):
-        raise ValueError('Commit reviewed Runtime source before invoking models')
-    task_bytes = read_regular(ROOT, relative)
-    if task_bytes != git(ROOT, 'show', source_revision + ':' + relative, raw=True):
+    input_revision = git(input_root, 'rev-parse', 'HEAD')
+    for root in {ROOT, input_root}:
+        if git(root, 'diff', '--name-only') or git(root, 'diff', '--cached', '--name-only'):
+            raise ValueError('Commit reviewed host source and inputs before invoking models')
+    task_bytes = read_regular(input_root, relative)
+    if task_bytes != git(input_root, 'show', input_revision + ':' + relative, raw=True):
         raise ValueError('Accepted task differs from preserved Git object')
     task = validate(json.loads(task_bytes))
+    if repository(task['target']).resolve() != input_root:
+        raise ValueError('Accepted target differs from input repository')
+    if git(input_root, 'remote', 'get-url', 'origin') != origin(task['target']):
+        raise ValueError('Unauthorized input origin')
+    if task['target'] == OFFICE and task['runtime_revision'] != source_revision:
+        raise ValueError('Runtime revision differs from accepted office task')
     acceptance_path = task['acceptance']
     brief_path = task['brief']
     if not acceptance_path.startswith('acceptance/') or not brief_path.startswith('tasks/'):
         raise ValueError('Host verifier and brief must be selected from this project')
-    acceptance = read_regular(ROOT, acceptance_path)
-    brief = read_regular(ROOT, brief_path)
+    acceptance = read_regular(input_root, acceptance_path)
+    brief = read_regular(input_root, brief_path)
     for name, content in ((acceptance_path, acceptance), (brief_path, brief)):
-        if content != git(ROOT, 'show', source_revision + ':' + name, raw=True):
+        if content != git(input_root, 'show', input_revision + ':' + name, raw=True):
             raise ValueError('Accepted brief/verifier differs from preserved Git object')
     if hashlib.sha256(acceptance).hexdigest() != task['acceptance_sha256']:
         raise ValueError('Acceptance file changed after acceptance')
@@ -83,13 +94,27 @@ def prepare(task_file):
     (state / 'acceptance.py').write_bytes(acceptance)
     (state / 'brief.md').write_bytes(brief)
     workspace = state / 'candidate'
-    subprocess.run(['git','clone','--no-hardlinks','--no-checkout',str(ROOT),str(workspace)],
+    subprocess.run(['git','clone','--no-hardlinks','--no-checkout',str(repository(task['target'])),str(workspace)],
                    check=True,capture_output=True,timeout=30)
     git(workspace,'checkout','--detach',task['base'])
     git(workspace,'remote','remove','origin')
     (workspace/'tools').mkdir(exist_ok=True); (workspace/'.scratch').mkdir(exist_ok=True)
+    # Exact-file Codex grants need existing regular files. No candidate can write
+    # the host's active entry, task inputs or verifier.
+    if task['target'] == OFFICE:
+        for name in task['allowed_paths']:
+            path = workspace / name
+            parent = workspace
+            for part in Path(name).parts[:-1]:
+                parent = parent / part
+                if parent.is_symlink(): raise ValueError('Unsafe allowed parent')
+                parent.mkdir(exist_ok=True)
+            if path.is_symlink(): raise ValueError('Unsafe allowed file')
+            if not path.exists(): path.touch()
+            read_regular(workspace, name)
     (workspace/'TASK.md').write_bytes(brief)
     manifest = {'task':task,'task_sha256':digest(task),'runtime_source':source_revision,
+                'input_source':git(repository(task['target']), 'rev-parse', 'HEAD'),
                 'brief_sha256':hashlib.sha256(brief).hexdigest(), 'acceptance_sha256':task['acceptance_sha256']}
     (output/'accepted.json').write_text(json.dumps(manifest,indent=2)+'\n')
     return task, output
@@ -108,6 +133,9 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
     else:
         if diagnosis or reconcile or access_restored or review_repair or review_retry: raise ValueError('Signals require --resume of an existing task')
         task, output = prepare(task_file)
+    if task['target'] == OFFICE:
+        if git(ROOT, 'rev-parse', 'HEAD') != task['runtime_revision'] or git(ROOT, 'diff', 'HEAD', '--name-only'):
+            raise ValueError('Resume requires the unchanged accepted Runtime revision')
     worker = None
     # Existing report workflow is retained when establishing the central DB.
     old_database = ROOT/'.runtime/tasks/runtime-run-report-1/temporal.sqlite'
@@ -163,7 +191,9 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
                 end=asyncio.get_running_loop().time()+task['attempt_seconds']*len(task['steps'])+420
                 while asyncio.get_running_loop().time()<end:
                     status=await asyncio.wait_for(handle.query(DevelopmentTask.state),10)
-                    (output/'state.json').write_text(json.dumps(status,indent=2)+'\n')
+                    snapshot = output/'state.json.tmp'
+                    snapshot.write_text(json.dumps(status,indent=2)+'\n')
+                    snapshot.replace(output/'state.json')
                     if ((status['phase']=='completed' or status['phase'].startswith('waiting_'))
                             and status['attempts'] >= required_attempt
                             and status.get('publication_attempts',0) >= required_publication
