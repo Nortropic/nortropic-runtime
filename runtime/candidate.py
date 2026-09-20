@@ -7,6 +7,7 @@ import subprocess
 from .profile import ROOT
 from .snapshot import read_regular
 from .task import task_directory
+from .targets import repository, origin
 
 
 def git(repository, *args, raw=False):
@@ -24,10 +25,10 @@ def prepare(task, attempt, source):
     blobs = {name: read_regular(source, name) for name in task['allowed_paths']}
     workspace = task_directory(task['id']) / ('commit-' + str(attempt))
     if workspace.exists(): raise ValueError('Preserve previous candidate; reconcile instead of overwriting')
-    subprocess.run(['git', 'clone', '--no-hardlinks', '--no-checkout', str(ROOT), str(workspace)],
+    subprocess.run(['git', 'clone', '--no-hardlinks', '--no-checkout', str(repository(task['target'])), str(workspace)],
                    check=True, capture_output=True, timeout=30)
     git(workspace, 'checkout', '--detach', task['base'])
-    git(workspace, 'remote', 'set-url', 'origin', 'https://github.com/Nortropic/nortropic-runtime.git')
+    git(workspace, 'remote', 'set-url', 'origin', origin(task['target']))
     for name, content in blobs.items():
         target = workspace / name
         # Base is a trusted exact Git object; refuse a symlink component regardless.

@@ -12,6 +12,7 @@ import time
 from scripts.bounded import stop_group
 from .profile import ROOT, command, environment
 from .task import load, task_directory, evidence_directory
+from .targets import OFFICE
 from .provider_result import parse as parse_provider
 from .claude_profile import command as claude_command, require_subscription
 
@@ -38,7 +39,7 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         output.mkdir(exist_ok=False)
         try:
             subscription = require_subscription() if provider == 'claude' else None
-            argv = claude_command(workspace, task['allowed_paths']) if provider == 'claude' else command(workspace, writable=role == 'implementation')
+            argv = claude_command(workspace, task['allowed_paths']) if provider == 'claude' else command(workspace, writable=role == 'implementation', allowed_paths=task['allowed_paths'] if task['target'] == OFFICE else None)
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             report = {'task':task_id,'attempt':number,'provider':provider,'provider_completed':False,
                       'reason':'Provider preflight failed: '+str(error),'process_group_removed':True,

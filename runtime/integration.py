@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import subprocess
 
+from .targets import TARGETS, RUNTIME, origin
+
 
 class GateClosed(ValueError):
     pass
@@ -21,7 +23,7 @@ def digest(value):
 def require_gate(task, subject, tests, review):
     if not all(isinstance(x, dict) for x in (task, subject, tests, review)):
         raise GateClosed('Missing or non-object mandatory evidence')
-    if task.get('target') != 'Nortropic/nortropic-runtime':
+    if task.get('target') not in TARGETS:
         raise GateClosed('Target is outside the authorized project')
     if not isinstance(task.get('id'), str) or not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', task['id']):
         raise GateClosed('Accepted task ID missing or invalid')
@@ -67,7 +69,9 @@ class Publisher:
     REPOSITORY = 'Nortropic/nortropic-runtime'
     ORIGIN = 'https://github.com/Nortropic/nortropic-runtime.git'
 
-    def __init__(self, repository):
+    def __init__(self, repository, target=RUNTIME):
+        self.ORIGIN = origin(target)
+        self.REPOSITORY = target
         self.repository = Path(repository).resolve()
 
     def git(self, *args):
@@ -82,6 +86,8 @@ class Publisher:
         return json.loads(result.stdout)
 
     def inspect_candidate(self, task, subject):
+        if task.get('target') != self.REPOSITORY:
+            raise GateClosed('Publisher and accepted target differ')
         if self.git('remote', 'get-url', 'origin') != self.ORIGIN:
             raise GateClosed('Unauthorized origin')
         base, candidate = subject['base'], subject['candidate']

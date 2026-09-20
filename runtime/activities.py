@@ -125,7 +125,7 @@ def publish_candidate(request: dict) -> dict:
     for name, expected in request['candidate_files_sha256'].items():
         if hashlib.sha256(git(workspace, 'show', subject['candidate'] + ':' + name, raw=True)).hexdigest() != expected:
             raise ValueError('Candidate bytes changed after acceptance')
-    receipt = Publisher(workspace).publish(task, subject, tests, review)
+    receipt = Publisher(workspace, task['target']).publish(task, subject, tests, review)
     output = evidence_directory(task['id'])
     (output / 'integration.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return receipt

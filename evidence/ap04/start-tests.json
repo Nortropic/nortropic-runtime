@@ -1,0 +1,15 @@
+{
+  "suite": "scripts/test_*.py",
+  "tests": 28,
+  "result": "PASS",
+  "raw_log_sha256": "c8f8cbecb7dbfab98ab6b98fecb8f574d82f6c17f0804b5dfc964ad2890a08a5",
+  "scope": "Focused target checks plus existing 22 operator regressions; no model calls or remote publication in tests",
+  "new_cases": [
+    "real Git input/target/freeze binding",
+    "named target scope",
+    "native exact-file write boundary",
+    "wrong target, stale base and missing review reject without mutations",
+    "read-only unavailable inspection",
+    "completed receipt consistency and mutation-free inspection"
+  ]
+}
