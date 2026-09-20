@@ -120,9 +120,12 @@ print(json.dumps(list(out.values())))
             manifest={'task':value,'task_sha256':digest(value),'runtime_source':'d'*40,'input_source':'e'*40,'brief_sha256':hashlib.sha256(brief).hexdigest()}
             write('accepted.json',manifest)
             integration={'merged':True,'candidate':subject['candidate'],'merge_commit':'c'*40,'tree':'d'*40,'url':'https://github.com/'+targets.OFFICE+'/pull/1'}
-            native={'phase':'completed','results':[{'attempt':1,'candidate':subject['candidate'],'thread_id':'author-thread'}],'review':review,'integration':integration}
+            hashes={'tools/value.txt':hashlib.sha256(b'candidate source').hexdigest()}
+            attempt={'attempt':1,'provider':'codex','provider_completed':True,'thread_id':'author-thread','exit_code':0,'interrupted':None,'process_group_removed':True}
+            native={'phase':'completed','results':[{**attempt,'phase_acceptance_passed':True,'candidate':subject['candidate'],'candidate_files_sha256':hashes}],'review':review,'integration':integration}
+            write('attempt-1/result.json',attempt)
+            source=evidence/'attempt-1/candidate/tools/value.txt';source.parent.mkdir(parents=True);source.write_bytes(b'candidate source')
             write('state.json',native);write('integration.json',integration);write('review-1/decision.json',review)
-            hashes={'tools/value.txt':'f'*64}
             write('attempt-1/acceptance.json',{'passed':True,'candidate_files_sha256':hashes})
             frozen={'candidate':subject['candidate'],'base':value['base'],'task_sha256':digest(value),'candidate_files_sha256':hashes}
             write('attempt-1/candidate.json',frozen)
@@ -135,5 +138,15 @@ print(json.dumps(list(out.values())))
                     path=evidence/name;original=path.read_bytes();write(name,invalid)
                     self.assertFalse(inspection.inspect(value['id'])['verified_delivery'],name)
                     path.write_bytes(original)
+                for key in ('provider_completed','phase_acceptance_passed'):
+                    bad=copy.deepcopy(native);bad['results'][0][key]=False;write('state.json',bad)
+                    self.assertFalse(inspection.inspect(value['id'])['verified_delivery'],key)
+                write('state.json',native)
+                (evidence/'attempt-1/result.json').unlink()
+                self.assertFalse(inspection.inspect(value['id'])['verified_delivery'])
+                write('attempt-1/result.json',attempt)
+                source.write_bytes(b'corrupt source')
+                self.assertFalse(inspection.inspect(value['id'])['verified_delivery'])
+                source.write_bytes(b'candidate source')
                 (state/'acceptance.py').write_bytes(b'changed')
                 self.assertFalse(inspection.inspect(value['id'])['verified_delivery'])

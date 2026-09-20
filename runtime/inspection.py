@@ -50,7 +50,41 @@ def inspect(task_id):
                       phase=state['phase'])
         if state['phase'] != 'completed':
             return report
-        latest_result = state['results'][-1]
+        results = state['results']
+        successes = []
+        for result in results:
+            number = result.get('attempt')
+            if type(number) is not int or number < 1:
+                raise ValueError('Invalid preserved attempt')
+            native = read_json(root, f'attempt-{number}/result.json')
+            for key in ('attempt', 'provider', 'provider_completed', 'thread_id',
+                        'exit_code', 'interrupted', 'process_group_removed'):
+                if native.get(key) != result.get(key):
+                    raise ValueError('Attempt receipt differs from engine result: ' + key)
+            if result.get('provider_completed') is not True or result.get('phase_acceptance_passed') is not True:
+                continue
+            if native.get('exit_code') != 0 or native.get('interrupted') or native.get('process_group_removed') is not True:
+                raise ValueError('Successful attempt has incomplete provider receipt')
+            acceptance = read_json(root, f'attempt-{number}/acceptance.json')
+            frozen = read_json(root, f'attempt-{number}/candidate.json')
+            if (acceptance.get('passed') is not True or frozen.get('candidate') != result.get('candidate')
+                    or frozen.get('task_sha256') != digest(task) or frozen.get('base') != task['base']):
+                raise ValueError('Successful attempt has mismatched acceptance/candidate')
+            hashes = frozen.get('candidate_files_sha256')
+            if (not hashes or set(hashes) != set(task['allowed_paths'])
+                    or hashes != acceptance.get('candidate_files_sha256')
+                    or hashes != result.get('candidate_files_sha256')):
+                raise ValueError('Successful attempt file identities differ')
+            for name, expected in hashes.items():
+                data = read_regular(root, f'attempt-{number}/candidate/' + name)
+                if hashlib.sha256(data).hexdigest() != expected:
+                    raise ValueError('Preserved candidate source changed')
+            successes.append(result)
+        if (len(successes) < len(task['steps']) or not results or successes[-1] != results[-1]
+                or [r.get('provider') for r in successes[:len(task['steps'])]] != [s['provider'] for s in task['steps']]
+                or any(r.get('provider') != task['steps'][-1]['provider'] for r in successes[len(task['steps']):])):
+            raise ValueError('Whole accepted provider sequence is not evidenced')
+        latest_result = results[-1]
         candidate = latest_result['candidate']
         subject = {'task_id':task_id, 'task_sha256':digest(task), 'base':task['base'],
                    'candidate':candidate, 'completed_steps':list(range(len(task['steps']))),
