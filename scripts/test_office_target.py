@@ -25,6 +25,9 @@ class OfficeTests(unittest.TestCase):
                        {'allowed_paths':['acceptance/x.py']},{'allowed_paths':['tools/../escape']},
                        {'runtime_revision':'main'}):
             with self.subTest(change=change), self.assertRaises(ValueError):task.validate({**value,**change})
+        claude={**value,'steps':[{'provider':'claude','prompt':'bounded'}]}
+        with self.assertRaisesRegex(ValueError,'Codex only'):task.validate(claude)
+        self.assertEqual(task.validate({**claude,'target':targets.RUNTIME})['steps'][0]['provider'],'claude')
         with self.assertRaises(ValueError):targets.repository('https://example.invalid/repo')
 
     def test_input_binds_project_and_runtime_and_freezes_office_base(self):

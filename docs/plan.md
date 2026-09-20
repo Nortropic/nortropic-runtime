@@ -14,10 +14,14 @@ added no model calls or publication. All recorded groups stopped. Do not resubmi
 Evidence: evidence/ap04/result-run.json, result-acceptance.json,
 native-preservation.json. Raw/native data stays locally under .runtime and ignored
 evidence/runs/office-result-1; archive and consistent DB were reread successfully.
-Runtime code is unchanged after the used revision; this closing change only records
-results/docs and portable raw-evidence exclusions. Old histories/evidence unchanged.
+After the used revision, one narrow selector restriction permits only Codex for
+office tasks until any future provider qualification. Original Runtime providers
+are unchanged. Its focused regression passed; old histories/evidence are unchanged.
+Other closing changes record results/docs and portable raw-evidence exclusions.
 Office tasks pin exact Runtime HEAD; an active task must run its accepted revision.
 Status/result inspection remains read-only on later documentation revisions.
+
+Office execution is qualified for Codex only.
 
 Scope: host allowlist adds Nortropic/nortropic-projektkontor; frozen inputs from
 its reviewed Git revision, candidate clones and publisher use that binding.
