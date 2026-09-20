@@ -1,13 +1,27 @@
 # Living plan — AP04 named office target
 
-CURRENT STEP: Implement and separately review the minimal named-target connection.
-Owner AP04-ACCEPT in Nortropic/nortropic-projektkontor authorizes only this target
-extension and its tests/docs. Original v0.1 histories/evidence remain immutable.
-NEXT ACTION: Finish focused tests and obtain independent exact-candidate review,
-then integrate through existing protected main. No office model task before this.
-RESUME: work/ap04-target from a941207; office work/ap04-start from cbd7290.
-Read both project plans and inspect processes before taking writing ownership.
-The office plan owns package sequencing. Runtime owns engine state as before.
+CURRENT STEP: AP04 office result task completed and protected-integrated at
+5a6084ee156bb2d12537f5e58af62e125d83be14 (office PR2), using Runtime
+09268df5f59a180afe863d4cf7f95c9ad95f8639. Only closing evidence/docs remain here.
+NEXT ACTION: Separately review this closing receipt, integrate it through existing
+main protection, then bind final remote and archive rereads. If the matching final
+receipt exists, this action is done: stop; no new task or model invocation.
+RESUME: work/ap04-receipt, based on 09268df. Office docs/plan.md owns package
+closure. Inspect before writes. Native task office-result-1 is completed; two
+attempts (first deliberately interrupted), one publication. A completed resume
+added no model calls or publication. All recorded groups stopped. Do not resubmit.
+
+Evidence: evidence/ap04/result-run.json, result-acceptance.json,
+native-preservation.json. Raw/native data stays locally under .runtime and ignored
+evidence/runs/office-result-1; archive and consistent DB were reread successfully.
+After the used revision, one narrow selector restriction permits only Codex for
+office tasks until any future provider qualification. Original Runtime providers
+are unchanged. Its focused regression passed; old histories/evidence are unchanged.
+Other closing changes record results/docs and portable raw-evidence exclusions.
+Office tasks pin exact Runtime HEAD; an active task must run its accepted revision.
+Status/result inspection remains read-only on later documentation revisions.
+
+Office execution is qualified for Codex only.
 
 Scope: host allowlist adds Nortropic/nortropic-projektkontor; frozen inputs from
 its reviewed Git revision, candidate clones and publisher use that binding.

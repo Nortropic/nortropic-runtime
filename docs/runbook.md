@@ -200,7 +200,9 @@ publication reconciliation require the same explicit reasons as before. Legacy
 Claude access/base replacement is not enabled for office tasks. Do not use
 `--resume` as a read-only status query.
 
-Office candidates receive exact-file write grants, plus scratch. The active entry
+Office tasks currently permit Codex only; a Claude step is rejected for this new
+target until a separately accepted qualification. Original Runtime-target provider
+support is unchanged. Office candidates receive exact-file write grants, plus scratch. The active entry
 `tools/kontor.py` is host-owned and excluded from task write scope. Host verifier,
 engine/publication source and authority remain outside the candidate workspace.
 Acceptance must execute candidate code through the existing read-only sandbox,

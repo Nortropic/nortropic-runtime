@@ -2,3 +2,7 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# AP04 native raw logs are local; publish only curated evidence/ap04 receipts.
+/evidence/runs/office-result-1/
+/evidence/ap04/local/

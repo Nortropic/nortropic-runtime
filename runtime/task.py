@@ -42,6 +42,8 @@ def validate(task):
     if not isinstance(task.get('steps'), list) or not task['steps']:
         raise ValueError('Accepted executor steps required')
     for step in task['steps']:
+        if task['target'] == OFFICE and step.get('provider') != 'codex':
+            raise ValueError('Office target is qualified for Codex only; Runtime provider scope is unchanged')
         if step.get('provider') not in ('codex', 'claude') or not isinstance(step.get('prompt'), str) or not step['prompt']:
             raise ValueError('Invalid provider step')
     if not re.fullmatch('[0-9a-f]{64}', task.get('acceptance_sha256', '')):
