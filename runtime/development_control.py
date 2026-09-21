@@ -63,19 +63,23 @@ def main():
     parser.add_argument('action',choices=['interactive-start','interactive-retry','status','pause','resume','stop']);parser.add_argument('--reason')
     args=parser.parse_args()
     if args.action=='interactive-start':
-        from .development_interactive import prepare,execute
-        config=require_active_code();request=prepare(config['development']['contract_sha256'])
+        from .development_interactive import prepare,execute,preflight
+        config=require_active_code();preflight(config['development']['contract_sha256'])
+        request=prepare(config['development']['contract_sha256'])
         # Start the waiting native parent BEFORE the interactive handover.
         asyncio.run(operate('interactive-start'))
         result=execute(request);print(json.dumps(result,indent=2));return 0 if result['completed'] else 1
     if args.action=='interactive-retry':
-        from .development_interactive import prepare_retry,execute
+        from .development_interactive import prepare_retry,execute,preflight,pending
         config=require_active_code()
+        # Executor, terminal, subscription and trust refusals come BEFORE a retry
+        # slot is bound, the scope resumed or the parent signalled.
+        preflight(config['development']['contract_sha256'])
         current=asyncio.run(operate('status'))
         phase=current['native'].get('phase')
         if phase not in ('waiting_control','waiting_host_diagnosis') or current['native'].get('children'):
             raise ValueError('Existing native parent must be paused before any child')
-        request=prepare_retry(config['development']['contract_sha256'],args.reason)
+        request=pending(config['development']['contract_sha256']) or prepare_retry(config['development']['contract_sha256'],args.reason)
         asyncio.run(operate('resume',args.reason))
         if phase=='waiting_host_diagnosis':
             async def diagnosed():

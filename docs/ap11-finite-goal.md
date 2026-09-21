@@ -42,6 +42,38 @@ and freeze A, build/review/integrate it, and derive B from actual integrated A.
 No observer instruction or continuation signal may occur during the qualified
 independent interval through B preparation and start.
 
+Every model role of this commitment has an explicit executor in the frozen release
+configuration, `development.executors` (`interactive`, `driver`, `preparation-review`,
+`diagnosis`, `final-review`, `implementation`, `review`; each `codex` or `claude`; an
+absent role is the original Codex route). It is never a fallback: quota or access
+loss stays a persisted pause, and the selection changes only through a separately
+reviewed controlled release transition. The child task receives its author and
+reviewer choice through the frozen context, inside its digest, and `freeze()` refuses
+a task that differs from it. A misspelt selection is refused, never defaulted. All
+executors count against the same 48/6 ceilings; consumed calls are never refunded by
+a change. A selection is not a qualification: each role needs its own real run under
+the active release, and runs by the same model family are separate identities, never
+a claim of independent judgment.
+
+With `claude` the interactive session is the pinned TUI restricted to reading its
+workspace and writing only `.scratch/answer.json`. Its persistent trust dialog
+(default: exit) is never answered: a workspace without an already trusted ancestor
+is refused by the control command before a retry slot is bound or the scope resumed,
+and again before the call is consumed or reserved; a bound call that never reached
+its consumed receipt is delivered again rather than stranded. `~/.claude.json` is
+volatile bookkeeping, so the host compares only authority-bearing keys before and
+after: the global ones and those of the delivered directory's own ancestor chain,
+since other sessions honestly rewrite their own entries. Managed settings are bound
+with the other instruction inputs; under `--restricted` an ancestor directory's
+project instructions were measured not to load. The host chooses the session id, so
+the native record is exactly `~/.claude/projects/*/<that id>.jsonl` and no other
+session is opened; a completed turn is a final assistant
+`end_turn` with the pinned version/model, only Read/Write tool use and no API-error
+row. Slash commands are disabled, so the operator's one closing action is two
+Ctrl-C (exit 0). An unmeasured provider-error shape still fails closed as an
+incomplete session; only its quota classification is then unavailable.
+A third diagnosed interactive retry exists; like the others it is counted.
+
 `status` is a dated read and never starts models, signals or publishes. `pause
 --reason ...` persists a block on new work but permits an already started child to
 finish its accepted review/publication. `resume --reason ...` is an explicit

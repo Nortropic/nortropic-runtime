@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 from .candidate import git
-from .development_model import active_scope
+from .development_model import active_scope, executors
 from .development_scope import identifier, decode
 from .inspection import inspect
 from .integration import Publisher, digest
@@ -90,7 +90,7 @@ def base_context(scope, config, work, key, *, paused_interactive_recovery=False)
     # The explicit pre-task interactive recovery must bind its read-only context
     # before resuming the waiting parent. It cannot run a model or start a task.
     recovery_read = (paused_interactive_recovery is True and state['control']=='paused'
-                     and work=='reconciliation' and key in ('interactive-retry-1','interactive-retry-2')
+                     and work=='reconciliation' and key in ('interactive-retry-1','interactive-retry-2','interactive-retry-3')
                      and not state['tasks'] and not state['integrated'])
     if state['control'] != 'active' and not recovery_read:
         raise ValueError('No new preparation while finite goal is paused or stopped')
@@ -158,6 +158,8 @@ def base_context(scope, config, work, key, *, paused_interactive_recovery=False)
     context = {'task_id': identifier('ap11-' + key), 'observed_at': observed_at,
                'base': base, 'runtime_revision': config['runtime_revision'],
                'acceptance_sha256': sha(recipe), 'work': work,
+               # Frozen explicit choice for the child task's author and separate reviewer.
+               'executors': {role: executors(config)[role] for role in ('implementation', 'review')},
                'integrated': delivered, 'reports': reports,
                'actual_reconciliation_source': source, 'actual_reconciliation_result': actual_result, 'sources': sources,
                'source_check': {'checked_at': observed_at,
@@ -286,6 +288,12 @@ def freeze(expected, draft_ref, review_nonce):
         raise ValueError('Generated task cannot select executable host code or expand paths')
     from .task import validate
     validate(task)
+    # The delivered selection is data to the policy; the frozen task must carry
+    # exactly the release's explicit author and reviewer, whoever prepared it.
+    chosen = executors(config)
+    if ({step.get('provider') for step in task['steps']} != {chosen['implementation']}
+            or task.get('review_provider', 'codex') != chosen['review']):
+        raise ValueError('Task executors differ from the frozen explicit selection')
     recipe = read_regular(Path(config['directory']) / 'office', task['acceptance'])
     if sha(recipe) != task['acceptance_sha256'] or read_regular(repo, task['acceptance']) != recipe:
         raise ValueError('Only the frozen previously reviewed host recipe is executable')

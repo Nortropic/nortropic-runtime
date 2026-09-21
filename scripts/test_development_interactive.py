@@ -63,7 +63,14 @@ class SessionTests(unittest.TestCase):
             second=prepare_retry('fixed','Distinct observed native tooltip guard failure; process-local suppression')
             self.assertEqual(selected_nonce(scope),'interactive-retry-2')
             self.assertEqual(second['nonce'],'interactive-retry-2')
-            with self.assertRaisesRegex(ValueError,'Only explicit'):prepare_retry('fixed','third')
+            # A third diagnosed retry exists (owner mandate 2026-09-21); it needs the second one ended, and it is the last.
+            with self.assertRaisesRegex(ValueError,'has not ended'):prepare_retry('fixed','third before second ended')
+            ended=directory/'calls/interactive-retry-2'
+            (ended/'result.json').write_text(json.dumps(prior))
+            (ended/'session-exit.json').write_bytes((stage/'session-exit.json').read_bytes())
+            third=prepare_retry('fixed','Provider quota ended retry2 before any draft; owner-selected available executor')
+            self.assertEqual(third['nonce'],'interactive-retry-3');self.assertEqual(selected_nonce(scope),'interactive-retry-3')
+            with self.assertRaisesRegex(ValueError,'Only explicit'):prepare_retry('fixed','fourth')
             binding=(directory/'interactive-retry.json').read_bytes()
             (directory/'interactive-retry.json').unlink()
             with self.assertRaisesRegex(ValueError,'Earlier'):selected_nonce(scope)
@@ -90,8 +97,11 @@ class SessionTests(unittest.TestCase):
         # Reach the real gate; stop at the first subsequent policy read. No
         # source/network/model call and no mocked base_context hiding its gate.
         with patch.object(host,'policy',side_effect=LookupError('context gate passed')):
-            with self.assertRaisesRegex(LookupError,'gate passed'):
-                host.base_context(scope,{},'reconciliation','interactive-retry-1',paused_interactive_recovery=True)
+            for key in ('interactive-retry-1','interactive-retry-2','interactive-retry-3'):
+                with self.subTest(key=key),self.assertRaisesRegex(LookupError,'gate passed'):
+                    host.base_context(scope,{},'reconciliation',key,paused_interactive_recovery=True)
+            with self.assertRaisesRegex(ValueError,'No new preparation'):
+                host.base_context(scope,{},'reconciliation','interactive-retry-4',paused_interactive_recovery=True)
             for control,work,key,flag,tasks in [('paused','reconciliation','interactive-retry-1',False,{}),('stopped','reconciliation','interactive-retry-1',True,{}),('paused','handoff','interactive-retry-1',True,{}),('paused','reconciliation','step-1',True,{}),('paused','reconciliation','interactive-retry-1',True,{'child':{}})]:
                 state.update(control=control,tasks=tasks)
                 with self.assertRaisesRegex(ValueError,'No new preparation'):

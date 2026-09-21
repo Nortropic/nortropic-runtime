@@ -484,3 +484,37 @@ from the AP11 application ceiling, which stays 48 with 3 already consumed.
 Limits: same-model author and reviewer are separate runs, not guaranteed independent
 judgment. The Claude author cannot execute tests. Driver calls, the interactive
 session and the private watch still use Codex until their own reviewed increments.
+[The driver-call and interactive part of this sentence is SUPERSEDED by
+AP11-EXECUTORS-2 below; the private watch statement stands.]
+
+## AP11-EXECUTORS-2 — 2026-09-21: goal roles and the interactive session
+
+Same owner mandate. `development.executors` in the frozen release configuration
+selects `codex` or `claude` for each finite-goal role (interactive, driver,
+preparation-review, diagnosis, final-review) and for the child task's author and
+reviewer; absent is Codex. A misspelt or misplaced selection is refused instead of
+becoming the default, and `freeze()` refuses a task whose author or reviewer differs
+from the release's selection. Nothing in the repository writes that key: only a
+separately reviewed controlled release transition does. Integration activates
+nothing, and a selection is not a qualification: every role still needs its own real
+run under the active release, accounted apart from the 48/6 application ceiling.
+
+A third bounded pre-probe measured the two couplings the interactive route depends
+on: the pinned TUI honours a host-chosen `--session-id` and names its native record
+by it, for a working directory with a space and dots as well; and under
+`--restricted` it loaded the delivered workspace instructions but not an ancestor
+directory's project instructions. The host therefore reads exactly the record it
+named and opens no other session. Quota or access is classified only from the
+provider's own error status or wording. The provider-error row of an interactive
+session is still unmeasured: it fails closed as an incomplete session.
+
+Before a retry slot is bound, the scope resumed or the parent signalled, the control
+command checks terminal, executor selection, subscription, trusted ancestor and
+project-local layers; a bound call that never reached its consumed receipt is
+delivered again instead of binding another slot. The authority comparison covers the
+global keys and the delivered directory's own ancestor chain, because other
+sessions, the operator's included, honestly rewrite their own entries meanwhile.
+
+Limits: author, reviewer, driver and whole-goal examiner may all be the same model
+family. They are separate runs with separate identities, never a claim of
+independent judgment. The private watch keeps its Codex executor.

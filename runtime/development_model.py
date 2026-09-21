@@ -16,10 +16,45 @@ import time
 from .development_scope import Scope, ScopeClosed, identifier, decode
 from .release import ROOT, require_active_code, require_workspace_instructions
 from .profile import command, environment
+from .claude_profile import command as claude_command, require_subscription
 from .provider_result import parse
+from .review import claude_response
 from .private_stage import stop_private_group, write
 from .shared import process_identity
 from .snapshot import read_regular
+
+
+ROLES = ('interactive', 'driver', 'preparation-review', 'diagnosis', 'final-review', 'implementation', 'review')
+QUOTA_WORDS = ('usage limit', 'quota', 'rate limit', 'rate_limit', 'unauthorized', 'authentication')
+CLAUDE_QUOTA_WORDS = QUOTA_WORDS + ('session limit',)
+
+
+def executors(config):
+    """Explicit frozen per-role executor choice; absent is the original Codex route.
+
+    Never a fallback: quota or access loss stays a persisted wait. The selection is
+    part of the frozen release configuration and changes only through a separately
+    reviewed controlled release transition.
+    """
+    development = config.get('development') or {}
+    # A misspelt selection must not silently become the Codex default.
+    if 'executors' in config or 'executor' in config or not isinstance(development, dict) or 'executor' in development:
+        raise ScopeClosed('Invalid explicit executor selection')
+    chosen = development.get('executors', {})
+    if (not isinstance(chosen, dict) or set(chosen) - set(ROLES)
+            or any(value not in ('codex', 'claude') for value in chosen.values())):
+        raise ScopeClosed('Invalid explicit executor selection')
+    return {role: chosen.get(role, 'codex') for role in ROLES}
+
+
+def claude_unavailable(records):
+    """Quota/access only from a failed terminal's own status or error text (measured shape).
+
+    Usage counters, tool inventories and agent output in the same row are never read.
+    """
+    failed = [e for e in records if e.get('type') == 'result' and e.get('is_error') is not False]
+    return any(e.get('api_error_status') in (401, 403, 429)
+               or any(word in str(e.get('result') or '').lower() for word in CLAUDE_QUOTA_WORDS) for e in failed)
 
 
 def active_scope(expected):
@@ -55,11 +90,18 @@ def execute(request):
     # Exclusive consumed receipt, before reservation, so native redelivery cannot
     # replay the same call even if it never reached Popen. Diagnose explicitly.
     write(stage / 'consumed.json', {'nonce': nonce, 'input_sha256': request['input_sha256']})
-    argv = command(workspace, writable=False)
-    argv = argv[:-1] + ['--output-schema', str(workspace / 'OUTPUT_SCHEMA.json'), '-']
+    provider = executors(config)[data['role']]
+    if provider == 'claude':
+        # Same order as the Codex profile: bound inputs and the qualified subscription
+        # route are checked before any model could start. Read-only, no file grant.
+        require_subscription(); require_workspace_instructions(workspace)
+        argv = claude_command(workspace, (), writable=False) + ['--json-schema', json.dumps(data['schema'])]
+    else:
+        argv = command(workspace, writable=False)
+        argv = argv[:-1] + ['--output-schema', str(workspace / 'OUTPUT_SCHEMA.json'), '-']
     parent = os.getppid()
     parent_identity = process_identity(parent)
-    record = {'role': data['role'], 'nonce': nonce, 'parent_pid': parent,
+    record = {'role': data['role'], 'nonce': nonce, 'provider': provider, 'parent_pid': parent,
               'parent_identity': parent_identity, 'started_epoch': time.time(),
               'seconds_limit': data['seconds'], 'input_sha256': request['input_sha256']}
     write(stage / 'prompt.json', {'prompt': data['prompt'], 'schema': data['schema']})
@@ -118,12 +160,19 @@ def execute(request):
     records = []; parsed = {}; answer = None
     try:
         records = [decode(line) for line in read_regular(stage, 'events.jsonl', limit=1024*1024).splitlines()]
-        parsed = parse('codex', records)
+        if not all(isinstance(e, dict) for e in records):
+            records = []
+            raise ValueError('Native provider event is not an object')
+        parsed = parse('claude', records, 'structured') if provider == 'claude' else parse('codex', records)
         if not parsed.get('valid_terminal'):
             reason = reason or 'No valid native provider terminal'
-        messages = [e.get('item', {}).get('text') for e in records
-                    if e.get('type') == 'item.completed' and e.get('item', {}).get('type') == 'agent_message']
-        answer = decode(messages[-1])
+        if provider == 'claude':
+            # Only the single valid terminal's strictly repeated structured object is an answer.
+            answer = claude_response(records)
+        else:
+            messages = [e.get('item', {}).get('text') for e in records
+                        if e.get('type') == 'item.completed' and e.get('item', {}).get('type') == 'agent_message']
+            answer = decode(messages[-1])
         require_workspace_instructions(workspace)
         for name, expected in data['workspace_sha256'].items():
             if hashlib.sha256(read_regular(workspace, name)).hexdigest() != expected:
@@ -133,7 +182,7 @@ def execute(request):
     # Only provider error events can trigger this classification; agent text is
     # never authority to change control. Unknown failure remains inconclusive.
     errors = json.dumps([e for e in records if e.get('type') in ('error', 'turn.failed')]).lower()
-    if any(word in errors for word in ('usage limit', 'quota', 'rate limit', 'rate_limit', 'unauthorized', 'authentication')):
+    if claude_unavailable(records) if provider == 'claude' else any(word in errors for word in QUOTA_WORDS):
         if scope.inspect()['control'] in ('active', 'paused'):
             scope.control('quota', 'Native provider reported quota/access failure; preserve original events')
     result = {'completed': reason is None and proc is not None and proc.returncode == 0 and removed,
