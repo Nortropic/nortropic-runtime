@@ -90,7 +90,7 @@ def base_context(scope, config, work, key, *, paused_interactive_recovery=False)
     # The explicit pre-task interactive recovery must bind its read-only context
     # before resuming the waiting parent. It cannot run a model or start a task.
     recovery_read = (paused_interactive_recovery is True and state['control']=='paused'
-                     and work=='reconciliation' and key=='interactive-retry-1'
+                     and work=='reconciliation' and key in ('interactive-retry-1','interactive-retry-2')
                      and not state['tasks'] and not state['integrated'])
     if state['control'] != 'active' and not recovery_read:
         raise ValueError('No new preparation while finite goal is paused or stopped')

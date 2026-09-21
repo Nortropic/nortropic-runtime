@@ -40,6 +40,7 @@ class SessionTests(unittest.TestCase):
         with patch('runtime.development_interactive.command',return_value=fixed),patch('runtime.development_interactive.ROOT',self.root),patch('runtime.development_interactive.Path.home',return_value=self.root):
             argv=interactive_command(self.workspace,'fixture')
             self.assertEqual(argv[:5],fixed[:5]);self.assertNotIn('exec',argv)
+            self.assertIn('tui.show_tooltips=false',argv)
             settings=tomllib.loads(argv[6]);self.assertEqual(settings,{'projects':{str(self.root):{'trust_level':'trusted'}}})
             (self.workspace/'.codex').mkdir()
             with self.assertRaisesRegex(ValueError,'Project-local'):interactive_command(self.workspace,'fixture')
@@ -50,12 +51,23 @@ class SessionTests(unittest.TestCase):
         (stage/'session-exit.json').write_text(json.dumps({'process_absent':True,'provider_pid':123}))
         scope=SimpleNamespace(directory=directory,inspect=lambda:{'control':'paused','tasks':{},'calls':[{'nonce':'interactive-start'}]})
         def prepare(*args):
-            new=directory/'calls/interactive-retry-1';new.mkdir();raw=b'{"actual":"new context"}';(new/'input.json').write_bytes(raw)
-            return {'nonce':'interactive-retry-1','input_sha256':hashlib.sha256(raw).hexdigest()}
+            new=directory/'calls'/args[1];new.mkdir();raw=json.dumps({'actual':args[1]}).encode();(new/'input.json').write_bytes(raw)
+            return {'nonce':args[1],'input_sha256':hashlib.sha256(raw).hexdigest()}
         with patch('runtime.development_interactive.active_scope',return_value=(scope,{})),patch('runtime.development_interactive.process_identity',return_value=''),patch('runtime.development_interactive.os.killpg',side_effect=ProcessLookupError),patch('runtime.development_interactive.host.base_context',return_value=({},{})),patch('runtime.development_interactive.host.prepare_call',side_effect=prepare):
             request=prepare_retry('fixed','Actual diagnosed trust startup; process-local correction')
             self.assertEqual(selected_nonce(scope),request['nonce'])
-            with self.assertRaisesRegex(ValueError,'Only explicit'):prepare_retry('fixed','repeat')
+            with self.assertRaisesRegex(ValueError,'has not ended'):prepare_retry('fixed','repeat')
+            first=directory/'calls/interactive-retry-1'
+            (first/'result.json').write_text(json.dumps(prior))
+            (first/'session-exit.json').write_bytes((stage/'session-exit.json').read_bytes())
+            second=prepare_retry('fixed','Distinct observed native tooltip guard failure; process-local suppression')
+            self.assertEqual(selected_nonce(scope),'interactive-retry-2')
+            self.assertEqual(second['nonce'],'interactive-retry-2')
+            with self.assertRaisesRegex(ValueError,'Only explicit'):prepare_retry('fixed','third')
+            binding=(directory/'interactive-retry.json').read_bytes()
+            (directory/'interactive-retry.json').unlink()
+            with self.assertRaisesRegex(ValueError,'Earlier'):selected_nonce(scope)
+            (directory/'interactive-retry.json').write_bytes(binding)
         self.assertEqual(json.loads((stage/'result.json').read_text()),prior)
         (stage/'result.json').write_text('{"completed":true}')
         with self.assertRaisesRegex(ValueError,'evidence changed'):selected_nonce(scope)
