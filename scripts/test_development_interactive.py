@@ -5,8 +5,11 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
-from runtime.development_interactive import actual_session
+from unittest.mock import patch,Mock
+from types import SimpleNamespace
+import hashlib
+import tomllib
+from runtime.development_interactive import actual_session, selected_nonce, prepare_retry, interactive_command
 
 
 class SessionTests(unittest.TestCase):
@@ -30,6 +33,43 @@ class SessionTests(unittest.TestCase):
     def test_multiple_matching_sessions_are_not_assumed_one_interactive_exit(self):
         self.history();self.history('two')
         with self.assertRaisesRegex(ValueError,'Exactly one'):self.read()
+
+    def test_process_local_trust_retains_sandbox_and_refuses_project_layers(self):
+        self.workspace.mkdir()
+        fixed=['codex','-c','default_permissions="nr"','-c','approval_policy="never"','exec','--json','-']
+        with patch('runtime.development_interactive.command',return_value=fixed),patch('runtime.development_interactive.ROOT',self.root),patch('runtime.development_interactive.Path.home',return_value=self.root):
+            argv=interactive_command(self.workspace,'fixture')
+            self.assertEqual(argv[:5],fixed[:5]);self.assertNotIn('exec',argv)
+            settings=tomllib.loads(argv[6]);self.assertEqual(settings,{'projects':{str(self.root):{'trust_level':'trusted'}}})
+            (self.workspace/'.codex').mkdir()
+            with self.assertRaisesRegex(ValueError,'Project-local'):interactive_command(self.workspace,'fixture')
+
+    def test_retry_keeps_failed_call_and_requires_exact_unchanged_selection(self):
+        directory=self.root/'scope';stage=directory/'calls/interactive-start';stage.mkdir(parents=True)
+        prior={'completed':False,'process_group_removed':True};(stage/'result.json').write_text(json.dumps(prior))
+        (stage/'session-exit.json').write_text(json.dumps({'process_absent':True,'provider_pid':123}))
+        scope=SimpleNamespace(directory=directory,inspect=lambda:{'control':'paused','tasks':{},'calls':[{'nonce':'interactive-start'}]})
+        def prepare(*args):
+            new=directory/'calls/interactive-retry-1';new.mkdir();raw=b'{"actual":"new context"}';(new/'input.json').write_bytes(raw)
+            return {'nonce':'interactive-retry-1','input_sha256':hashlib.sha256(raw).hexdigest()}
+        with patch('runtime.development_interactive.active_scope',return_value=(scope,{})),patch('runtime.development_interactive.process_identity',return_value=''),patch('runtime.development_interactive.os.killpg',side_effect=ProcessLookupError),patch('runtime.development_interactive.host.base_context',return_value=({},{})),patch('runtime.development_interactive.host.prepare_call',side_effect=prepare):
+            request=prepare_retry('fixed','Actual diagnosed trust startup; process-local correction')
+            self.assertEqual(selected_nonce(scope),request['nonce'])
+            with self.assertRaisesRegex(ValueError,'Only explicit'):prepare_retry('fixed','repeat')
+        self.assertEqual(json.loads((stage/'result.json').read_text()),prior)
+        (stage/'result.json').write_text('{"completed":true}')
+        with self.assertRaisesRegex(ValueError,'evidence changed'):selected_nonce(scope)
+
+    def test_retry_refuses_running_previous_process_or_new_children(self):
+        directory=self.root/'scope';stage=directory/'calls/interactive-start';stage.mkdir(parents=True)
+        (stage/'result.json').write_text(json.dumps({'completed':False,'process_group_removed':True}))
+        (stage/'session-exit.json').write_text(json.dumps({'process_absent':True,'provider_pid':123}))
+        state={'control':'paused','tasks':{}}
+        scope=SimpleNamespace(directory=directory,inspect=lambda:state)
+        with patch('runtime.development_interactive.active_scope',return_value=(scope,{})),patch('runtime.development_interactive.process_identity',return_value='still present'):
+            with self.assertRaisesRegex(ValueError,'absent'):prepare_retry('fixed','diagnosed')
+            state['tasks']={'child':{}}
+            with self.assertRaisesRegex(ValueError,'Only explicit'):prepare_retry('fixed','diagnosed')
 
 
 if __name__=='__main__':unittest.main()

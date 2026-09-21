@@ -129,15 +129,16 @@ def development_step(request: dict) -> dict:
     if control != 'active':
         return {'control_wait': True, 'control': control}
     if operation == 'interactive':
-        stage=scope.directory/'calls/interactive-start'
+        from .development_interactive import selected_nonce
+        nonce=selected_nonce(scope);stage=scope.directory/'calls'/nonce
         if not (stage/'result.json').exists():
             return {'interactive_wait':True}
-        result=host.call_result(scope,'interactive-start','driver')
+        result=host.call_result(scope,nonce,'driver')
         ended=decode(read_regular(stage,'session-exit.json'))
         if (result['provider'].get('interactive') is not True
                 or ended.get('process_absent') is not True or ended.get('process_group_removed') is not True):
             raise ValueError('Actual interactive driver session has not verifiably ended')
-        return host.draft_from_call(scope.expected,'interactive-start')
+        return host.draft_from_call(scope.expected,nonce)
     if operation == 'propose':
         context, files = host.base_context(scope, config, request['work'], key)
         previous = request.get('revision_request')
