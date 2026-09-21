@@ -48,6 +48,13 @@ def validate(task):
             raise ValueError('Invalid provider step')
     if not re.fullmatch('[0-9a-f]{64}', task.get('acceptance_sha256', '')):
         raise ValueError('Frozen acceptance digest required')
+    if 'development' in task:
+        binding = task['development']
+        if (task['target'] != OFFICE or not isinstance(binding, dict)
+                or set(binding) != {'contract_sha256', 'work'}
+                or not re.fullmatch('[0-9a-f]{64}', str(binding.get('contract_sha256', '')))
+                or not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', str(binding.get('work', '')))):
+            raise ValueError('Invalid finite development binding')
     return task
 
 

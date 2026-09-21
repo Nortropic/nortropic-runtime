@@ -173,7 +173,8 @@ class Scope:
     @staticmethod
     def state(contract, records):
         result = {'control': 'active', 'calls': [], 'launches': [], 'started': [], 'tasks': {},
-                  'implementations': {key: 0 for key in contract['work']}, 'integrated': {}}
+                  'implementations': {key: 0 for key in contract['work']}, 'integrated': {},
+                  'effects': {}}
         for row in records:
             e = row['event']
             if e['kind'] == 'control':
@@ -190,6 +191,8 @@ class Scope:
                 result['launches'].append(e['nonce'])
             elif e['kind'] == 'integrated':
                 result['integrated'][e['work']] = e
+            elif e['kind'] in ('effect-start', 'effect-result'):
+                result['effects'][e['identity']] = e
             else:
                 raise ScopeClosed('Unknown journal event')
         return result
@@ -293,3 +296,31 @@ class Scope:
                     return
                 raise ScopeClosed('Conflicting integration; preserve and reconcile')
             self.append(records, {'kind': 'integrated', 'work': work, 'task': task, 'receipt': receipt})
+
+    def publication_effect(self, work, task, task_digest, operation, invoke):
+        """Serialize stop with ONE bounded host publication operation.
+
+        A lost response is uncertain, never permission to repeat the mutation.
+        Completed identical operations are read from the journal. The Publisher
+        still reads current remote identities and verifies the resulting tree.
+        No candidate/model supplied callback or arbitrary operation is allowed.
+        """
+        identity = digest({'task': task, 'task_sha256': task_digest, 'operation': operation})
+        with self.locked() as (contract, records):
+            state = self.state(contract, records)
+            bound = state['tasks'].get(task)
+            if not bound or bound['work'] != work or bound['task_sha256'] != task_digest:
+                raise ScopeClosed('Publication effect is not bound to an accepted task')
+            previous = state['effects'].get(identity)
+            if previous:
+                if previous['kind'] == 'effect-result':
+                    return previous['result']
+                raise ScopeClosed('Uncertain remote effect; read-only reconciliation required')
+            if state['control'] not in ('active', 'paused') or work in state['integrated']:
+                raise ScopeClosed('New publication effect is paused or stopped')
+            self.append(records, {'kind': 'effect-start', 'identity': identity,
+                                  'work': work, 'task': task, 'operation': operation})
+            result = invoke()
+            self.append(records, {'kind': 'effect-result', 'identity': identity,
+                                  'work': work, 'task': task, 'result': result})
+            return result
