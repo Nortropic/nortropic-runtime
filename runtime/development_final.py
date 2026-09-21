@@ -72,7 +72,12 @@ def prepare(scope,config,key):
     files['ACTUAL_AP10.json']=json.dumps(watch,default=str).encode()
     files['SCOPE.json']=json.dumps(state).encode()
     files['SCOPE_JOURNAL.json']=json.dumps([decode(line) for line in read_regular(scope.directory,'journal.jsonl').splitlines()]).encode()
-    stage=scope.directory/'calls/interactive-start'
+    from .development_interactive import selected_nonce, NONCE
+    nonce=selected_nonce(scope);stage=scope.directory/'calls'/nonce
+    if nonce!=NONCE:
+        files['interactive/RETRY_BINDING.json']=read_regular(scope.directory,'interactive-retry.json')
+        for name in ('session-exit.json','result.json'):
+            files['interactive/previous-'+name]=read_regular(scope.directory/'calls'/NONCE,name)
     for name in ('input.json','interactive-input.json','session-exit.json','result.json'):
         files['interactive/'+name]=read_regular(stage,name)
     files['interactive/OPERATOR_INPUT.json']=json.dumps({'bytes_hex':read_regular(stage,'operator-input.raw',limit=16384).hex()}).encode()
