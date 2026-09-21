@@ -49,8 +49,12 @@ through a separately diagnosed operation, never an automatic empty DB/reset.
 
 ## Bounds and failure semantics
 
-Daily Schedule has BUFFER_ONE and explicit 24-hour catchup window: the daily
-schedule can catch up at most one still-current occurrence, not all absent days.
+Daily Schedule has BUFFER_ONE and an explicit 22-hour catchup window. This is
+strictly shorter than the minimum 23-hour spacing of Stockholm09 occurrences
+at spring DST. At most one past occurrence is eligible on return, not all absent
+days; an older missed occurrence is a gap. A return very near the following
+planned time may be followed by that new on-time occurrence; BUFFER_ONE can
+queue it while the caught-up current assessment finishes.
 No backfill command is exposed. Previous and actual observation times remain
 separate; missed/paused/sleep periods are gaps, not reconstructed observations.
 One activity slot serializes builds and private work. The round execution/run
