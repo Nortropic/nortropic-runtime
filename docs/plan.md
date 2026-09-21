@@ -1,12 +1,12 @@
 # AP10 — shared local service and private observation qualification
 
 CURRENT STEP: AP10-ACCEPT authorizes the named Office monitoring obligation,
-necessary Runtime extension and user login start. Root is sole writer. No daemon
-or monitor has been activated. Office docs/plan.md owns the five-milestone phase.
-NEXT ACTION: implement and separately review pinned shared service identity and
-attachment, retaining canonical state and ordinary development gates; qualify
-private read/review workflow and native schedule next. Small protected increments.
-RESUME: work/ap10-runtime-service; Office evidence/ap10/local/accepted-mandate.md
+necessary Runtime extension and user login start. Root is sole writer. First pinned daemon launch failed closed because its historical-ID check named
+absent pre-AP10 histories. Owned processes stopped; no monitor was activated. Office docs/plan.md owns the five-milestone phase.
+NEXT ACTION: review the focused startup correction against pre-AP10 DB evidence,
+then qualify real shared attachment and Office intake build. Private workflow and
+schedule remain unimplemented. PR17 is integrated, not operational qualification.
+RESUME: work/ap10-private-profile; Office evidence/ap10/local/accepted-mandate.md
 and acceptance-start.json bind the full owner order. Old histories/source remain.
 
 Only named Office target. No upgrades, new models/costs/rights, root service,
