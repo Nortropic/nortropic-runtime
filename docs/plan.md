@@ -1,3 +1,21 @@
+# AP11 — executor-neutral roles under construction; application paused at 3/48
+
+2026-09-21T14:40Z. Claude Code is sole Runtime/Office writer after a receiver-verified
+handover; the Codex root ended on its provider usage limit at 13:17Z. Office
+**docs/plan.md alone owns the milestones, next action and resume point.**
+interactive-retry-2 was launched and ended on that limit before any draft; scope
+paused, 3/48 consumed, no child, no G2. Owner mandate AP11-UTFÖRARNEUTRAL: both
+executors shall be able to drive everything; see decisions AP11-EXECUTORS.
+
+This increment makes the office executor and the separate reviewer an explicit
+per-role choice (Codex route unchanged, no automatic switching). Driver calls and
+the interactive session follow as their own reviewed increments, then ONE separately
+reviewed controlled release transition. Integration here activates nothing: the
+active release stays 1148c945 / Office 7e6230a7 / config bee6ee5d until then.
+AP10 remains active and untouched; its executor choice is a separate later step.
+
+---
+
 # AP10 — private workflow qualification in progress
 
 CURRENT STEP: shared service PR17 and focused startup correction PR18 integrated.
@@ -51,7 +69,8 @@ Other closing changes record results/docs and portable raw-evidence exclusions.
 Office tasks pin exact Runtime HEAD; an active task must run its accepted revision.
 Status/result inspection remains read-only on later documentation revisions.
 
-Office execution is qualified for Codex only.
+Office execution is qualified for Codex only. [SUPERSEDED 2026-09-21 by decisions
+AP11-EXECUTORS: the executor is an explicit per-role choice; retained as history.]
 
 Scope: host allowlist adds Nortropic/nortropic-projektkontor; frozen inputs from
 its reviewed Git revision, candidate clones and publisher use that binding.

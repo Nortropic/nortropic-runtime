@@ -25,7 +25,9 @@ class BindingTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name).resolve()
         self.scope = Scope(self.root / 'scope', initialize(self.root / 'scope', contract()))
+        # Accepted tasks always carry their explicit executor steps; attempt binds the role to them.
         self.task = {'id': 'fixture', 'target': 'Nortropic/nortropic-projektkontor',
+                     'steps': [{'provider': 'codex', 'prompt': 'fixture'}],
                      'attempt_seconds': 10, 'allowed_paths': ['tools/reconciliation.py'],
                      'development': {'work': 'reconciliation', 'contract_sha256': self.scope.expected}}
         self.scope.bind_task('reconciliation', self.task['id'], digest(self.task),

@@ -26,7 +26,9 @@ class OfficeTests(unittest.TestCase):
                        {'runtime_revision':'main'}):
             with self.subTest(change=change), self.assertRaises(ValueError):task.validate({**value,**change})
         claude={**value,'steps':[{'provider':'claude','prompt':'bounded'}]}
-        with self.assertRaisesRegex(ValueError,'Codex only'):task.validate(claude)
+        # Owner mandate 2026-09-21: the executor is an explicit accepted choice for the office too.
+        self.assertEqual(task.validate(claude)['steps'][0]['provider'],'claude')
+        with self.assertRaisesRegex(ValueError,'Invalid provider step'):task.validate({**value,'steps':[{'provider':'other','prompt':'bounded'}]})
         self.assertEqual(task.validate({**claude,'target':targets.RUNTIME})['steps'][0]['provider'],'claude')
         with self.assertRaises(ValueError):targets.repository('https://example.invalid/repo')
 

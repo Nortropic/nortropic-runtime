@@ -15,6 +15,7 @@ from .task import load, task_directory, evidence_directory
 from .targets import OFFICE
 from .provider_result import parse as parse_provider
 from .claude_profile import command as claude_command, require_subscription
+from .review import strict_object
 from .development_binding import reserve_task_call
 from .development_scope import ScopeClosed
 
@@ -25,7 +26,11 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         raise ValueError('Explicit attempt and changed prerequisite required')
     if role not in ('implementation', 'review') or not 1 <= seconds <= task['attempt_seconds']:
         raise ValueError('Invalid role or invocation limit')
-    if provider not in ('codex','claude') or (role == 'review' and provider != 'codex'):
+    # The executor is the accepted task's explicit choice for this role. A caller
+    # cannot substitute another one; an absent reviewer choice is original Codex.
+    accepted = ({task.get('review_provider', 'codex')} if role == 'review'
+                else {step.get('provider') for step in task['steps']})
+    if provider not in ('codex','claude') or provider not in accepted:
         raise ValueError('Unqualified provider/role')
     state = task_directory(task_id)
     if role == 'review':
@@ -41,7 +46,12 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         output.mkdir(exist_ok=False)
         try:
             subscription = require_subscription() if provider == 'claude' else None
-            argv = claude_command(workspace, task['allowed_paths']) if provider == 'claude' else command(workspace, writable=role == 'implementation', allowed_paths=task['allowed_paths'] if task['target'] == OFFICE else None)
+            if provider == 'claude' and os.environ.get('NR_CONFIG_SHA256'):
+                # Same order as the Codex profile: a changed bound input stops BEFORE a model call.
+                from .release import require_workspace_instructions
+                require_workspace_instructions(workspace)
+            # A Claude reviewer receives the read-only profile: no edit tool and no file grant.
+            argv = claude_command(workspace, task['allowed_paths'], writable=role == 'implementation') if provider == 'claude' else command(workspace, writable=role == 'implementation', allowed_paths=task['allowed_paths'] if task['target'] == OFFICE else None)
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             report = {'task':task_id,'attempt':number,'provider':provider,'provider_completed':False,
                       'reason':'Provider preflight failed: '+str(error),'process_group_removed':True,
@@ -56,7 +66,10 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                   'role': role, 'task_sha256': task_digest,
                   'change_reason': change_reason,
                   'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest()}
-        if role == 'review':
+        if role == 'review' and provider == 'claude':
+            # Host-written schema; the native CLI refuses invalid JSON before any model call.
+            record['command'] = record['command'] + ['--json-schema', (workspace / 'REVIEW_SCHEMA.json').read_text()]
+        elif role == 'review':
             record['command'] = record['command'][:-1] + ['--output-schema', str(workspace / 'REVIEW_SCHEMA.json'), '-']
         (output / 'launch.json').write_text(json.dumps(record, indent=2) + '\n')
         started = time.monotonic()
@@ -121,12 +134,12 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         records, parse_error = [], False
         for line in (output / 'events.jsonl').read_text().splitlines():
             try:
-                event = json.loads(line)
+                event = json.loads(line, object_pairs_hook=strict_object) if provider == 'claude' else json.loads(line)
                 if not isinstance(event, dict): raise ValueError('Non-object event')
                 records.append(event)
             except ValueError:
                 parse_error = True
-        parsed = parse_provider(provider, records)
+        parsed = parse_provider(provider, records, role)
         valid_terminal = parsed.pop('valid_terminal')
         finished = (code == 0 and removed and not interrupted and not parse_error and valid_terminal)
         if os.environ.get('NR_CONFIG_SHA256'):

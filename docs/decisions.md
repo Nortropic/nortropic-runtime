@@ -450,3 +450,37 @@ Existing development gates and histories remain. Pin active code/config; make
 pause/stop persistent; bounded model/reviewer/time/retry budgets per native round.
 Office plan owns whole phase. Runtime implementation/review/integration and
 limited public evidence allowed. No upgrades/new paid services/models/targets.
+
+
+## AP11-EXECUTORS — 2026-09-21: executor-neutral roles, explicit choice, no fallback
+
+Owner mandate recorded by the Office as AP11-UTFÖRARNEUTRAL (exact words preserved
+privately there): the working model must never matter; both Claude and Codex shall
+be able to drive everything. This is the separately accepted qualification that the
+AP04 selector restriction was waiting for, and it restates mandate §1 Replaceable
+execution. No new subscription, model connection, API billing or paid fallback.
+
+Decision: executor choice is explicit per role and bound in frozen input — step
+`provider`, optional `review_provider` (absent = Codex, preserving earlier digests).
+Quota or access loss remains a persisted wait; nothing switches automatically. The
+Codex route is unchanged. D019's pinned binary, subscription check and restricted
+file-tool profile are reused; binary hash and auth status are preflight, not proof
+of a new role.
+
+Two bounded real pre-probes with the pinned CLI preceded the build. Reviewer role:
+the read-only profile plus `--json-schema` exposes exactly Read and StructuredOutput,
+cannot edit, is denied reads outside its workspace, and returns the verdict in the
+single terminal's `structured_output`; an interrupted run has no terminal and an
+invalid schema stops before any model call. Interactive role: a trust dialog whose
+default is exit appears unless an ancestor is already trusted; trust is inherited;
+the permission mode confines writes to the one granted file; `/exit` is disabled by
+the profile and two Ctrl-C end the session with exit 0; the native record is
+`~/.claude/projects/<cwd-slug>/<session>.jsonl`; `~/.claude.json` changes only
+volatile bookkeeping, so a byte-hash guard on it would fail every honest run.
+Reduced measured rows: evidence/claude-office-roles/review-terminal-shape.json.
+Raw events stay in the private host area. Construction usage is reported apart
+from the AP11 application ceiling, which stays 48 with 3 already consumed.
+
+Limits: same-model author and reviewer are separate runs, not guaranteed independent
+judgment. The Claude author cannot execute tests. Driver calls, the interactive
+session and the private watch still use Codex until their own reviewed increments.
