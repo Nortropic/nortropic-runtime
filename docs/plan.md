@@ -7,11 +7,15 @@ interactive-retry-2 was launched and ended on that limit before any draft; scope
 paused, 3/48 consumed, no child, no G2. Owner mandate AP11-UTFÖRARNEUTRAL: both
 executors shall be able to drive everything; see decisions AP11-EXECUTORS.
 
-This increment makes the office executor and the separate reviewer an explicit
-per-role choice (Codex route unchanged, no automatic switching). Driver calls and
-the interactive session follow as their own reviewed increments, then ONE separately
-reviewed controlled release transition. Integration here activates nothing: the
-active release stays 1148c945 / Office 7e6230a7 / config bee6ee5d until then.
+Integrated: the office executor and the separate reviewer as an explicit per-role
+choice (PR29, 3b31a548) and the Office side of that choice (Office PR25, 3c1c992a).
+This increment adds the goal roles and the genuine interactive session (decisions
+AP11-EXECUTORS-2). Codex route unchanged, no automatic switching. Next: ONE
+separately reviewed controlled release transition that stages both revisions and
+writes `development.executors`, then real per-role qualification, then the diagnosed
+interactive-retry-3, which is the LAST interactive slot. Integration here activates
+nothing: the active release stays 1148c945 / Office 7e6230a7 / config bee6ee5d until
+then, and AP11 preparation refuses meanwhile because Office main has moved.
 AP10 remains active and untouched; its executor choice is a separate later step.
 
 ---

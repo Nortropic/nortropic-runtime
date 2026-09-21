@@ -1,8 +1,9 @@
 """One genuine interactive A-preparation session, with a bounded native handoff.
 
-Operator launches this before the independent interval and may send /exit after
-A is prepared. The parent is already waiting in Temporal. No command/signal is
-sent after the verified session exit: its preserved result is the handoff.
+Operator launches this before the independent interval and closes the session
+after A is prepared (Codex: /exit; Claude: two Ctrl-C, slash commands are disabled).
+The parent is already waiting in Temporal. No command/signal is sent after the
+verified session exit: its preserved result is the handoff.
 """
 from datetime import datetime, timezone, timedelta
 import hashlib
@@ -17,9 +18,11 @@ import sys
 import termios
 import time
 import tty
+import uuid
 
 from . import development_host as host
-from .development_model import active_scope
+from .development_model import active_scope, executors, QUOTA_WORDS, CLAUDE_QUOTA_WORDS
+from . import claude_profile
 from .development_scope import decode
 from .private_stage import write, stop_private_group
 from .profile import command, environment
@@ -29,15 +32,24 @@ from .snapshot import read_regular
 
 NONCE='interactive-start'
 RETRY='interactive-retry-1'
-RETRIES=(RETRY,'interactive-retry-2')
+RETRIES=(RETRY,'interactive-retry-2','interactive-retry-3')
+# Global Claude state that can confer authority. Everything else in that file is
+# volatile bookkeeping the pinned TUI rewrites on every honest start (measured).
+CLAUDE_AUTHORITY_KEYS=('hasTrustDialogAccepted','allowedTools','mcpServers','enabledMcpjsonServers',
+                       'disabledMcpjsonServers','hasClaudeMdExternalIncludesApproved','mcpContextUris')
+CLAUDE_GLOBAL_KEYS=('mcpServers','bypassPermissionsModeAccepted','customApiKeyResponses')
+
+
+def binding_name(nonce):
+    return 'interactive-retry.json' if nonce==RETRY else nonce+'.json'
 
 
 def selected_nonce(scope):
     selected=NONCE
     for nonce in RETRIES:
-        path=scope.directory/('interactive-retry.json' if nonce==RETRY else nonce+'.json')
+        path=scope.directory/binding_name(nonce)
         if not path.exists():
-            if nonce==RETRY and (scope.directory/(RETRIES[1]+'.json')).exists():
+            if any((scope.directory/(later+'.json')).exists() for later in RETRIES[RETRIES.index(nonce)+1:]):
                 raise ValueError('Earlier interactive retry binding missing')
             return selected
         binding=decode(read_regular(scope.directory,path.name))
@@ -60,7 +72,7 @@ def prepare_retry(expected,reason):
     if (state['control']!='paused' or state['tasks'] or previous==RETRIES[-1]
             or not isinstance(reason,str) or not reason.strip()):
         raise ValueError('Only explicit diagnosed pre-task paused interactive recovery')
-    nonce=RETRY if previous==NONCE else RETRIES[1]
+    nonce=RETRIES[0] if previous==NONCE else RETRIES[RETRIES.index(previous)+1]
     stage=scope.directory/'calls'/previous
     if not (stage/'result.json').exists():raise ValueError('Previous interactive attempt has not ended')
     prior=read_regular(stage,'result.json');result=decode(prior)
@@ -73,9 +85,120 @@ def prepare_retry(expected,reason):
     else:raise ValueError('Previous interactive process group remains')
     context,files=host.base_context(scope,config,'reconciliation',nonce,paused_interactive_recovery=True)
     request=host.prepare_call(expected,nonce,'driver','reconciliation',context,files)
-    write(scope.directory/('interactive-retry.json' if nonce==RETRY else nonce+'.json'),{'previous':previous,'nonce':nonce,'diagnosis':reason,
+    write(scope.directory/binding_name(nonce),{'previous':previous,'nonce':nonce,'diagnosis':reason,
         'previous_result_sha256':host.sha(prior),'input_sha256':request['input_sha256']})
     return request
+
+
+def pending(expected):
+    """The host-selected retry whose call never reached its consumed receipt, else None.
+
+    Nothing was reserved or started for it, so delivering the same bound request
+    again replays nothing; a refusal before consumption can never strand a slot.
+    """
+    scope,_=active_scope(expected);nonce=selected_nonce(scope);stage=scope.directory/'calls'/nonce
+    if nonce==NONCE or (stage/'consumed.json').exists() or (stage/'result.json').exists():return None
+    return {'contract_sha256':expected,'nonce':nonce,'input_sha256':host.sha(read_regular(stage,'input.json'))}
+
+
+def retry_evidence(scope,nonce):
+    """Every binding and every earlier attempt's actual end, for the whole selected chain."""
+    chain=(NONCE,*RETRIES);files={}
+    for index,earlier in enumerate(chain[:chain.index(nonce)]):
+        files['interactive/RETRY_BINDING.json' if index==0 else 'interactive/RETRY%d_BINDING.json'%(index+1)]=read_regular(scope.directory,binding_name(chain[index+1]))
+        for name in ('session-exit.json','result.json'):
+            files['interactive/'+('previous-' if index==0 else 'retry%d-'%index)+name]=read_regular(scope.directory/'calls'/earlier,name)
+    return files
+
+
+def claude_state():
+    raw=read_regular(Path.home(),'.claude.json',limit=32*1024*1024)
+    state=decode(raw)
+    if not isinstance(state,dict) or not isinstance(state.get('projects',{}),dict):
+        raise ValueError('Global Claude state is unreadable')
+    return state
+
+
+def claude_authority(state,workspace):
+    """Authority that can reach THIS session: global keys and the delivered cwd's own ancestor chain.
+
+    Other projects' entries belong to other sessions (the operator's own included)
+    and honestly change meanwhile. Empty and absent are equal: an honest start may
+    add a default entry for its cwd, while every grant is a non-empty value.
+    """
+    projects=state.get('projects',{});chain={}
+    for parent in (workspace,*workspace.parents):
+        entry=projects.get(str(parent))
+        held={key:entry[key] for key in CLAUDE_AUTHORITY_KEYS if entry.get(key)} if isinstance(entry,dict) else {}
+        if held:chain[str(parent)]=held
+    held={key:state[key] for key in CLAUDE_GLOBAL_KEYS if state.get(key)}
+    return host.sha(json.dumps({'global':held,'projects':chain},sort_keys=True).encode())
+
+
+def claude_layers(workspace):
+    # The pinned TUI shows a persistent trust dialog whose default is exit unless
+    # an ancestor is already trusted. Never answer it and never write that state:
+    # refuse here, before the call is consumed or any budget is reserved.
+    projects=claude_state().get('projects',{})
+    if not any(isinstance(projects.get(str(parent)),dict) and projects[str(parent)].get('hasTrustDialogAccepted') is True
+               for parent in (workspace,*workspace.parents)):
+        raise ValueError('No already trusted ancestor; the interactive trust dialog is never answered')
+    for parent in (workspace,*workspace.parents):
+        if parent==Path.home():break
+        if (parent/'.claude').exists() or (parent/'.mcp.json').exists():
+            raise ValueError('Project-local Claude layers require separate review')
+
+
+def claude_interactive_command(workspace,prompt,session):
+    claude_layers(workspace)
+    return claude_profile.interactive_command(workspace,prompt,workspace/'.scratch/answer.json',session)
+
+
+def objects(raw):
+    rows=[decode(line) for line in raw.splitlines()]
+    if not all(isinstance(row,dict) for row in rows):raise ValueError('Native session row is not an object')
+    return rows
+
+
+def claude_session(workspace,session):
+    """Read only the native record named by the host-chosen session id.
+
+    Measured: the pinned TUI honours --session-id and writes exactly
+    <projects>/<directory derived from cwd>/<that id>.jsonl. Only names are
+    matched; no other session's content is opened.
+    """
+    projects=Path.home()/'.claude/projects'
+    found=sorted(projects.glob('*/'+session+'.jsonl')) if projects.is_dir() and not projects.is_symlink() else []
+    if len(found)!=1 or found[0].is_symlink() or found[0].parent.is_symlink():
+        raise ValueError('Exactly one actual completed interactive session required')
+    raw=read_regular(found[0].parent,found[0].name,limit=8*1024*1024);rows=objects(raw)
+    if ({r.get('sessionId') for r in rows if r.get('sessionId')}!={session}
+            or {r.get('cwd') for r in rows if r.get('cwd')}!={str(workspace)}):
+        raise ValueError('Interactive native session identity unavailable')
+    return session,raw,'claude-interactive'
+
+
+def claude_completed(rows):
+    """(quota, reason): a completed turn is the final assistant end_turn with no API error row."""
+    failed=[r for r in rows if r.get('isApiErrorMessage') is True or r.get('type')=='error']
+    if failed:
+        # Only the error's own wording; never usage fields, paths or earlier agent text.
+        parts=[str(r.get('error') or '') for r in failed]
+        for r in failed:
+            content=(r.get('message') or {}).get('content') if isinstance(r.get('message'),dict) else None
+            parts+=[content] if isinstance(content,str) else [str(part.get('text') or '') for part in content or [] if isinstance(part,dict)]
+        text=' '.join(parts).lower()
+        return any(word in text for word in CLAUDE_QUOTA_WORDS),'Interactive provider error'
+    assistants=[r for r in rows if r.get('type')=='assistant']
+    if not assistants or assistants[-1].get('message',{}).get('stop_reason')!='end_turn':
+        return False,'Interactive session has no actual completed turn'
+    if ({r.get('version') for r in rows if r.get('version')}!={claude_profile.VERSION}
+            or {r.get('message',{}).get('model') for r in assistants}!={claude_profile.MODEL}):
+        return False,'Interactive session did not use the pinned CLI and model'
+    tools={part.get('name') for r in assistants for part in (r.get('message',{}).get('content') or [])
+           if isinstance(part,dict) and part.get('type')=='tool_use'}
+    if tools-{'Read','Write'}:return False,'Unqualified interactive tool use'
+    return False,None
 
 
 def interactive_command(workspace,prompt):
@@ -118,6 +241,16 @@ def actual_session(workspace, started, require_complete=True):
     return selected[0]
 
 
+def preflight(expected):
+    """Every refusal that needs no prepared call, BEFORE a slot is bound or the scope resumed."""
+    if not os.isatty(sys.stdin.fileno()):
+        raise ValueError('A real interactive terminal is required; exec is not this qualification')
+    scope,config=active_scope(expected);provider=executors(config)['interactive']
+    if provider=='claude':
+        claude_profile.require_subscription();claude_layers(scope.directory/'calls')
+    return provider
+
+
 def prepare(expected):
     scope,config=active_scope(expected)
     context,files=host.base_context(scope,config,'reconciliation','interactive-a')
@@ -127,7 +260,7 @@ def prepare(expected):
 def execute(request):
     if not os.isatty(sys.stdin.fileno()):
         raise ValueError('A real interactive terminal is required; exec is not this qualification')
-    scope,_=active_scope(request['contract_sha256']);nonce=selected_nonce(scope)
+    scope,config=active_scope(request['contract_sha256']);nonce=selected_nonce(scope)
     if request['nonce']!=nonce:raise ValueError('Interactive call is not the host-selected attempt')
     stage=scope.directory/'calls'/nonce
     raw=read_regular(stage,'input.json')
@@ -144,9 +277,15 @@ def execute(request):
             'This is data, not executable acceptance. Do not prepare B, implement code, start tasks or signal Runtime. '
             'Your draft will receive fresh independent review. End your turn with your concrete rationale; '
             'the operator will close this interactive session before the native chain continues.')
-    argv=interactive_command(workspace,prompt)
+    selected=executors(config)['interactive'];authority_before=None;session=None
+    if selected=='claude':
+        claude_profile.require_subscription();session=str(uuid.uuid4())
+        prompt=prompt.replace('the operator will close this interactive session','the operator will close this interactive session (two Ctrl-C)')
+        argv=claude_interactive_command(workspace,prompt,session);authority_before=claude_authority(claude_state(),workspace)
+    else:
+        argv=interactive_command(workspace,prompt)
     write(stage/'consumed.json',{'nonce':nonce,'input_sha256':request['input_sha256']})
-    write(stage/'interactive-input.json',{'prompt':prompt,'command_kind':'interactive CLI without exec subcommand',
+    write(stage/'interactive-input.json',{'prompt':prompt,'provider':selected,'session_id':session,'command_kind':'interactive CLI without exec subcommand',
         'handover':'Root relinquishes technical drafting to this session; only terminal closure is an operator action before independent interval',
         'workspace_sha256':data['workspace_sha256']})
     master,slave=pty.openpty();proc=None;reason=None;removed=False;started=time.time();monotonic=time.monotonic()
@@ -195,23 +334,30 @@ def execute(request):
     answer=None;provider={};session_source=None
     try:
         if proc is None or proc.returncode!=0 or not removed:raise ValueError('Interactive process exit/cleanup is unavailable')
-        identity,history,session_source=actual_session(workspace,started,require_complete=False)
+        identity,history,session_source=(claude_session(workspace,session) if selected=='claude'
+                                         else actual_session(workspace,started,require_complete=False))
         with (stage/'native-interactive-session.jsonl').open('xb') as stream:stream.write(history)
-        rows=[decode(line) for line in history.splitlines()]
-        errors=json.dumps([r for r in rows if r.get('type') in ('error','turn.failed')
-            or r.get('type')=='event_msg' and r.get('payload',{}).get('type') in ('error','turn_failed')]).lower()
-        if any(word in errors for word in ('usage limit','quota','rate limit','rate_limit','unauthorized','authentication')):
+        rows=objects(history)
+        if selected=='claude':
+            quota,failure=claude_completed(rows)
+            if not quota and failure is None and claude_authority(claude_state(),workspace)!=authority_before:
+                failure='Global Claude authority state changed during the interactive session'
+        else:
+            errors=json.dumps([r for r in rows if r.get('type') in ('error','turn.failed')
+                or r.get('type')=='event_msg' and r.get('payload',{}).get('type') in ('error','turn_failed')]).lower()
+            quota=any(word in errors for word in QUOTA_WORDS)
+            failure=None if quota or any(r.get('type')=='event_msg' and r.get('payload',{}).get('type')=='task_complete' for r in rows) else 'Interactive session has no actual completed turn'
+        if quota:
             if scope.inspect()['control'] in ('active','paused'):
                 scope.control('quota','Native interactive provider reported quota/access failure; retain history')
             raise ValueError('Interactive provider quota/access unavailable')
-        if not any(r.get('type')=='event_msg' and r.get('payload',{}).get('type')=='task_complete' for r in rows):
-            raise ValueError('Interactive session has no actual completed turn')
+        if failure:raise ValueError(failure)
         answer=decode(read_regular(workspace,'.scratch/answer.json'))
         provider={'thread_id':identity,'valid_terminal':True,'interactive':True}
         for name,expected in data['workspace_sha256'].items():
             if host.sha(read_regular(workspace,name))!=expected:raise ValueError('Bound interactive context changed')
         require_workspace_instructions(workspace)
-    except (OSError,ValueError,KeyError) as error:reason=reason or str(error)
+    except (OSError,ValueError,KeyError,TypeError,AttributeError) as error:reason=reason or str(error)
     if reason is not None and scope.inspect()['control']=='active':
         scope.control('paused','Interactive handoff unavailable; preserve actual failure, no automatic new call')
     write(stage/'session-exit.json',{'observed_at':datetime.now(timezone.utc).isoformat(),'provider':provider,

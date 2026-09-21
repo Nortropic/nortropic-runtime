@@ -72,16 +72,9 @@ def prepare(scope,config,key):
     files['ACTUAL_AP10.json']=json.dumps(watch,default=str).encode()
     files['SCOPE.json']=json.dumps(state).encode()
     files['SCOPE_JOURNAL.json']=json.dumps([decode(line) for line in read_regular(scope.directory,'journal.jsonl').splitlines()]).encode()
-    from .development_interactive import selected_nonce, NONCE, RETRIES
+    from .development_interactive import selected_nonce, retry_evidence
     nonce=selected_nonce(scope);stage=scope.directory/'calls'/nonce
-    if nonce!=NONCE:
-        files['interactive/RETRY_BINDING.json']=read_regular(scope.directory,'interactive-retry.json')
-        for name in ('session-exit.json','result.json'):
-            files['interactive/previous-'+name]=read_regular(scope.directory/'calls'/NONCE,name)
-    if nonce==RETRIES[1]:
-        files['interactive/RETRY2_BINDING.json']=read_regular(scope.directory,RETRIES[1]+'.json')
-        for name in ('session-exit.json','result.json'):
-            files['interactive/retry1-'+name]=read_regular(scope.directory/'calls'/RETRIES[0],name)
+    files.update(retry_evidence(scope,nonce))
     for name in ('input.json','interactive-input.json','session-exit.json','result.json'):
         files['interactive/'+name]=read_regular(stage,name)
     files['interactive/OPERATOR_INPUT.json']=json.dumps({'bytes_hex':read_regular(stage,'operator-input.raw',limit=16384).hex()}).encode()

@@ -1,0 +1,332 @@
+{
+ "source": "Actual genuine interactive TUI session 2026-09-21 in a PTY: pinned Claude Code 2.1.257, measured interactive profile, synthetic workspace under an already trusted ancestor; ended by two Ctrl-C with exit 0. Rows reduced mechanically to the fields the host reads; text, tool inputs, paths and ids omitted. <WORKSPACE> stands for the exact delivered cwd and <SESSION> for the single session id on every row that carries one.",
+ "raw_session_sha256": "2a81eb8b199e4aa1a0d072193186a42cf97082fe56b852c2b6941f4d7915b1aa",
+ "exit_code": 0,
+ "exit_action": "two Ctrl-C; /exit is an unknown command under --disable-slash-commands",
+ "untrusted_ancestor_run": {
+  "trust_dialog_default": "No, exit",
+  "returncode": 1,
+  "model_call": false,
+  "session_record": false,
+  "global_state_changed_keys": 0
+ },
+ "write_boundary": {
+  "granted_scratch_answer_written": true,
+  "other_workspace_writes_refused": true
+ },
+ "global_state": {
+  "user_and_managed_settings_unchanged": true,
+  "authority_bearing_keys_changed": 0,
+  "changed_key_classes": [
+   "feature cache",
+   "numStartups",
+   "tips counters",
+   "routine watermark",
+   "githubRepoPaths",
+   "last* metrics under the trusted ancestor project"
+  ]
+ },
+ "rows": [
+  {
+   "type": "mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "permission-mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "atis-latch",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "file-history-snapshot"
+  },
+  {
+   "type": "file-history-snapshot"
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "ai-title",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "text"
+     }
+    ]
+   }
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Read"
+     }
+    ]
+   }
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "file-history-delta"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "thinking"
+     }
+    ]
+   }
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Write"
+     }
+    ]
+   }
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Write"
+     }
+    ]
+   }
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Read"
+     }
+    ]
+   }
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Write"
+     }
+    ]
+   }
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "end_turn",
+    "content": [
+     {
+      "type": "text"
+     }
+    ]
+   }
+  },
+  {
+   "type": "system",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "last-prompt",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "ai-title",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "permission-mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "atis-latch",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "system",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.257"
+  },
+  {
+   "type": "last-prompt",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "cost-state",
+   "sessionId": "<SESSION>"
+  }
+ ],
+ "session_id_run": {
+  "source": "Third bounded probe 2026-09-21, same pinned CLI and profile plus a host-chosen --session-id, working directory with a space and dots under an already trusted ancestor. Names only were inspected.",
+  "record_named_by_host_session_id": true,
+  "directory_rule_nonalnum_to_dash_held": true,
+  "trust_dialog_seen": false,
+  "returncode": 0,
+  "ancestor_project_instructions_loaded": false,
+  "workspace_instructions_loaded": true
+ }
+}

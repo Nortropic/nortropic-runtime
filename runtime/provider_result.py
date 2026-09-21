@@ -1,7 +1,9 @@
 """Fail closed on ambiguous/missing terminal output from the selected native CLI."""
 # Measured with the pinned CLI: --json-schema adds exactly the StructuredOutput
 # tool. A reviewer that could edit is not a reviewer, so the inventory is exact.
-CLAUDE_TOOLS={'implementation':{'Read','Edit','Write'},'review':{'Read','StructuredOutput'}}
+CLAUDE_TOOLS={'implementation':{'Read','Edit','Write'},'review':{'Read','StructuredOutput'},
+              # Read-only finite-goal calls (driver, preparation review, diagnosis, final review).
+              'structured':{'Read','StructuredOutput'}}
 
 
 def parse(provider, records, role='implementation'):
