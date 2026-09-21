@@ -78,7 +78,12 @@ The waiting parent polls every 30 s in every wait state, and the local engine ru
 an explicit history safety margin: measured, a five second cycle would have ended the
 paused parent at the engine's default history count limit within hours and had already
 made a restart unsafe (decisions AP11-HISTORY-BOUND). Expect up to 30 s before the parent
-notices a finished session or child.
+notices a finished session or child. A pause, and the wait for the host's whole-goal
+evidence, are not polled at all: the parent waits for the control command's data-less wake
+signal (sent by `pause`, `resume` and the explicit `wake`) with a six hour fallback timer,
+about 44 events per day (decisions AP11-PAUSE-WAIT). The command reports whether the engine
+accepted the signal; if the scope shows active while the parent still waits in control,
+repeat `wake`. After preserving the whole-goal evidence, run `wake`.
 
 A separately reviewed amendment of the frozen goal is bound by the release
 configuration (`development.amendments`: the amendment and its external review record,

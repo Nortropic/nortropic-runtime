@@ -47,5 +47,36 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
             result=await operate('status')
         self.assertFalse(result['native']['available']);scope.control.assert_not_called();handle.cancel.assert_not_awaited()
 
+    async def test_pause_resume_and_wake_tell_the_waiting_parent_best_effort_and_status_never_does(self):
+        from unittest.mock import Mock
+        for action,reason,controlled in (('pause','operator pause','paused'),('resume','diagnosed resume','active'),('wake',None,None),('status',None,None)):
+            for failure in (None,RPCError('gone',RPCStatusCode.NOT_FOUND,b''),TimeoutError()):
+                handle=SimpleNamespace(signal=AsyncMock(side_effect=failure),query=AsyncMock(return_value={'phase':'waiting_control'}),cancel=AsyncMock())
+                scope=SimpleNamespace(control=Mock(),inspect=lambda:{'control':'paused','tasks':{}})
+                service=AsyncMock();service.__aenter__.return_value=SimpleNamespace(get_workflow_handle=lambda _:handle)
+                with patch('runtime.development_control.require_active_code',return_value={'development':{'contract_sha256':'fixture'},'config_sha256':'fixture'}),patch('runtime.development_control.active_scope',return_value=(scope,{})),patch('runtime.development_control.SharedService',return_value=service):
+                    result=await operate(action,reason)
+                with self.subTest(action=action,failure=failure):
+                    self.assertEqual(result['native'],{'phase':'waiting_control'});handle.cancel.assert_not_awaited()
+                    if action=='status':self.assertNotIn('wake_signal',result)
+                    elif failure is None:self.assertEqual(result['wake_signal'],'accepted by the engine')
+                    else:self.assertIn('NOT delivered',result['wake_signal']);self.assertIn('repeat wake',result['wake_signal'])
+                    if action=='status':handle.signal.assert_not_awaited()
+                    else:
+                        handle.signal.assert_awaited_once();self.assertEqual(handle.signal.await_args.args[0].__name__,'host_state_changed')
+                    if controlled:scope.control.assert_called_once_with(controlled,reason)
+                    else:scope.control.assert_not_called()
+
+    async def test_the_scope_control_is_written_before_the_parent_is_told_to_read_it(self):
+        """Otherwise the woken parent could read the OLD control and sleep on a fresh fallback timer."""
+        for action,value in (('pause','paused'),('resume','active')):
+            order=[]
+            handle=SimpleNamespace(signal=AsyncMock(side_effect=lambda *a:order.append('signal')),query=AsyncMock(return_value={'phase':'waiting_control'}),cancel=AsyncMock())
+            scope=SimpleNamespace(control=lambda state,reason:order.append(('control',state)),inspect=lambda:{'control':value,'tasks':{}})
+            service=AsyncMock();service.__aenter__.return_value=SimpleNamespace(get_workflow_handle=lambda _:handle)
+            with patch('runtime.development_control.require_active_code',return_value={'development':{'contract_sha256':'fixture'},'config_sha256':'fixture'}),patch('runtime.development_control.active_scope',return_value=(scope,{})),patch('runtime.development_control.SharedService',return_value=service):
+                await operate(action,'ordered')
+            with self.subTest(action=action):self.assertEqual(order,[('control',value),'signal'])
+
 
 if __name__=='__main__':unittest.main()

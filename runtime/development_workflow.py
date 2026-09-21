@@ -3,6 +3,7 @@
 This runs only the two work identities in the accepted scope. It does not select
 future goals, alter limits or replace DevelopmentTask's review/recovery logic.
 """
+import asyncio
 from datetime import timedelta
 from temporalio import workflow
 from temporalio.common import RetryPolicy, WorkflowIDReusePolicy
@@ -19,6 +20,15 @@ with workflow.unsafe.imports_passed_through():
 # second workflow task timeout, so a restart could no longer be survived. A longer timer is
 # replay-compatible: the recorded history replays unchanged under this value.
 POLL_SECONDS = 30
+# A pause, or a wait for the host's whole-goal evidence, can last days. It is therefore not
+# polled: the parent waits for the host's wake signal, and a rare fallback timer keeps it
+# live if a signal is ever lost. About 44 events per day instead of 32 000, plus about 12 per
+# pause, resume or wake: from a history of N events, (25 000 - N) / 44 days of untouched pause
+# before a cold restart stops being safe, more than a year from a small history. Not forever:
+# continue-as-new would be the unbounded remedy and is deliberately not taken here. The same
+# native command (a timer) is recorded, so earlier histories replay unchanged. Forward-only:
+# a history in which this signal was processed no longer replays under earlier parent code.
+HOST_WAIT_SECONDS = 6*3600
 
 
 @workflow.defn
@@ -32,6 +42,21 @@ class FiniteDevelopment:
         self.continuation = None
         self.continuations = []
         self.final = None
+        self.wake = False
+
+    @workflow.signal
+    def host_state_changed(self):
+        """The host changed control or preserved evidence: re-read now. Carries no data and starts nothing by itself."""
+        self.wake = True
+
+    async def host_wait(self):
+        # The flag is cleared BEFORE the host step reads the state (see step), never here: a wake that
+        # arrives while that step is in flight must end this wait at once, or a resume would be missed
+        # until the fallback (measured in review with a slowed step).
+        try:
+            await workflow.wait_condition(lambda: self.wake, timeout=HOST_WAIT_SECONDS)
+        except asyncio.TimeoutError:
+            pass
 
     @workflow.signal
     def continue_after_diagnosis(self, reason: str):
@@ -43,6 +68,7 @@ class FiniteDevelopment:
         request = {'contract_sha256': self.expected, 'operation': operation,
                    'key': 'step-' + str(self.sequence), **fields}
         while True:
+            self.wake = False
             try:
                 result = await workflow.execute_activity(development_step, request,
                     start_to_close_timeout=timedelta(seconds=1520),
@@ -66,13 +92,13 @@ class FiniteDevelopment:
                 continue
             if result.get('proof_wait'):
                 self.phase = 'waiting_whole_goal_evidence'; self.reason = result['reason']
-                await workflow.sleep(30)
+                await self.host_wait()
                 continue
             if result.get('control_wait'):
                 self.phase = 'waiting_control'; self.reason = result['control']
                 if result['control'] in ('stopped', 'revoked'):
                     return result
-                await workflow.sleep(POLL_SECONDS)
+                await self.host_wait()
                 continue
             return result
 

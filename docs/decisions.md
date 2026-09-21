@@ -570,3 +570,58 @@ Signal-driven waits or continue-as-new would be the structural remedy; both chan
 workflow structure and are deliberately not part of this increment. An already grown
 execution is not shrunk by new code: that needs an operator's native reset, which
 preserves the old history and is recorded separately.
+
+## AP11-PAUSE-WAIT — 2026-09-21: a pause is waited for, not polled
+
+Owner requirement: before AP11 is called finished its pause and wait state must be able
+to persist without recurring manual history rescue, by the smallest sufficient use of the
+engine's existing mechanisms; no new engine or platform. With 30 s polling a pause still
+costs about 32 000 events per day, and the measured point at which a cold restart stops
+being safe (about 25 000 to 30 000 events, the ten second workflow task timeout) is reached
+within a day, far below the explicit engine margin.
+
+Decision: the two waits that can last days, the control wait (paused, quota, exhausted) and
+the wait for the host's whole-goal evidence, are no longer polled. The parent waits for a
+data-less native signal, `host_state_changed`, with a six hour fallback timer that keeps it
+live if a signal is ever lost: about 44 events per day plus about 12 per pause, resume or
+wake, so from a history of N events (25 000 - N) / 44 days of an untouched pause before a
+restart stops being safe; more than a year from a small history. The control command sends the signal, best effort,
+after `pause` and `resume`, and a new explicit `wake` action sends only the signal. The
+signal carries no data, changes no state by itself and starts nothing: the parent merely
+re-reads the host's control, which stays the only authority. `status` never signals. The
+wait for the interactive session stays host-polled at 30 s, because no signal may follow a
+session's exit, and that wait is bounded by the session itself. The same native command (a
+timer) is recorded as before: the real preserved 36 684-event history of the running parent
+and a recorded 44-event fixture replay without failure, and the repository now replays that
+fixture offline with a negative control.
+
+The wake flag is cleared before the host step reads the state, never at wait entry. A
+separate review measured why: a resume whose signal was processed while a host step that
+had already read "paused" was in flight was dropped at wait entry, and the parent slept
+on a fresh fallback timer. With the flag cleared before the step, such a wake ends the
+wait at once and the control is read again (shown on a throwaway engine with a slowed
+step: noticed, not missed). The control command writes the scope control before it
+signals, and reports whether the engine accepted the signal.
+
+What has been shown, and what has not. Shown on throwaway engines with the real parent
+code: no history event during 60 to 75 s of pause; a restart of worker and engine adds
+none and the pause persists; resume and wake are noticed within a second after such a
+restart, also through the real control command and the real host step on a synthetic
+scope; a 30 s engine timer survived an engine restart and fired into the fallback path;
+an accepted signal survived a worker stop and an engine restart. NOT shown: any rest
+longer than 75 s, so nothing here proves long or unbounded event-free waiting; the six
+hour timer firing at its real length; a restart while a signal call is still in flight.
+
+Limits: not unbounded. Continue-as-new would be, but it needs the parent's position and
+carried results to become resumable state, which is a structural change this increment
+deliberately avoids. Following a child still polls at 30 s (about 2 000 events per hour):
+bounded by the child, not by this change. The six hour timer is the ONLY automatic
+recovery from a lost signal; otherwise the operator repeats `wake`, and a status that
+shows the scope active while the parent still waits in control is the sign. A paused
+parent that wakes while capacity is unobservable polls at 30 s until capacity returns.
+Nothing signals when the host preserves the whole-goal evidence: the operator runs `wake`
+afterwards, or the examination starts at the fallback. Forward-only: once this signal has
+been processed, the history no longer replays under earlier parent code, and the signal
+must never reach a parent still served by an earlier worker (measured: the new code
+cannot replay such a history); control command and worker change together, through the
+release transition only.

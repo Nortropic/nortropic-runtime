@@ -44,15 +44,25 @@ async def operate(action, reason=None):
                     errors.append({'workflow':task_id,'status':'cancellation readback timeout'})
             if errors:
                 raise RuntimeError('Scope is stopped; native cancellation requires inspection: '+json.dumps(errors))
-        elif action not in ('status','pause','resume'):
+        elif action not in ('status','pause','resume','wake'):
             raise ValueError('Unknown finite-goal action')
+        wake = None
+        if action in ('pause','resume','wake'):
+            # The waiting parent does not poll a pause: tell it to re-read the host state now. The scope
+            # control above is already written, so whatever the parent reads next is current. Best effort:
+            # an undelivered signal costs at most the parent's rare fallback timer, and is REPORTED so
+            # the operator can repeat `wake` instead of finding out hours later.
+            try:
+                await asyncio.wait_for(handle.signal(FiniteDevelopment.host_state_changed),10);wake='accepted by the engine'
+            except (RPCError,TimeoutError) as error:
+                wake='NOT delivered ('+type(error).__name__+'); repeat wake, or the parent notices at its fallback timer'
         try:
             native = await handle.query(FiniteDevelopment.state)
         except RPCError as error:
             if error.status != RPCStatusCode.NOT_FOUND:raise
             native = {'available':False,'reason':'Named native workflow has not been found; no execution or success inferred'}
         return {'observed_at':datetime.now(timezone.utc).isoformat(),'scope':scope.inspect(),
-                'native':native,'config_sha256':config['config_sha256'],
+                'native':native,'config_sha256':config['config_sha256'],**({'wake_signal':wake} if wake else {}),
                 'meaning':'Dated native observation, not whole-goal approval; status starts no work'}
 
 
@@ -60,7 +70,7 @@ def main():
     delegated=delegate('runtime.development_control',sys.argv[1:])
     if delegated is not None:return delegated
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=['interactive-start','interactive-retry','status','pause','resume','stop']);parser.add_argument('--reason')
+    parser.add_argument('action',choices=['interactive-start','interactive-retry','status','pause','resume','stop','wake']);parser.add_argument('--reason')
     args=parser.parse_args()
     if args.action=='interactive-start':
         from .development_interactive import prepare,execute,preflight
