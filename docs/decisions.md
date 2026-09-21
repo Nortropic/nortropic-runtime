@@ -437,3 +437,16 @@ before Runtime builds office result retrieval through it. No additional targets,
 accounts, billing, daemon or permissions. Existing Runtime protected integration
 continues; office receives the same server gates. This is not a general hardening
 mandate or resolution of historical audit findings.
+
+
+## AP10-ACCEPT — shared local lifecycle and private Office observation
+
+2026-09-21. Explicit owner mandate preserved privately by Office, SHA256
+163a08b4fe9e55e37c4c5bb280576ecea663255975566b61af83780c386b734d.
+Allows only named Office monitoring activation, persistent coordination and
+private read/assessment completion after relevant review without code publication.
+User-specific login start allowed; no root/new exposure/security changes.
+Existing development gates and histories remain. Pin active code/config; make
+pause/stop persistent; bounded model/reviewer/time/retry budgets per native round.
+Office plan owns whole phase. Runtime implementation/review/integration and
+limited public evidence allowed. No upgrades/new paid services/models/targets.

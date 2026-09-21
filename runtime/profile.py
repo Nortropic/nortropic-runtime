@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from scripts.probe_bridge import ROOT, worker_command
+from .release import require_workspace_instructions
 
 
 def permissions(workspace, writable=True, allowed_paths=None):
@@ -26,6 +27,8 @@ def permissions(workspace, writable=True, allowed_paths=None):
 
 
 def command(workspace, writable=True, allowed_paths=None):
+    if os.environ.get('NR_CONFIG_SHA256'):
+        require_workspace_instructions(workspace)
     shell_env = {'PATH': '/opt/homebrew/bin:/usr/bin:/bin', 'PYTHONDONTWRITEBYTECODE': '1',
                  'TMPDIR': str(Path(workspace).resolve() / '.scratch')}
     env_table = '{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in shell_env.items()) + '}'

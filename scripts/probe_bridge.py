@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 
-ROOT = Path(__file__).resolve().parents[1]
+from runtime.release import ROOT
 WORKSPACES = ROOT / '.runtime' / 'workspaces'
 
 

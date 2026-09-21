@@ -1,3 +1,23 @@
+# AP10 — shared local service and private observation qualification
+
+CURRENT STEP: AP10-ACCEPT authorizes the named Office monitoring obligation,
+necessary Runtime extension and user login start. Root is sole writer. No daemon
+or monitor has been activated. Office docs/plan.md owns the five-milestone phase.
+NEXT ACTION: implement and separately review pinned shared service identity and
+attachment, retaining canonical state and ordinary development gates; qualify
+private read/review workflow and native schedule next. Small protected increments.
+RESUME: work/ap10-runtime-service; Office evidence/ap10/local/accepted-mandate.md
+and acceptance-start.json bind the full owner order. Old histories/source remain.
+
+Only named Office target. No upgrades, new models/costs/rights, root service,
+external listener or business logic in Runtime. Runtime owns durable scheduling
+and run state; Office owns intake/applicability. Private jobs never publish.
+Active code/config must be immutable reviewed snapshots, not current branch.
+Owner accepts one phase; technical transitions require no new prompt. Do not
+leave an unverified standing service active at incomplete final acceptance.
+
+---
+
 # Living plan — AP04 named office target
 
 CURRENT STEP: AP04 office result task completed and protected-integrated at

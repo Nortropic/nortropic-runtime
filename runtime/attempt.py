@@ -93,6 +93,13 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         parsed = parse_provider(provider, records)
         valid_terminal = parsed.pop('valid_terminal')
         finished = (code == 0 and removed and not interrupted and not parse_error and valid_terminal)
+        if os.environ.get('NR_CONFIG_SHA256'):
+            from .release import require_workspace_instructions
+            try:
+                require_workspace_instructions(workspace)
+            except (OSError, ValueError):
+                finished = False
+                interrupted = 'active instruction/configuration binding changed'
         report = {'task': task_id, 'attempt': number, 'provider': provider,
                   'provider_completed': finished, 'exit_code': code,
                   **parsed, 'role': role,
