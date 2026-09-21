@@ -6,13 +6,15 @@ from temporalio.worker import Worker
 from .activities import execute_codex, execute_claude, review_candidate, publish_candidate
 from .workflow import DevelopmentTask
 from .shared import ServiceIdentity
+from .private_workflow import PrivateAssessment
+from .private_activity import private_stage
 
 
 async def main():
     client = await Client.connect('127.0.0.1:7339', namespace='nortropic-runtime')
     with ThreadPoolExecutor(max_workers=1) as executor:
-        async with Worker(client, task_queue='development', workflows=[DevelopmentTask, ServiceIdentity],
-                          activities=[execute_codex, execute_claude, review_candidate, publish_candidate], activity_executor=executor,
+        async with Worker(client, task_queue='development', workflows=[DevelopmentTask, ServiceIdentity, PrivateAssessment],
+                          activities=[execute_codex, execute_claude, review_candidate, publish_candidate, private_stage], activity_executor=executor,
                           max_concurrent_activities=1):
             await asyncio.Event().wait()
 
