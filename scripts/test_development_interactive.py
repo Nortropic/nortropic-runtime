@@ -71,5 +71,19 @@ class SessionTests(unittest.TestCase):
             state['tasks']={'child':{}}
             with self.assertRaisesRegex(ValueError,'Only explicit'):prepare_retry('fixed','diagnosed')
 
+    def test_real_context_gate_only_allows_exact_paused_pre_task_recovery_read(self):
+        from runtime import development_host as host
+        state={'control':'paused','tasks':{},'integrated':{}}
+        scope=SimpleNamespace(inspect=lambda:state)
+        # Reach the real gate; stop at the first subsequent policy read. No
+        # source/network/model call and no mocked base_context hiding its gate.
+        with patch.object(host,'policy',side_effect=LookupError('context gate passed')):
+            with self.assertRaisesRegex(LookupError,'gate passed'):
+                host.base_context(scope,{},'reconciliation','interactive-retry-1',paused_interactive_recovery=True)
+            for control,work,key,flag,tasks in [('paused','reconciliation','interactive-retry-1',False,{}),('stopped','reconciliation','interactive-retry-1',True,{}),('paused','handoff','interactive-retry-1',True,{}),('paused','reconciliation','step-1',True,{}),('paused','reconciliation','interactive-retry-1',True,{'child':{}})]:
+                state.update(control=control,tasks=tasks)
+                with self.assertRaisesRegex(ValueError,'No new preparation'):
+                    host.base_context(scope,{},work,key,paused_interactive_recovery=flag)
+
 
 if __name__=='__main__':unittest.main()

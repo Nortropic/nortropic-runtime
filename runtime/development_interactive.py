@@ -61,7 +61,7 @@ def prepare_retry(expected,reason):
     try:os.killpg(ended['provider_pid'],0)
     except ProcessLookupError:pass
     else:raise ValueError('Previous interactive process group remains')
-    context,files=host.base_context(scope,config,'reconciliation',RETRY)
+    context,files=host.base_context(scope,config,'reconciliation',RETRY,paused_interactive_recovery=True)
     request=host.prepare_call(expected,RETRY,'driver','reconciliation',context,files)
     write(scope.directory/'interactive-retry.json',{'previous':NONCE,'nonce':RETRY,'diagnosis':reason,
         'previous_result_sha256':host.sha(prior),'input_sha256':request['input_sha256']})
