@@ -117,7 +117,7 @@ def development_step(request: dict) -> dict:
     # Even an observation/cancel preparation must not occupy AP10's time budget.
     # B preparation includes remote binding + exact Git extraction (up to480s),
     # a bounded model guardian (490s) and cleanup. Reserve the whole host step.
-    occupied = 20 if operation == 'observe' else 1500
+    occupied = 20 if operation in ('observe','interactive') else 1500
     try:
         capacity = asyncio.run(inspect_capacity(occupied))
     except Exception:
@@ -128,6 +128,16 @@ def development_step(request: dict) -> dict:
         return {'child': save_child(scope, request['task_id'], key), 'control': control}
     if control != 'active':
         return {'control_wait': True, 'control': control}
+    if operation == 'interactive':
+        stage=scope.directory/'calls/interactive-start'
+        if not (stage/'result.json').exists():
+            return {'interactive_wait':True}
+        result=host.call_result(scope,'interactive-start','driver')
+        ended=decode(read_regular(stage,'session-exit.json'))
+        if (result['provider'].get('interactive') is not True
+                or ended.get('process_absent') is not True or ended.get('process_group_removed') is not True):
+            raise ValueError('Actual interactive driver session has not verifiably ended')
+        return host.draft_from_call(scope.expected,'interactive-start')
     if operation == 'propose':
         context, files = host.base_context(scope, config, request['work'], key)
         previous = request.get('revision_request')
@@ -160,4 +170,10 @@ def development_step(request: dict) -> dict:
         if current != state:
             raise ValueError('Child changed during diagnosis; no continuation signal')
         return host.recovery_request(scope, request['task_id'], state, key)
+    if operation == 'final-review':
+        from .development_final import prepare,close
+        call=prepare(scope,config,key)
+        if call.get('proof_wait'):return call
+        run_model(call)
+        return close(scope,config,key)
     raise ValueError('Unknown finite development operation')

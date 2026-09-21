@@ -23,6 +23,7 @@ class FiniteDevelopment:
         self.reason = None
         self.continuation = None
         self.continuations = []
+        self.final = None
 
     @workflow.signal
     def continue_after_diagnosis(self, reason: str):
@@ -51,6 +52,14 @@ class FiniteDevelopment:
                 self.phase = 'waiting_capacity'; self.reason = result['reason']
                 await workflow.sleep(30)
                 continue
+            if result.get('interactive_wait'):
+                self.phase = 'waiting_interactive_session_end'
+                await workflow.sleep(5)
+                continue
+            if result.get('proof_wait'):
+                self.phase = 'waiting_whole_goal_evidence'; self.reason = result['reason']
+                await workflow.sleep(30)
+                continue
             if result.get('control_wait'):
                 self.phase = 'waiting_control'; self.reason = result['control']
                 if result['control'] in ('stopped', 'revoked'):
@@ -62,11 +71,20 @@ class FiniteDevelopment:
     @workflow.run
     async def run(self, expected: str) -> dict:
         self.expected = expected
+        # A real interactive driver authors A, then actually exits. Temporal
+        # is already waiting; no observer instruction starts the continuation.
+        self.phase = 'waiting_interactive_session_end'
+        initial = await self.step('interactive')
+        if initial.get('control_wait'):
+            self.phase = 'stopped'; self.reason = initial; return self.state()
         for work in ('reconciliation', 'handoff'):
             revision_request = None
             while True:
                 self.phase = 'preparing_' + work
-                draft = await self.step('propose', work=work, revision_request=revision_request)
+                if work == 'reconciliation' and revision_request is None:
+                    draft = initial
+                else:
+                    draft = await self.step('propose', work=work, revision_request=revision_request)
                 if draft.get('hold') or draft.get('control_wait'):
                     self.phase = 'insufficient'; self.reason = draft
                     return self.state()
@@ -124,13 +142,14 @@ class FiniteDevelopment:
                     self.continuations.append({'child': task['id'], 'reason': self.continuation})
                     self.continuation = None
                 await workflow.sleep(5)
-        # Deliberately NOT completion from two child PASS results. The separate
-        # overall G1–G10 review/closure is a subsequent native bounded step.
         self.phase = 'awaiting_whole_goal_review'
+        self.final = await self.step('final-review')
+        self.phase = 'completed' if self.final.get('whole_goal_complete') is True else 'whole_goal_not_approved'
         return self.state()
 
     @workflow.query
     def state(self) -> dict:
         return {'phase': self.phase, 'sequence': self.sequence, 'children': self.children,
                 'results': self.results, 'reason': self.reason,
-                'continuations': self.continuations, 'whole_goal_complete': False}
+                'continuations': self.continuations, 'final': self.final,
+                'whole_goal_complete': bool(self.final and self.final.get('whole_goal_complete') is True)}

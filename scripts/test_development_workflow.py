@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 from temporalio import workflow
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 from runtime.development_workflow import FiniteDevelopment
+from runtime.development_trial import CapacityTrial
 
 
 class Child:
@@ -22,16 +23,29 @@ class Child:
 class NativeTests(unittest.IsolatedAsyncioTestCase):
     async def test_definition_loads_in_existing_native_sandbox(self):
         SandboxedWorkflowRunner().prepare_workflow(workflow._Definition.must_from_class(FiniteDevelopment))
+        SandboxedWorkflowRunner().prepare_workflow(workflow._Definition.must_from_class(CapacityTrial))
+
+    async def test_interactive_wait_is_native_and_does_not_start_model_work(self):
+        instance=FiniteDevelopment();instance.expected='a'*64
+        with patch('runtime.development_workflow.workflow.execute_activity',AsyncMock(side_effect=[
+                {'interactive_wait':True},{'draft':'actual-interactive-draft'}])) as execute, \
+             patch('runtime.development_workflow.workflow.sleep',AsyncMock()) as sleep:
+            result=await instance.step('interactive')
+        sleep.assert_awaited_once_with(5)
+        self.assertEqual(execute.await_args_list[0],execute.await_args_list[1])
+        self.assertEqual(result['draft'],'actual-interactive-draft')
 
     async def test_dependent_preparation_follows_actual_first_result(self):
         instance = FiniteDevelopment(); events = []; children = []
         async def step(operation, **fields):
             events.append((operation, fields))
+            if operation == 'interactive': return {'draft':'reconciliation','sha256':'fixture'}
             if operation == 'propose': return {'draft': fields['work'], 'sha256': 'fixture'}
             if operation == 'review': return {'review': 'review', 'approved': True}
             if operation == 'freeze': return {'task': {'id': fields['draft']['draft']}}
             if operation == 'control': return {'control': 'active'}
             if operation == 'observe': return {'child': {'phase': 'completed'}}
+            if operation == 'final-review': return {'approved':False,'whole_goal_complete':False}
             self.fail('Unexpected operation')
         async def child_start(_, task, **options):
             child = Child(task['id'], events); children.append(child); return child
@@ -41,14 +55,14 @@ class NativeTests(unittest.IsolatedAsyncioTestCase):
         first = events.index(('actual-child-return', 'reconciliation'))
         second = next(i for i,e in enumerate(events) if e[0]=='propose' and e[1]['work']=='handoff')
         self.assertLess(first, second)
-        self.assertEqual(result['phase'], 'awaiting_whole_goal_review')
+        self.assertEqual(result['phase'], 'whole_goal_not_approved')
         self.assertFalse(result['whole_goal_complete'])  # two task PASS cannot close G1–G10
         self.assertEqual(result['children'], ['reconciliation', 'handoff'])
 
     async def test_stop_cancels_only_own_child(self):
         instance = FiniteDevelopment(); child = Child('own', [])
         async def step(operation, **fields):
-            return {'propose': {'draft': 'own'}, 'review': {'approved': True, 'review': 'r'},
+            return {'interactive': {'draft':'own'}, 'propose': {'draft': 'own'}, 'review': {'approved': True, 'review': 'r'},
                     'freeze': {'task': {'id': 'own'}}, 'control': {'control': 'stopped'}}[operation]
         instance.step = step
         with patch('runtime.development_workflow.workflow.start_child_workflow', AsyncMock(return_value=child)) as start:
@@ -59,7 +73,7 @@ class NativeTests(unittest.IsolatedAsyncioTestCase):
     async def test_no_child_for_inconclusive_preparation_review(self):
         instance = FiniteDevelopment()
         async def step(operation, **fields):
-            if operation == 'propose': return {'draft': 'fixture'}
+            if operation in ('interactive','propose'): return {'draft': 'fixture'}
             return {'approved': False, 'decision': {'verdict': 'inconclusive', 'blocking_findings': []}}
         instance.step = step
         with patch('runtime.development_workflow.workflow.start_child_workflow', AsyncMock()) as start:

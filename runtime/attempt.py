@@ -109,7 +109,13 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         finally:
             for sig in old:
                 signal.signal(sig, signal.SIG_IGN)
-            removed = proc is None or stop_group(proc)
+            if reservation:
+                # Reuse the qualified macOS EPERM readback: a reaped leader
+                # AND an absent OS process group, never EPERM alone as success.
+                from .private_stage import stop_private_group
+                removed = proc is None or stop_private_group(proc)
+            else:
+                removed = proc is None or stop_group(proc)
             for sig, handler in old.items():
                 signal.signal(sig, handler)
         records, parse_error = [], False
