@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 import platform
-import resource
+import selectors
 import importlib.metadata
 
 from .release import ROOT, require_active_code, sha, require_workspace_instructions
@@ -79,24 +79,39 @@ def model(stage, workspace, prompt, schema, seconds, parent):
     def interrupted(sig, frame):raise InterruptedError('stage signal')
     old={sig:signal.signal(sig,interrupted) for sig in (signal.SIGINT,signal.SIGTERM)}
     try:
-        with (stage/'events.jsonl').open('xb') as out,(stage/'stderr.log').open('xb') as err,prompt_file.open('rb') as inp:
+        with (stage/'events.jsonl').open('xb') as out,(stage/'stderr.log').open('xb') as err,prompt_file.open('rb') as inp,selectors.DefaultSelector() as streams:
             proc=subprocess.Popen(argv,cwd=workspace,env=environment(),stdin=inp,
-                                  stdout=out,stderr=err,start_new_session=True,
-                                  preexec_fn=lambda:resource.setrlimit(resource.RLIMIT_FSIZE,(LOG_BYTES//2,LOG_BYTES//2)))
+                                  stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
+            for source,target in ((proc.stdout,out),(proc.stderr,err)):
+                os.set_blocking(source.fileno(),False)
+                streams.register(source,selectors.EVENT_READ,target)
             record.update(provider_pid=proc.pid,provider_identity=process_identity(proc.pid))
             write(stage/'launch.json',record)
-            while proc.poll() is None:
+            while streams.get_map() or proc.poll() is None:
                 if os.getppid()!=parent or process_identity(parent)!=record['parent_identity']:
                     raise InterruptedError('worker parent ended')
                 if time.monotonic()-start>seconds:raise TimeoutError('model deadline')
-                if out.tell()+err.tell()>LOG_BYTES or private_size()>LIMIT_BYTES:raise ValueError('private storage limit')
-                time.sleep(.25)
+                if private_size()>LIMIT_BYTES:raise ValueError('private storage limit')
+                for key,_ in streams.select(.25):
+                    raw=os.read(key.fileobj.fileno(),65536)
+                    if not raw:
+                        streams.unregister(key.fileobj);key.fileobj.close();continue
+                    # Bound only these captured outputs. A process-wide file-size
+                    # limit also kills the native CLI while opening its own state.
+                    target=key.data;remaining=LOG_BYTES//2-target.tell()
+                    target.write(raw[:remaining]);target.flush()
+                    if len(raw)>remaining:raise ValueError('provider output limit')
     except (InterruptedError,TimeoutError,ValueError,OSError) as error:
         reason=type(error).__name__
     finally:
         for sig in old:signal.signal(sig,signal.SIG_IGN)
-        removed=proc is None or stop_private_group(proc)
-        for sig,handler in old.items():signal.signal(sig,handler)
+        try:
+            removed=proc is None or stop_private_group(proc)
+        finally:
+            if proc is not None:
+                for stream in (proc.stdout,proc.stderr):
+                    if stream is not None:stream.close()
+            for sig,handler in old.items():signal.signal(sig,handler)
     records=[]
     try:
         for line in (stage/'events.jsonl').read_text().splitlines():records.append(json.loads(line))
@@ -110,6 +125,7 @@ def model(stage, workspace, prompt, schema, seconds, parent):
     except (ValueError,IndexError,TypeError):reason=reason or 'no structured answer'
     result={'completed':reason is None and proc is not None and proc.returncode==0 and removed,
             'reason':reason,'provider':parsed,'elapsed_seconds':round(time.monotonic()-start,3),
+            'exit_code':proc.returncode if proc is not None else None,
             'process_group_removed':removed,'answer':answer}
     write(stage/'result.json',result)
     return result
