@@ -11,13 +11,14 @@ from scripts.bounded import stop_group
 from .candidate import prepare, git
 from .integration import Publisher, digest, require_gate
 from .profile import ROOT
+from .release import CODE_ROOT
 from .review import SCHEMA, verdict
 from .snapshot import snapshot, read_regular
 from .task import load, task_directory, evidence_directory, frozen_verifier
 
 
 def invoke(request):
-    proc = subprocess.Popen([sys.executable, '-m', 'runtime.attempt'], cwd=ROOT,
+    proc = subprocess.Popen([sys.executable, '-m', 'runtime.attempt'], cwd=CODE_ROOT,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, start_new_session=True)
     try:

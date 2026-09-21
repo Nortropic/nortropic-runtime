@@ -21,6 +21,8 @@ from .candidate import git
 from .integration import digest
 from .profile import ROOT
 from .service import LocalService
+from .release import installed, revision, delegate, CODE_ROOT
+from .shared import SharedService
 from .snapshot import read_regular
 from .task import validate, task_directory, evidence_directory, load
 from .workflow import DevelopmentTask
@@ -54,9 +56,9 @@ def read_input(task_file):
     if task_file.parent.name != 'tasks' or input_root not in [repository(t).resolve() for t in TARGETS]:
         raise ValueError('Select a committed accepted task in an authorized project tasks/')
     relative = str(task_file.relative_to(input_root))
-    source_revision = git(ROOT, 'rev-parse', 'HEAD')
+    source_revision = revision() if installed() else git(ROOT, 'rev-parse', 'HEAD')
     input_revision = git(input_root, 'rev-parse', 'HEAD')
-    for root in {ROOT, input_root}:
+    for root in ({input_root} if installed() else {ROOT, input_root}):
         if git(root, 'diff', '--name-only') or git(root, 'diff', '--cached', '--name-only'):
             raise ValueError('Commit reviewed host source and inputs before invoking models')
     task_bytes = read_regular(input_root, relative)
@@ -134,18 +136,22 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
         if diagnosis or reconcile or access_restored or review_repair or review_retry: raise ValueError('Signals require --resume of an existing task')
         task, output = prepare(task_file)
     if task['target'] == OFFICE:
-        if git(ROOT, 'rev-parse', 'HEAD') != task['runtime_revision'] or git(ROOT, 'diff', 'HEAD', '--name-only'):
+        if (revision() if installed() else git(ROOT, 'rev-parse', 'HEAD')) != task['runtime_revision'] or (not installed() and git(ROOT, 'diff', 'HEAD', '--name-only')):
             raise ValueError('Resume requires the unchanged accepted Runtime revision')
     worker = None
     # Existing report workflow is retained when establishing the central DB.
     old_database = ROOT/'.runtime/tasks/runtime-run-report-1/temporal.sqlite'
     seed = old_database if old_database.exists() else None
-    service = LocalService(ROOT/'.runtime/runtime.sqlite',output/'service',seed_database=seed)
+    shared = installed() is not None
+    service = SharedService() if shared else LocalService(ROOT/'.runtime/runtime.sqlite',output/'service',seed_database=seed)
     async with service as client:
         with (output/'worker.log').open('wb') as log:
-            worker = subprocess.Popen([sys.executable,'-m','runtime.worker'],cwd=ROOT,
-                                      stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-            (output/'worker.json').write_text(json.dumps({'pid':worker.pid})+'\n')
+            if not shared:
+                worker = subprocess.Popen([sys.executable,'-m','runtime.worker'],cwd=CODE_ROOT,
+                                          stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+                (output/'worker.json').write_text(json.dumps({'pid':worker.pid})+'\n')
+            else:
+                (output/'shared-service.json').write_text(json.dumps({'attached':True,'owns_processes':False})+'\n')
             try:
                 # Verify the old waiting workflow before allowing a new task to run.
                 if service.migrated:
@@ -199,7 +205,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
                             and status.get('publication_attempts',0) >= required_publication
                             and (len(status.get('reviews', [])) >= required_reviews
                                  or status['phase'] == 'waiting_diagnosis')):break
-                    if worker.poll() is not None:raise RuntimeError('Worker exited; inspect preserved state')
+                    if worker is not None and worker.poll() is not None:raise RuntimeError('Worker exited; inspect preserved state')
                     await asyncio.sleep(.5)
                 else:raise TimeoutError('Bounded observation ended; inspect existing workflow before retry')
                 history=await handle.fetch_history()
@@ -208,7 +214,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
                                   'integration':status.get('integration'),'evidence':str(output.relative_to(ROOT))}))
                 return 0 if status['phase']=='completed' else 1
             finally:
-                removed=stop_group(worker)
+                removed=worker is None or stop_group(worker)
                 (output/'worker-cleanup.json').write_text(json.dumps({'process_group_removed':removed})+'\n')
                 if not removed:raise RuntimeError('Worker group remains; inspect before restart')
 
@@ -221,6 +227,9 @@ async def bounded(task_file, **options):
 
 
 if __name__=='__main__':
+    delegated = delegate('runtime.run', sys.argv[1:])
+    if delegated is not None:
+        raise SystemExit(delegated)
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('accepted_task')
     parser.add_argument('--resume', action='store_true')
     signals = parser.add_mutually_exclusive_group()
