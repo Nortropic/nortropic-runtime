@@ -48,7 +48,7 @@ class OfficeTests(unittest.TestCase):
             path=office/'tasks/test.json';path.write_text(json.dumps(accepted))
             candidate.git(office,'add','.');candidate.git(office,'commit','-qm','accepted input')
             def repo(target):return {targets.OFFICE:office,targets.RUNTIME:runtime}[target]
-            with patch.object(run,'ROOT',runtime),patch.object(run,'repository',side_effect=repo),patch.object(run,'task_directory',return_value=state),patch.object(run,'evidence_directory',return_value=evidence),patch.object(run,'check_unfinished_writers'):
+            with patch.object(run,'installed',return_value=None),patch.object(run,'ROOT',runtime),patch.object(run,'repository',side_effect=repo),patch.object(run,'task_directory',return_value=state),patch.object(run,'evidence_directory',return_value=evidence),patch.object(run,'check_unfinished_writers'):
                 self.assertEqual(run.read_input(path)[0],accepted)
                 run.prepare(path)
                 self.assertEqual(candidate.git(state/'candidate','rev-parse','HEAD'),accepted['base'])

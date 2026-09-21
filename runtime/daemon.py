@@ -15,6 +15,7 @@ from .shared import ServiceIdentity, process_identity
 from .service import LocalService
 from .run import check_unfinished_writers
 from .workflow import DevelopmentTask
+from .private_stage import check_private_processes
 from scripts.bounded import stop_group
 
 
@@ -30,6 +31,7 @@ async def main():
         if not connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
             raise ValueError('Canonical database is empty')
     check_unfinished_writers()
+    check_private_processes()
     home = ROOT / '.runtime/ap10'
     output = home / 'service-launches' / uuid.uuid4().hex
     output.mkdir(parents=True)

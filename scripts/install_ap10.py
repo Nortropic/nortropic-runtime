@@ -35,7 +35,7 @@ def copy_code(repo, revision, dest):
     return hashes
 
 
-def stage(runtime_revision, office_revision):
+def stage(runtime_revision, office_revision, context=None):
     """Stage only; operator separately reviews config and selects/loads it."""
     home = ROOT / '.runtime/ap10'; home.mkdir(parents=True, exist_ok=True, mode=0o700)
     directory = home / 'releases' / (runtime_revision + '-' + office_revision)
@@ -44,6 +44,19 @@ def stage(runtime_revision, office_revision):
     for name, repo, revision in [('runtime', ROOT, runtime_revision),
                                  ('office', ROOT.parent / 'nortropic-projektkontor', office_revision)]:
         files.update({name+'/'+p:h for p,h in copy_code(repo,revision,directory/name).items()})
+    if context is not None:
+        source=Path(context).absolute()
+        office=ROOT.parent/'nortropic-projektkontor'
+        if not source.is_relative_to(office/'evidence/ap10/local') or any(p.is_symlink() for p in (source,*source.parents)):
+            raise ValueError('Private context must be regular selected AP10 Office evidence')
+        selected=list(source.iterdir())
+        if not selected or sum(p.stat().st_size for p in selected)>2*1024*1024:
+            raise ValueError('Bounded private context required')
+        for p in selected:
+            if not p.is_file() or p.is_symlink() or p.suffix not in ('.md','.json'):
+                raise ValueError('Only selected regular context text')
+            target=directory/'context'/p.name;target.parent.mkdir(exist_ok=True,mode=0o700)
+            target.write_bytes(p.read_bytes());target.chmod(0o400);files['context/'+p.name]=sha(target)
     config = dict(schema=1, host_root=str(ROOT), office_root=str(ROOT.parent/'nortropic-projektkontor'),
                   database=str(ROOT/'.runtime/runtime.sqlite'), runtime_revision=runtime_revision,
                   office_revision=office_revision, files=files, instruction_guards=instruction_guards())
@@ -86,8 +99,8 @@ def plist(config):
 if __name__ == '__main__':
     os.umask(0o077)
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['stage','select','write-plist'])
-    p.add_argument('--runtime');p.add_argument('--office');p.add_argument('--config');a=p.parse_args()
-    if a.action=='stage':print(stage(a.runtime,a.office))
+    p.add_argument('--runtime');p.add_argument('--office');p.add_argument('--config');p.add_argument('--context');a=p.parse_args()
+    if a.action=='stage':print(stage(a.runtime,a.office,a.context))
     elif a.action=='select':print(select(a.config))
     else:
         dest=Path.home()/'Library/LaunchAgents'/ (LABEL+'.plist')

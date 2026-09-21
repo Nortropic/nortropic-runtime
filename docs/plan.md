@@ -1,20 +1,30 @@
-# AP10 — shared local service and private observation qualification
+# AP10 — private workflow qualification in progress
 
-CURRENT STEP: AP10-ACCEPT authorizes the named Office monitoring obligation,
-necessary Runtime extension and user login start. Root is sole writer. First pinned daemon launch failed closed because its historical-ID check named
-absent pre-AP10 histories. Owned processes stopped; no monitor was activated. Office docs/plan.md owns the five-milestone phase.
-NEXT ACTION: review the focused startup correction against pre-AP10 DB evidence,
-then qualify real shared attachment and Office intake build. Private workflow and
-schedule remain unimplemented. PR17 is integrated, not operational qualification.
-RESUME: work/ap10-private-profile; Office evidence/ap10/local/accepted-mandate.md
-and acceptance-start.json bind the full owner order. Old histories/source remain.
+CURRENT STEP: shared service PR17 and focused startup correction PR18 integrated.
+The active pinned Runtime22aedb + Office10875 service successfully ran the real
+Office intake task through repair, independent review and protected Office PR17.
+The named watch is NOT installed/active. Root is sole Runtime writer; Office
+host-contract preparation is explicitly delegated with a separate write handoff.
+NEXT ACTION: separately review this bounded private workflow/schedule increment,
+then protected integrate and activate only after Office policy is ready. Complete
+actual source/schedule/cancellation/recipient/coexistence acceptance before leaving
+standing watch active. Office docs/plan.md owns all five phase milestones.
+RESUME: work/ap10-private-profile, .runtime/ap10/build-evidence; accepted owner
+mandate is in Office evidence/ap10/local/accepted-mandate.md. No new owner prompt
+needed for technical transitions. Preserve failed review/test attempts.
 
-Only named Office target. No upgrades, new models/costs/rights, root service,
-external listener or business logic in Runtime. Runtime owns durable scheduling
-and run state; Office owns intake/applicability. Private jobs never publish.
-Active code/config must be immutable reviewed snapshots, not current branch.
-Owner accepts one phase; technical transitions require no new prompt. Do not
-leave an unverified standing service active at incomplete final acceptance.
+Private tests bind native Schedule, no retry/publication, cancelled-stage cleanup,
+quota-like unavailable output, spent budget and actual OS IO/credential/network
+boundaries. Isolated fixture schedules on the existing engine were deleted after
+qualification; raw evidence retained. They are not actual business observations.
+Periodic storage cap is not an exact disk quota; source/review usage is preserved.
+See docs/private-obligation.md. Login start currently has no schedule to unpause.
+
+Only named Office target and existing subscriptions. No upgrades, new costs/models/
+rights, external listener, root service or business logic in Runtime. Development
+review/publication gates and earlier histories are unchanged. AP09's decisions and
+open graceful-drain gap remain. At an incomplete phase end do not leave unverified
+standing service active; stop/unregister after checking unrelated work.
 
 ---
 
