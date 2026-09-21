@@ -84,10 +84,15 @@ def apply_integrated_a(repo, revision, destination, goal, reports):
     return result
 
 
-def base_context(scope, config, work, key):
+def base_context(scope, config, work, key, *, paused_interactive_recovery=False):
     """Read actual integration and source objects before deriving a next task."""
     state = scope.inspect()
-    if state['control'] != 'active':
+    # The explicit pre-task interactive recovery must bind its read-only context
+    # before resuming the waiting parent. It cannot run a model or start a task.
+    recovery_read = (paused_interactive_recovery is True and state['control']=='paused'
+                     and work=='reconciliation' and key=='interactive-retry-1'
+                     and not state['tasks'] and not state['integrated'])
+    if state['control'] != 'active' and not recovery_read:
         raise ValueError('No new preparation while finite goal is paused or stopped')
     active = policy(config)
     if work not in active.WORK or work in state['integrated']:
