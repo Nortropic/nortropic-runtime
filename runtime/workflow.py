@@ -11,6 +11,7 @@ with workflow.unsafe.imports_passed_through():
     from .review import recovery_kind
     from .revision import require_revision
     from .task import validate
+    from .development_binding import activity_seconds
 
 
 @workflow.defn
@@ -97,6 +98,8 @@ class DevelopmentTask:
                 if 'acceptance_sha256' in task: request['task_digest'] = digest(task)
                 if self.retry_request:
                     request['change_reason'] = self.retry_request['reason']
+                    if task.get('development'):
+                        request['prompt'] += '\n\nHost diagnosis within the unchanged accepted task:\n' + self.retry_request['reason']
                 elif self.attempts > 1:
                     request['change_reason'] = 'Next accepted implementation step ' + str(index)
                 self.retry_request = None
@@ -171,6 +174,8 @@ class DevelopmentTask:
                 repair = {'task_id': task['id'], 'number': self.attempts, 'prompt': prompt,
                           'seconds': task['attempt_seconds'], 'task_digest': digest(task),
                           'change_reason': reason}
+                if task.get('development'):
+                    repair['prompt'] += '\n\nHost diagnosis within the unchanged frozen requirements:\n' + reason
                 try:
                     result = await self.execute_activity(
                         execute_claude if step['provider'] == 'claude' else execute_codex, repair,
@@ -213,6 +218,10 @@ class DevelopmentTask:
         explicitly scoped profile may return the no-start capacity observation.
         """
         phase = self.phase
+        if self.accepted_task.get('development'):
+            kind = ('review' if function == review_candidate else
+                    'publication' if function == publish_candidate else 'implementation')
+            options['start_to_close_timeout'] = timedelta(seconds=activity_seconds(self.accepted_task, kind))
         while True:
             result = await workflow.execute_activity(function, request, **options)
             if not (self.accepted_task.get('development') and result.get('capacity_wait')):
