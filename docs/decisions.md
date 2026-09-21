@@ -543,3 +543,30 @@ activates anything: only the separately reviewed controlled release transition d
 Limit: the host checks that a review record exists and binds the bytes. It cannot
 check that the review was good; amendment author and reviewer may be the same model
 family, which the record itself must state.
+
+## AP11-HISTORY-BOUND — 2026-09-21: a waiting parent must survive its own polling
+
+Measured on the real paused finite parent: its five second wait cycle costs about eleven
+native history events (one short activity, one timer and their workflow tasks), so the
+execution reached 32 000 events in 4 h 20 min with no work done. Measured with the pinned
+engine CLI on a throwaway engine: an execution is terminated at its history count limit
+("Workflow history count exceeds limit"; default 51 200). Measured by replaying the real
+history locally: a full replay took 10 s, the whole default workflow task timeout, so a
+restart, including a controlled release transition, could no longer be relied on. A
+terminated parent cannot be started again under its reject-duplicate identity.
+
+Decision: every wait cycle of the finite parent (interactive wait, control wait, following
+a child) uses one 30 s interval; capacity and evidence waits already did. The recorded
+history replays unchanged under the longer timer (verified by replaying the real 33 802
+event history against this code). The local engine is started with an explicit history
+safety margin (count 200 000, size 128 MiB). That margin changes no model, attempt,
+schedule or business limit. Latency cost: the parent notices a finished interactive
+session or child within 30 s instead of 5 s.
+
+Limits: this bounds growth, it does not remove it (about 1 300 events per waiting hour,
+more while following a child), and replay time still grows with history: keep waits short,
+and treat a very long history before a planned restart as a condition to resolve first.
+Signal-driven waits or continue-as-new would be the structural remedy; both change
+workflow structure and are deliberately not part of this increment. An already grown
+execution is not shrunk by new code: that needs an operator's native reset, which
+preserves the old history and is recorded separately.

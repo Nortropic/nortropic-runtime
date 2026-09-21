@@ -12,6 +12,14 @@ with workflow.unsafe.imports_passed_through():
     from .development_activity import development_step
     from .workflow import DevelopmentTask
 
+# Every poll cycle costs about eleven history events (an activity, a timer and their
+# workflow tasks); following a child costs more. Measured on the real waiting parent: a
+# five second cycle reached 32 000 events in 4 h 20 min, the engine terminates an execution
+# at its history count limit, and a full replay of that history took as long as the ten
+# second workflow task timeout, so a restart could no longer be survived. A longer timer is
+# replay-compatible: the recorded history replays unchanged under this value.
+POLL_SECONDS = 30
+
 
 @workflow.defn
 class FiniteDevelopment:
@@ -54,7 +62,7 @@ class FiniteDevelopment:
                 continue
             if result.get('interactive_wait'):
                 self.phase = 'waiting_interactive_session_end'
-                await workflow.sleep(5)
+                await workflow.sleep(POLL_SECONDS)
                 continue
             if result.get('proof_wait'):
                 self.phase = 'waiting_whole_goal_evidence'; self.reason = result['reason']
@@ -64,7 +72,7 @@ class FiniteDevelopment:
                 self.phase = 'waiting_control'; self.reason = result['control']
                 if result['control'] in ('stopped', 'revoked'):
                     return result
-                await workflow.sleep(5)
+                await workflow.sleep(POLL_SECONDS)
                 continue
             return result
 
@@ -141,7 +149,7 @@ class FiniteDevelopment:
                     await workflow.wait_condition(lambda: self.continuation is not None)
                     self.continuations.append({'child': task['id'], 'reason': self.continuation})
                     self.continuation = None
-                await workflow.sleep(5)
+                await workflow.sleep(POLL_SECONDS)
         self.phase = 'awaiting_whole_goal_review'
         self.final = await self.step('final-review')
         self.phase = 'completed' if self.final.get('whole_goal_complete') is True else 'whole_goal_not_approved'
