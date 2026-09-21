@@ -74,6 +74,12 @@ Ctrl-C (exit 0). An unmeasured provider-error shape still fails closed as an
 incomplete session; only its quota classification is then unavailable.
 A third diagnosed interactive retry exists; like the others it is counted.
 
+The waiting parent polls every 30 s in every wait state, and the local engine runs with
+an explicit history safety margin: measured, a five second cycle would have ended the
+paused parent at the engine's default history count limit within hours and had already
+made a restart unsafe (decisions AP11-HISTORY-BOUND). Expect up to 30 s before the parent
+notices a finished session or child.
+
 A separately reviewed amendment of the frozen goal is bound by the release
 configuration (`development.amendments`: the amendment and its external review record,
 by SHA256), never by the contract, whose hash keys the scope and its consumed calls.

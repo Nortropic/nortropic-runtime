@@ -31,9 +31,39 @@ class NativeTests(unittest.IsolatedAsyncioTestCase):
                 {'interactive_wait':True},{'draft':'actual-interactive-draft'}])) as execute, \
              patch('runtime.development_workflow.workflow.sleep',AsyncMock()) as sleep:
             result=await instance.step('interactive')
-        sleep.assert_awaited_once_with(5)
+        sleep.assert_awaited_once_with(30)
         self.assertEqual(execute.await_args_list[0],execute.await_args_list[1])
         self.assertEqual(result['draft'],'actual-interactive-draft')
+
+    async def test_every_waiting_state_polls_slowly_enough_for_a_bounded_history(self):
+        """A waiting parent must survive its own polling: about eleven history events per cycle."""
+        from runtime import development_workflow
+        self.assertEqual(development_workflow.POLL_SECONDS, 30)
+        for answer in ({'interactive_wait': True}, {'control_wait': True, 'control': 'paused'}):
+            instance=FiniteDevelopment();instance.expected='a'*64
+            with patch('runtime.development_workflow.workflow.execute_activity',AsyncMock(side_effect=[answer,{'done':True}])), \
+                 patch('runtime.development_workflow.workflow.sleep',AsyncMock()) as sleep:
+                await instance.step('interactive')
+            with self.subTest(answer=answer): sleep.assert_awaited_once_with(30)
+        # One day of waiting stays far below the engine's default limit and the raised one.
+        self.assertLess(24*3600//development_workflow.POLL_SECONDS*11, 51200)
+
+    async def test_following_a_child_polls_at_the_same_bounded_rate(self):
+        instance = FiniteDevelopment(); observed = iter([{'child': {'phase': 'running'}}, {'child': {'phase': 'completed'}}, {'child': {'phase': 'completed'}}])
+        async def step(operation, **fields):
+            if operation == 'interactive': return {'draft': 'reconciliation', 'sha256': 'fixture'}
+            if operation == 'propose': return {'draft': fields['work'], 'sha256': 'fixture'}
+            if operation == 'review': return {'review': 'review', 'approved': True}
+            if operation == 'freeze': return {'task': {'id': fields['draft']['draft']}}
+            if operation == 'control': return {'control': 'active'}
+            if operation == 'observe': return next(observed)
+            if operation == 'final-review': return {'approved': False, 'whole_goal_complete': False}
+        async def child_start(_, task, **options): return Child(task['id'], [])
+        instance.step = step
+        with patch('runtime.development_workflow.workflow.start_child_workflow', side_effect=child_start), \
+             patch('runtime.development_workflow.workflow.sleep', AsyncMock()) as sleep:
+            await instance.run('a'*64)
+        self.assertEqual([call.args for call in sleep.await_args_list], [(30,)])
 
     async def test_dependent_preparation_follows_actual_first_result(self):
         instance = FiniteDevelopment(); events = []; children = []

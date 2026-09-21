@@ -23,6 +23,16 @@ def require_ports_available(ports):
             sock.bind(('127.0.0.1', port))
 
 
+# The engine terminates an execution at its history count limit (measured with the pinned
+# CLI: "Workflow history count exceeds limit"; the default is 51 200 events). A waiting finite
+# parent must not be ended by its own polling. This is an engine safety margin only: it changes
+# no model, attempt, schedule or business limit, and slower polling remains the actual remedy.
+HISTORY_LIMITS = ['--dynamic-config-value', 'limit.historyCount.warn=150000',
+                  '--dynamic-config-value', 'limit.historyCount.error=200000',
+                  '--dynamic-config-value', 'limit.historySize.warn=104857600',
+                  '--dynamic-config-value', 'limit.historySize.error=134217728']
+
+
 class LocalService:
     def __init__(self, database, output, namespace='nortropic-runtime', seed_database=None):
         self.database, self.output = Path(database), Path(output)
@@ -48,7 +58,8 @@ class LocalService:
             command = [str(ROOT / '.runtime/bin/temporal-1.9.1'), '--disable-config-env',
                        '--disable-config-file', 'server', 'start-dev', '--ip', '127.0.0.1',
                        '--port', '7339', '--http-port', '7340', '--metrics-port', '7341',
-                       '--namespace', self.namespace, '--headless', '--db-filename', str(self.database)]
+                       '--namespace', self.namespace, '--headless', '--db-filename', str(self.database),
+                       *HISTORY_LIMITS]
             self.log = (self.output / 'server.log').open('wb')
             self.proc = subprocess.Popen(command, stdout=self.log, stderr=subprocess.STDOUT,
                                          cwd=ROOT, start_new_session=True)
