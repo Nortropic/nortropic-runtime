@@ -12,8 +12,9 @@ choice (PR29, 3b31a548), the Office side of that choice (Office PR25, 3c1c992a) 
 the goal roles with the genuine interactive session (PR30, 459d7db1; decisions
 AP11-EXECUTORS-2) and the delivery of a separately reviewed, hash-bound goal amendment
 to every role that receives the goal (PR31, c8d1c8a5; AP11-GOAL-AMENDMENT). This
-increment bounds the waiting parent's native history (30 s wait cycles, explicit engine
-margin; AP11-HISTORY-BOUND): measured, the paused parent was hours from termination. Codex route unchanged, no automatic switching. Next: ONE
+and the bound on the waiting parent's native history (PR32, 68b91e8e; 30 s wait cycles,
+explicit engine margin; AP11-HISTORY-BOUND). This increment makes a pause and the evidence
+wait event-driven (AP11-PAUSE-WAIT), so a pause persists without manual history rescue. Codex route unchanged, no automatic switching. Next: ONE
 separately reviewed controlled release transition that stages both revisions and
 writes `development.executors`, then real per-role qualification, then the diagnosed
 interactive-retry-3, which is the LAST interactive slot. Integration here activates
