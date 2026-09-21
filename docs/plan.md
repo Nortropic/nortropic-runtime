@@ -13,8 +13,10 @@ the goal roles with the genuine interactive session (PR30, 459d7db1; decisions
 AP11-EXECUTORS-2) and the delivery of a separately reviewed, hash-bound goal amendment
 to every role that receives the goal (PR31, c8d1c8a5; AP11-GOAL-AMENDMENT). This
 and the bound on the waiting parent's native history (PR32, 68b91e8e; 30 s wait cycles,
-explicit engine margin; AP11-HISTORY-BOUND). This increment makes a pause and the evidence
-wait event-driven (AP11-PAUSE-WAIT), so a pause persists without manual history rescue. Codex route unchanged, no automatic switching. Next: ONE
+explicit engine margin; AP11-HISTORY-BOUND) and the event-driven pause and evidence wait
+(AP11-PAUSE-WAIT). This increment lets a daemon start survive the engine's one day
+retention through release-bound verified archives (AP11-DAEMON-HISTORY): measured, the
+running service could otherwise never be started again after a stop. Codex route unchanged, no automatic switching. Next: ONE
 separately reviewed controlled release transition that stages both revisions and
 writes `development.executors`, then real per-role qualification, then the diagnosed
 interactive-retry-3, which is the LAST interactive slot. Integration here activates
