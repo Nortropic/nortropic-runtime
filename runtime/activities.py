@@ -109,16 +109,21 @@ def review_candidate(request: dict) -> dict:
               '/opt/homebrew/bin/python3.12.\n\nFiles: ' + ', '.join(task['allowed_paths']) +
               '\n\nAccepted brief:\n' + brief)
     number = request.get('review_number', 1)
+    # The reviewer executor is the accepted task's explicit choice; absent is Codex.
+    provider = task.get('review_provider', 'codex')
     result = invoke({'task_id': task['id'], 'number': number, 'prompt': prompt,
                      'change_reason': request.get('change_reason'),
                      'seconds': min(180, task['attempt_seconds']), 'task_digest': digest(task),
-                     'role': 'review', 'workspace_name': request['workspace_name']})
+                     'role': 'review', 'workspace_name': request['workspace_name'],
+                     'provider': provider})
     output = evidence_directory(task['id']) / ('review-' + str(number))
     if not result.get('provider_completed'):
         return {'terminal_status': 'incomplete', 'provider_result': result}
-    decision = verdict(output / 'events.jsonl')
+    decision = verdict(output / 'events.jsonl', provider)
     receipt = {k: subject[k] for k in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256')}
-    receipt.update(scope='whole_task', terminal_status='completed',
+    # A separate process and context, not a claim of independent judgment when the
+    # author used the same model family. The gate still requires a different run.
+    receipt.update(scope='whole_task', terminal_status='completed', reviewer_provider=provider,
                    reviewer_run=result['thread_id'], provider_result=result, **decision)
     (output / 'decision.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return receipt

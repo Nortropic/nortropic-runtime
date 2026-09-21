@@ -42,10 +42,13 @@ def validate(task):
     if not isinstance(task.get('steps'), list) or not task['steps']:
         raise ValueError('Accepted executor steps required')
     for step in task['steps']:
-        if task['target'] == OFFICE and step.get('provider') != 'codex':
-            raise ValueError('Office target is qualified for Codex only; Runtime provider scope is unchanged')
+        # The executor is an explicit accepted choice per step, never a fallback.
         if step.get('provider') not in ('codex', 'claude') or not isinstance(step.get('prompt'), str) or not step['prompt']:
             raise ValueError('Invalid provider step')
+    # Absent means the original Codex reviewer, so every earlier accepted task
+    # keeps its exact digest and history. A present value is part of the digest.
+    if 'review_provider' in task and task['review_provider'] not in ('codex', 'claude'):
+        raise ValueError('Invalid review provider')
     if not re.fullmatch('[0-9a-f]{64}', task.get('acceptance_sha256', '')):
         raise ValueError('Frozen acceptance digest required')
     if 'development' in task:

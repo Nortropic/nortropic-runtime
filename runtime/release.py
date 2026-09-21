@@ -27,6 +27,10 @@ def instruction_guards():
     paths.update(home/name for name in ('config.toml','AGENTS.md','AGENTS.override.md'))
     # Includes names as well as bytes: a newly added rule must not silently load.
     paths.update((home/'rules').glob('*.rules'))
+    # The qualified Claude roles run --restricted, which ignores user, project and
+    # local settings; managed settings still apply and are therefore bound here.
+    managed = Path('/Library/Application Support/ClaudeCode')
+    paths.update(managed/name for name in ('managed-settings.json','managed-mcp.json','CLAUDE.md'))
     return {str(p):sha(p) if p.is_file() and not p.is_symlink() else
             ('unsafe' if p.exists() or p.is_symlink() else None) for p in sorted(paths)}
 

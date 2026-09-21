@@ -200,9 +200,35 @@ publication reconciliation require the same explicit reasons as before. Legacy
 Claude access/base replacement is not enabled for office tasks. Do not use
 `--resume` as a read-only status query.
 
-Office tasks currently permit Codex only; a Claude step is rejected for this new
-target until a separately accepted qualification. Original Runtime-target provider
-support is unchanged. Office candidates receive exact-file write grants, plus scratch. The active entry
+The executor is an explicit accepted choice per role, for both targets: each step
+names `provider` (`codex` or `claude`), and an optional `review_provider` names the
+reviewer. An absent `review_provider` is the original Codex reviewer, so earlier
+accepted tasks keep their digests and histories. Both values are inside the frozen
+task digest; nothing switches executor automatically on quota or access loss, and a
+caller cannot substitute an executor the accepted task did not name.
+
+A Claude reviewer uses the read-only profile: `--tools Read`, no file grant, plus the
+host-written `--json-schema`. Measured with the pinned CLI this yields exactly the
+tools `Read` and `StructuredOutput`; any other inventory, a missing or second
+terminal, an error terminal, a missing/conflicting structured object or an
+interrupted run is an incomplete review, never an approval. A reviewer is a
+separate process and context whose run must differ from every implementation run.
+When author and reviewer use the same model family that separation is NOT a claim
+of independent judgment. The Claude author has Read/Edit/Write only and cannot run
+tests; host acceptance runs afterwards in the existing sandbox. Managed Claude
+settings are bound with the other native instruction inputs.
+
+Release-transition constraint: this revision extends the bound instruction inputs,
+so its guard key set differs from every earlier frozen configuration. The frozen
+active release is unaffected (it runs its own pinned copy). Do NOT advance the
+primary operator checkout to a revision containing this change before the separately
+reviewed controlled transition: `delegate()`-based commands (`runtime.run`,
+`runtime.obligation`, `runtime.development_control`) and release staging compare the
+checkout's guard set with the active configuration and would refuse. The new
+release must be staged by code that contains this change, and the checkout is
+advanced as one step of that transition. Integration alone activates nothing.
+
+Office candidates receive exact-file write grants, plus scratch for Codex. The active entry
 `tools/kontor.py` is host-owned and excluded from task write scope. Host verifier,
 engine/publication source and authority remain outside the candidate workspace.
 Acceptance must execute candidate code through the existing read-only sandbox,
