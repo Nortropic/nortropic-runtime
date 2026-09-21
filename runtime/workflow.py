@@ -101,7 +101,7 @@ class DevelopmentTask:
                     request['change_reason'] = 'Next accepted implementation step ' + str(index)
                 self.retry_request = None
                 try:
-                    result = await workflow.execute_activity(execute_claude if step['provider']=='claude' else execute_codex, request,
+                    result = await self.execute_activity(execute_claude if step['provider']=='claude' else execute_codex, request,
                         start_to_close_timeout=timedelta(seconds=task['attempt_seconds'] + 150),
                         retry_policy=RetryPolicy(maximum_attempts=1))
                 except ActivityError as error:
@@ -132,7 +132,7 @@ class DevelopmentTask:
             self.phase = 'reviewing'
             self.waiting_reason = None
             try:
-                self.review = await workflow.execute_activity(review_candidate, request,
+                self.review = await self.execute_activity(review_candidate, request,
                     start_to_close_timeout=timedelta(seconds=210), retry_policy=RetryPolicy(maximum_attempts=1))
             except ActivityError as error:
                 self.review = {'terminal_status': 'incomplete', 'reason': str(error)}
@@ -172,7 +172,7 @@ class DevelopmentTask:
                           'seconds': task['attempt_seconds'], 'task_digest': digest(task),
                           'change_reason': reason}
                 try:
-                    result = await workflow.execute_activity(
+                    result = await self.execute_activity(
                         execute_claude if step['provider'] == 'claude' else execute_codex, repair,
                         start_to_close_timeout=timedelta(seconds=task['attempt_seconds'] + 150),
                         retry_policy=RetryPolicy(maximum_attempts=1))
@@ -196,7 +196,7 @@ class DevelopmentTask:
             self.waiting_reason = None
             self.reconciliation = None
             try:
-                self.integration = await workflow.execute_activity(publish_candidate, publication,
+                self.integration = await self.execute_activity(publish_candidate, publication,
                     start_to_close_timeout=timedelta(seconds=150), retry_policy=RetryPolicy(maximum_attempts=1))
                 break
             except ActivityError as error:
@@ -205,6 +205,23 @@ class DevelopmentTask:
                 await workflow.wait_condition(lambda: self.reconciliation is not None)
         self.phase = 'completed'
         return self.state()
+
+    async def execute_activity(self, function, request, **options):
+        """Capacity waits are native timers, never a sleeping activity slot.
+
+        Ordinary histories execute exactly their former commands. Only the new
+        explicitly scoped profile may return the no-start capacity observation.
+        """
+        phase = self.phase
+        while True:
+            result = await workflow.execute_activity(function, request, **options)
+            if not (self.accepted_task.get('development') and result.get('capacity_wait')):
+                return result
+            self.phase = 'waiting_capacity'
+            self.waiting_reason = result['capacity']['reason']
+            await workflow.sleep(30)
+            self.phase = phase
+            self.waiting_reason = None
 
     @workflow.query
     def state(self) -> dict:

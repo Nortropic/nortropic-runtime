@@ -73,17 +73,26 @@ class Publisher:
         self.ORIGIN = origin(target)
         self.REPOSITORY = target
         self.repository = Path(repository).resolve()
+        self.effect_guard = None
 
     def git(self, *args):
-        return subprocess.run(['git', '-C', str(self.repository), *args], check=True,
-                              text=True, capture_output=True, timeout=30).stdout.rstrip("\n")
+        def invoke():
+            return subprocess.run(['git', '-C', str(self.repository), *args], check=True,
+                                  text=True, capture_output=True, timeout=30).stdout.rstrip("\n")
+        if args and args[0] == 'push' and self.effect_guard:
+            return self.effect_guard({'git': list(args)}, invoke)
+        return invoke()
 
     def api(self, path, method='GET', body=None):
         argv = ['gh', 'api', 'repos/' + self.REPOSITORY + '/' + path, '-X', method]
         if body is not None: argv += ['--input', '-']
-        result = subprocess.run(argv, input=json.dumps(body) if body is not None else None,
-                                check=True, text=True, capture_output=True, timeout=30)
-        return json.loads(result.stdout)
+        def invoke():
+            result = subprocess.run(argv, input=json.dumps(body) if body is not None else None,
+                                    check=True, text=True, capture_output=True, timeout=30)
+            return json.loads(result.stdout)
+        if method != 'GET' and self.effect_guard:
+            return self.effect_guard({'api': path, 'method': method, 'body': body}, invoke)
+        return invoke()
 
     def inspect_candidate(self, task, subject):
         if task.get('target') != self.REPOSITORY:
@@ -141,6 +150,19 @@ class Publisher:
                 'tree': tree, 'url': pr['html_url']}
 
     def publish(self, task, subject, tests, review):
+        from .development_binding import for_task
+        scope = for_task(task)
+        if scope is not None:
+            self.effect_guard = lambda operation, invoke: scope.publication_effect(
+                task['development']['work'], task['id'], digest(task), operation, invoke)
+        else:
+            self.effect_guard = None
+        receipt = self._publish(task, subject, tests, review)
+        if scope is not None:
+            scope.record_integration(task['development']['work'], task['id'], digest(task), receipt)
+        return receipt
+
+    def _publish(self, task, subject, tests, review):
         require_gate(task, subject, tests, review)  # MUST precede every publication caller.
         tree = self.inspect_candidate(task, subject)
         self.require_protection()

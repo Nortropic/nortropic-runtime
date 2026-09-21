@@ -15,6 +15,7 @@ from .release import CODE_ROOT
 from .review import SCHEMA, verdict
 from .snapshot import snapshot, read_regular
 from .task import load, task_directory, evidence_directory, frozen_verifier
+from .development_capacity import before_activity
 
 
 def invoke(request):
@@ -37,6 +38,9 @@ def invoke(request):
 
 def execute_implementation(request: dict) -> dict:
     task = load(request['task_id'], request.get('task_digest'))
+    wait = before_activity(task, task['attempt_seconds'] + 150)
+    if wait:
+        return wait
     result = invoke(request)
     if not result.get('provider_completed'): return result
     workspace = task_directory(task['id']) / 'candidate'
@@ -82,6 +86,9 @@ def execute_claude(request: dict) -> dict:
 @activity.defn
 def review_candidate(request: dict) -> dict:
     task = load(request['task_id'], request['task_digest'])
+    wait = before_activity(task, 210)
+    if wait:
+        return wait
     subject = request['subject']
     workspace = task_directory(task['id']) / request['workspace_name']
     if git(workspace, 'rev-parse', 'HEAD') != subject['candidate']:
@@ -119,6 +126,9 @@ def review_candidate(request: dict) -> dict:
 @activity.defn
 def publish_candidate(request: dict) -> dict:
     task = load(request['task_id'], request['task_digest'])
+    wait = before_activity(task, 150)
+    if wait:
+        return wait
     subject, tests, review = request['subject'], request['tests'], request['review']
     require_gate(task, subject, tests, review)
     workspace = task_directory(task['id']) / request['workspace_name']

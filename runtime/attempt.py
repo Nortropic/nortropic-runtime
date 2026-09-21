@@ -15,6 +15,8 @@ from .task import load, task_directory, evidence_directory
 from .targets import OFFICE
 from .provider_result import parse as parse_provider
 from .claude_profile import command as claude_command, require_subscription
+from .development_binding import reserve_task_call
+from .development_scope import ScopeClosed
 
 
 def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=None, role="implementation", workspace_name=None, provider="codex"):
@@ -60,22 +62,50 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         started = time.monotonic()
         proc = None
         interrupted = None
+        reservation = None
         def stop(sig, frame):
             raise InterruptedError(sig)
         old = {sig: signal.signal(sig, stop) for sig in (signal.SIGINT, signal.SIGTERM)}
         try:
             with (output / 'events.jsonl').open('wb') as stdout, (output / 'stderr.log').open('wb') as stderr:
-                proc = subprocess.Popen(record['command'], cwd=workspace, env=environment(),
-                                        stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
-                                        start_new_session=True)
-                record['provider_pid'] = proc.pid
-                (output / 'launch.json').write_text(json.dumps(record, indent=2) + '\n')
-                proc.communicate(prompt.encode(), timeout=seconds)
+                def launch():
+                    # Retain ownership BEFORE Scope records success. An append/
+                    # disk failure after Popen must still clean up this process.
+                    nonlocal proc
+                    proc = subprocess.Popen(record['command'], cwd=workspace, env=environment(),
+                                            stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
+                                            start_new_session=True)
+                    record['provider_pid'] = proc.pid
+                    (output / 'launch.json').write_text(json.dumps(record, indent=2) + '\n')
+                    return proc
+                reservation = reserve_task_call(task, role, number)
+                if reservation:
+                    reservation[0].launch(reservation[1], launch)
+                else:
+                    launch()
+                if reservation:
+                    first_input = prompt.encode()
+                    while True:
+                        control = reservation[0].inspect()['control']
+                        if control not in ('active', 'paused'):
+                            raise ScopeClosed('Active scoped process stopped: ' + control)
+                        remaining = seconds - (time.monotonic() - started)
+                        if remaining <= 0:
+                            raise subprocess.TimeoutExpired(record['command'], seconds)
+                        try:
+                            proc.communicate(first_input, timeout=min(1, remaining))
+                            break
+                        except subprocess.TimeoutExpired:
+                            first_input = None
+                else:
+                    proc.communicate(prompt.encode(), timeout=seconds)
                 code = proc.returncode
         except subprocess.TimeoutExpired:
             code, interrupted = 124, 'deadline'
         except InterruptedError:
             code, interrupted = 130, 'signal'
+        except (ScopeClosed, OSError) as error:
+            code, interrupted = 125, str(error)
         finally:
             for sig in old:
                 signal.signal(sig, signal.SIG_IGN)
@@ -103,6 +133,8 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         report = {'task': task_id, 'attempt': number, 'provider': provider,
                   'provider_completed': finished, 'exit_code': code,
                   **parsed, 'role': role,
+                  'model_started': proc is not None,
+                  'scope_reservation': reservation[1] if reservation else None,
                   'interrupted': interrupted, 'process_group_removed': removed,
                   'elapsed_seconds': round(time.monotonic() - started, 3),
                   'evidence': str(output.relative_to(ROOT))}
