@@ -81,7 +81,8 @@ def prepare(scope,config,key):
     for name in ('authority.md','goal.md'):
         files[name]=read_regular(Path(config['directory'])/'development-context',name)
     files['AGENTS.md']=read_regular(Path(config['directory'])/'office','AGENTS.md')
-    context={'remaining_action':'Independently examine entire actual G1-G10 chain and approve closure or identify exact gaps',
+    amended=host.goal_amendments(config,decode(read_regular(scope.directory,'contract.json')));files.update(amended)
+    context={'goal_amendments':host.amendment_notice(amended),'remaining_action':'Independently examine entire actual G1-G10 chain and approve closure or identify exact gaps',
         'observed_at':datetime.now(timezone.utc).isoformat(),'runtime_revision':config['runtime_revision'],
         'office_revision':config['office_revision'],'config_sha256':config['config_sha256'],
         'qualification_index_sha256':host.sha(read_regular(directory,'index.json')),

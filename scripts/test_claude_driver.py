@@ -586,18 +586,28 @@ class PreflightAndPendingTest(unittest.TestCase):
                                                        'files': {'g2.md': hashlib.sha256(b'interval').hexdigest()}}))
         release = self.root/'release'; (release/'development-context').mkdir(parents=True); (release/'office').mkdir()
         for name in ('development-context/authority.md', 'development-context/goal.md', 'office/AGENTS.md'): (release/name).write_text(name)
+        goal = hashlib.sha256(b'development-context/goal.md').hexdigest(); (self.directory/'contract.json').write_text(json.dumps({'acceptance_sha256': goal}))
+        (release/'development-context/amendment-a.md').write_text('amendment'); amended = hashlib.sha256(b'amendment').hexdigest()
+        (release/'development-context/amendment-a-review.json').write_text(json.dumps({'reviewer': 'separate context', 'verdict': 'approved',
+                                                                                         'sha256': amended, 'amends_sha256': goal}))
+        bound = [{'file': 'amendment-a.md', 'sha256': amended, 'review': 'amendment-a-review.json',
+                  'review_sha256': hashlib.sha256((release/'development-context/amendment-a-review.json').read_bytes()).hexdigest()}]
         receipt = {'url': 'https://example.invalid/pull/1', 'candidate': 'c'*40, 'tree': 't'*40}
         state = {'integrated': {work: {'task': work, 'receipt': receipt} for work in ('reconciliation', 'handoff')}}
         scope = SimpleNamespace(directory=self.directory, expected='x', inspect=lambda: state)
         report = {'verified_delivery': True, 'integration': receipt, 'state': {'results': [{'workspace_name': 'w'}]}}
         async def native(task_ids): return {}, {}
-        delivered = {}
-        def call(expected, key, role, work, context, files): delivered.update(files); return {'nonce': key}
+        delivered = {}; examined = {}
+        def call(expected, key, role, work, context, files): delivered.update(files); examined.update(context); return {'nonce': key}
         with patch.object(final, 'load', side_effect=lambda name: {'id': name, 'base': 'b'*40}), patch.object(final, 'inspect', return_value=report), \
              patch.object(final, 'task_directory', return_value=self.root), patch.object(final, 'native_evidence', side_effect=native), \
              patch.object(final, 'Publisher', return_value=SimpleNamespace(api=lambda path: {}, reconcile=lambda *a: receipt)), \
              patch.object(final.host, 'prepare_call', side_effect=call):
-            final.prepare(scope, {'directory': str(release), 'runtime_revision': 'r', 'office_revision': 'o', 'config_sha256': 'c'}, 'step-9')
+            final.prepare(scope, {'directory': str(release), 'runtime_revision': 'r', 'office_revision': 'o', 'config_sha256': 'c',
+                                  'development': {'amendments': bound}}, 'step-9')
+        # The whole-goal examiner judges against the goal AS AMENDED, with the review record beside it.
+        self.assertEqual(delivered['GOAL_AMENDMENT_1.md'], b'amendment'); self.assertIn('GOAL_AMENDMENT_1_REVIEW.json', delivered)
+        self.assertEqual([(n['path'], n['sha256']) for n in examined['goal_amendments']], [('GOAL_AMENDMENT_1.md', amended)])
         expected = interactive.retry_evidence(scope, 'interactive-retry-3')
         self.assertEqual(len(expected), 9); self.assertEqual({name: delivered.get(name) for name in expected}, expected)
         self.assertEqual(json.loads(delivered['interactive/result.json']), {'last': 'result.json'})

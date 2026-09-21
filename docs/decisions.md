@@ -518,3 +518,28 @@ sessions, the operator's included, honestly rewrite their own entries meanwhile.
 Limits: author, reviewer, driver and whole-goal examiner may all be the same model
 family. They are separate runs with separate identities, never a claim of
 independent judgment. The private watch keeps its Codex executor.
+
+## AP11-GOAL-AMENDMENT — 2026-09-21: a reviewed goal amendment reaches every role
+
+The frozen overall acceptance forbids another model and any fallback. The owner's
+changed mandate narrows that, and the owner requires a reviewed amendment that is
+traceable to the original and weakens neither the goal nor the final proof. A separate
+review of the first draft found that the amendment was bound to nothing: the final
+whole-goal examiner, and every driver and reviewer, would have judged a chain run by
+the newly selected executor against the unamended text alone.
+
+Decision: `development.amendments` in the frozen release configuration lists, by
+SHA256, an amendment and its external review record, both stored with the frozen goal
+in the release. The host delivers them, next to the goal and the authority, to the
+driver, the preparation review, the diagnosis and the whole-goal examination, and
+names them in the delivered context. An amendment has effect only with a record that
+approves exactly its bytes as an amendment of exactly the contract's goal; changed
+bytes, another goal, a verdict other than approved or a malformed selection are
+refused. The contract and its hash never change, because the scope and its consumed
+calls are keyed to them. Absent means none, with the delivered context unchanged. The
+Office policy's exact source set is untouched. Nothing here writes that key or
+activates anything: only the separately reviewed controlled release transition does.
+
+Limit: the host checks that a review record exists and binds the bytes. It cannot
+check that the review was good; amendment author and reviewer may be the same model
+family, which the record itself must state.

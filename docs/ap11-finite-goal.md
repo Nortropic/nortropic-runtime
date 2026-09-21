@@ -74,6 +74,14 @@ Ctrl-C (exit 0). An unmeasured provider-error shape still fails closed as an
 incomplete session; only its quota classification is then unavailable.
 A third diagnosed interactive retry exists; like the others it is counted.
 
+A separately reviewed amendment of the frozen goal is bound by the release
+configuration (`development.amendments`: the amendment and its external review record,
+by SHA256), never by the contract, whose hash keys the scope and its consumed calls.
+The host delivers both next to the goal and the authority to every role that receives
+those, including the whole-goal examination, and refuses changed bytes, a record that
+does not approve exactly those bytes for exactly the contract's goal, or a malformed
+selection. The record binds bytes; it does not make the review independent judgment.
+
 `status` is a dated read and never starts models, signals or publishes. `pause
 --reason ...` persists a block on new work but permits an already started child to
 finish its accepted review/publication. `resume --reason ...` is an explicit

@@ -84,6 +84,44 @@ def apply_integrated_a(repo, revision, destination, goal, reports):
     return result
 
 
+def goal_amendments(config, contract):
+    """Separately reviewed amendments of the frozen goal, bound by the release configuration.
+
+    The contract and its hash never change: the scope and its consumed calls are keyed
+    to them. An amendment has effect only together with an external review record that
+    approves exactly its bytes as an amendment of exactly the contract's goal. Both are
+    delivered wherever goal.md and authority.md are, so no role judges the chain against
+    the unamended text alone. Absent means none; anything malformed is refused.
+    """
+    selected = (config.get('development') or {}).get('amendments', [])
+    if not isinstance(selected, list) or len(selected) > 4:
+        raise ValueError('Invalid bound goal amendments')
+    directory = Path(config['directory']) / 'development-context'; files = {}
+    for number, item in enumerate(selected, 1):
+        if (not isinstance(item, dict) or set(item) != {'file', 'sha256', 'review', 'review_sha256'}
+                or any(not isinstance(item[name], str) or Path(item[name]).name != item[name] for name in ('file', 'review'))
+                or not item['file'].endswith('.md') or not item['review'].endswith('.json')):
+            raise ValueError('Invalid bound goal amendments')
+        content = read_regular(directory, item['file']); raw = read_regular(directory, item['review'])
+        if sha(content) != item['sha256'] or sha(raw) != item['review_sha256']:
+            raise ValueError('Bound goal amendment changed')
+        record = decode(raw)
+        if (not isinstance(record, dict) or record.get('verdict') != 'approved' or record.get('sha256') != item['sha256']
+                or record.get('amends_sha256') != contract['acceptance_sha256']
+                or not isinstance(record.get('reviewer'), str) or not record['reviewer'].strip()):
+            raise ValueError('Goal amendment has no review record approving exactly these bytes for this goal')
+        files['GOAL_AMENDMENT_%d.md' % number] = content
+        files['GOAL_AMENDMENT_%d_REVIEW.json' % number] = raw
+    return files
+
+
+def amendment_notice(files):
+    return [{'path': name, 'sha256': sha(content), 'amends': 'goal.md',
+             'review_record': name[:-3] + '_REVIEW.json',
+             'meaning': 'Separately reviewed amendment of the frozen goal; read it together with goal.md'}
+            for name, content in sorted(files.items()) if name.endswith('.md')]
+
+
 def base_context(scope, config, work, key, *, paused_interactive_recovery=False):
     """Read actual integration and source objects before deriving a next task."""
     state = scope.inspect()
@@ -174,6 +212,9 @@ def base_context(scope, config, work, key, *, paused_interactive_recovery=False)
             continue
         files[name] = git(repo, 'show', base + ':' + name, raw=True)
     files['AGENTS.md'] = read_regular(Path(config['directory']) / 'office', 'AGENTS.md')
+    amended = goal_amendments(config, contract)
+    if amended:
+        files.update(amended); context['goal_amendments'] = amendment_notice(amended)
     return context, files
 
 
@@ -329,6 +370,7 @@ def diagnosis_call(expected, task_id, state, nonce):
              'goal.md': read_regular(Path(config['directory'])/'development-context', 'goal.md'),
              'authority.md': read_regular(Path(config['directory'])/'development-context', 'authority.md'),
              'AGENTS.md': read_regular(Path(config['directory'])/'office', 'AGENTS.md')}
+    files.update(goal_amendments(config, decode(read_regular(scope.directory, 'contract.json'))))
     from .task import evidence_directory
     for result in state.get('results', [])[-2:]:
         number = result.get('attempt')
