@@ -7,6 +7,21 @@ from .development_scope import Scope, ScopeClosed
 from .release import ROOT, require_active_code
 
 
+def activity_seconds(task, kind):
+    """Conservative full slot occupancy, including bounded host subprocesses.
+
+    A Temporal timeout alone does not kill a synchronous activity thread. AP11
+    permits two source files and480 model seconds. Candidate Git operations,
+    sandbox recipe120s, publication's bounded Git/API calls and cleanup also
+    fit in these envelopes. The native workflow uses the same time limit.
+    """
+    if 'development' not in task:
+        return None
+    if len(task.get('allowed_paths', [])) != 2 or not 1 <= task.get('attempt_seconds', 0) <= 480:
+        raise ScopeClosed('Only the bounded two-file finite child profile is qualified')
+    return {'implementation': 1500, 'review': 360, 'publication': 1500}[kind]
+
+
 def for_task(task):
     selected = task.get('development')
     if selected is None:

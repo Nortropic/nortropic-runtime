@@ -148,7 +148,7 @@ class BindingTests(unittest.TestCase):
         self.assertIsNone(before_activity({}, 160))
 
     def test_native_wait_releases_slot_and_does_not_rewrite_attempt(self):
-        instance = DevelopmentTask(); instance.accepted_task = self.task; instance.phase = 'running_codex'
+        instance = DevelopmentTask(); instance.accepted_task = {**self.task, 'allowed_paths': ['tools/a.py', 'tools/test_a.py']}; instance.phase = 'running_codex'
         results = [{'capacity_wait': True, 'capacity': {'reason': 'watch due'}}, {'done': True}]
         with patch('runtime.workflow.workflow.execute_activity', AsyncMock(side_effect=results)) as run, \
              patch('runtime.workflow.workflow.sleep', AsyncMock()) as wait:
@@ -157,6 +157,16 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(run.await_args_list[0], run.await_args_list[1])
         wait.assert_awaited_once_with(30)
         self.assertEqual(instance.phase, 'running_codex')
+
+    def test_full_occupancy_includes_host_checks_and_keeps_ordinary_history(self):
+        task = {**self.task, 'allowed_paths': ['tools/a.py', 'tools/test_a.py'], 'attempt_seconds': 480}
+        self.assertEqual(binding.activity_seconds(task, 'implementation'), 1500)
+        self.assertEqual(binding.activity_seconds(task, 'publication'), 1500)
+        self.assertEqual(binding.activity_seconds(task, 'review'), 360)
+        self.assertIsNone(binding.activity_seconds({}, 'implementation'))
+        for invalid in ({**task, 'attempt_seconds': 481}, {**task, 'allowed_paths': ['tools/a.py']}):
+            with self.assertRaises(ScopeClosed):
+                binding.activity_seconds(invalid, 'implementation')
 
     def test_publisher_routes_actual_remote_mutations_through_guard(self):
         publisher = Publisher(self.root)

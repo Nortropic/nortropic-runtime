@@ -55,6 +55,8 @@ def validate(task):
                 or not re.fullmatch('[0-9a-f]{64}', str(binding.get('contract_sha256', '')))
                 or not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', str(binding.get('work', '')))):
             raise ValueError('Invalid finite development binding')
+        if len(paths) != 2 or task['attempt_seconds'] > 480:
+            raise ValueError('Finite child profile supports two files and at most480 model seconds')
     return task
 
 
