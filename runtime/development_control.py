@@ -72,10 +72,16 @@ def main():
         from .development_interactive import prepare_retry,execute
         config=require_active_code()
         current=asyncio.run(operate('status'))
-        if current['native'].get('phase')!='waiting_control' or current['native'].get('children'):
+        phase=current['native'].get('phase')
+        if phase not in ('waiting_control','waiting_host_diagnosis') or current['native'].get('children'):
             raise ValueError('Existing native parent must be paused before any child')
         request=prepare_retry(config['development']['contract_sha256'],args.reason)
         asyncio.run(operate('resume',args.reason))
+        if phase=='waiting_host_diagnosis':
+            async def diagnosed():
+                async with SharedService() as client:
+                    await client.get_workflow_handle(NAME).signal(FiniteDevelopment.continue_after_diagnosis,args.reason)
+            asyncio.run(diagnosed())
         result=execute(request);print(json.dumps(result,indent=2));return 0 if result['completed'] else 1
     print(json.dumps(asyncio.run(operate(args.action,args.reason)),indent=2));return 0
 

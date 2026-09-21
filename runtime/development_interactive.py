@@ -29,30 +29,40 @@ from .snapshot import read_regular
 
 NONCE='interactive-start'
 RETRY='interactive-retry-1'
+RETRIES=(RETRY,'interactive-retry-2')
 
 
 def selected_nonce(scope):
-    path=scope.directory/'interactive-retry.json'
-    if not path.exists():return NONCE
-    binding=decode(read_regular(scope.directory,path.name))
-    if (set(binding)!={'previous','nonce','diagnosis','previous_result_sha256','input_sha256'}
-            or binding['previous']!=NONCE or binding['nonce']!=RETRY
-            or not isinstance(binding['diagnosis'],str) or not binding['diagnosis'].strip()):
-        raise ValueError('Exact host interactive retry binding required')
-    previous=read_regular(scope.directory/'calls'/NONCE,'result.json')
-    if (host.sha(previous)!=binding['previous_result_sha256']
-            or decode(previous).get('completed') is not False
-            or host.sha(read_regular(scope.directory/'calls'/RETRY,'input.json'))!=binding['input_sha256']):
-        raise ValueError('Interactive retry evidence changed')
-    return RETRY
+    selected=NONCE
+    for nonce in RETRIES:
+        path=scope.directory/('interactive-retry.json' if nonce==RETRY else nonce+'.json')
+        if not path.exists():
+            if nonce==RETRY and (scope.directory/(RETRIES[1]+'.json')).exists():
+                raise ValueError('Earlier interactive retry binding missing')
+            return selected
+        binding=decode(read_regular(scope.directory,path.name))
+        if (set(binding)!={'previous','nonce','diagnosis','previous_result_sha256','input_sha256'}
+                or binding['previous']!=selected or binding['nonce']!=nonce
+                or not isinstance(binding['diagnosis'],str) or not binding['diagnosis'].strip()):
+            raise ValueError('Exact host interactive retry binding required')
+        previous=read_regular(scope.directory/'calls'/selected,'result.json')
+        if (host.sha(previous)!=binding['previous_result_sha256']
+                or decode(previous).get('completed') is not False
+                or host.sha(read_regular(scope.directory/'calls'/nonce,'input.json'))!=binding['input_sha256']):
+            raise ValueError('Interactive retry evidence changed')
+        selected=nonce
+    return selected
 
 
 def prepare_retry(expected,reason):
     scope,config=active_scope(expected);state=scope.inspect()
-    if (state['control']!='paused' or state['tasks'] or selected_nonce(scope)!=NONCE
+    previous=selected_nonce(scope)
+    if (state['control']!='paused' or state['tasks'] or previous==RETRIES[-1]
             or not isinstance(reason,str) or not reason.strip()):
         raise ValueError('Only explicit diagnosed pre-task paused interactive recovery')
-    stage=scope.directory/'calls'/NONCE
+    nonce=RETRY if previous==NONCE else RETRIES[1]
+    stage=scope.directory/'calls'/previous
+    if not (stage/'result.json').exists():raise ValueError('Previous interactive attempt has not ended')
     prior=read_regular(stage,'result.json');result=decode(prior)
     ended=decode(read_regular(stage,'session-exit.json'))
     if (result.get('completed') is not False or result.get('process_group_removed') is not True
@@ -61,9 +71,9 @@ def prepare_retry(expected,reason):
     try:os.killpg(ended['provider_pid'],0)
     except ProcessLookupError:pass
     else:raise ValueError('Previous interactive process group remains')
-    context,files=host.base_context(scope,config,'reconciliation',RETRY,paused_interactive_recovery=True)
-    request=host.prepare_call(expected,RETRY,'driver','reconciliation',context,files)
-    write(scope.directory/'interactive-retry.json',{'previous':NONCE,'nonce':RETRY,'diagnosis':reason,
+    context,files=host.base_context(scope,config,'reconciliation',nonce,paused_interactive_recovery=True)
+    request=host.prepare_call(expected,nonce,'driver','reconciliation',context,files)
+    write(scope.directory/('interactive-retry.json' if nonce==RETRY else nonce+'.json'),{'previous':previous,'nonce':nonce,'diagnosis':reason,
         'previous_result_sha256':host.sha(prior),'input_sha256':request['input_sha256']})
     return request
 
@@ -78,7 +88,9 @@ def interactive_command(workspace,prompt):
             raise ValueError('Project-local Codex layers require separate review')
     argv=command(workspace,writable=False);cut=argv.index('exec')
     trust='projects={'+json.dumps(str(ROOT))+'={trust_level="trusted"}}'
-    return argv[:cut]+['-c',trust,'--no-alt-screen','-C',str(workspace),prompt]
+    # The pinned CLI otherwise increments a global model-introduction counter.
+    # Suppress that UI bookkeeping for this process; do not rebind global guards.
+    return argv[:cut]+['-c',trust,'-c','tui.show_tooltips=false','--no-alt-screen','-C',str(workspace),prompt]
 
 
 def actual_session(workspace, started, require_complete=True):
