@@ -625,3 +625,33 @@ been processed, the history no longer replays under earlier parent code, and the
 must never reach a parent still served by an earlier worker (measured: the new code
 cannot replay such a history); control command and worker change together, through the
 release transition only.
+
+## AP11-DAEMON-HISTORY — 2026-09-21: a daemon start must survive the engine's retention
+
+Found by a separate review of the release transition and confirmed by reading: at every
+start the daemon queried three delivered task executions on the engine and refused to
+start if a query failed. Measured: the local engine's namespace retention is one day, and
+the engine had already removed the first of the three; the other two were hours from
+removal. From that moment neither the active release nor any stageable one could start
+again after a stop, and a transition's promised return to the previous release was
+impossible. The running service kept working only because it was not stopped.
+
+Decision: the requirement is stated once, in `delivered_histories`, which the daemon calls
+at every start and which a controlled release transition calls against the running engine
+BEFORE it stops the service. The engine is always asked first. Only for an execution the
+engine answers not-found for, the delivery is evidenced by an archive that the release
+itself binds: run id and SHA256 in the pinned configuration, the bytes inside the release
+under its file map, and the archived history must itself show that execution by name, that
+run of the task workflow, closing with the completed phase the live query would have returned. No binding,
+other bytes, another run, another workflow type or another outcome refuses the start; any
+other engine error is not mistaken for retention. What the daemon observed is written
+beside its launch record, not into the service receipt.
+
+Limits: an archive proves what was delivered, not that the database is the same one. The
+earlier live query also tied a start to the established database; once the engine has
+removed those executions that is lost, and nothing at daemon start then distinguishes the
+established database from another intact, non-empty database at the canonical path (the
+native service identity cannot: the daemon creates it when absent). A current-source
+continuity anchor that never expires is a separate, later increment. Nothing in the repository writes `historical_archives`: only
+a separately reviewed controlled release transition stages verified archives. Executions
+of a release activated before this change cannot be started again at all.

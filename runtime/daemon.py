@@ -1,7 +1,9 @@
 """User-owned pinned local lifecycle; Temporal alone owns task scheduling/state."""
 import asyncio
+import base64
 import json
 import os
+from pathlib import Path
 import signal
 import sqlite3
 import subprocess
@@ -10,13 +12,67 @@ import uuid
 
 from temporalio.common import WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
-from .release import ROOT, CODE_ROOT, require_active_code
+from temporalio.service import RPCError, RPCStatusCode
+from .release import ROOT, CODE_ROOT, require_active_code, sha
 from .shared import ServiceIdentity, process_identity
 from .service import LocalService
 from .run import check_unfinished_writers
 from .workflow import DevelopmentTask
 from .private_stage import check_private_processes
 from scripts.bounded import stop_group
+
+
+HISTORICAL = ('office-result-1', 'office-assignment-core-1', 'office-owner-view-1')
+
+
+def archived_delivery(config, name):
+    """A delivered execution that the engine no longer holds is evidenced ONLY by an archive this release binds.
+
+    The engine removes a closed execution after its namespace retention (one day here, measured), so a daemon that
+    insists on asking the engine cannot start a day after the last delivery closed. The pinned configuration names the
+    run id and SHA256, the bytes lie inside the release under its file map, and the archived history itself must show
+    that execution by name, that run of the task workflow, closing with the completed phase the live query would have returned. No binding,
+    other bytes, another run or another outcome is missing evidence, never a pass.
+    """
+    bound = (config.get('historical_archives') or {}).get(name)
+    if (not isinstance(bound, dict) or set(bound) != {'file', 'run_id', 'sha256'} or not all(isinstance(v, str) for v in bound.values())
+            or Path(bound['file']).parent != Path('history') or config.get('files', {}).get(bound['file']) != bound['sha256']):
+        raise ValueError('Required delivered native history is unavailable and no verified archive is bound: ' + name)
+    path = Path(config['directory']) / bound['file']
+    if path.is_symlink() or not path.is_file() or sha(path) != bound['sha256']:
+        raise ValueError('Bound archive of delivered native history changed: ' + name)
+    try:
+        events = json.loads(path.read_text())['events']
+        started = events[0]['workflowExecutionStartedEventAttributes']
+        result = json.loads(base64.b64decode(events[-1]['workflowExecutionCompletedEventAttributes']['result']['payloads'][0]['data']))
+        shown = (started['workflowId'], started['originalExecutionRunId'], started['workflowType']['name'], result['phase'])
+    except (ValueError, KeyError, IndexError, TypeError) as error:
+        raise ValueError('Bound archive does not show a completed delivery: ' + name) from error
+    if shown != (name, bound['run_id'], 'DevelopmentTask', 'completed'):
+        raise ValueError('Bound archive does not show that run completing its delivery: ' + name)
+    return {'source': 'archive bound by the release', 'run_id': bound['run_id'], 'sha256': bound['sha256']}
+
+
+async def delivered_histories(client, config):
+    """What a daemon start requires of the delivered native histories, stated ONCE.
+
+    The daemon calls it at every start. A controlled release transition calls the same function against the running
+    engine BEFORE it stops the service, so a release whose daemon could not start is never selected. The engine is
+    always asked first; an archive is consulted only for an execution the engine answers NOT_FOUND for.
+    """
+    observed = {}
+    for name in HISTORICAL:
+        try:
+            state = await asyncio.wait_for(client.get_workflow_handle(name).query(DevelopmentTask.state), 10)
+        except RPCError as error:
+            if error.status != RPCStatusCode.NOT_FOUND:
+                raise
+            observed[name] = archived_delivery(config, name)
+            continue
+        if state.get('phase') != 'completed':
+            raise ValueError('Required delivered native history is unavailable or changed: ' + name)
+        observed[name] = {'source': 'engine'}
+    return observed
 
 
 async def main():
@@ -56,10 +112,7 @@ async def main():
                 live = await asyncio.wait_for(client.get_workflow_handle(identity_id).query(ServiceIdentity.describe), 20)
                 if live != identity:
                     raise ValueError('Existing native service identity mismatch')
-                for historical in ('office-result-1', 'office-assignment-core-1', 'office-owner-view-1'):
-                    state = await asyncio.wait_for(client.get_workflow_handle(historical).query(DevelopmentTask.state), 10)
-                    if state.get('phase') != 'completed':
-                        raise ValueError('Required delivered native history is unavailable or changed: '+historical)
+                (output / 'delivered-histories.json').write_text(json.dumps(await delivered_histories(client, config), indent=2)+'\n')
                 receipt = dict(config_sha256=config['config_sha256'], native_identity=identity,
                                identity_workflow=identity_id)
                 for role, pid in [('daemon', os.getpid()), ('engine', service.proc.pid), ('worker', worker.pid)]:
