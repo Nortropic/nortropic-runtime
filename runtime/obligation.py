@@ -37,7 +37,7 @@ def definition(config, test_at=None):
         run_timeout=timedelta(seconds=1200),retry_policy=RetryPolicy(maximum_attempts=1)),
         spec=once(test_at) if test_at else daily(),
         policy=SchedulePolicy(overlap=ScheduleOverlapPolicy.BUFFER_ONE,
-            catchup_window=timedelta(days=1),pause_on_failure=False),
+            catchup_window=timedelta(hours=22),pause_on_failure=False),
         state=ScheduleState(paused=True,note='AP10 explicitly installed paused',
             limited_actions=bool(test_at),remaining_actions=1 if test_at else 0))
 

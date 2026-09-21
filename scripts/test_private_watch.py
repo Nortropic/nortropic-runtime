@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
+from zoneinfo import ZoneInfo
 import json
 from pathlib import Path
 import tempfile
@@ -23,12 +24,34 @@ class PrivateTests(unittest.TestCase):
         self.assertEqual(s.spec.time_zone_name,'Europe/Stockholm')
         self.assertEqual(s.spec.calendars[0].hour[0].start,9)
         self.assertEqual(s.policy.overlap,ScheduleOverlapPolicy.BUFFER_ONE)
-        self.assertEqual(s.policy.catchup_window.total_seconds(),86400)
+        self.assertEqual(s.policy.catchup_window.total_seconds(),22*3600)
         self.assertEqual(s.action.execution_timeout.total_seconds(),1200)
         self.assertEqual(s.action.retry_policy.maximum_attempts,1)
         test=definition({'config_sha256':'x'},datetime.now(timezone.utc))
         self.assertTrue(test.state.limited_actions);self.assertEqual(test.state.remaining_actions,1)
         self.assertEqual(test.spec.time_zone_name,'UTC')
+
+    def test_catchup_window_below_closest_stockholm_daily_occurrences(self):
+        # Real timezone transition: two consecutive09 starts are only23h apart.
+        zone=ZoneInfo('Europe/Stockholm')
+        before=datetime(2026,3,28,9,tzinfo=zone).astimezone(timezone.utc)
+        after=datetime(2026,3,29,9,tzinfo=zone).astimezone(timezone.utc)
+        window=definition({'config_sha256':'fixture'}).policy.catchup_window
+        self.assertEqual(after-before,timedelta(hours=23))
+        self.assertLess(window,after-before)
+        before27=datetime(2027,3,27,9,tzinfo=zone).astimezone(timezone.utc)
+        after27=datetime(2027,3,28,9,tzinfo=zone).astimezone(timezone.utc)
+        returned=datetime(2027,3,28,9,30,tzinfo=zone).astimezone(timezone.utc)
+        self.assertEqual(sum(returned-x<=timedelta(hours=24) for x in (before27,after27)),2)
+        self.assertEqual(sum(returned-x<=window for x in (before27,after27)),1)
+        self.assertTrue((after27+window-timedelta(seconds=1))-after27<window)
+        self.assertFalse((after27+window+timedelta(seconds=1))-after27<=window)
+        # Compare all adjacent days across both transitions in an actual year.
+        starts=[(datetime(2026,1,1,9,tzinfo=zone)+timedelta(days=n)).astimezone(timezone.utc) for n in range(366)]
+        self.assertTrue(all(b-a>window for a,b in zip(starts,starts[1:])))
+        for start in starts[1:]:
+            at=start+timedelta(seconds=1)
+            self.assertLessEqual(sum(timedelta(0)<=at-x<=window for x in starts),1)
 
     def test_stage_order_no_publication_and_no_retry(self):
         class Info:
