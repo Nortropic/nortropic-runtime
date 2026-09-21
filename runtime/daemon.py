@@ -54,7 +54,7 @@ async def main():
                 live = await asyncio.wait_for(client.get_workflow_handle(identity_id).query(ServiceIdentity.describe), 20)
                 if live != identity:
                     raise ValueError('Existing native service identity mismatch')
-                for historical in ('runtime-run-report-1', 'runtime-evidence-index-1', 'office-result-1'):
+                for historical in ('office-result-1', 'office-assignment-core-1', 'office-owner-view-1'):
                     state = await asyncio.wait_for(client.get_workflow_handle(historical).query(DevelopmentTask.state), 10)
                     if state.get('phase') != 'completed':
                         raise ValueError('Required delivered native history is unavailable or changed: '+historical)

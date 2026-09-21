@@ -22,7 +22,7 @@ def copy_code(repo, revision, dest):
         raise ValueError('Exact integrated revision required')
     git(repo, 'merge-base', '--is-ancestor', revision, 'origin/main')
     files = git(repo, 'ls-tree', '-r', '--name-only', revision).decode().splitlines()
-    selected = [n for n in files if n == 'AGENTS.md' or n.startswith(('runtime/', 'scripts/', 'tools/', 'acceptance/', 'config/'))]
+    selected = [n for n in files if n in ('AGENTS.md', 'docs/runtime-v0.1.md') or n.startswith(('runtime/', 'scripts/', 'tools/', 'acceptance/', 'config/'))]
     hashes = {}
     for name in selected:
         mode = git(repo, 'ls-tree', revision, '--', name).decode().split()[0]
