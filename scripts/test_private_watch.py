@@ -94,6 +94,44 @@ class PrivateTests(unittest.TestCase):
             self.assertFalse(result['completed']);self.assertTrue(result['process_group_removed'])
             self.assertLess(result['elapsed_seconds'],5)
 
+    def test_capture_does_not_limit_native_provider_state_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            stage=Path(d).resolve()/'analysis';stage.mkdir();work=stage/'work';work.mkdir()
+            state=stage/'synthetic-provider-state'
+            code=("import sys,json,pathlib;sys.stdin.read();"
+                  "pathlib.Path("+repr(str(state))+").write_bytes(b'x'*(2*1024*1024));"
+                  "print(json.dumps({'type':'thread.started','thread_id':'synthetic'}));"
+                  "print(json.dumps({'type':'item.completed','item':{'type':'agent_message','text':'{}'}}));"
+                  "print(json.dumps({'type':'turn.completed','usage':None}))")
+            with patch.object(ps,'command',return_value=[sys.executable,'-c',code,'-']),patch.object(ps,'require_workspace_instructions'):
+                result=ps.model(stage,work,'synthetic',{},3,os.getppid())
+            self.assertTrue(result['completed']);self.assertEqual(result['exit_code'],0)
+            self.assertEqual(state.stat().st_size,2*1024*1024)
+            self.assertEqual(result['answer'],{})
+
+    def test_each_capture_is_bounded_and_flooding_process_is_cleaned(self):
+        for fd in (1,2):
+            with self.subTest(fd=fd),tempfile.TemporaryDirectory() as d:
+                stage=Path(d).resolve()/'analysis';stage.mkdir();work=stage/'work';work.mkdir()
+                code="import os,sys;sys.stdin.read();\nwhile True:os.write("+str(fd)+",b'x'*65536)"
+                with patch.object(ps,'command',return_value=[sys.executable,'-c',code,'-']),patch.object(ps,'require_workspace_instructions'),patch.object(ps,'LOG_BYTES',32768):
+                    result=ps.model(stage,work,'synthetic',{},3,os.getppid())
+                self.assertFalse(result['completed']);self.assertTrue(result['process_group_removed'])
+                self.assertIsInstance(result['exit_code'],int)
+                self.assertLessEqual((stage/'events.jsonl').stat().st_size,16384)
+                self.assertLessEqual((stage/'stderr.log').stat().st_size,16384)
+                self.assertLess(result['elapsed_seconds'],5)
+
+    def test_early_signal_exit_is_preserved_without_retry(self):
+        with tempfile.TemporaryDirectory() as d:
+            stage=Path(d).resolve()/'analysis';stage.mkdir();work=stage/'work';work.mkdir()
+            code="import os,signal;os.kill(os.getpid(),signal.SIGTERM)"
+            with patch.object(ps,'command',return_value=[sys.executable,'-c',code,'-']),patch.object(ps,'require_workspace_instructions'):
+                result=ps.model(stage,work,'synthetic',{},3,os.getppid())
+            self.assertEqual(result['exit_code'],-15);self.assertFalse(result['completed'])
+            self.assertTrue(result['process_group_removed'])
+            self.assertEqual(json.loads((stage/'budget.json').read_text())['model_calls'],1)
+
     def test_activity_cancel_closes_real_stage_before_raising(self):
         import subprocess
         real_popen=subprocess.Popen

@@ -72,7 +72,11 @@ cancellation clean its group; retained launch identities prevent starting anothe
 private invocation while a prior private process remains unresolved. A hard-killed
 unidentifiable guardian requires operator diagnosis, never blind restart.
 
-Logs have a 1MiB per-file child limit (2MiB combined stdout/stderr). A periodic
+The host captures stdout/stderr through bounded pipes, at most 1MiB per file
+(2MiB combined), then stops the provider group on overflow. No process-wide
+file-size limit is applied to the native CLI's own state files. The actual exit
+code is preserved even when startup fails before a structured provider event.
+A periodic
 512MiB capacity guard covers rounds, workspaces/scratch and dispatch; a new stage
 reserves 64MiB headroom. This is a stop-on-observed-growth safeguard, **not** an
 exact filesystem quota: bursts between samples can overshoot it. No historical
