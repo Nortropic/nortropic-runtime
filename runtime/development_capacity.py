@@ -63,7 +63,14 @@ async def inspect_capacity(seconds):
         if identity != expected:
             raise ValueError('Native identity differs')
         description = await client.get_schedule_handle(NAME).describe()
-        return admission(status(description), datetime.now(timezone.utc), seconds)
+        result = admission(status(description), datetime.now(timezone.utc), seconds)
+        trial = config.get('development', {}).get('capacity_trial')
+        if result['available'] and trial:
+            if trial != 'ap11-capacity-watch':
+                raise ValueError('Unqualified capacity fixture')
+            description = await client.get_schedule_handle(trial).describe()
+            result = admission(status(description), datetime.now(timezone.utc), seconds)
+        return result
     return await asyncio.wait_for(observe(), 1)
 
 

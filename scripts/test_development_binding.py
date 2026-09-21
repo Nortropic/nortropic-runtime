@@ -92,6 +92,13 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(len(self.scope.inspect()['calls']), 1)
         self.assertEqual(self.scope.inspect()['started'], [])
 
+    def test_scoped_cleanup_reuses_verified_group_readback_on_eperm(self):
+        with patch('runtime.private_stage.stop_group', side_effect=PermissionError('synthetic macOS exit transition')):
+            code,report=self.run_process('pass',fail_started_record=True)
+        self.assertEqual(code,1)
+        self.assertTrue(report['process_group_removed'])
+        self.assertEqual(len(self.scope.inspect()['calls']),1)
+
     def test_real_running_process_stops_on_own_persistent_stop(self):
         def stop():
             # Launch journal lock is held now; controller obtains it afterwards.

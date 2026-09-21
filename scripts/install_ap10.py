@@ -92,6 +92,13 @@ def plist(config):
               'RunAtLoad':True,'KeepAlive':False,'ProcessType':'Background','Umask':63,
               'StandardOutPath':str(ROOT/'.runtime/ap10/launchd.stdout.log'),
               'StandardErrorPath':str(ROOT/'.runtime/ap10/launchd.stderr.log')}
+    if json.loads(config.read_text()).get('development', {}).get('id') == 'office-ap11':
+        # The same existing host gh identity already used by Publisher.api.
+        # Avoid an interactive Keychain Git helper in the unattended profile.
+        # No token is copied; candidate/model environments filter these values.
+        result['EnvironmentVariables'].update(GIT_TERMINAL_PROMPT='0', GIT_CONFIG_COUNT='2',
+            GIT_CONFIG_KEY_0='credential.helper', GIT_CONFIG_VALUE_0='',
+            GIT_CONFIG_KEY_1='credential.helper', GIT_CONFIG_VALUE_1='!gh auth git-credential')
     # No launchd interval: Temporal is the only scheduler. No restart storm on failure.
     return plistlib.dumps(result)
 
