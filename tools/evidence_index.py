@@ -131,6 +131,53 @@ def create(root, paths):
         return {"version": 1, "files": [_digest(root_fd, path) for path in selected]}
 
 
+def _tree(dir_fd, prefix, found):
+    # Lists one directory through its descriptor; every name is checked with
+    # lstat and directories are re-opened with O_NOFOLLOW, so nothing follows a
+    # symlink and nothing is resolved to an absolute path.
+    path = prefix[:-1] or "."
+    try:
+        with os.scandir(dir_fd) as entries:
+            for entry in entries:
+                path = prefix + entry.name
+                try:
+                    _path(path)
+                except ValueError as exc:
+                    raise ValueError(f"unsupported name: {path}") from exc
+                try:
+                    before = os.lstat(entry.name, dir_fd=dir_fd)
+                except FileNotFoundError as exc:
+                    raise ValueError(f"entry disappeared while listing: {path}") from exc
+                if stat.S_ISREG(before.st_mode):
+                    found.append(path)
+                elif stat.S_ISDIR(before.st_mode):
+                    child = os.open(entry.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                    dir_fd=dir_fd)
+                    try:
+                        after = os.fstat(child)
+                        if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+                            raise ValueError(f"directory changed while opening: {path}")
+                        _tree(child, path + "/", found)
+                    finally:
+                        os.close(child)
+                else:
+                    raise ValueError(f"not a regular file: {path}")
+    except (OSError, UnicodeError) as exc:
+        raise ValueError(f"cannot safely list {path}: {exc}") from exc
+
+
+def select_tree(root):
+    """Return the sorted relative paths of every regular file under root.
+
+    Any symlink, FIFO, socket, device or other nonregular entry raises ValueError
+    naming its relative path. Contents are not read.
+    """
+    found = []
+    with _root(root) as root_fd:
+        _tree(root_fd, "", found)
+    return sorted(found)
+
+
 def _manifest(manifest):
     if not isinstance(manifest, dict) or set(manifest) != {"version", "files"}:
         raise ValueError("manifest must contain exactly version and files")
@@ -190,9 +237,14 @@ def main(argv=None):
     args = list(sys.argv[1:] if argv is None else argv)
     try:
         if len(args) < 2 or args[0] not in ("create", "verify"):
-            raise ValueError("usage: evidence_index.py create ROOT [PATH ...] | verify ROOT")
+            raise ValueError("usage: evidence_index.py create ROOT [PATH ...|--tree] | verify ROOT")
         if args[0] == "create":
-            result = create(args[1], args[2:])
+            if "--tree" in args[2:]:
+                if args[2:] != ["--tree"]:
+                    raise ValueError("--tree must be given once, after ROOT, without explicit paths")
+                result = create(args[1], select_tree(args[1]))
+            else:
+                result = create(args[1], args[2:])
             code = 0
         else:
             if len(args) != 2:
