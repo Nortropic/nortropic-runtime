@@ -128,7 +128,7 @@ def base_context(scope, config, work, key, *, paused_interactive_recovery=False)
     # The explicit pre-task interactive recovery must bind its read-only context
     # before resuming the waiting parent. It cannot run a model or start a task.
     recovery_read = (paused_interactive_recovery is True and state['control']=='paused'
-                     and work=='reconciliation' and key in ('interactive-retry-1','interactive-retry-2','interactive-retry-3','interactive-retry-4')
+                     and work=='reconciliation' and key in ('interactive-retry-1','interactive-retry-2','interactive-retry-3','interactive-retry-4','interactive-retry-5')
                      and not state['tasks'] and not state['integrated'])
     if state['control'] != 'active' and not recovery_read:
         raise ValueError('No new preparation while finite goal is paused or stopped')
@@ -238,6 +238,9 @@ INVENTORY_NOTE = ('Complete inventory of every file delivered into this workspac
                   'inventory, is missing evidence.')
 
 
+HOST_WRITTEN = ('CONTEXT.json', 'OUTPUT_SCHEMA.json')
+
+
 def delivered_files(files):
     """What a reader without directory listing needs to find every delivered file: the host binding, restated per file."""
     entries = []
@@ -258,7 +261,7 @@ def prepare_call(expected, nonce, role, work, context, files, extra=None):
     stage.mkdir(parents=True, mode=0o700, exist_ok=False)
     workspace = stage / 'workspace'; workspace.mkdir(mode=0o700)
     (workspace / '.scratch').mkdir(mode=0o700)
-    files = {**files, 'OUTPUT_SCHEMA.json': json.dumps(active.schema(role)).encode()}
+    files = {**files, 'OUTPUT_SCHEMA.json': json.dumps(active.schema(role, work)).encode()}
     if extra:
         files.update(extra)
     if 'CONTEXT.json' in files:
@@ -277,7 +280,7 @@ def prepare_call(expected, nonce, role, work, context, files, extra=None):
         with target.open('xb') as stream:
             stream.write(content)
         target.chmod(0o400)
-    data = {'prompt': active.instructions(role), 'schema': active.schema(role),
+    data = {'prompt': active.instructions(role, work), 'schema': active.schema(role, work),
             'work': work, 'role': role, 'seconds': 480,
             'workspace_sha256': {name: sha(content) for name, content in files.items()}}
     write(stage / 'input.json', data)
@@ -331,7 +334,10 @@ def review_call(expected, draft_ref, nonce):
     # Same bound inputs, fresh provider session and read-only context. The
     # implementer never supplies or writes this review's output/identity.
     binding = decode(read_regular(original.parent, 'input.json'))['workspace_sha256']
-    files = {name: read_regular(original, name) for name in binding}
+    # The driver's binding names every file of its workspace, including the two the host writes itself for every
+    # role (CONTEXT.json and OUTPUT_SCHEMA.json); the reviewer's workspace gets its own of each from prepare_call,
+    # so only the delivered sources are re-delivered (found by review D: re-delivering CONTEXT.json was refused).
+    files = {name: read_regular(original, name) for name in binding if name not in HOST_WRITTEN}
     return prepare_call(expected, nonce, 'preparation-review', packet['work'], packet['context'],
                         files, {'DRAFT.json': raw})
 

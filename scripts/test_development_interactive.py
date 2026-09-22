@@ -102,10 +102,11 @@ class SessionTests(unittest.TestCase):
             for key in ('interactive-retry-1','interactive-retry-2','interactive-retry-3'):
                 with self.subTest(key=key),self.assertRaisesRegex(LookupError,'gate passed'):
                     host.base_context(scope,{},'reconciliation',key,paused_interactive_recovery=True)
-            with self.subTest(key='interactive-retry-4'),self.assertRaisesRegex(LookupError,'gate passed'):
-                host.base_context(scope,{},'reconciliation','interactive-retry-4',paused_interactive_recovery=True)
+            for key in ('interactive-retry-4','interactive-retry-5'):
+                with self.subTest(key=key),self.assertRaisesRegex(LookupError,'gate passed'):
+                    host.base_context(scope,{},'reconciliation',key,paused_interactive_recovery=True)
             with self.assertRaisesRegex(ValueError,'No new preparation'):
-                host.base_context(scope,{},'reconciliation','interactive-retry-5',paused_interactive_recovery=True)
+                host.base_context(scope,{},'reconciliation','interactive-retry-6',paused_interactive_recovery=True)
             for control,work,key,flag,tasks in [('paused','reconciliation','interactive-retry-1',False,{}),('stopped','reconciliation','interactive-retry-1',True,{}),('paused','handoff','interactive-retry-1',True,{}),('paused','reconciliation','step-1',True,{}),('paused','reconciliation','interactive-retry-1',True,{'child':{}})]:
                 state.update(control=control,tasks=tasks)
                 with self.assertRaisesRegex(ValueError,'No new preparation'):

@@ -1,3 +1,11 @@
+# AP11 — release 3cc1f945-5ea26473 active; fourth interactive start answered a task the policy refused on depends_on; answer contract made coherent, one further bound start under construction
+
+2026-09-22T10:30Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**
+This candidate: instruction and schema delivered per work; extensions as an ordered list bound to how the
+previous start really ended (hold or task-refused); tests in scripts/test_discoverability.py. Its Office
+counterpart states and enforces the answer contract (tools/development_policy.py). See decisions
+AP11-ANSWER-CONTRACT. Activation needs a new reviewed transition.
+
 # AP11 — release 52ee556a-3c1c992a active with claude in every role; third interactive retry ended with hold; discoverability fix and one bound extra start under construction
 
 2026-09-22T08:10Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**
