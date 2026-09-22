@@ -19,6 +19,9 @@ from runtime.integration import GateClosed, digest, require_gate
 from runtime.provider_result import parse
 
 SHAPE = json.loads(Path('evidence/claude-office-roles/review-terminal-shape.json').read_text())
+# An explicit release model choice that is not the profile default, so a launch that ignored the
+# selection and fell back to the hardcoded model would fail rather than look identical.
+MODEL_CHOICE = 'claude-opus-5'
 
 
 def events(**changes):
@@ -226,8 +229,10 @@ class AttemptRoleBindingTest(unittest.TestCase):
             accepted = {'id': 't', 'target': targets.OFFICE, 'attempt_seconds': 60, 'allowed_paths': ['tools/a.py'],
                         'steps': [{'provider': 'codex', 'prompt': 'p'}], 'review_provider': provider}
             calls = {}
-            def claude(workspace, allowed, writable=True):
-                calls['claude'] = {'allowed': list(allowed), 'writable': writable}; return ['pinned-claude', '--tools', 'Read']
+            def claude(workspace, allowed, writable=True, model=None):
+                # Real signature, including the release's explicit model choice for this run.
+                calls['claude'] = {'allowed': list(allowed), 'writable': writable, 'model': model}
+                return ['pinned-claude', '--tools', 'Read']
             def codex(workspace, writable=True, allowed_paths=None):
                 calls['codex'] = {'writable': writable}; return ['codex', 'exec', '-']
             order = []
@@ -239,6 +244,7 @@ class AttemptRoleBindingTest(unittest.TestCase):
                  mock.patch.object(attempt, 'command', side_effect=codex), \
                  mock.patch.object(attempt, 'require_subscription', return_value={'subscriptionType': 'max'}), \
                  mock.patch('runtime.release.require_workspace_instructions', side_effect=lambda w: order.append('guard')), \
+                 mock.patch('runtime.release.require_active_code', return_value={'development': {'models': {'claude': MODEL_CHOICE}}}), \
                  mock.patch.object(attempt, 'environment', return_value={}), \
                  mock.patch.object(attempt, 'reserve_task_call', return_value=None), \
                  mock.patch.object(attempt.subprocess, 'Popen', side_effect=OSError('provider launch refused in this test')), \
@@ -250,7 +256,8 @@ class AttemptRoleBindingTest(unittest.TestCase):
 
     def test_claude_review_launch_is_read_only_with_the_host_schema(self):
         code, record, report, calls, order = self.launch('claude', active=True)
-        self.assertEqual(calls, {'claude': {'allowed': ['tools/a.py'], 'writable': False}})
+        self.assertEqual(calls, {'claude': {'allowed': ['tools/a.py'], 'writable': False, 'model': MODEL_CHOICE}},
+                         'the review runs as the model the active release selected')
         self.assertEqual(record['command'][:3], ['pinned-claude', '--tools', 'Read'])
         self.assertEqual(record['command'][-2], '--json-schema')
         self.assertEqual(json.loads(record['command'][-1]), review.SCHEMA)

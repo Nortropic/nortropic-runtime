@@ -6,6 +6,13 @@ from pathlib import Path
 from scripts.probe_bridge import ROOT, worker_command
 from .release import require_workspace_instructions
 
+# The Codex startup chain's ACTUAL specified model and reasoning effort, as worker_command() builds
+# them - not a presumed CLI default. Recorded here so a model choice has a real baseline to start
+# from; test_model_binding asserts these against worker_command() itself, so drift on either side
+# fails a test instead of silently changing which model runs.
+MODEL = 'gpt-6-astra'
+REASONING_EFFORT = 'high'
+
 
 def permissions(workspace, writable=True, allowed_paths=None):
     workspace = Path(workspace).resolve()
