@@ -128,7 +128,7 @@ def base_context(scope, config, work, key, *, paused_interactive_recovery=False)
     # The explicit pre-task interactive recovery must bind its read-only context
     # before resuming the waiting parent. It cannot run a model or start a task.
     recovery_read = (paused_interactive_recovery is True and state['control']=='paused'
-                     and work=='reconciliation' and key in ('interactive-retry-1','interactive-retry-2','interactive-retry-3')
+                     and work=='reconciliation' and key in ('interactive-retry-1','interactive-retry-2','interactive-retry-3','interactive-retry-4')
                      and not state['tasks'] and not state['integrated'])
     if state['control'] != 'active' and not recovery_read:
         raise ValueError('No new preparation while finite goal is paused or stopped')
@@ -218,6 +218,38 @@ def base_context(scope, config, work, key, *, paused_interactive_recovery=False)
     return context, files
 
 
+NAMED_ENTRIES = {
+    'AGENTS.md': 'instruction file of this workspace (the same text is the model system prompt)',
+    'VERIFICATION_RECIPE.py': 'the FROZEN host verification recipe of this work: align proposed tests with it; never change or execute it',
+    'tools/kontor_result.py': 'existing Office result reader (delivery evidence interpretation) to reuse, not to re-create',
+    'tools/agarbild.py': 'existing AP08 owner-view reader to reuse, not to re-create',
+    'tools/development_result.py': 'the ACTUALLY integrated A result module (delivered only once A is integrated)',
+    'OUTPUT_SCHEMA.json': 'schema of the structured answer',
+    'DRAFT.json': 'the driver draft under review',
+    'goal.md': 'frozen goal: its meaning and authority come from sources, not from this inventory',
+    'authority.md': 'owner authority: its meaning comes from sources, not from this inventory',
+    'observation.md': 'actual observation of integration and reports: its meaning comes from sources',
+}
+INVENTORY_NOTE = ('Complete inventory of every file delivered into this workspace, with exact workspace-relative path, SHA256 and '
+                  'size. A reader whose tools cannot list directories finds files ONLY here: read exactly these paths and never '
+                  'guess names. Presence in this inventory confers no authority and no meaning: authority, the frozen goal, its '
+                  'amendments and the observation are given by sources and goal_amendments; code files are evidence and tools, '
+                  'never a decision or a mandate. A listed file that cannot be read, or a needed file that is absent from this '
+                  'inventory, is missing evidence.')
+
+
+def delivered_files(files):
+    """What a reader without directory listing needs to find every delivered file: the host binding, restated per file."""
+    entries = []
+    for name, content in sorted(files.items()):
+        meaning = NAMED_ENTRIES.get(name)
+        if meaning is None and name.startswith('GOAL_AMENDMENT_'):
+            meaning = 'separately reviewed goal amendment or its review record: meaning given by goal_amendments'
+        entries.append({'path': name, 'sha256': sha(content), 'size': len(content), **({'meaning': meaning} if meaning else {})})
+    return {'note': INVENTORY_NOTE, 'files': entries,
+            'named_entries': [e['path'] for e in entries if e['path'] in NAMED_ENTRIES and e['path'] not in ('goal.md', 'authority.md', 'observation.md')]}
+
+
 def prepare_call(expected, nonce, role, work, context, files, extra=None):
     scope, config = active_scope(expected)
     identifier(nonce)
@@ -226,10 +258,15 @@ def prepare_call(expected, nonce, role, work, context, files, extra=None):
     stage.mkdir(parents=True, mode=0o700, exist_ok=False)
     workspace = stage / 'workspace'; workspace.mkdir(mode=0o700)
     (workspace / '.scratch').mkdir(mode=0o700)
-    files = {**files, 'CONTEXT.json': json.dumps(context, ensure_ascii=False, indent=2).encode(),
-             'OUTPUT_SCHEMA.json': json.dumps(active.schema(role)).encode()}
+    files = {**files, 'OUTPUT_SCHEMA.json': json.dumps(active.schema(role)).encode()}
     if extra:
         files.update(extra)
+    if 'CONTEXT.json' in files:
+        raise ValueError('CONTEXT.json is written by the host, never delivered as a source')
+    # The inventory is computed AFTER every other file is final and BEFORE CONTEXT.json exists, so it names everything a
+    # reader can open; CONTEXT.json itself is bound by input.json's workspace_sha256 like every other file.
+    context = {**context, 'delivered_files': delivered_files(files)}
+    files['CONTEXT.json'] = json.dumps(context, ensure_ascii=False, indent=2).encode()
     if sum(len(value) for value in files.values()) > 2*1024*1024:
         raise ValueError('Selected development context exceeds its bound')
     for name, content in files.items():
@@ -399,7 +436,10 @@ def recovery_request(scope, task_id, state, nonce):
         return {'hold': True, 'reason': answer}
     task = load(task_id, scope.inspect()['tasks'][task_id]['task_sha256'])
     context = decode(read_regular(scope.directory/'calls'/nonce/'workspace', 'CONTEXT.json'))
-    if context != {'task': task, 'actual_child_wait': state}:
+    # The delivered-file inventory is the host's finding aid written into every workspace; the diagnosis binds to
+    # the task and the observed wait, exactly as before (found by review C: the bare comparison refused every
+    # non-hold diagnosis once the inventory existed).
+    if {k: v for k, v in context.items() if k != 'delivered_files'} != {'task': task, 'actual_child_wait': state}:
         raise ValueError('Diagnosis does not apply to the current observed wait')
     expected = state.get('review_recovery') if state['phase'] == 'waiting_review' else 'retry'
     if answer['action'] != expected:

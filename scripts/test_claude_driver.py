@@ -420,6 +420,9 @@ class InteractiveExecuteTest(unittest.TestCase):
         argv = json.loads((self.home/'argv.json').read_text())
         self.assertEqual(argv[1:3], ['--session-id', session]); self.assertEqual(argv, launched[0][1:])
         self.assertIn('(two Ctrl-C)', argv[0]); self.assertEqual(argv[0], delivered['prompt'])
+        # The handover names the only way a reader without directory listing finds the delivered files (retry-3 hold, 2026-09-22).
+        self.assertIn('cannot list directories', delivered['prompt']); self.assertIn('CONTEXT.json delivered_files', delivered['prompt'])
+        self.assertIn('VERIFICATION_RECIPE.py', delivered['prompt']); self.assertIn('never guess names', delivered['prompt'])
         ended = json.loads((self.stage/'session-exit.json').read_text())
         self.assertEqual((ended['exit_code'], ended['process_absent'], ended['process_group_removed'], ended['session_source']),
                          (0, True, True, 'claude-interactive'))
