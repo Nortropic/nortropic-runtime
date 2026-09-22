@@ -33,6 +33,11 @@ from .snapshot import read_regular
 NONCE='interactive-start'
 RETRY='interactive-retry-1'
 RETRIES=(RETRY,'interactive-retry-2','interactive-retry-3')
+# ONE further interactive start, only for this commitment and only when the active configuration binds the owner's
+# separately reviewed decision (owner decision 2026-09-22 after the third retry ended correctly with `hold`). It is not
+# a general retry right: it requires the third retry's real completed result and hold answer, unchanged.
+EXTENSION='interactive-retry-4'
+EXTENSION_KEYS={'nonce','after','decision','decision_sha256','review','review_sha256'}
 # Global Claude state that can confer authority. Everything else in that file is
 # volatile bookkeeping the pinned TUI rewrites on every honest start (measured).
 CLAUDE_AUTHORITY_KEYS=('hasTrustDialogAccepted','allowedTools','mcpServers','enabledMcpjsonServers',
@@ -44,12 +49,41 @@ def binding_name(nonce):
     return 'interactive-retry.json' if nonce==RETRY else nonce+'.json'
 
 
-def selected_nonce(scope):
+def extension(config):
+    """The bound extra interactive start of the active configuration, verified against its decision and review, or None."""
+    bound=(config.get('development') or {}).get('interactive_extension')
+    if bound is None:return None
+    if (not isinstance(bound,dict) or set(bound)!=EXTENSION_KEYS or bound['nonce']!=EXTENSION or bound['after']!=RETRIES[-1]
+            or not all(isinstance(bound[k],str) and bound[k] for k in EXTENSION_KEYS)):
+        raise ValueError('Exact reviewed interactive extension binding required')
+    directory=Path(config['directory'])/'development-context'
+    for name,expected in ((bound['decision'],bound['decision_sha256']),(bound['review'],bound['review_sha256'])):
+        if Path(name).name!=name or host.sha(read_regular(directory,name))!=expected:
+            raise ValueError('Interactive extension decision or review changed')
+    review=decode(read_regular(directory,bound['review']))
+    if (not isinstance(review,dict) or review.get('verdict')!='approved' or review.get('blocking_findings')!=[]
+            or review.get('extends')!=EXTENSION or review.get('after')!=RETRIES[-1] or review.get('decision_sha256')!=bound['decision_sha256']):
+        raise ValueError('Interactive extension is not separately approved')
+    return bound
+
+
+def previous_hold(scope):
+    """The third retry's real end: a completed session whose answer was `hold`, never rewritten."""
+    stage=scope.directory/'calls'/RETRIES[-1]
+    prior=read_regular(stage,'result.json');result=decode(prior)
+    answer=read_regular(stage/'workspace','.scratch/answer.json')
+    if (result.get('completed') is not True or result.get('process_group_removed') is not True
+            or not result.get('provider',{}).get('thread_id') or decode(answer).get('action')!='hold'):
+        raise ValueError('The extension follows only a completed interactive session that answered hold')
+    return prior,answer
+
+
+def selected_nonce(scope,config=None):
     selected=NONCE
     for nonce in RETRIES:
         path=scope.directory/binding_name(nonce)
         if not path.exists():
-            if any((scope.directory/(later+'.json')).exists() for later in RETRIES[RETRIES.index(nonce)+1:]):
+            if any((scope.directory/(later+'.json')).exists() for later in (*RETRIES[RETRIES.index(nonce)+1:],EXTENSION)):
                 raise ValueError('Earlier interactive retry binding missing')
             return selected
         binding=decode(read_regular(scope.directory,path.name))
@@ -63,15 +97,32 @@ def selected_nonce(scope):
                 or host.sha(read_regular(scope.directory/'calls'/nonce,'input.json'))!=binding['input_sha256']):
             raise ValueError('Interactive retry evidence changed')
         selected=nonce
-    return selected
+    path=scope.directory/binding_name(EXTENSION)
+    if not path.exists():return selected
+    binding=decode(read_regular(scope.directory,path.name))
+    if (set(binding)!={'previous','nonce','diagnosis','previous_result_sha256','previous_answer_sha256','decision_sha256','review_sha256','input_sha256'}
+            or binding['previous']!=RETRIES[-1] or binding['nonce']!=EXTENSION
+            or not isinstance(binding['diagnosis'],str) or not binding['diagnosis'].strip()):
+        raise ValueError('Exact host interactive extension binding required')
+    prior,answer=previous_hold(scope)
+    if (host.sha(prior)!=binding['previous_result_sha256'] or host.sha(answer)!=binding['previous_answer_sha256']
+            or host.sha(read_regular(scope.directory/'calls'/EXTENSION,'input.json'))!=binding['input_sha256']):
+        raise ValueError('Interactive extension evidence changed')
+    if config is not None:
+        bound=extension(config)
+        if bound is None or (bound['decision_sha256'],bound['review_sha256'])!=(binding['decision_sha256'],binding['review_sha256']):
+            raise ValueError('Interactive extension binding is not the activated one')
+    return EXTENSION
 
 
 def prepare_retry(expected,reason):
     scope,config=active_scope(expected);state=scope.inspect()
-    previous=selected_nonce(scope)
-    if (state['control']!='paused' or state['tasks'] or previous==RETRIES[-1]
+    previous=selected_nonce(scope,config)
+    if (state['control']!='paused' or state['tasks'] or previous==EXTENSION
             or not isinstance(reason,str) or not reason.strip()):
         raise ValueError('Only explicit diagnosed pre-task paused interactive recovery')
+    if previous==RETRIES[-1]:
+        return prepare_extension(scope,config,expected,reason)
     nonce=RETRIES[0] if previous==NONCE else RETRIES[RETRIES.index(previous)+1]
     stage=scope.directory/'calls'/previous
     if not (stage/'result.json').exists():raise ValueError('Previous interactive attempt has not ended')
@@ -90,24 +141,46 @@ def prepare_retry(expected,reason):
     return request
 
 
+def prepare_extension(scope,config,expected,reason):
+    """The single extra start after a third retry that ended correctly with hold. Nothing of that session is rewritten."""
+    bound=extension(config)
+    if bound is None:raise ValueError('No further interactive start: the three retries are exhausted')
+    prior,answer=previous_hold(scope)
+    ended=decode(read_regular(scope.directory/'calls'/RETRIES[-1],'session-exit.json'))
+    if ended.get('process_absent') is not True or process_identity(ended['provider_pid']):
+        raise ValueError('Previous interactive process must be verifiably absent')
+    try:os.killpg(ended['provider_pid'],0)
+    except ProcessLookupError:pass
+    else:raise ValueError('Previous interactive process group remains')
+    context,files=host.base_context(scope,config,'reconciliation',EXTENSION,paused_interactive_recovery=True)
+    request=host.prepare_call(expected,EXTENSION,'driver','reconciliation',context,files)
+    write(scope.directory/binding_name(EXTENSION),{'previous':RETRIES[-1],'nonce':EXTENSION,'diagnosis':reason,
+        'previous_result_sha256':host.sha(prior),'previous_answer_sha256':host.sha(answer),
+        'decision_sha256':bound['decision_sha256'],'review_sha256':bound['review_sha256'],'input_sha256':request['input_sha256']})
+    return request
+
+
 def pending(expected):
     """The host-selected retry whose call never reached its consumed receipt, else None.
 
     Nothing was reserved or started for it, so delivering the same bound request
     again replays nothing; a refusal before consumption can never strand a slot.
     """
-    scope,_=active_scope(expected);nonce=selected_nonce(scope);stage=scope.directory/'calls'/nonce
+    scope,config=active_scope(expected);nonce=selected_nonce(scope,config);stage=scope.directory/'calls'/nonce
     if nonce==NONCE or (stage/'consumed.json').exists() or (stage/'result.json').exists():return None
     return {'contract_sha256':expected,'nonce':nonce,'input_sha256':host.sha(read_regular(stage,'input.json'))}
 
 
 def retry_evidence(scope,nonce):
     """Every binding and every earlier attempt's actual end, for the whole selected chain."""
-    chain=(NONCE,*RETRIES);files={}
+    chain=(NONCE,*RETRIES,EXTENSION);files={}
     for index,earlier in enumerate(chain[:chain.index(nonce)]):
         files['interactive/RETRY_BINDING.json' if index==0 else 'interactive/RETRY%d_BINDING.json'%(index+1)]=read_regular(scope.directory,binding_name(chain[index+1]))
         for name in ('session-exit.json','result.json'):
             files['interactive/'+('previous-' if index==0 else 'retry%d-'%index)+name]=read_regular(scope.directory/'calls'/earlier,name)
+        if chain[index+1]==EXTENSION:
+            # The whole-goal reviewer sees the hold that the extension follows, exactly as answered.
+            files['interactive/retry%d-answer.json'%index]=read_regular(scope.directory/'calls'/earlier/'workspace','.scratch/answer.json')
     return files
 
 
@@ -272,6 +345,8 @@ def execute(request):
     require_workspace_instructions(workspace)
     prompt=(data['prompt']+'\nYou are now the sole interactive chain driver for the remaining A preparation. '
             'Independently derive the concrete A draft; none has been prepared for you. '
+            'Your file tools cannot list directories: CONTEXT.json delivered_files is the complete inventory of this workspace, '
+            'with the exact path of the frozen recipe VERIFICATION_RECIPE.py and of the result readers under tools/; open those paths, never guess names. '
             'Read the actual inputs and frozen recipe; reason about necessity, scope and verification. '
             'Write your structured driver answer matching OUTPUT_SCHEMA.json to .scratch/answer.json. '
             'This is data, not executable acceptance. Do not prepare B, implement code, start tasks or signal Runtime. '

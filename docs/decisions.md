@@ -655,3 +655,55 @@ native service identity cannot: the daemon creates it when absent). A current-so
 continuity anchor that never expires is a separate, later increment. Nothing in the repository writes `historical_archives`: only
 a separately reviewed controlled release transition stages verified archives. Executions
 of a release activated before this change cannot be started again at all.
+
+## AP11-DISCOVERABILITY — 2026-09-22: a delivered file the reader cannot find is not delivered
+
+Measured on the third interactive retry of the AP11 application: the restricted
+interactive Claude profile (Read and Write, one scratch grant, no directory listing)
+opened the seven files that CONTEXT.json named, then tried some fifty guessed names, and
+answered `hold` because the verification recipe and the result readers were "missing".
+They were present: VERIFICATION_RECIPE.py, tools/kontor_result.py, tools/agarbild.py and
+AGENTS.md were delivered and bound by the host (input.json workspace_sha256), but no text
+the reader could see named them. The earlier Codex driver had listed the directory with
+its shell. The stop was controlled (the parent waits for host diagnosis), the cause is
+the host's context delivery and its fit with the restricted profile, not a missing
+mandate and not a candidate fault in A. The third retry stays as it ended: completed,
+hold, its answer and traces untouched.
+
+Decision: every workspace the host delivers carries, inside CONTEXT.json, the host's
+existing file binding restated as `delivered_files`: every delivered file with its exact
+workspace-relative path, SHA256 and size, plus named entries for the frozen recipe, the
+result readers, the instruction file and the answer schema. It is built at the single
+delivery point (prepare_call), so the driver, the preparation reviewer, the diagnosis
+role and the whole-goal reviewer all read through it. The inventory is a finding aid,
+not authority: the meaning of authority, goal, amendments and observation still comes
+from `sources` and `goal_amendments`, which the Office policy keeps exactly as before.
+The Office policy's common role instructions name the files and the limit of the tools
+(a separate Office change). Nothing is added to the profiles: no listing tool, shell,
+network or write grant. Hold remains the right answer when source or authority is truly
+insufficient; the model is not told to always propose.
+
+Measured with the actual profiles on a synthetic workspace shaped like a real delivery,
+every file carrying a random marker (qualification consumption, separate from the
+application; no draft of A, no answer key): the interactive profile opened all ten
+inventoried files and reported every marker, twice (the second run also through the
+one writable answer file); the print profile with Read and structured output reported
+every marker; with the recipe listed but absent it reported that path as unreadable
+and invented nothing. The host's own binding refuses a missing or changed delivered
+file before any model call, as before.
+
+Owner decision of the same day: one further interactive start for this commitment,
+interactive-retry-4, after the third retry ended correctly with hold. It exists only
+when the active configuration binds the owner's decision document and its separate
+review (`development.interactive_extension`), and only after a third retry whose
+result is completed with the answer hold: the binding carries the SHA256 of that
+result and of that answer, so nothing of the earlier session is rewritten, and a
+different decision does not fit the binding. Four consumed calls, the ceilings of
+48 model calls and 6 implementation attempts, every identity and the journal stand.
+It is not a general retry right: no fifth start exists, and a next stop is preserved
+as it falls. The whole-goal reviewer receives the hold answer and the fourth binding.
+
+Limits: the probe used synthetic contents; the real fourth session is a real run. The
+interactive profile still cannot list directories by design; a file that no text names
+remains undiscoverable, which is why the inventory is complete by construction.
+

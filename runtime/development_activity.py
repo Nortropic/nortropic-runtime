@@ -130,7 +130,7 @@ def development_step(request: dict) -> dict:
         return {'control_wait': True, 'control': control}
     if operation == 'interactive':
         from .development_interactive import selected_nonce
-        nonce=selected_nonce(scope);stage=scope.directory/'calls'/nonce
+        nonce=selected_nonce(scope,config);stage=scope.directory/'calls'/nonce
         if not (stage/'result.json').exists():
             return {'interactive_wait':True}
         result=host.call_result(scope,nonce,'driver')

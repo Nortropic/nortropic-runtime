@@ -1,3 +1,15 @@
+# AP11 — release 52ee556a-3c1c992a active with claude in every role; third interactive retry ended with hold; discoverability fix and one bound extra start under construction
+
+2026-09-22T08:10Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**
+The release transition was activated by the owner at 05:08Z. The Claude executor and reviewer ran a real
+Runtime task through the daemon (PR35). interactive-retry-3 ran and answered hold; the parent waits for
+host diagnosis; cause and decision in decisions AP11-DISCOVERABILITY. This candidate: the delivered-file
+inventory at the single delivery point, the handover text naming it, and the bound single extra
+interactive start (tests: scripts/test_discoverability.py). Its Office counterpart changes the common
+role instructions (tools/development_policy.py). Activation of both needs a new reviewed transition.
+
+Previous plan text (2026-09-21) follows unchanged.
+
 # AP11 — executor-neutral roles under construction; application paused at 3/48
 
 2026-09-21T14:40Z. Claude Code is sole Runtime/Office writer after a receiver-verified

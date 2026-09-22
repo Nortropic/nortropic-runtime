@@ -73,7 +73,7 @@ def prepare(scope,config,key):
     files['SCOPE.json']=json.dumps(state).encode()
     files['SCOPE_JOURNAL.json']=json.dumps([decode(line) for line in read_regular(scope.directory,'journal.jsonl').splitlines()]).encode()
     from .development_interactive import selected_nonce, retry_evidence
-    nonce=selected_nonce(scope);stage=scope.directory/'calls'/nonce
+    nonce=selected_nonce(scope,config);stage=scope.directory/'calls'/nonce
     files.update(retry_evidence(scope,nonce))
     for name in ('input.json','interactive-input.json','session-exit.json','result.json'):
         files['interactive/'+name]=read_regular(stage,name)
