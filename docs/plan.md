@@ -1,3 +1,17 @@
+# AP11 — host recovery active; the review stalls because the host never finishes handing over its prompt
+
+2026-09-22T18:40Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**
+The host-recovery release is active (runtime ff9d336a, configuration 9a62788d) and did what it was built to do,
+measured live: the host answer released the wait without spending an interactive start, the parent re-diagnosed, the
+diagnosis produced a continuation, the child re-ran its review, and one host fact authorised exactly one
+continuation — the parent is parked at `waiting_host_diagnosis` sequence 18, not looping. Consumption is 15 of 48.
+Review 2 was then cut off at 302.0 s under the raised 300 s bound with a zero-byte event stream, exactly as review 1
+was at 182.2 s under 180 s. The bound was never the cause. This candidate corrects the cause: the host abandoned a
+partially written prompt and never closed stdin, so the provider waited for an EOF that never came. See decisions
+AP11-PROMPT-DELIVERY. Reviews 1 and 2 stay preserved as incomplete; nothing restarts from an interactive start and
+the frozen review bound is left untouched. Activation needs a new reviewed transition; after it, the waiting
+diagnosis is answered again through the same reviewed host-answer path.
+
 # AP11 — release de89de0e-23692bde active; the sixth start's review was cut off at its host bound; host recovery under construction
 
 2026-09-22T13:40Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**

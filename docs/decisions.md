@@ -707,6 +707,63 @@ Limits: the probe used synthetic contents; the real fourth session is a real run
 interactive profile still cannot list directories by design; a file that no text names
 remains undiscoverable, which is why the inventory is complete by construction.
 
+## AP11-PROMPT-DELIVERY — 2026-09-22: the host must hand the provider its whole prompt
+
+Measured on the live application after the host-recovery release was activated. The host answer released the wait,
+the parent re-diagnosed, the diagnosis produced a continuation and the child re-ran its review — the chain moved.
+Review 2 then ended exactly as review 1 had: exit 124, `interrupted: deadline`, at 302.0 s under the raised 300 s
+bound, with a **zero-byte event stream and an empty stderr** while the process had started. Review 1 did the same at
+182.2 s under 180 s.
+
+So the raised review bound did not solve this cause and was never going to: it turned 182.2 s into 302.0 s and
+changed nothing else. The frozen bound is left exactly as it is — not reverted, not quietly adjusted — because it is
+a separate, reviewed decision about how long a review may take, and nothing here contradicts it.
+
+What the cause is, measured rather than reasoned. The same invocation, the same workspace and a prompt of the same
+shape and size (19777 bytes) answer in seconds when the prompt is written and stdin closed up front: init at 2.0 s,
+the assistant producing within 9 s. The account's quota was not blocking. So the invocation, the prompt, the
+workspace and the quota are all sound, and the difference is how the host delivers the prompt. `attempt.py` handed
+it over with `communicate(first_input, timeout=min(1, remaining))` inside a one-second polling loop, setting
+`first_input = None` after the first `TimeoutExpired`. If that first call's timeout fires before the write has
+finished, the rest of the prompt is never written and stdin is never closed — so the child waits for an EOF that
+never arrives, emits nothing, and is killed at the deadline. Reproduced without a model: a child that reads at once
+receives the whole payload on the first pass; a child busy for three seconds first receives nothing at all, thirty
+one-second passes in a row. CPython issue 141473 describes the same mechanism. Neither that issue nor the
+reproduction is treated as proof that this correction works; the tests exercise the corrected function itself.
+
+Decision: one `transfer(proc, payload, command, seconds, started, control=None)` does the delivery for both the
+scope-reserved and the plain run. It writes to a non-blocking descriptor, one write per pass, closes stdin as soon
+as the payload is exhausted, and only then waits. The delivery is deliberately NOT a blocking write: it stays inside
+the run's own `seconds` and re-reads the scope control on every pass, so a stop is honoured while the prompt is
+still going out and a child that never reads is ended by the run's own deadline rather than by anything new. A child
+that ends early surfaces as a broken pipe, its own result decides the outcome, and process cleanup is unchanged.
+
+A separate review then reproduced the defect in the LIVE output shape — the recorded reproduction had used a piped
+stdout, which is not what `execute` does — and measured the number that makes it fatal: a subprocess stdin pipe
+stalls at 16384 bytes on this host while `communicate` writes it in 512-byte chunks, so the 19777-byte review prompt
+was just past the ceiling and 3393 bytes were abandoned. A prompt below that ceiling would not have failed, which is
+why the implementation run on the same task succeeded. The same review found three things wrong with this
+correction's own work, all fixed here: a stop signal arriving during the stdin close was swallowed, because
+`InterruptedError` is an `OSError`; a comment claimed a child that ended always surfaces as a broken pipe, which is
+untrue when a descendant still holds the read end; and the single most important property had no red guard, since
+neutering the non-blocking write made the suite hang rather than fail.
+
+Tests: `scripts/test_prompt_delivery.py` (9), all with model-free children and a payload well past where a stdin
+pipe stalls, so a delayed transfer is really exercised rather than a message that fits in one write. Every run is
+bounded by its own watchdog, so a delivery that blocks fails instead of hanging the suite. A child that reads at once
+and a child that starts late both receive a byte-identical payload and an EOF; a child that never reads meets the
+run's deadline and is reaped; a child that exits early is not recorded as the host failing; a stop during the
+transfer is honoured; a paused scope keeps sending, because a started run may finish. One of them drives the real
+`execute` path with a model-free provider, because `transfer` being correct is not the same as the run using it —
+a mutant that emptied the payload at that call site survived the whole suite until that test existed. Nine in-place mutants, all killed,
+each by a test that names the broken behaviour; the guard against swallowing a stop signal is measured directly,
+without a child, so it cannot pass or fail by ordering.
+
+Limits: this corrects the delivery, not the review itself. What it makes possible is that the real review process
+receives its whole brief and returns a judgeable verdict. A rejection with concrete findings is a working review
+result; nothing here is aimed at producing an approval. The earlier reviews 1 and 2 stay preserved as incomplete,
+and a missing review stays a missing review, never an approval.
+
 ## AP11-HOST-RECOVERY — 2026-09-22: a host failure is named as one, and the host can answer its own diagnosis
 
 Measured on the sixth and last approved interactive start: its task's candidate passed the frozen acceptance recipe,

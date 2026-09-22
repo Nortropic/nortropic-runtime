@@ -1,6 +1,7 @@
 """One bounded provider process, no retry loop. Host evidence stays outside candidate."""
 import fcntl
 import hashlib
+import select
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,64 @@ from .claude_profile import command as claude_command, require_subscription
 from .review import strict_object
 from .development_binding import reserve_task_call
 from .development_scope import ScopeClosed
+
+
+def transfer(proc, payload, command, seconds, started, control=None):
+    """Deliver the whole prompt, close stdin, then wait - all inside the run's OWN bound and stop check.
+
+    Measured on the live application 2026-09-22 and reproduced without a model: subprocess.communicate(input,
+    timeout) abandons a partially written input when its timeout fires, and never closes stdin. A child that is
+    slow to start reading therefore receives nothing, emits nothing, and is killed at the deadline with an empty
+    event stream - which is exactly what both review runs of ap11-step-5 did, at 182.2 s and again at 302.0 s under
+    a raised bound. CPython issue 141473 describes the same mechanism; the local reproduction is what this is fixed
+    against, and neither is taken as proof that this correction works - the tests exercise this function itself.
+
+    The transfer must stay bounded and stoppable: it is NOT replaced by a blocking write, which could hang before
+    any control check ran. One non-blocking write per pass, the scope control re-read every pass, the run's own
+    deadline enforced every pass, and process cleanup left to the caller.
+    """
+    pending = memoryview(payload)
+    descriptor = proc.stdin.fileno()
+    os.set_blocking(descriptor, False)
+
+    def sent():
+        try:
+            proc.stdin.close()
+        except InterruptedError:
+            raise                       # a stop signal is never swallowed by the close (BrokenPipeError is an OSError)
+        except OSError:
+            pass
+
+    while True:
+        if control is not None:
+            state = control()
+            if state not in ('active', 'paused'):
+                raise ScopeClosed('Active scoped process stopped: ' + state)
+        remaining = seconds - (time.monotonic() - started)
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(command, seconds)
+        if pending is not None:
+            # A child that ended before taking the whole prompt surfaces as BrokenPipeError on the next write IF
+            # nothing else holds the read end. Where a descendant inherited it and never reads, the run instead meets
+            # its own deadline below - bounded and stoppable either way, and the same as the plain path has always
+            # behaved. Measured by review N.
+            ready = select.select([], [descriptor], [], min(1, remaining))[1]
+            if ready:
+                try:
+                    pending = pending[os.write(descriptor, pending):]
+                except BlockingIOError:
+                    continue
+                except BrokenPipeError:
+                    sent(); pending = None
+                    continue
+                if not len(pending):
+                    sent(); pending = None
+            continue
+        try:
+            proc.wait(timeout=min(1, remaining))
+            return
+        except subprocess.TimeoutExpired:
+            pass
 
 
 def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=None, role="implementation", workspace_name=None, provider="codex"):
@@ -96,22 +155,10 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                     reservation[0].launch(reservation[1], launch)
                 else:
                     launch()
-                if reservation:
-                    first_input = prompt.encode()
-                    while True:
-                        control = reservation[0].inspect()['control']
-                        if control not in ('active', 'paused'):
-                            raise ScopeClosed('Active scoped process stopped: ' + control)
-                        remaining = seconds - (time.monotonic() - started)
-                        if remaining <= 0:
-                            raise subprocess.TimeoutExpired(record['command'], seconds)
-                        try:
-                            proc.communicate(first_input, timeout=min(1, remaining))
-                            break
-                        except subprocess.TimeoutExpired:
-                            first_input = None
-                else:
-                    proc.communicate(prompt.encode(), timeout=seconds)
+                # One delivery path for both: the scope-reserved run re-reads its control every pass, the plain
+                # run has none to read, and neither can lose part of the prompt or leave stdin open.
+                transfer(proc, prompt.encode(), record['command'], seconds, started,
+                         control=(lambda: reservation[0].inspect()['control']) if reservation else None)
                 code = proc.returncode
         except subprocess.TimeoutExpired:
             code, interrupted = 124, 'deadline'
