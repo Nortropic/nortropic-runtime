@@ -504,7 +504,11 @@ def review_attempts(task_id):
 # to a host-derived value below rather than delivered. A field belongs here only if the host itself measured it AND
 # its value comes from the host's own vocabulary. `interrupted` qualifies only because it is classified below: found
 # by review L, attempt.py sets it to str(error) on a host error, which carries an absolute path.
-RUN_FIELDS = ('attempt', 'elapsed_seconds', 'exit_code', 'provider_completed', 'model_started', 'process_group_removed')
+# 'model' and 'reported_model' are named model ids, not host text: which model was started and which one the
+# provider said it was. A release that changes only the selection keeps the same runtime_revision, so without
+# these a diagnosis could not tell two otherwise identical runs apart.
+RUN_FIELDS = ('attempt', 'elapsed_seconds', 'exit_code', 'provider_completed', 'model_started', 'process_group_removed',
+              'model', 'reported_model')
 REVIEW_RUN_FIELDS = RUN_FIELDS            # the name the earlier releases used for this set
 # Every value attempt.py assigns to `interrupted` from its own words. Anything else is a host error string.
 HOST_INTERRUPTIONS = ('deadline', 'signal', 'active instruction/configuration binding changed')

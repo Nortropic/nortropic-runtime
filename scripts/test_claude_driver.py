@@ -99,8 +99,10 @@ class StructuredCallTest(unittest.TestCase):
         source = ('import json,sys\nopen("../seen-argv.json","w").write(json.dumps(sys.argv[1:]))\n'
                   'for e in '+repr(events)+': print(json.dumps(e),flush=True)\nsys.exit('+str(code)+')')
         order = []
-        def claude(workspace, allowed, writable=True):
-            order.append(('command', tuple(allowed), writable)); return [sys.executable, '-u', '-c', source]
+        def claude(workspace, allowed, writable=True, model=None):
+            # The double carries the real signature, including the release's explicit model choice: a
+            # stub that silently accepted anything would hide a selection that never reached the profile.
+            order.append(('command', tuple(allowed), writable, model)); return [sys.executable, '-u', '-c', source]
         with patch.object(model, 'active_scope', return_value=(self.scope, config)), \
              patch.object(model, 'claude_command', side_effect=claude), \
              patch.object(model, 'command', side_effect=AssertionError('Codex profile must not be built for a claude role')), \
@@ -112,7 +114,7 @@ class StructuredCallTest(unittest.TestCase):
     def test_measured_terminal_completes_read_only_with_the_host_schema(self):
         result, order = self.run_fixture(self.rows())
         self.assertTrue(result['completed'], result); self.assertEqual(result['answer'], {'action': 'hold'})
-        self.assertEqual(order[:3], ['subscription', 'guard', ('command', (), False)])
+        self.assertEqual(order[:3], ['subscription', 'guard', ('command', (), False, claude_profile.MODEL)])
         # The delivered role schema itself, not a file name or the review schema, constrains the answer.
         self.assertEqual(json.loads((self.stage/'seen-argv.json').read_text()), ['--json-schema', json.dumps(self.schema)])
         self.assertEqual(json.loads((self.workspace/'OUTPUT_SCHEMA.json').read_text()), self.schema)
@@ -431,6 +433,35 @@ class InteractiveExecuteTest(unittest.TestCase):
                          next((self.home/'.claude/projects').glob('*/'+session+'.jsonl')).read_bytes())
         self.assertEqual(host.call_result(self.scope, interactive.NONCE, 'driver'), result)
         self.assertEqual([c['nonce'] for c in self.scope.inspect()['calls']], [interactive.NONCE])
+
+    def test_a_session_started_on_the_releases_chosen_model_is_accepted_as_completed(self):
+        """The launch and the completion check must read ONE value, through the real execute().
+
+        Independent review found the first version of the model binding launching the TUI with the
+        release's choice while claude_completed still compared against the hardcoded default - a session
+        that did exactly what it was told would have been recorded as a failure and burned an interactive
+        start, the scarcest resource in the mission. Testing claude_completed alone does not catch a call
+        site that stops passing the model, so this drives the whole path.
+        """
+        chosen = 'claude-opus-5'
+        rows = copy.deepcopy(SESSION['rows'])
+        for row in rows:
+            if row.get('type') == 'assistant' and isinstance(row.get('message'), dict):
+                row['message']['model'] = chosen
+        (self.home / 'rows.json').write_text(json.dumps(rows))
+        selected = copy.deepcopy(ALL_CLAUDE); selected['development']['models'] = {'claude': chosen}
+        result, _, launched = self.run_session('honest', config=selected)
+        self.assertTrue(result['completed'], result)
+        self.assertEqual(launched[0][launched[0].index('--model') + 1], chosen,
+                         'the session was started as the chosen model')
+        self.assertEqual(result['provider']['valid_terminal'], True)
+
+    def test_a_session_that_ran_a_different_model_than_the_release_chose_is_not_completed(self):
+        """The other direction: the agreement must not be achieved by checking nothing."""
+        selected = copy.deepcopy(ALL_CLAUDE); selected['development']['models'] = {'claude': 'claude-opus-5'}
+        result, _, _ = self.run_session('honest', config=selected)   # rows still report the default model
+        self.assertFalse(result['completed'])
+        self.assertIn('pinned CLI and model', result['reason'])
 
     def test_honest_bookkeeping_and_another_sessions_entry_do_not_fail_the_handoff(self):
         result, _, _ = self.run_session('bookkeeping')

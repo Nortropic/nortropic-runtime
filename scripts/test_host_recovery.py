@@ -299,8 +299,13 @@ class DiagnosisDeliveryTests(unittest.TestCase):
             self.assertNotIn(secret, delivered, 'no host account, path or reservation material reaches a model workspace')
         # Review L: an assertion derived from the whitelist cannot detect a change to the whitelist. This pins the
         # tuple itself, so ANY field added to it fails here and has to be argued for in the open.
+        # Argued in the open, 2026-09-22: 'model' and 'reported_model' were added when the model became a
+        # release-bound selection. They are named model ids - which model the host started, and which one the
+        # provider said it was - not host text, paths or account material. Without them a diagnosis cannot
+        # tell two runs apart at all, because a release that changes only the selection keeps the same
+        # runtime_revision, which previously implied the model.
         self.assertEqual(host.RUN_FIELDS, ('attempt', 'elapsed_seconds', 'exit_code', 'provider_completed',
-                                           'model_started', 'process_group_removed'),
+                                           'model_started', 'process_group_removed', 'model', 'reported_model'),
                          'the delivered whitelist is exactly these host-measured scalars')
         self.assertEqual(set(first), {'review_number', 'note', 'bound_seconds', 'events_bytes', 'events_lines',
                                       'permission_denials', 'usage_reported', 'interrupted', *host.RUN_FIELDS} & set(first),
