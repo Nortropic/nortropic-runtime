@@ -1,3 +1,20 @@
+# AP11 — release de89de0e-23692bde active; the sixth start's review was cut off at its host bound; host recovery under construction
+
+2026-09-22T13:40Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**
+The parent `office-ap11` waits in `waiting_host_diagnosis` at sequence 12 and the child `ap11-step-5` in
+`waiting_review` (measured 12:26Z; scope active, 12 of 48 calls consumed, no approved interactive start left, and
+`interactive-retry` is itself refused while the parent has a child); both are preserved, unreset, and measured to
+replay identically under this candidate. The waiting diagnosis answered hold and named what it lacked: the review
+run's own evidence, a resolution of a misleading host message, and the readers the goal names. This candidate
+answers all three (the review run's own record, written by the host from its own files, with the provider's denials
+reduced to a count, its usage to a boolean and a host error string classified rather than passed through; the gate
+message; the named readers), narrows the implementation attempts through the same record, derives and raises the review model bound (180 -> 300 s
+inside the unchanged 360 s envelope), and adds `development_control continue`: a recorded host answer that spends no
+interactive start and that authorizes exactly one re-run of an interrupted review, while the model still decides. Tests: scripts/test_host_recovery.py. See decisions
+AP11-HOST-RECOVERY. Activation needs a new reviewed transition; after it, the host answers the waiting diagnosis
+with the raised bound as the changed prerequisite, the child re-runs its review under the new bound, and the chain
+continues on its own.
+
 # AP11 — release 3cc1f945-5ea26473 active; fourth interactive start answered a task the policy refused on depends_on; answer contract made coherent, one further bound start under construction
 
 2026-09-22T10:30Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**

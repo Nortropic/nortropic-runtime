@@ -22,6 +22,21 @@ def activity_seconds(task, kind):
     return {'implementation': 1500, 'review': 360, 'publication': 1500}[kind]
 
 
+# The model's own bound inside the review activity. Measured 2026-09-22: a whole-task review with a structured answer
+# was cut off by the host guardian at 182.2 s against this bound, leaving no verdict at all, while the activity envelope
+# for a development review is 360 s. The larger bound stays well inside that envelope, so the host keeps time for its own
+# work; a task without the finite-goal binding keeps exactly its former 180 s under its own 210 s envelope.
+REVIEW_MODEL_SECONDS = 180
+DEVELOPMENT_REVIEW_MODEL_SECONDS = 300
+
+
+def model_seconds(task, kind):
+    if kind != 'review':
+        raise ValueError('Only the review model bound is derived here')
+    bound = DEVELOPMENT_REVIEW_MODEL_SECONDS if task.get('development') else REVIEW_MODEL_SECONDS
+    return min(bound, task['attempt_seconds'])
+
+
 def for_task(task):
     selected = task.get('development')
     if selected is None:

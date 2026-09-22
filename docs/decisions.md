@@ -707,6 +707,175 @@ Limits: the probe used synthetic contents; the real fourth session is a real run
 interactive profile still cannot list directories by design; a file that no text names
 remains undiscoverable, which is why the inventory is complete by construction.
 
+## AP11-HOST-RECOVERY — 2026-09-22: a host failure is named as one, and the host can answer its own diagnosis
+
+Measured on the sixth and last approved interactive start: its task's candidate passed the frozen acceptance recipe,
+and the separate review was then killed by the host guardian at 182.2 s against a 180 s model bound (exit 124,
+interrupted deadline, an empty event stream) and produced no verdict. The parent `office-ap11` has stood in
+`waiting_host_diagnosis` since, at sequence 12, with the child `ap11-step-5` in `waiting_review`; twelve of the
+forty-eight calls are consumed and no approved interactive start remains. `interactive-retry` is itself refused while
+the parent has a child, so this wait had no exit at all.
+
+The diagnosis answered `hold`, correctly, and said in its own words what it lacked: the review run's own evidence
+directory, so that the cause of the deadline hit could be told apart from a provider stall; a resolution of the
+host's `waiting_reason`, which read `Stale or mismatched evidence: task_id` and described an identity mismatch where
+a host interruption had happened; and the readers the frozen goal names, which every other role receives and it did
+not. All three are host defects in how the host describes itself and what it hands the role that must judge.
+
+Decision.
+1. The review model bound is derived (`model_seconds`) and raised from 180 to 300 s for a task carrying the finite
+   development binding, inside the unchanged 360 s activity envelope and never above the task's own attempt bound;
+   a task without that binding keeps exactly its former bound.
+2. `require_gate` checks completeness and scope before identity and names them, so an unfinished review reads
+   `Mandatory review evidence unfinished or wrong scope: incomplete`.
+3. The diagnosis receives `host_bounds` (the bounds of the ACTIVE release, stated as `undetermined` rather than
+   raising, because a diagnosis must never fail because the host could not describe itself), the host's own earlier
+   answers as `HOST_DIAGNOSIS_ANSWERS.json`, the host's own record of each recent review run as
+   `review-N-run.json`, the same record for each recent implementation attempt as `previous-N-run.json`, and the
+   readers the goal names. The raw run files are deliberately not delivered: the event stream's name is not one the
+   delivery point accepts; `launch.json` carries the host's own account state, absolute host paths, the provider argv
+   and process ids; and `result.json` carries the provider's own usage, denied tool calls, thread id, reported cost,
+   the run's evidence path and its scope reservation. The record carries the bound that applied, how long the run
+   took, how it ended, the stream's size in bytes and, when the host can read it, its line count. An empty stream is
+   reported as empty, because the emptiness is the evidence. Three provider-written values are reduced rather than
+   delivered: `permission_denials` becomes a count, because its tool input is the interrupted model's own text and
+   was measured on this host to contain an absolute path; `usage` becomes a boolean; and `interrupted` is passed
+   through only when it is one of the host's own words, because the host sets it to the text of an OSError on a
+   failed start, which also carries an absolute path. A run the host cannot read is reported as unreadable rather
+   than omitted, so the diagnosis can tell that from a run that never happened, which yields no record at all. What
+   this bounds is the record; it is not a claim about the whole workspace — see Limits.
+4. `development_control continue --reason "<host fact>"` signals the existing `continue_after_diagnosis` and then
+   records an append-only answer with its parent phase and sequence. It requires the parent to be in
+   `waiting_host_diagnosis` and the goal to be active, it starts no work and resumes nothing, and it is an operator
+   intervention, recorded and reported as one, never evidence of autonomous continuation.
+5. A recorded host answer lets an interrupted review be re-run. `recovery_request` returned `hold` for everything but
+   `repair`, because free model text cannot establish that a host prerequisite changed. A host answer is not model
+   text: only the host operator's own command writes it. Where a readable answer bound to this child exists, a
+   `review_only` diagnosis may continue — the model still decides the action, the host must still measure the wait
+   the same way, and the continuation is bound to the ANSWER, so one host fact authorizes exactly one continuation
+   and a second re-run needs a second host fact.
+
+The host answer is therefore a real operator-to-model channel that unlocks a re-run, and is treated as one: its text
+is bounded at 8000 characters, an answer that cannot be read back is reported as unreadable and states no fact and
+authorizes nothing, an answer bound to no child is never delivered as a fact about one, and every answer is part of
+the whole-goal evidence as `HOST_ANSWERS.json`.
+
+Found before review, by reading the path the chain would actually take: `recovery_request` binds a returned diagnosis
+back to the observed wait by comparing the workspace context, so the new context keys would have refused every
+non-hold diagnosis — the class review C measured when the delivered-file inventory was added. `DIAGNOSIS_HOST_KEYS` is
+now the single place the delivery point and the binding agree. Two separate reviews then rejected the first candidate
+and are answered here: an unbounded answer could write a file `read_regular` refuses, which made `host_answers` raise
+for the whole scope and took every future diagnosis with it, while the only command out of that wait read the same
+directory (so the live goal could not be recovered from inside itself); the answer was recorded before the signal was
+accepted, so an undelivered signal could leave an answer that authorized a continuation the parent never heard of; an
+answer recorded before any child existed carried a null task and was delivered to every later child as a fact about
+that child; and `record_host_answer` created its directory without the symlink guard its reader applies.
+
+Replay safety, corrected: not every change is outside workflow context. `require_gate` is called from the child
+workflow, and its reorder is a control-flow change, not a message string. The raise predicate is unchanged — the old
+order is reimplemented in the tests and compared against the real gate across the whole space the reorder touches —
+so the same branch is taken and no command differs; only which message is raised changes, and that message is
+query-only state (`waiting_reason`). It is observable: on the first replay the preserved child's `waiting_reason`
+changes from the old sentence to the accurate one, and a host-written observation taken afterwards differs from
+`step-12` for a child that did nothing. That is host-caused evidence drift, recorded here rather than discovered
+later. Measured rather than argued: both live histories (`office-ap11`, 1745 events; `ap11-step-5`, 16 events) were
+fetched read-only and replayed offline against this candidate, and against the active release as a control. All
+passed. The histories are preserved under `.runtime/ap11/claude-path/host-recovery-20260922/live-histories`.
+
+Tests: `scripts/test_host_recovery.py` (44) through the real review activity, the real gate, the real delivery point,
+the real recovery binding and the real control action. One test runs the real `diagnosis_call` and then hands the
+names it actually built to the real, unpatched `prepare_call`, so the rule is owned by the code that enforces it
+rather than restated in the test; others stage review and implementation results, and both causes of a failed
+acceptance — the two branches the LIVE recipe actually returns, the host's own raising, a candidate the verifier
+cannot finish on, and a record from before the markers — and pin `RUN_FIELDS`, `ACCEPTANCE_FIELDS`, `VERIFIER_FIELDS`
+and the host's interruption vocabulary to exact literals, so any field added to a whitelist fails there. Both
+branches of `execute_implementation` are measured, because both were changed. One drives the real
+activity and reads back the record it wrote, because a mutant that removed the host's own cause marker had been
+"killed" only by an unrelated timing test — nothing was actually holding it. Those assertions replaced one derived from the
+whitelist itself, which review L proved was a tautology by putting the provider's reported cost back on it with
+every test still green. Sixty in-place mutants
+against the new guards, all killed, recorded in
+`.runtime/ap11/claude-path/host-recovery-20260922/mutants.json`; the survivors along the way each showed a guard that
+was not measured where it acts — the raised bound, the run record, the readers, the answer numbering, the field
+whitelist, the pre-signal refusals and the unreadable-run report. Whole suite 238.
+
+Seven separate reviews rejected earlier candidates, each on something that would have acted on the live chain rather
+than on style. The record of what they found, and of what closed it, is kept beside the measurements in
+`.runtime/ap11/claude-path/host-recovery-20260922/`.
+
+The whole delivery path was then measured as one chain, with the REAL revision-bound recipe executed on real
+candidates in an isolated area — nothing in it asserts what that recipe returns, because it is run and its own bytes
+are carried forward (record: `.runtime/ap11/claude-path/chain-proof-20260922/chain-proof.json`; recipe
+`1ff7338e…`, the acceptance identity of the live child). Four courses, each through the real `run_verifier`, the real
+wrap, a real `acceptance.json` on disk, and the receiver's actual workspace written by the real `diagnosis_call`
+through the real `prepare_call`:
+
+- the real candidate that passed: the recipe passes it in 0.2 s, the host marks it passed, the receiver reads that;
+- a candidate whose code raises: the recipe's own output names an absolute host path, the host marks it a verifier
+  rejection, and the receiver's workspace does not carry that path;
+- a candidate that prints at import, so the recipe cannot parse its own result: a verifier rejection, not a host
+  failure — the branch whose exact `{'passed', 'reason'}` shape a shape test had read as the host's fault;
+- a candidate that never returns: the recipe's own 120 s timeout fires, and the host marks a verifier rejection,
+  because a candidate that hangs is the candidate's outcome. The receiver is told the verifier did not complete, not
+  that it ran and rejected the candidate.
+
+Each course runs through the real `execute_implementation`, so the clause that sets the marker is the shipped one;
+only the model call and the Git freezing around it are stood in for, because this harness has no model and no
+candidate commit. What the recipe raises is carried forward as the exception object itself, and the record states
+when a raise would have escaped the host instead of being caught. Review L found both of those simulated, which
+would have proved the correction's outcome with a substituted exception and a copy of the very clause under test.
+
+The last link, through the real recovery path: a correct diagnosis of a candidate finding, an answer claiming a
+change it cannot show, and an answer naming an action the host did not measure all fail to produce a continuation —
+the first two hold with "model text is not recovery authority", the third is refused outright. Missing or
+insufficient material never yields a positive outcome. The host-failure branch of the same marking is measured at the
+activity itself rather than here, because a host tooling failure has no recipe result to carry.
+
+A third review then rejected the corrected candidate and is answered here too. Delivering the raw run files would
+have refused every diagnosis of a child that has a review attempt, before any model ran: `prepare_call` accepts only
+`.md`, `.json` and `.py`, and `events.jsonl` is none of them — the chain would have stalled permanently on activation,
+and the test written to prove the name check survived had staged a name the code cannot build. The continuation was
+bound to the whole review record, which a re-run rewrites (new attempt number, evidence path and reservation nonce),
+so one host answer could have authorized an unbounded chain of automatic re-runs until the terminal call ceiling. And
+because the signal is now sent before the answer is written, a refusal at the write would have consumed the
+operator's one continuation while reporting failure, so every refusal runs before the signal.
+
+Honest limit on the confidentiality of the diagnosis workspace. The records above are bounded, and so, now, are the
+implementation attempts: `previous-N-result.json` was a raw copy of the provider's own result and carried every field
+the review record excludes. Nothing binds those files, so they could be narrowed and are. One carrier remains and is
+not narrowed: `CONTEXT.json`'s `actual_child_wait` is the child's own state exactly as the diagnosis must bind back
+to it. Measured in the live workspace of `step-12`, that state carries the run's evidence path, its scope reservation
+nonce, a usage object and a reported cost. `recovery_request` compares the returned context against that same state,
+so filtering it would refuse every non-hold diagnosis. It stays as it was before this release, and the workspace as a
+whole is therefore not free of host path or reservation material. The host's verdict on the frozen acceptance recipe
+is narrowed too, and this is where review L found the sharpest defect of the whole release — in a correction of mine.
+A non-pass has two causes, and the host recorded them identically: its own tooling raising (`str(error)`, and a Git
+error stringifies the whole command, so it names host paths) and the frozen verifier rejecting the candidate. The
+first version of this narrowing collapsed both into one sentence saying a failure there is the host's tooling
+failing, never a finding about the candidate. On the commonest path into a diagnosis that sentence is false, and it
+was worse than the raw file it replaced: the diagnosis lost the verifier's findings and was told the opposite of the
+truth, in the one role whose whole job is that distinction. The host now marks its own cause where the failure
+happens, and carries it through the wrap. Review L then measured the replacement against the LIVE recipe and found
+the same inversion from the other side: that recipe returns exactly `{'passed', 'reason'}` on one of its own
+rejection branches, which the shape test read as the host's failure, and returns up to 6000 bytes of raw subprocess
+stderr on the other, which the new field delivered whole — reopening the leak in a new place. So the shape test is
+gone entirely: `activities.py` now marks BOTH causes where each is known, and the delivery reads the marker. A host
+failure delivers the verdict, the candidate hashes and the withheld sentence — which says the host's own tooling
+raised and that this is not the verifier's verdict, without claiming it can never be about the candidate, because the
+same `try` also catches a candidate that wrote outside the paths its task allows. A rejection delivers the verifier's
+own verdict fields, whitelisted by `VERIFIER_FIELDS` and bounded, and its note separates a recipe that ran and did
+not pass from one that did not complete at all, since `run_verifier` also catches a recipe that never started. A record written before either marker existed says its
+cause is unrecorded and delivers neither text, because asserting a cause the host did not record would be an
+invention. Two named carriers remain, by decision rather than oversight: `actual_child_wait` above, and the frozen
+verifier's `checks` and `scope` on the pass path, which are the recipe's own words rather than the host's.
+
+Limits: the raised bound is a measured margin over one cut-off review, not a proof that every review fits; a review
+that exceeds 300 s is still an honest incomplete. Each `continue` spends one of the 48 counted calls through the
+diagnosis it triggers, and that ceiling is terminal. The opening is for an interrupted review only: a
+`waiting_diagnosis` retry still requires host recovery, and `repair` still requires an independently bound rejection.
+The host answer is not matched to a particular review number or candidate: it authorizes one continuation of whatever
+interrupted review the child is waiting on.
+
 ## AP11-ANSWER-CONTRACT — 2026-09-22: what the receiving policy enforces is stated where the model reads
 
 Measured on the fourth interactive start (the single extra start after the hold): the driver found every

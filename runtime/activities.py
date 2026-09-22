@@ -16,7 +16,7 @@ from .review import SCHEMA, verdict
 from .snapshot import snapshot, read_regular
 from .task import load, task_directory, evidence_directory, frozen_verifier
 from .development_capacity import before_activity
-from .development_binding import activity_seconds
+from .development_binding import activity_seconds, model_seconds
 
 
 def invoke(request):
@@ -37,6 +37,23 @@ def invoke(request):
     return result
 
 
+def run_verifier(verifier, candidate):
+    """The frozen recipe runs the CANDIDATE's own code, under its own timeout.
+
+    A crash or a hang in there is an outcome of the candidate, not of the host's tooling, and the recipes say so by
+    handling a non-zero exit themselves while leaving their timeout uncaught. Found by review L: with this call inside
+    the host's own try, a candidate with an infinite loop was recorded as the host failing, and the diagnosis was told
+    it was 'never a finding about the candidate itself'.
+    """
+    try:
+        return verifier(candidate)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        # Marked, because "did not complete" is not the same statement as "ran and did not pass": the recipe may
+        # never have started (found by review L).
+        return {'passed': False, 'verifier_incomplete': True,
+                'reason': 'the frozen verifier did not complete on this candidate'}
+
+
 def execute_implementation(request: dict) -> dict:
     task = load(request['task_id'], request.get('task_digest'))
     wait = before_activity(task, activity_seconds(task, 'implementation') or task['attempt_seconds'] + 150)
@@ -46,13 +63,14 @@ def execute_implementation(request: dict) -> dict:
     if not result.get('provider_completed'): return result
     workspace = task_directory(task['id']) / 'candidate'
     output = ROOT / result['evidence']
+    host_error = False
     try:
         if 'acceptance_sha256' in task:
             candidate = prepare(task, request['number'], workspace)
             frozen = task_directory(task['id']) / candidate['workspace_name']
             (output / 'candidate.json').write_text(json.dumps({**candidate, 'base': task['base'], 'task_sha256': digest(task)}, indent=2)+'\n')
             git(frozen, 'bundle', 'create', str(output / 'candidate.bundle'), 'HEAD', '^' + task['base'])
-            validation = frozen_verifier(task)(frozen)
+            validation = run_verifier(frozen_verifier(task), frozen)
             files = candidate['candidate_files_sha256']
             # Preserve source bytes from the exact Git object, not mutable checkout.
             dest = output / 'candidate'; dest.mkdir(exist_ok=False)
@@ -62,12 +80,21 @@ def execute_implementation(request: dict) -> dict:
             result.update(candidate)
         else:
             files = snapshot(workspace, output / 'candidate', task['allowed_paths'])
-            validation = legacy_verify(output / 'candidate')
+            validation = run_verifier(legacy_verify, output / 'candidate')
     except (OSError, ValueError, subprocess.SubprocessError) as error:
+        # The HOST's own tooling raised while freezing the candidate. The verifier call is NOT in here: it runs the
+        # candidate's own code, so its timeout or crash is an outcome of the candidate (found by review L).
         files = {}
+        host_error = True
         validation = {'passed': False, 'reason': str(error)}
     if not isinstance(validation, dict) or validation.get('passed') is not True:
-        validation = {'passed': False, 'details': validation}
+        # BOTH causes are marked here, where each is known, from the host's OWN flag rather than from anything the
+        # verifier returned. Inferring them later from the record's shape is what review L measured going wrong
+        # twice: the live recipe returns {'passed', 'reason'} on one of its own rejection branches, which a shape
+        # test reads as the host's failure. The wrap must carry the marker at the top level: nesting it inside
+        # details would hide the host's own cause exactly where a diagnosis looks for it.
+        validation = {'passed': False, 'details': validation,
+                      **({'host_error': True} if host_error else {'verifier_rejected': True})}
     validation['candidate_files_sha256'] = files
     (output / 'acceptance.json').write_text(json.dumps(validation, indent=2) + '\n')
     result.update(phase_acceptance_passed=validation['passed'], candidate_files_sha256=files)
@@ -113,7 +140,7 @@ def review_candidate(request: dict) -> dict:
     provider = task.get('review_provider', 'codex')
     result = invoke({'task_id': task['id'], 'number': number, 'prompt': prompt,
                      'change_reason': request.get('change_reason'),
-                     'seconds': min(180, task['attempt_seconds']), 'task_digest': digest(task),
+                     'seconds': model_seconds(task, 'review'), 'task_digest': digest(task),
                      'role': 'review', 'workspace_name': request['workspace_name'],
                      'provider': provider})
     output = evidence_directory(task['id']) / ('review-' + str(number))
