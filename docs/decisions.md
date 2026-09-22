@@ -707,3 +707,36 @@ Limits: the probe used synthetic contents; the real fourth session is a real run
 interactive profile still cannot list directories by design; a file that no text names
 remains undiscoverable, which is why the inventory is complete by construction.
 
+## AP11-ANSWER-CONTRACT — 2026-09-22: what the receiving policy enforces is stated where the model reads
+
+Measured on the fourth interactive start (the single extra start after the hold): the driver found every
+delivered file through the inventory and answered a concrete task for A, and the frozen Office policy
+refused it on one field: `depends_on` carried an explanation ("none: first task of the application …")
+where the policy requires the empty string for A. The delivered schema allowed any string and the
+instruction said "explain the dependency"; the Codex driver of the first retry had written the same kind
+of prose. Two drivers, one reading: the host's delivered text did not state the host's own rule. The
+parent picked the session up by itself and stopped controlled in the host diagnosis wait; the answer,
+session, refusal and consumption are preserved as they fell.
+
+Decision, Runtime side: the delivery point hands the Office policy the WORK it prepares, so the instruction
+and the answer schema are delivered per work (`instructions(role, work)`, `schema(role, work)`); the
+Office policy states one contract in both and enforces exactly it in `prepare()` (a separate Office change).
+The single extra start becomes an ordered list of separately reviewed owner decisions
+(`development.interactive_extensions`), each bound to the start it follows and to how that start really
+ended: `hold`, or `task-refused` (a completed session whose task answer the host produced no draft for).
+The previous session's result and answer are bound by SHA256 and never rewritten; a decision that names
+the wrong ending does not fit; the chain has at most two entries and no further start exists. Whole-goal
+evidence carries every followed ending as answered.
+
+Measured before the next start, with the candidate's real functions on an isolated area: the two preserved
+prose answers are refused with the stated reason and violate the A schema; a controlled copy of the fourth
+answer with the field emptied passes policy, AP06 preparation and Runtime validation (a test copy, not a
+delivered task); synthetic A and B pass; an explanatory, invented or premature dependency, a hold, and
+every field rule the text now states are refused. With the actual restricted profiles on a separate
+synthetic probe goal, the unedited answers of the interactive profile and of the print profile (whose
+pinned CLI accepted the per-work schema) passed the whole receiver path. Qualification consumption: two
+Claude model processes, separate from the application.
+
+Limits: the interactive answer file is not schema-checked by the host (the policy is the enforcement, as
+before); the fifth start is a real run under the corrected release; five calls of forty-eight are consumed.
+

@@ -33,11 +33,14 @@ from .snapshot import read_regular
 NONCE='interactive-start'
 RETRY='interactive-retry-1'
 RETRIES=(RETRY,'interactive-retry-2','interactive-retry-3')
-# ONE further interactive start, only for this commitment and only when the active configuration binds the owner's
-# separately reviewed decision (owner decision 2026-09-22 after the third retry ended correctly with `hold`). It is not
-# a general retry right: it requires the third retry's real completed result and hold answer, unchanged.
-EXTENSION='interactive-retry-4'
-EXTENSION_KEYS={'nonce','after','decision','decision_sha256','review','review_sha256'}
+# Further interactive starts exist ONLY as separately reviewed owner decisions bound in the active configuration
+# (development.interactive_extensions, an ordered list). Each one names the start it follows and how that start really
+# ended: `hold` (the third retry, 2026-09-22) or `task-refused` (the fourth retry: a task answer the frozen policy
+# refused on a field the delivered text had not stated). The previous session's result and answer are bound by SHA256
+# and never rewritten; the extension never fits a different ending. Not a general retry right.
+EXTENSIONS=('interactive-retry-4','interactive-retry-5')
+EXTENSION_KEYS={'nonce','after','previous_outcome','decision','decision_sha256','review','review_sha256'}
+OUTCOMES=('hold','task-refused')
 # Global Claude state that can confer authority. Everything else in that file is
 # volatile bookkeeping the pinned TUI rewrites on every honest start (measured).
 CLAUDE_AUTHORITY_KEYS=('hasTrustDialogAccepted','allowedTools','mcpServers','enabledMcpjsonServers',
@@ -49,32 +52,44 @@ def binding_name(nonce):
     return 'interactive-retry.json' if nonce==RETRY else nonce+'.json'
 
 
-def extension(config):
-    """The bound extra interactive start of the active configuration, verified against its decision and review, or None."""
-    bound=(config.get('development') or {}).get('interactive_extension')
-    if bound is None:return None
-    if (not isinstance(bound,dict) or set(bound)!=EXTENSION_KEYS or bound['nonce']!=EXTENSION or bound['after']!=RETRIES[-1]
-            or not all(isinstance(bound[k],str) and bound[k] for k in EXTENSION_KEYS)):
-        raise ValueError('Exact reviewed interactive extension binding required')
-    directory=Path(config['directory'])/'development-context'
-    for name,expected in ((bound['decision'],bound['decision_sha256']),(bound['review'],bound['review_sha256'])):
-        if Path(name).name!=name or host.sha(read_regular(directory,name))!=expected:
-            raise ValueError('Interactive extension decision or review changed')
-    review=decode(read_regular(directory,bound['review']))
-    if (not isinstance(review,dict) or review.get('verdict')!='approved' or review.get('blocking_findings')!=[]
-            or review.get('extends')!=EXTENSION or review.get('after')!=RETRIES[-1] or review.get('decision_sha256')!=bound['decision_sha256']):
-        raise ValueError('Interactive extension is not separately approved')
-    return bound
+def extensions(config):
+    """The bound extra interactive starts of the active configuration, in order, each verified against its decision and
+    review, or an empty tuple. The chain is fixed: each entry follows the previous nonce and names the outcome it follows."""
+    bound=(config.get('development') or {}).get('interactive_extensions')
+    if bound is None:return ()
+    if not isinstance(bound,list) or not bound or len(bound)>len(EXTENSIONS):
+        raise ValueError('Exact reviewed interactive extension list required')
+    directory=Path(config['directory'])/'development-context';previous=RETRIES[-1]
+    for index,entry in enumerate(bound):
+        if (not isinstance(entry,dict) or set(entry)!=EXTENSION_KEYS or entry['nonce']!=EXTENSIONS[index] or entry['after']!=previous
+                or entry['previous_outcome'] not in OUTCOMES or not all(isinstance(entry[k],str) and entry[k] for k in EXTENSION_KEYS)):
+            raise ValueError('Exact reviewed interactive extension binding required')
+        for name,expected in ((entry['decision'],entry['decision_sha256']),(entry['review'],entry['review_sha256'])):
+            if Path(name).name!=name or host.sha(read_regular(directory,name))!=expected:
+                raise ValueError('Interactive extension decision or review changed')
+        review=decode(read_regular(directory,entry['review']))
+        if (not isinstance(review,dict) or review.get('verdict')!='approved' or review.get('blocking_findings')!=[]
+                or review.get('extends')!=entry['nonce'] or review.get('after')!=previous or review.get('previous_outcome',entry['previous_outcome'])!=entry['previous_outcome']
+                or review.get('decision_sha256')!=entry['decision_sha256']):
+            raise ValueError('Interactive extension is not separately approved')
+        previous=entry['nonce']
+    return tuple(bound)
 
 
-def previous_hold(scope):
-    """The third retry's real end: a completed session whose answer was `hold`, never rewritten."""
-    stage=scope.directory/'calls'/RETRIES[-1]
+def previous_end(scope,nonce,outcome):
+    """How the start `nonce` really ended, never rewritten: `hold` = a completed session whose answer was hold;
+    `task-refused` = a completed session whose answer was task and for which the host produced no draft (the frozen
+    policy refused it, the refusal being the parent's recorded host diagnosis)."""
+    stage=scope.directory/'calls'/nonce
     prior=read_regular(stage,'result.json');result=decode(prior)
-    answer=read_regular(stage/'workspace','.scratch/answer.json')
-    if (result.get('completed') is not True or result.get('process_group_removed') is not True
-            or not result.get('provider',{}).get('thread_id') or decode(answer).get('action')!='hold'):
-        raise ValueError('The extension follows only a completed interactive session that answered hold')
+    answer=read_regular(stage/'workspace','.scratch/answer.json');action=decode(answer).get('action')
+    ended=(result.get('completed') is True and result.get('process_group_removed') is True and bool(result.get('provider',{}).get('thread_id')))
+    if outcome=='hold':
+        if not ended or action!='hold':raise ValueError('The extension follows only a completed interactive session that answered hold')
+    elif outcome=='task-refused':
+        if not ended or action!='task' or (scope.directory/'drafts'/nonce).exists():
+            raise ValueError('The extension follows only a completed interactive session whose task answer the host refused (no draft exists)')
+    else:raise ValueError('Unknown extension outcome')
     return prior,answer
 
 
@@ -83,7 +98,7 @@ def selected_nonce(scope,config=None):
     for nonce in RETRIES:
         path=scope.directory/binding_name(nonce)
         if not path.exists():
-            if any((scope.directory/(later+'.json')).exists() for later in (*RETRIES[RETRIES.index(nonce)+1:],EXTENSION)):
+            if any((scope.directory/(later+'.json')).exists() for later in (*RETRIES[RETRIES.index(nonce)+1:],*EXTENSIONS)):
                 raise ValueError('Earlier interactive retry binding missing')
             return selected
         binding=decode(read_regular(scope.directory,path.name))
@@ -97,32 +112,42 @@ def selected_nonce(scope,config=None):
                 or host.sha(read_regular(scope.directory/'calls'/nonce,'input.json'))!=binding['input_sha256']):
             raise ValueError('Interactive retry evidence changed')
         selected=nonce
-    path=scope.directory/binding_name(EXTENSION)
-    if not path.exists():return selected
-    binding=decode(read_regular(scope.directory,path.name))
-    if (set(binding)!={'previous','nonce','diagnosis','previous_result_sha256','previous_answer_sha256','decision_sha256','review_sha256','input_sha256'}
-            or binding['previous']!=RETRIES[-1] or binding['nonce']!=EXTENSION
-            or not isinstance(binding['diagnosis'],str) or not binding['diagnosis'].strip()):
-        raise ValueError('Exact host interactive extension binding required')
-    prior,answer=previous_hold(scope)
-    if (host.sha(prior)!=binding['previous_result_sha256'] or host.sha(answer)!=binding['previous_answer_sha256']
-            or host.sha(read_regular(scope.directory/'calls'/EXTENSION,'input.json'))!=binding['input_sha256']):
-        raise ValueError('Interactive extension evidence changed')
-    if config is not None:
-        bound=extension(config)
-        if bound is None or (bound['decision_sha256'],bound['review_sha256'])!=(binding['decision_sha256'],binding['review_sha256']):
-            raise ValueError('Interactive extension binding is not the activated one')
-    return EXTENSION
+    bound=extensions(config) if config is not None else None
+    for index,nonce in enumerate(EXTENSIONS):
+        path=scope.directory/binding_name(nonce)
+        if not path.exists():
+            if any((scope.directory/(later+'.json')).exists() for later in EXTENSIONS[index+1:]):
+                raise ValueError('Earlier interactive extension binding missing')
+            return selected
+        binding=decode(read_regular(scope.directory,path.name))
+        # The first extension's binding on disk was written by the release that knew only the hold ending and carries
+        # no previous_outcome key; that ending IS hold. Every later binding names its ending explicitly.
+        keys={'previous','nonce','diagnosis','previous_result_sha256','previous_answer_sha256','decision_sha256','review_sha256','input_sha256'}
+        if index==0 and 'previous_outcome' not in binding:binding={**binding,'previous_outcome':'hold'}
+        if (set(binding)!=keys|{'previous_outcome'}
+                or binding['previous']!=selected or binding['nonce']!=nonce or binding['previous_outcome'] not in OUTCOMES
+                or not isinstance(binding['diagnosis'],str) or not binding['diagnosis'].strip()):
+            raise ValueError('Exact host interactive extension binding required')
+        prior,answer=previous_end(scope,selected,binding['previous_outcome'])
+        if (host.sha(prior)!=binding['previous_result_sha256'] or host.sha(answer)!=binding['previous_answer_sha256']
+                or host.sha(read_regular(scope.directory/'calls'/nonce,'input.json'))!=binding['input_sha256']):
+            raise ValueError('Interactive extension evidence changed')
+        if bound is not None:
+            entry=bound[index] if index<len(bound) else None
+            if entry is None or (entry['decision_sha256'],entry['review_sha256'],entry['previous_outcome'])!=(binding['decision_sha256'],binding['review_sha256'],binding['previous_outcome']):
+                raise ValueError('Interactive extension binding is not the activated one')
+        selected=nonce
+    return selected
 
 
 def prepare_retry(expected,reason):
     scope,config=active_scope(expected);state=scope.inspect()
     previous=selected_nonce(scope,config)
-    if (state['control']!='paused' or state['tasks'] or previous==EXTENSION
+    if (state['control']!='paused' or state['tasks'] or previous==EXTENSIONS[-1]
             or not isinstance(reason,str) or not reason.strip()):
         raise ValueError('Only explicit diagnosed pre-task paused interactive recovery')
-    if previous==RETRIES[-1]:
-        return prepare_extension(scope,config,expected,reason)
+    if previous in (RETRIES[-1],*EXTENSIONS[:-1]):
+        return prepare_extension(scope,config,expected,reason,previous)
     nonce=RETRIES[0] if previous==NONCE else RETRIES[RETRIES.index(previous)+1]
     stage=scope.directory/'calls'/previous
     if not (stage/'result.json').exists():raise ValueError('Previous interactive attempt has not ended')
@@ -141,22 +166,22 @@ def prepare_retry(expected,reason):
     return request
 
 
-def prepare_extension(scope,config,expected,reason):
-    """The single extra start after a third retry that ended correctly with hold. Nothing of that session is rewritten."""
-    bound=extension(config)
-    if bound is None:raise ValueError('No further interactive start: the three retries are exhausted')
-    prior,answer=previous_hold(scope)
-    ended=decode(read_regular(scope.directory/'calls'/RETRIES[-1],'session-exit.json'))
+def prepare_extension(scope,config,expected,reason,previous):
+    """The next bound extra start after `previous` ended as its decision states. Nothing of that session is rewritten."""
+    entry=next((e for e in extensions(config) if e['after']==previous),None)
+    if entry is None:raise ValueError('No further interactive start: no reviewed extension follows '+previous)
+    nonce=entry['nonce'];prior,answer=previous_end(scope,previous,entry['previous_outcome'])
+    ended=decode(read_regular(scope.directory/'calls'/previous,'session-exit.json'))
     if ended.get('process_absent') is not True or process_identity(ended['provider_pid']):
         raise ValueError('Previous interactive process must be verifiably absent')
     try:os.killpg(ended['provider_pid'],0)
     except ProcessLookupError:pass
     else:raise ValueError('Previous interactive process group remains')
-    context,files=host.base_context(scope,config,'reconciliation',EXTENSION,paused_interactive_recovery=True)
-    request=host.prepare_call(expected,EXTENSION,'driver','reconciliation',context,files)
-    write(scope.directory/binding_name(EXTENSION),{'previous':RETRIES[-1],'nonce':EXTENSION,'diagnosis':reason,
+    context,files=host.base_context(scope,config,'reconciliation',nonce,paused_interactive_recovery=True)
+    request=host.prepare_call(expected,nonce,'driver','reconciliation',context,files)
+    write(scope.directory/binding_name(nonce),{'previous':previous,'nonce':nonce,'previous_outcome':entry['previous_outcome'],'diagnosis':reason,
         'previous_result_sha256':host.sha(prior),'previous_answer_sha256':host.sha(answer),
-        'decision_sha256':bound['decision_sha256'],'review_sha256':bound['review_sha256'],'input_sha256':request['input_sha256']})
+        'decision_sha256':entry['decision_sha256'],'review_sha256':entry['review_sha256'],'input_sha256':request['input_sha256']})
     return request
 
 
@@ -173,13 +198,13 @@ def pending(expected):
 
 def retry_evidence(scope,nonce):
     """Every binding and every earlier attempt's actual end, for the whole selected chain."""
-    chain=(NONCE,*RETRIES,EXTENSION);files={}
+    chain=(NONCE,*RETRIES,*EXTENSIONS);files={}
     for index,earlier in enumerate(chain[:chain.index(nonce)]):
         files['interactive/RETRY_BINDING.json' if index==0 else 'interactive/RETRY%d_BINDING.json'%(index+1)]=read_regular(scope.directory,binding_name(chain[index+1]))
         for name in ('session-exit.json','result.json'):
             files['interactive/'+('previous-' if index==0 else 'retry%d-'%index)+name]=read_regular(scope.directory/'calls'/earlier,name)
-        if chain[index+1]==EXTENSION:
-            # The whole-goal reviewer sees the hold that the extension follows, exactly as answered.
+        if chain[index+1] in EXTENSIONS:
+            # The whole-goal reviewer sees the ending each extension follows (a hold, or a refused task), exactly as answered.
             files['interactive/retry%d-answer.json'%index]=read_regular(scope.directory/'calls'/earlier/'workspace','.scratch/answer.json')
     return files
 
