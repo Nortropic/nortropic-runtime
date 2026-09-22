@@ -15,8 +15,8 @@ import time
 
 from .development_scope import Scope, ScopeClosed, identifier, decode
 from .release import ROOT, require_active_code, require_workspace_instructions
-from .profile import command, environment
-from .claude_profile import command as claude_command, require_subscription
+from .profile import command, environment, MODEL as CODEX_MODEL
+from .claude_profile import command as claude_command, require_subscription, MODEL as CLAUDE_MODEL, MODEL_NAME
 from .provider_result import parse
 from .review import claude_response
 from .private_stage import stop_private_group, write
@@ -25,6 +25,7 @@ from .snapshot import read_regular
 
 
 ROLES = ('interactive', 'driver', 'preparation-review', 'diagnosis', 'final-review', 'implementation', 'review')
+EXECUTORS = ('codex', 'claude')
 QUOTA_WORDS = ('usage limit', 'quota', 'rate limit', 'rate_limit', 'unauthorized', 'authentication')
 CLAUDE_QUOTA_WORDS = QUOTA_WORDS + ('session limit',)
 
@@ -45,6 +46,35 @@ def executors(config):
             or any(value not in ('codex', 'claude') for value in chosen.values())):
         raise ScopeClosed('Invalid explicit executor selection')
     return {role: chosen.get(role, 'codex') for role in ROLES}
+
+
+def models(config):
+    """Explicit frozen per-executor model choice; absent is each profile's own qualified model.
+
+    Mirrors executors(): part of the frozen release configuration, changed only through a separately
+    reviewed controlled release transition, and never a fallback. A misspelt key must not silently
+    run a different model than the chosen one, so an unknown key refuses instead of defaulting.
+
+    The choice is per executor, not per role: the owner makes one collected choice for the mission
+    and the host applies it to every role that executor drives. A name that could be read as a flag
+    is refused here rather than reaching an argument list.
+    """
+    development = config.get('development') or {}
+    if 'models' in config or 'model' in config or not isinstance(development, dict) or 'model' in development:
+        raise ScopeClosed('Invalid explicit model selection')
+    chosen = development.get('models', {})
+    # The same rule the profile applies, so a name cannot pass one validator and fail the other.
+    if (not isinstance(chosen, dict) or set(chosen) - set(EXECUTORS)
+            or any(not isinstance(value, str) or not MODEL_NAME.match(value)
+                   for value in chosen.values())):
+        raise ScopeClosed('Invalid explicit model selection')
+    # Only the Claude route reads its model from here yet. The Codex startup chain still specifies its
+    # model itself, so a different Codex value would be configured and then not run - a silent divergence
+    # between what the configuration says and what executes. It is refused rather than ignored until that
+    # chain is wired to this selection and exercised.
+    if chosen.get('codex', CODEX_MODEL) != CODEX_MODEL:
+        raise ScopeClosed('Codex model selection is not wired to its startup chain yet')
+    return {'claude': chosen.get('claude', CLAUDE_MODEL), 'codex': CODEX_MODEL}
 
 
 def claude_unavailable(records):
@@ -89,13 +119,18 @@ def execute(request):
         raise ScopeClosed('Selected role schema differs from actual delivered schema')
     # Exclusive consumed receipt, before reservation, so native redelivery cannot
     # replay the same call even if it never reached Popen. Diagnose explicitly.
+    # Validated BEFORE the exclusive consumed receipt: the receipt cannot be rewritten and the stage
+    # directory cannot be re-made, so a selection that refuses after it would strand this prepared call
+    # on a key that can never be delivered again.
+    chosen = models(config)
     write(stage / 'consumed.json', {'nonce': nonce, 'input_sha256': request['input_sha256']})
     provider = executors(config)[data['role']]
+    selected = chosen[provider]
     if provider == 'claude':
         # Same order as the Codex profile: bound inputs and the qualified subscription
         # route are checked before any model could start. Read-only, no file grant.
         require_subscription(); require_workspace_instructions(workspace)
-        argv = claude_command(workspace, (), writable=False) + ['--json-schema', json.dumps(data['schema'])]
+        argv = claude_command(workspace, (), writable=False, model=selected) + ['--json-schema', json.dumps(data['schema'])]
     else:
         argv = command(workspace, writable=False)
         argv = argv[:-1] + ['--output-schema', str(workspace / 'OUTPUT_SCHEMA.json'), '-']
@@ -163,7 +198,7 @@ def execute(request):
         if not all(isinstance(e, dict) for e in records):
             records = []
             raise ValueError('Native provider event is not an object')
-        parsed = parse('claude', records, 'structured') if provider == 'claude' else parse('codex', records)
+        parsed = parse('claude', records, 'structured', model=selected) if provider == 'claude' else parse('codex', records)
         if not parsed.get('valid_terminal'):
             reason = reason or 'No valid native provider terminal'
         if provider == 'claude':

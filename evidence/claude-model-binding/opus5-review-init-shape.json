@@ -1,0 +1,26 @@
+{
+ "init": {
+  "apiKeySource": "none",
+  "claude_code_version": "2.1.257",
+  "mcp_servers": [],
+  "model": "claude-opus-5",
+  "permissionMode": "dontAsk",
+  "plugins": [],
+  "session_id": "e504baa0-f7ff-4b91-b33b-471d38331a25",
+  "slash_commands": [],
+  "subtype": "init",
+  "tools": [
+   "Read",
+   "StructuredOutput"
+  ],
+  "type": "system"
+ },
+ "raw_events_sha256": "5f8570616cd87591840c52427a176a8e2827a3703bec281f5a281f046f07f84d",
+ "source": "Actual run 2026-09-22: pinned Claude Code 2.1.257, runtime.claude_profile.command(writable=False) plus --json-schema, with MODEL substituted by the release selection claude-opus-5. Synthetic fixture, no project material. The init row is reduced mechanically to the fields runtime.provider_result.parse reads; absolute local paths, the messaging socket and unrelated rows are omitted. Raw events stay in the private evidence root.",
+ "why": "The qualification premise this file exists to make checkable: that the pinned CLI echoes an explicitly selected --model value VERBATIM into system/init.model, and that the review role inventory is unchanged under it. If the CLI normalised or aliased the name, every Claude run under a selection would fail the identity check while still spending a call. Measured, not assumed.",
+ "terminal": {
+  "is_error": false,
+  "subtype": "success",
+  "terminal_reason": "completed"
+ }
+}

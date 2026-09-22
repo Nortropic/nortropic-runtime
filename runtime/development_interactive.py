@@ -21,7 +21,7 @@ import tty
 import uuid
 
 from . import development_host as host
-from .development_model import active_scope, executors, QUOTA_WORDS, CLAUDE_QUOTA_WORDS
+from .development_model import active_scope, executors, models, QUOTA_WORDS, CLAUDE_QUOTA_WORDS
 from . import claude_profile
 from .development_scope import decode
 from .private_stage import write, stop_private_group
@@ -247,9 +247,9 @@ def claude_layers(workspace):
             raise ValueError('Project-local Claude layers require separate review')
 
 
-def claude_interactive_command(workspace,prompt,session):
+def claude_interactive_command(workspace,prompt,session,model=None):
     claude_layers(workspace)
-    return claude_profile.interactive_command(workspace,prompt,workspace/'.scratch/answer.json',session)
+    return claude_profile.interactive_command(workspace,prompt,workspace/'.scratch/answer.json',session,model=model)
 
 
 def objects(raw):
@@ -276,8 +276,13 @@ def claude_session(workspace,session):
     return session,raw,'claude-interactive'
 
 
-def claude_completed(rows):
-    """(quota, reason): a completed turn is the final assistant end_turn with no API error row."""
+def claude_completed(rows, model=None):
+    """(quota, reason): a completed turn is the final assistant end_turn with no API error row.
+
+    The model is the one this session was STARTED with, so the check measures the same value the launch
+    used. Verifying a selected-model session against the profile default would reject a session that did
+    exactly what it was told - and an interactive start is the scarcest resource in the mission.
+    """
     failed=[r for r in rows if r.get('isApiErrorMessage') is True or r.get('type')=='error']
     if failed:
         # Only the error's own wording; never usage fields, paths or earlier agent text.
@@ -291,7 +296,7 @@ def claude_completed(rows):
     if not assistants or assistants[-1].get('message',{}).get('stop_reason')!='end_turn':
         return False,'Interactive session has no actual completed turn'
     if ({r.get('version') for r in rows if r.get('version')}!={claude_profile.VERSION}
-            or {r.get('message',{}).get('model') for r in assistants}!={claude_profile.MODEL}):
+            or {r.get('message',{}).get('model') for r in assistants}!={claude_profile.selected_model(model)}):
         return False,'Interactive session did not use the pinned CLI and model'
     tools={part.get('name') for r in assistants for part in (r.get('message',{}).get('content') or [])
            if isinstance(part,dict) and part.get('type')=='tool_use'}
@@ -378,10 +383,14 @@ def execute(request):
             'Your draft will receive fresh independent review. End your turn with your concrete rationale; '
             'the operator will close this interactive session before the native chain continues.')
     selected=executors(config)['interactive'];authority_before=None;session=None
+    # One value for this session: the launch below and the completion check further down must never
+    # measure different models, or a session that ran exactly what it was told would be recorded as a
+    # failure and burn an interactive start.
+    chosen_model=models(config)['claude'] if selected=='claude' else None
     if selected=='claude':
         claude_profile.require_subscription();session=str(uuid.uuid4())
         prompt=prompt.replace('the operator will close this interactive session','the operator will close this interactive session (two Ctrl-C)')
-        argv=claude_interactive_command(workspace,prompt,session);authority_before=claude_authority(claude_state(),workspace)
+        argv=claude_interactive_command(workspace,prompt,session,model=chosen_model);authority_before=claude_authority(claude_state(),workspace)
     else:
         argv=interactive_command(workspace,prompt)
     write(stage/'consumed.json',{'nonce':nonce,'input_sha256':request['input_sha256']})
@@ -439,7 +448,7 @@ def execute(request):
         with (stage/'native-interactive-session.jsonl').open('xb') as stream:stream.write(history)
         rows=objects(history)
         if selected=='claude':
-            quota,failure=claude_completed(rows)
+            quota,failure=claude_completed(rows,model=chosen_model)
             if not quota and failure is None and claude_authority(claude_state(),workspace)!=authority_before:
                 failure='Global Claude authority state changed during the interactive session'
         else:

@@ -2,11 +2,15 @@
 import json
 import hashlib
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import uuid
 
 MODEL = 'claude-fable-5-1'
+# A provider model id: alphanumeric start, then the characters real ids use, bounded. Deliberately
+# narrow - this value becomes an argv element, and the only names that need to pass are model ids.
+MODEL_NAME = re.compile(r'\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z')
 VERSION = '2.1.257'
 BINARY_SHA256 = '64590d7d9d9c189d33fb3dfa58c5408eaf2a10fe556bd84155d95efaab46b60e'
 
@@ -26,7 +30,22 @@ SETTINGS={'enabledPlugins':{'slack@claude-plugins-official':False},
           'permissions':{'defaultMode':'dontAsk','blockReadsOutsideWorkingDirectories':True}}
 
 
-def interactive_command(workspace, prompt, answer, session):
+def selected_model(model=None):
+    """The release's explicit model choice, or this profile's own qualified model when none is bound.
+
+    The name must be a plain provider model id. Anything else is refused HERE rather than after a
+    launch: a padded or newline-bearing name reaches argv and only fails once the provider answers,
+    having already spent a call, and an embedded NUL makes Popen itself raise where the caller's
+    preflight handler could not classify it. The value is checked again after the run - provider_result
+    compares it against the identity the provider reports - so a substitution fails the terminal too.
+    """
+    chosen = MODEL if model is None else model
+    if not isinstance(chosen, str) or not MODEL_NAME.match(chosen):
+        raise ValueError('Claude profile needs a plain model name')
+    return chosen
+
+
+def interactive_command(workspace, prompt, answer, session, model=None):
     """Genuine TUI session that may read its workspace and write ONE scratch file.
 
     Measured with the pinned CLI: the prompt must come first because the variadic
@@ -40,7 +59,7 @@ def interactive_command(workspace, prompt, answer, session):
         raise ValueError('Interactive profile needs a plain prompt and one scratch answer file')
     if not isinstance(session,str) or str(uuid.UUID(session))!=session:
         raise ValueError('Interactive profile needs a canonical host-chosen session id')
-    return [qualified_binary(),prompt,'--session-id',session,'--model',MODEL,'--effort','medium',
+    return [qualified_binary(),prompt,'--session-id',session,'--model',selected_model(model),'--effort','medium',
             '--restricted','--strict-mcp-config','--mcp-config','{"mcpServers":{}}',
             '--tools','Read,Write','--allowedTools','Read','Edit(/'+str(answer)+')',
             '--permission-mode','dontAsk','--no-chrome','--disable-slash-commands',
@@ -48,13 +67,13 @@ def interactive_command(workspace, prompt, answer, session):
             '--append-system-prompt-file',str(workspace/'AGENTS.md')]
 
 
-def command(workspace, allowed_paths=(), writable=True):
+def command(workspace, allowed_paths=(), writable=True, model=None):
     workspace=Path(workspace).resolve()
     grants=['Read']
     if writable:
         grants += ['Edit(/'+str(workspace/name)+')' for name in allowed_paths]
     settings=SETTINGS
-    return [qualified_binary(),'-p','--model',MODEL,'--effort','medium',
+    return [qualified_binary(),'-p','--model',selected_model(model),'--effort','medium',
             '--output-format','stream-json','--verbose','--include-hook-events',
             '--restricted','--strict-mcp-config','--mcp-config','{"mcpServers":{}}',
             '--tools','Read,Edit,Write' if writable else 'Read',

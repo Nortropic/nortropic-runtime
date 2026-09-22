@@ -966,3 +966,45 @@ Claude model processes, separate from the application.
 Limits: the interactive answer file is not schema-checked by the host (the policy is the enforcement, as
 before); the fifth start is a real run under the corrected release; five calls of forty-eight are consumed.
 
+
+## D022 — 2026-09-22: the model is an explicit release choice, checked against what actually ran
+
+D019 qualified the native Claude profile with a configured model family and pinned the binary by SHA256.
+The model was a source constant used BOTH to build every command and to verify the identity the provider
+reports back, so changing it meant editing source and re-qualifying the profile each time.
+
+Owner decision of 2026-09-22: finish AP-11 with claude-opus-5 through the existing qualified installation,
+make only the model binding that requires, and keep it reusable so the next change is a configuration
+value rather than another source migration. The global CLI is NOT updated in this step; D019's binary pin
+and version check stand unchanged.
+
+The selection is part of the frozen release configuration, `development.models.{claude,codex}`, resolved by
+`development_model.models(config)`. It mirrors `executors(config)`: a per-executor choice, changed only
+through a separately reviewed controlled release transition, and it refuses rather than defaults. Unknown
+executor key, a singular `model` key at either level, and any name that is not a plain provider model id
+are refused before reaching an argument list.
+
+D019's identity requirement is not relaxed. `provider_result.parse` compares the provider's own reported
+model against the SELECTED one, an unbound call still demands the profile's own model, and the CLI version
+check is untouched. A run reporting a different model than the one chosen is not a valid terminal. Because a
+release that changes only the selection keeps the same runtime_revision, which previously implied the model,
+the run record now states both the model started and the model the provider reported.
+
+Qualification is per model and proportionate, not a blanket claim. Measured for claude-opus-5 on the real
+non-interactive path before the change: the read-only and the writable profile shapes both ran, the provider
+echoed the selected name back verbatim, the review role's tool inventory was unchanged, and the restricted
+file tools edited an allowed path with no permission denials. The init row and its raw hash are recorded in
+evidence/claude-model-binding/. Other models remain UNPROVEN; being selectable is not being qualified.
+
+Also measured: provider capacity is model-specific. At one moment, in one command shape, claude-opus-5
+answered while claude-fable-5-1 returned its own limit message naming another model as the remedy.
+
+The Codex startup chain still specifies its own model (`gpt-6-astra`, reasoning effort `high`, in
+`worker_command()`), so a Codex selection that differs from that recorded baseline is REFUSED rather than
+accepted and silently not run. Wiring the Codex route to this selection is separate, later work, and its
+baseline is asserted against the real function so drift on either side fails a test.
+
+Limits: `--effort` stays pinned at medium and is not part of the selection; the choice binds at release
+activation, not at task freeze, so a frozen task carries its executor but not its model; and no allow-list
+of qualified models exists yet — the check proves the model that answered is the one asked for, never that
+it is one already proven.
