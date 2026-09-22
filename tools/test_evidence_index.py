@@ -1,9 +1,11 @@
 """Behavioral tests, including deterministic filesystem substitution races."""
 
+from collections import Counter
 import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -256,6 +258,168 @@ class EvidenceIndexTests(unittest.TestCase):
                 code, result = self.cli("verify", self.root, stdin=payload)
                 self.assertEqual(code, 2)
                 self.assertTrue(result["error"])
+
+    def populate_tree(self):
+        """Add nested, hidden and UTF-8 files plus empty directories; return the sorted paths."""
+        (self.root / "nested" / "deeper").mkdir()
+        (self.root / "b").mkdir()
+        (self.root / "empty").mkdir()
+        (self.root / "nested" / "empty").mkdir()
+        (self.root / "nested" / "deeper" / ".empty").mkdir()
+        added = {".hidden": b"h", "b.txt": b"before slash", "b/c": b"c",
+                 "nested/.dot": b"dot", "nested/deeper/ünï.txt": "ünï".encode("utf-8")}
+        for name, data in added.items():
+            (self.root / name).write_bytes(data)
+        self.contents.update(added)
+        return sorted(self.contents)
+
+    def test_select_tree_lists_nested_hidden_and_utf8_files_only(self):
+        expected = self.populate_tree()
+        before = {p.relative_to(self.root) for p in self.root.rglob("*")}
+        # "b.txt" sorts before "b/c" because "." < "/", exactly as create orders paths.
+        self.assertEqual(expected, [".hidden", "a", "b.txt", "b/c", "nested/.dot",
+                                    "nested/deeper/ünï.txt", "nested/åäö.bin"])
+        with mock.patch.object(index.os, "read", side_effect=AssertionError("read contents")):
+            selected = index.select_tree(self.root)
+            self.assertEqual(index.select_tree(str(self.root)), selected)
+        self.assertEqual(selected, expected)
+        self.assertEqual(selected, sorted(selected))
+        manifest = index.create(self.root, index.select_tree(self.root))
+        self.assertEqual(manifest, self.manifest(reversed(expected)))
+        self.assertEqual([entry["path"] for entry in manifest["files"]], selected)
+        self.assertEqual(index.verify(self.root, manifest)["ok"], True)
+        self.assertEqual(before, {p.relative_to(self.root) for p in self.root.rglob("*")})
+        for name, data in self.contents.items():
+            self.assertEqual((self.root / name).read_bytes(), data)
+
+    def test_select_tree_order_is_sorted_regardless_of_directory_order(self):
+        expected = self.populate_tree()
+        real_scandir = os.scandir
+
+        class Listing:
+            def __init__(self, entries):
+                self.entries = entries
+
+            def __enter__(self):
+                return iter(self.entries)
+
+            def __exit__(self, *exc_info):
+                return False
+
+        def reversed_scandir(fd):
+            with real_scandir(fd) as entries:
+                return Listing(sorted(entries, key=lambda entry: entry.name, reverse=True))
+
+        with mock.patch.object(index.os, "scandir", side_effect=reversed_scandir):
+            self.assertEqual(index.select_tree(self.root), expected)
+        self.assertEqual(index.select_tree(self.root), expected)
+
+    def test_select_tree_empty_root_and_empty_directories(self):
+        empty = Path(self.temp.name) / "empty"
+        empty.mkdir()
+        self.assertEqual(index.select_tree(empty), [])
+        self.assertEqual(index.create(empty, index.select_tree(empty)), {"version": 1, "files": []})
+        self.assertEqual(self.cli("create", empty, "--tree"), (0, {"version": 1, "files": []}))
+        (empty / "only" / "dirs").mkdir(parents=True)
+        (empty / ".hidden").mkdir()
+        self.assertEqual(index.select_tree(empty), [])
+        self.assertEqual(self.cli("create", empty, "--tree"), (0, {"version": 1, "files": []}))
+
+    def test_select_tree_invalid_roots(self):
+        link = Path(self.temp.name) / "link"
+        link.symlink_to(self.root, target_is_directory=True)
+        for root in (None, 1, "", "\0", self.root / "absent", self.root / "a",
+                     link, str(link) + "/", str(link) + "/./"):
+            with self.subTest(root=root), self.assertRaises(ValueError):
+                index.select_tree(root)
+
+    def test_select_tree_refuses_symlinks_and_fifos_naming_the_path(self):
+        self.populate_tree()
+        cases = {
+            "link": lambda p: p.symlink_to(self.root / "a"),
+            "dangling": lambda p: p.symlink_to(self.root / "absent"),
+            "dirlink": lambda p: p.symlink_to(self.root / "nested", target_is_directory=True),
+            "nested/deeper/fifo": os.mkfifo,
+            "b/.link": lambda p: p.symlink_to(self.root / "a"),
+        }
+        for name, make in cases.items():
+            with self.subTest(name=name):
+                target = self.root / name
+                make(target)
+                with self.assertRaisesRegex(ValueError, re.escape(name)):
+                    index.select_tree(self.root)
+                with self.assertRaisesRegex(ValueError, re.escape(name)):
+                    index.create(self.root, index.select_tree(self.root))
+                code, result = self.cli("create", self.root, "--tree")
+                self.assertEqual(code, 2)
+                self.assertEqual(list(result), ["error"])
+                self.assertIn(name, result["error"])
+                # Explicit paths remain the way to index a tree with refused entries.
+                self.assertEqual(self.manifest(["a", "b/c"]), self.manifest(["b/c", "a"]))
+                self.assertEqual(self.cli("create", self.root, "a")[0], 0)
+                target.unlink()
+        self.assertEqual(index.select_tree(self.root), sorted(self.contents))
+
+    def test_select_tree_closes_every_descriptor(self):
+        self.populate_tree()
+        real_open, real_close = os.open, os.close
+        opened, closed = [], []
+
+        def record_open(path, flags, *args, **kwargs):
+            fd = real_open(path, flags, *args, **kwargs)
+            opened.append(fd)
+            self.assertTrue(flags & os.O_NOFOLLOW)
+            if "dir_fd" in kwargs:
+                # Below root, every open is a single name relative to a descriptor.
+                self.assertNotIn("/", path)
+            return fd
+
+        def record_close(fd):
+            closed.append(fd)
+            real_close(fd)
+
+        with mock.patch.object(index.os, "open", side_effect=record_open), \
+                mock.patch.object(index.os, "close", side_effect=record_close):
+            index.select_tree(self.root)
+            self.assertTrue(opened)
+            self.assertEqual(Counter(opened), Counter(closed))
+            opened.clear()
+            closed.clear()
+            os.mkfifo(self.root / "nested" / "deeper" / "fifo")
+            with self.assertRaisesRegex(ValueError, "nested/deeper/fifo"):
+                index.select_tree(self.root)
+            self.assertTrue(opened)
+            self.assertEqual(Counter(opened), Counter(closed))
+
+    def test_cli_tree_success_and_invocation_errors(self):
+        expected = self.populate_tree()
+        code, manifest = self.cli("create", self.root, "--tree")
+        self.assertEqual(code, 0)
+        self.assertEqual(manifest, index.create(self.root, index.select_tree(self.root)))
+        self.assertEqual([entry["path"] for entry in manifest["files"]], expected)
+        self.assertEqual(manifest["version"], 1)
+        payload = json.dumps(manifest, ensure_ascii=False).encode("utf-8")
+        self.assertEqual(self.cli("verify", self.root, stdin=payload)[0], 0)
+        for args in (("create", str(self.root), "--tree", "a"),
+                     ("create", str(self.root), "a", "--tree"),
+                     ("create", str(self.root), "--tree", "--tree"),
+                     ("verify", str(self.root), "--tree"),
+                     ("create", str(self.root / "absent"), "--tree"),
+                     ("create", str(self.root / "a"), "--tree")):
+            with self.subTest(args=args):
+                code, result = self.cli(*args, stdin=payload)
+                self.assertEqual(code, 2)
+                self.assertEqual(list(result), ["error"])
+                self.assertTrue(result["error"])
+        # A file literally named --tree is listed by the tree mode and selectable
+        # through the importable function, but not as an explicit CLI path.
+        (self.root / "--tree").write_bytes(b"flag")
+        self.assertIn("--tree", index.select_tree(self.root))
+        self.assertEqual(index.create(self.root, ["--tree"])["files"][0]["size"], 4)
+        code, manifest = self.cli("create", self.root, "--tree")
+        self.assertEqual(code, 0)
+        self.assertIn("--tree", [entry["path"] for entry in manifest["files"]])
+        self.assertEqual(self.cli("create", self.root), (0, {"version": 1, "files": []}))
 
 
 if __name__ == "__main__":
