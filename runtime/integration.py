@@ -49,12 +49,14 @@ def require_gate(task, subject, tests, review):
     if (not isinstance(implementation_runs, list) or not implementation_runs
             or not all(isinstance(x, str) and x for x in implementation_runs)):
         raise GateClosed('Implementation run identity missing')
-    for evidence in (tests, review):
+    # Completeness first, and named: an unfinished review carries no identity fields at all, and reporting that as a
+    # stale or mismatched identity misdescribes a host failure to the diagnosis role (measured 2026-09-22).
+    for name, evidence in (('tests', tests), ('review', review)):
+        if not isinstance(evidence, dict) or evidence.get('terminal_status') != 'completed' or evidence.get('scope') != 'whole_task':
+            raise GateClosed('Mandatory %s evidence unfinished or wrong scope: %s' % (name, evidence.get('terminal_status') if isinstance(evidence, dict) else 'absent'))
         for field in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256'):
             if evidence.get(field) != subject.get(field):
-                raise GateClosed('Stale or mismatched evidence: ' + field)
-        if evidence.get('scope') != 'whole_task' or evidence.get('terminal_status') != 'completed':
-            raise GateClosed('Mandatory evidence unfinished or wrong scope')
+                raise GateClosed('Stale or mismatched %s evidence: %s' % (name, field))
     if tests.get('passed') is not True:
         raise GateClosed('Required tests did not pass')
     if review.get('verdict') != 'approved' or review.get('blocking_findings') != []:

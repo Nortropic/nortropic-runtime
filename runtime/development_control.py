@@ -7,6 +7,7 @@ import sys
 
 from temporalio.common import WorkflowIDReusePolicy
 from temporalio.service import RPCError, RPCStatusCode
+from . import development_host as host
 from .development_model import active_scope
 from .development_workflow import FiniteDevelopment
 from .release import delegate, require_active_code
@@ -18,10 +19,10 @@ NAME = 'office-ap11'
 async def operate(action, reason=None):
     config = require_active_code()
     scope, _ = active_scope(config.get('development', {}).get('contract_sha256'))
-    if action in ('pause','resume','stop'):
+    if action in ('pause','resume','stop','continue'):
         if not isinstance(reason,str) or not reason.strip():
             raise ValueError('Explicit scoped reason required')
-        if not (action=='stop' and scope.inspect()['control'] in ('stopped','revoked','exhausted')):
+        if action!='continue' and not (action=='stop' and scope.inspect()['control'] in ('stopped','revoked','exhausted')):
             scope.control({'pause':'paused','resume':'active','stop':'stopped'}[action],reason)
     async with SharedService() as client:
         handle = client.get_workflow_handle(NAME)
@@ -44,6 +45,20 @@ async def operate(action, reason=None):
                     errors.append({'workflow':task_id,'status':'cancellation readback timeout'})
             if errors:
                 raise RuntimeError('Scope is stopped; native cancellation requires inspection: '+json.dumps(errors))
+        elif action=='continue':
+            # The HOST answers a diagnosis the model already made, so the chain can leave the host-diagnosis wait
+            # without spending one of the counted interactive starts. It supplies no content: the reason states a host
+            # fact, the answer is recorded for the next diagnosis, and every later decision is still the model's.
+            native=await handle.query(FiniteDevelopment.state)
+            if native.get('phase')!='waiting_host_diagnosis':
+                raise ValueError('Only a parent waiting for host diagnosis can be continued; observed '+str(native.get('phase')))
+            if scope.inspect()['control']!='active':
+                raise ValueError('Resume the finite goal explicitly before answering its diagnosis')
+            host.check_host_answer(scope,reason)   # every refusal BEFORE the continuation is spent
+            await asyncio.wait_for(handle.signal(FiniteDevelopment.continue_after_diagnosis,reason),10)
+            # Recorded only after the parent has accepted the signal. A recorded answer is what the next diagnosis is
+            # shown and what lets a host-interrupted review be re-run, so it must never outlive an undelivered signal.
+            recorded=host.record_host_answer(scope,reason,(native.get('children') or [None])[-1],native)
         elif action not in ('status','pause','resume','wake'):
             raise ValueError('Unknown finite-goal action')
         wake = None
@@ -63,6 +78,7 @@ async def operate(action, reason=None):
             native = {'available':False,'reason':'Named native workflow has not been found; no execution or success inferred'}
         return {'observed_at':datetime.now(timezone.utc).isoformat(),'scope':scope.inspect(),
                 'native':native,'config_sha256':config['config_sha256'],**({'wake_signal':wake} if wake else {}),
+                **({'host_answer':recorded} if action=='continue' else {}),
                 'meaning':'Dated native observation, not whole-goal approval; status starts no work'}
 
 
@@ -70,7 +86,7 @@ def main():
     delegated=delegate('runtime.development_control',sys.argv[1:])
     if delegated is not None:return delegated
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=['interactive-start','interactive-retry','status','pause','resume','stop','wake']);parser.add_argument('--reason')
+    parser.add_argument('action',choices=['interactive-start','interactive-retry','status','pause','resume','stop','wake','continue']);parser.add_argument('--reason')
     args=parser.parse_args()
     if args.action=='interactive-start':
         from .development_interactive import prepare,execute,preflight

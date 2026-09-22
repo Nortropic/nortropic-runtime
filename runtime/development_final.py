@@ -72,6 +72,10 @@ def prepare(scope,config,key):
     files['ACTUAL_AP10.json']=json.dumps(watch,default=str).encode()
     files['SCOPE.json']=json.dumps(state).encode()
     files['SCOPE_JOURNAL.json']=json.dumps([decode(line) for line in read_regular(scope.directory,'journal.jsonl').splitlines()]).encode()
+    # Every answer the HOST itself gave to a diagnosis. These are operator interventions, and one of them can let a
+    # host-interrupted review be re-run, so the whole-goal review must see them as such and not have to infer them
+    # from signal payloads in the native history.
+    files['HOST_ANSWERS.json']=json.dumps(host.host_answers(scope)).encode()
     from .development_interactive import selected_nonce, retry_evidence
     nonce=selected_nonce(scope,config);stage=scope.directory/'calls'/nonce
     files.update(retry_evidence(scope,nonce))
