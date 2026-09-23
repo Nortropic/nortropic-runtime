@@ -29,6 +29,15 @@ def event(number, payload=''):
             'eventType': 'ActivityTaskCompleted', 'attributes': {'result': payload}}
 
 
+def encoded(size):
+    """A payload in the shape Temporal actually records: json/plain, base64 in 'data'. readable_event decodes exactly
+    this shape into structure printed over short lines; a plain long string is not this shape and stays one line."""
+    import base64
+    body = json.dumps({'k%05d' % i: 'v' * 20 for i in range(max(1, size // 32))}).encode()
+    return {'payloads': [{'metadata': {'encoding': base64.b64encode(b'json/plain').decode()},
+                          'data': base64.b64encode(body).decode()}]}
+
+
 def history(counts):
     return {name: [event(i, 'x' * size) for i in range(1, n + 1)] for name, (n, size) in counts.items()}
 
@@ -370,21 +379,22 @@ class IsolatedProofDeliveryTests(unittest.TestCase):
               'def test_renamed_tasks_share_six_implementation_attempts')
 
     def delivery_node(self):
-        """The single statement in prepare() that produces the delivered proofs."""
+        """The single statement in prepare() that produces the delivered proofs: one read per bound proof."""
         import ast
         import inspect as inspect_module
         from runtime import development_final
         for node in ast.walk(ast.parse(inspect_module.getsource(development_final.prepare).lstrip())):
-            if (isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Subscript)
-                    and isinstance(node.targets[0].slice, ast.Constant)
-                    and node.targets[0].slice.value == self.DELIVERED):
-                return node
-        self.fail('prepare() no longer delivers ' + self.DELIVERED)
+            if (isinstance(node, ast.For) and ast.unparse(node.iter) == 'PROOFS' and len(node.body) == 1
+                    and isinstance(node.body[0], ast.Assign)
+                    and ast.unparse(node.body[0].targets[0]) == "files['proofs/' + Path(path).name]"):
+                return node.body[0]
+        self.fail('prepare() no longer delivers the bound proofs, ' + self.DELIVERED + ' among them')
 
     def test_the_proofs_are_read_from_the_releases_own_revision(self):
         """Not from the working tree. A working-copy read would let edited text be presented as the text the
         running release was built from."""
         import ast
+        from runtime import development_final
         node = self.delivery_node()
         self.assertIsInstance(node.value, ast.Call)
         self.assertEqual(getattr(node.value.func, 'id', None), 'git',
@@ -392,9 +402,10 @@ class IsolatedProofDeliveryTests(unittest.TestCase):
         spec = ast.unparse(node.value.args[2])
         self.assertIn("config['runtime_revision']", spec,
                       'bound to the ACTIVE release revision, not a branch, tag or working file')
-        self.assertIn('scripts/test_development_scope.py', spec)
         self.assertEqual(ast.unparse(node.value.args[0]), 'repository(RUNTIME)')
         self.assertEqual(ast.unparse(node.value.args[1]), "'show'")
+        self.assertIn('scripts/' + self.DELIVERED.split('/', 1)[1], development_final.PROOFS,
+                      'the first review\'s ceiling proofs are still among the delivered ones')
 
     def proof_source(self):
         """The delivered text, at the revision the host would deliver. Where an active release is visible that
@@ -621,26 +632,128 @@ class CompanionReadabilityTests(unittest.TestCase):
         self.assertIn('77', [e['eventId'] for e in delivered], 'the verbatim event is delivered anyway')
 
     def test_at_the_real_bound_that_same_event_does_get_its_companion(self):
-        """So the gap above is the bound doing its work, not the event being undeliverable."""
-        from runtime.development_final import READ_BOUND
+        """So the gap above is the bound doing its work, not the event being undeliverable - for an event in the
+        measured payload shape. A plain long string is not that shape: its companion would keep the long line,
+        and it is named as a gap instead (ReadableDeliveryTests)."""
+        from runtime.development_final import READ_BOUND, READER_LINE_BYTES
         source = history({'office-ap11': (4, 100)})
-        source['office-ap11'].insert(1, event(77, 'x' * 30000))
+        source['office-ap11'].insert(1, event(77, encoded(30000)))
         files = history_parts(source, ROOM)
         entry = json.loads(files['NATIVE_HISTORY_INDEX.json'])['workflows']['office-ap11']
         named = [line for part in entry['parts'] for line in part.get('unreadable_lines', [])
                  if line['event_id'] == '77'][0]
         self.assertIsNotNone(named['readable_copy'])
         self.assertLessEqual(len(files[named['readable_copy']]), READ_BOUND)
+        self.assertLessEqual(max(len(line) for line in files[named['readable_copy']].split(b'\n')), READER_LINE_BYTES)
 
     def test_every_companion_actually_written_is_within_the_readers_bound(self):
         from runtime.development_final import READ_BOUND
+        from runtime.development_final import READER_LINE_BYTES
         source = history({'office-ap11': (6, 100)})
-        source['office-ap11'].insert(2, event(88, 'x' * 60000))
+        source['office-ap11'].insert(2, event(88, encoded(60000)))
         files = history_parts(source, ROOM)
         companions = [name for name in files if name.startswith('NATIVE_HISTORY_EVENT_')]
         self.assertTrue(companions, 'this fixture really does produce a companion')
         for name in companions:
             self.assertLessEqual(len(files[name]), READ_BOUND, name)
+            self.assertLessEqual(max(len(line) for line in files[name].split(b'\n')), READER_LINE_BYTES, name)
+
+
+class ReadableDeliveryTests(unittest.TestCase):
+    """The gate that refuses a whole-goal package the reviewer could not open, and the verdicts it carries.
+
+    Measured with the reviewer's own reader: a read over 25000 tokens is refused and offsets count lines, so a line
+    past READER_LINE_BYTES can never be opened. The gate must refuse such a package, never hand it over, and must
+    accept a verbatim history line only where its readable companion was written."""
+
+    def test_a_long_derived_line_refuses_the_package_and_names_the_file(self):
+        from runtime.development_final import readable_delivery, READER_LINE_BYTES
+        files = {'SHORT.json': b'{"a": 1}\n', 'ONE_LINE.json': b'{"a": "' + b'x' * (READER_LINE_BYTES + 1) + b'"}'}
+        with self.assertRaises(ValueError) as caught:
+            readable_delivery(files)
+        self.assertIn('ONE_LINE.json', str(caught.exception))
+        self.assertIs(readable_delivery({'SHORT.json': files['SHORT.json']})['SHORT.json'], files['SHORT.json'])
+
+    def test_a_file_over_the_per_file_bound_refuses_even_with_short_lines(self):
+        from runtime.development_final import readable_delivery, READ_BOUND
+        body = (b'x' * 99 + b'\n') * (READ_BOUND // 100 + 1)
+        with self.assertRaises(ValueError) as caught:
+            readable_delivery({'BIG.md': body})
+        self.assertIn('per-file bound', str(caught.exception))
+
+    def test_readable_json_keeps_every_line_short_for_the_real_journal_shape(self):
+        from runtime.development_final import readable_json, readable_delivery, READER_LINE_BYTES
+        rows = [{'sequence': n, 'previous': 'a' * 64, 'sha256': 'b' * 64,
+                 'event': {'kind': 'effect-result', 'result': {'files': ['tools/x%d.py' % i for i in range(40)]}}}
+                for n in range(1, 120)]
+        one_line = json.dumps(rows).encode()
+        self.assertGreater(len(one_line), READER_LINE_BYTES, 'the old one-line form really is unreadable')
+        body = readable_json({'journal': rows})
+        self.assertLessEqual(max(len(line) for line in body.split(b'\n')), READER_LINE_BYTES)
+        readable_delivery({'SCOPE_JOURNAL.json': body})
+        with self.assertRaises(ValueError):
+            readable_delivery({'SCOPE_JOURNAL.json': one_line})
+
+    def test_a_verbatim_history_line_passes_only_where_its_companion_is_recorded(self):
+        from runtime.development_final import history_parts, readable_delivery
+        def event(n, payload=''):
+            return {'eventId': str(n), 'eventType': 'EVENT_TYPE_ACTIVITY_TASK_SCHEDULED',
+                    'eventTime': '2026-09-23T00:00:%02dZ' % (n % 60), 'payload': payload}
+        import base64
+        decodable = {'payloads': [{'data': base64.b64encode(json.dumps({'k%d' % i: 'v' * 40 for i in range(900)}).encode()).decode()}]}
+        files = history_parts({'office-ap11': [event(1), event(2, 'x' * 60000), event(3, decodable)]}, 3 * 1024 * 1024)
+        readable_delivery(dict(files))
+        index = json.loads(files['NATIVE_HISTORY_INDEX.json'])
+        lines = {u['event_id']: u for e in index['workflows'].values() for p in e['parts'] for u in p.get('unreadable_lines', [])}
+        self.assertIsNone(lines['2']['readable_copy'], 'an undecodable long line gets no unreadable companion')
+        self.assertTrue(lines['3']['readable_copy'], 'a decodable one gets its readable companion')
+        self.assertIn(lines['3']['readable_copy'], files)
+        for entry in index['workflows'].values():
+            for part in entry['parts']:
+                part.pop('unreadable_lines', None)
+        stripped = {**files, 'NATIVE_HISTORY_INDEX.json': json.dumps(index).encode()}
+        with self.assertRaises(ValueError, msg='a long verbatim line without its recorded companion refuses'):
+            readable_delivery(stripped)
+
+
+class WholeGoalReviewsTests(unittest.TestCase):
+    """Every earlier whole-goal review, as the host preserved it: a completed one's answer verbatim, an incomplete
+    one only as measured, never its stream's content."""
+
+    def test_completed_answers_verbatim_incomplete_only_measured(self):
+        import tempfile
+        from types import SimpleNamespace
+        from runtime import development_final as final
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stages = {'step-36': {'completed': True, 'process_group_removed': True, 'answer': {'verdict': 'inconclusive'},
+                                  'provider': {'thread_id': 'first'}, 'reason': None, 'model_started': True, 'elapsed_seconds': 1.0},
+                      'office-ap11-assessment-3-step-2': {'completed': False, 'process_group_removed': True, 'answer': None,
+                                  'provider': {'thread_id': 'cut'}, 'reason': 'goal call signal', 'model_started': True,
+                                  'elapsed_seconds': 2.0}}
+            for nonce, result in stages.items():
+                (root / 'calls' / nonce).mkdir(parents=True)
+                (root / 'calls' / nonce / 'result.json').write_text(json.dumps(result))
+            (root / 'calls' / 'office-ap11-assessment-3-step-2' / 'events.jsonl').write_bytes(b'{"partial": "reading"}\n')
+            calls = [{'nonce': 'step-35', 'role': 'driver'}, {'nonce': 'step-36', 'role': 'final-review'},
+                     {'nonce': 'office-ap11-assessment-3-step-2', 'role': 'final-review'}]
+            records = [{'sequence': n, 'event': {'kind': kind, 'nonce': nonce}}
+                       for n, (kind, nonce) in enumerate([('call', 'step-36'), ('launch', 'step-36'), ('started', 'step-36'),
+                                                          ('call', 'office-ap11-assessment-3-step-2')], 1)]
+            scope = SimpleNamespace(directory=root, inspect=lambda: {'calls': calls})
+            with patch.object(final.assessment, 'identities',
+                              return_value=('office-ap11', 'office-ap11-assessment-2', 'office-ap11-assessment-3')):
+                reviews = final.whole_goal_reviews(scope, {}, records)['reviews']
+        self.assertEqual([r['nonce'] for r in reviews], ['step-36', 'office-ap11-assessment-3-step-2'])
+        first, cut = reviews
+        self.assertEqual(first['identity'], 'office-ap11')
+        self.assertEqual(first['answer'], {'verdict': 'inconclusive'})
+        self.assertEqual(first['journal'], {'call': 1, 'launch': 2, 'started': 3})
+        self.assertEqual(cut['identity'], 'office-ap11-assessment-3')
+        self.assertNotIn('answer', cut, 'an incomplete review is never a verdict')
+        self.assertEqual(cut['result']['reason'], 'goal call signal')
+        self.assertEqual(cut['stream']['bytes'], len(b'{"partial": "reading"}\n'))
+        self.assertNotIn('partial', json.dumps(reviews), 'the interrupted stream\'s content never travels')
 
 
 class HostChecksAreStillBoundTests(unittest.TestCase):
@@ -657,10 +770,11 @@ class HostChecksAreStillBoundTests(unittest.TestCase):
             'test_the_qualification_index_binds_every_preserved_record',
             'test_the_real_preserved_sessions_divide_exactly_as_measured'),
         'PopulatedScopeTests': (
-            'test_no_assessment_key_can_land_on_a_stage_this_scope_already_has',
+            'test_no_key_of_the_next_identity_can_land_on_a_stage_this_scope_already_has',
             'test_an_inherited_namespace_really_does_reach_an_existing_stage',
-            'test_the_assessment_key_is_a_valid_scope_identity',
-            'test_the_preserved_run_keeps_its_keys_journal_and_verdict'),
+            'test_the_next_identity_key_is_a_valid_scope_identity',
+            'test_every_identity_that_has_run_is_refused_by_the_scope_itself',
+            'test_the_preserved_runs_keep_their_keys_journal_and_verdict'),
     }
 
     def module(self):
@@ -753,8 +867,6 @@ class HostChecksAreStillBoundTests(unittest.TestCase):
         for klass, methods in self.EXPECTED.items():
             for method in methods:
                 name = klass + '.' + method
-                if name.endswith('test_the_assessment_key_is_a_valid_scope_identity'):
-                    continue            # reads no host state; listed only so a rename is still caught
                 with self.subTest(check=name):
                     self.assertIn(name, reached, 'this check does not reach the presence guard')
 

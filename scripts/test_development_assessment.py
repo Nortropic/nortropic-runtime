@@ -154,6 +154,41 @@ class BindingTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     assessment.assessments(self.build(directory, decision=decision, entry=entry))
 
+    def test_each_further_entry_binds_the_next_identity_after_the_one_before_it(self):
+        """Owner mandate 2026-09-23: a further assessment must not need the same principle decision again, so the
+        n-th entry's identity is derived, never chosen - and it still needs its own decision and its own review."""
+        with tempfile.TemporaryDirectory() as directory:
+            config = self.build(directory)
+            context = Path(directory) / 'development-context'
+            decision = b'Decision: assess the same commitment after the named completions.\n'
+            review = {'verdict': 'approved', 'blocking_findings': [], 'assesses': 'office-ap11-assessment-3',
+                      'after': ID, 'previous_outcome': 'whole_goal_not_approved', 'decision_sha256': sha(decision)}
+            body = json.dumps(review).encode()
+            (context / 'assessment-3.md').write_bytes(decision)
+            (context / 'assessment-3-review.json').write_bytes(body)
+            third = {'id': 'office-ap11-assessment-3', 'after': ID, 'previous_outcome': 'whole_goal_not_approved',
+                     'decision': 'assessment-3.md', 'decision_sha256': sha(decision),
+                     'review': 'assessment-3-review.json', 'review_sha256': sha(body)}
+            bound = config['development']['assessments'] + [third]
+            chained = {**config, 'development': {'assessments': bound}}
+            self.assertEqual(assessment.identities(chained), ('office-ap11', ID, 'office-ap11-assessment-3'))
+            self.assertEqual(assessment.identity(chained), 'office-ap11-assessment-3')
+            variants = {
+                'a name of its own choosing': {**third, 'id': 'office-ap11-assessment-9'},
+                'skipping its predecessor': {**third, 'after': assessment.APPLICATION},
+                'the review of another decision': {**third, 'decision_sha256': sha(b'another')},
+            }
+            for label, entry in variants.items():
+                with self.subTest(label=label):
+                    with self.assertRaises(ValueError):
+                        assessment.assessments({**config, 'development': {
+                            'assessments': config['development']['assessments'] + [entry]}})
+            reviewed_elsewhere = {**review, 'after': assessment.APPLICATION}
+            (context / 'assessment-3-review.json').write_bytes(json.dumps(reviewed_elsewhere).encode())
+            with self.assertRaises(ValueError, msg='a review approving it after another run does not count'):
+                assessment.assessments({**config, 'development': {'assessments': config['development']['assessments']
+                                        + [{**third, 'review_sha256': sha(json.dumps(reviewed_elsewhere).encode())}]}})
+
     def test_the_list_itself_cannot_grant_an_open_ended_series(self):
         with tempfile.TemporaryDirectory() as directory:
             config = self.build(directory)
@@ -227,6 +262,53 @@ class PreconditionTests(unittest.TestCase):
             scope = self.scope(directory, calls=(('step-36', 'final-review'), ('step-40', 'final-review')),
                                result={'answer': {'verdict': 'inconclusive'}})
             self.assertEqual(self.run_check(scope)[0], 'step-40')
+
+
+class EvidenceAndIdentityTests(unittest.TestCase):
+    """The two refusals that must not depend on the engine: unchanged evidence, and an identity already run."""
+
+    def scope(self, directory, calls=('step-36',), delivered=b'{"files": {"A.json": "1"}}',
+              current=b'{"files": {"A.json": "2"}}'):
+        root = Path(directory)
+        for nonce in calls:
+            (root / 'calls' / nonce / 'workspace' / 'qualification').mkdir(parents=True, exist_ok=True)
+            (root / 'calls' / nonce / 'workspace' / 'qualification' / 'index.json').write_bytes(delivered)
+        if current is not None:
+            (root / 'qualification').mkdir(parents=True, exist_ok=True)
+            (root / 'qualification' / 'index.json').write_bytes(current)
+        return SimpleNamespace(directory=root, inspect=lambda: {'calls': [{'nonce': n} for n in calls]})
+
+    def test_changed_evidence_is_measured_on_the_index_the_followed_review_was_given(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scope = self.scope(directory)
+            self.assertEqual(assessment.changed_evidence(scope, 'step-36'),
+                             sha(b'{"files": {"A.json": "2"}}'))
+        with tempfile.TemporaryDirectory() as directory:
+            same = self.scope(directory, current=b'{"files": {"A.json": "1"}}')
+            with self.assertRaises(ValueError):
+                assessment.changed_evidence(same, 'step-36')
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError):
+                assessment.changed_evidence(self.scope(directory, current=None), 'step-36')
+
+    def test_an_identity_is_unused_only_while_it_has_neither_a_start_record_nor_a_counted_call(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scope = self.scope(directory, calls=('step-36', ID + '-step-3'))
+            with self.assertRaises(ValueError):
+                assessment.unused_identity(scope, ID)
+            assessment.unused_identity(scope, 'office-ap11-assessment-3')   # a namespace nothing has used
+            assessment.record_start(scope, 'office-ap11-assessment-3', '2026-09-23T00:00:00Z')
+            with self.assertRaises(ValueError):
+                assessment.unused_identity(scope, 'office-ap11-assessment-3')
+            with self.assertRaises(FileExistsError, msg='a start record is never rewritten'):
+                assessment.record_start(scope, 'office-ap11-assessment-3', '2026-09-24T00:00:00Z')
+            with self.assertRaises(ValueError):
+                assessment.unused_identity(scope, assessment.APPLICATION)
+
+    def test_a_similar_name_is_not_the_same_namespace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            scope = self.scope(directory, calls=('office-ap11-assessment-20-step-1',))
+            assessment.unused_identity(scope, ID)
 
 
 class ControlWiringTests(unittest.TestCase):

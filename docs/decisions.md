@@ -1032,3 +1032,31 @@ evidence/claude-host-copy/provenance.json.
 
 This is not a requalification and not a new version: no model, right, payment path or acceptance
 requirement changes. Moving to a newer CLI remains a separate qualified step.
+
+## D024 — 2026-09-23: a whole-goal package the reviewer cannot read is refused, and an assessment identity never runs twice
+
+Two whole-goal reviews in a row named delivered evidence they could not open. The common cause was not one file:
+host-derived JSON was written with `json.dumps` on one line, which every byte check passes, while the reviewer's
+own reader refuses any read over 25000 tokens and pages by LINE, so a long line can never be opened (measured with
+the reviewer's profile: "File content (79468 tokens) exceeds maximum allowed tokens (25000)"). The second review
+could not open SCOPE_JOURNAL.json (82631 bytes on one line); SCOPE.json and ACTUAL_REPORTS.json had the same shape
+and were readable only because they were shorter.
+
+Decision, readability: every derived JSON delivery of the final-review package is printed over short lines, and
+`prepare()` refuses a package in which any delivered line exceeds READER_LINE_BYTES or any file exceeds the per-file
+bound. The only exception is a verbatim native-history line, accepted where the index records it as unreadable in
+place, with its readable companion or, where no companion the reader could open can be made, as a named gap. The package also carries every earlier whole-goal review of the commitment
+verbatim (WHOLE_GOAL_REVIEWS.json; an incomplete one only as the host measured it, never its partial stream), the
+decision and review binding each further assessment, and the release revision's own proof sources.
+
+Decision, further assessments: the n-th entry of `development.assessments` IS `office-ap11-assessment-(n+1)` and
+follows the entry before it; a decision can no longer choose a name, and a new entry needs no code change. Each
+run's counted keys use its own identity (`key_prefix`), so the second assessment replays under exactly the keys it
+ran under. `assess` refuses when the selected evidence is the package the followed review already had, and refuses
+any identity the scope has seen run - a counted call in its namespace or a recorded start - because the engine's
+duplicate refusal forgets a closed run one day after it closed. The start record is written only after the engine
+accepted the start.
+
+Unchanged: the 48/6 ceilings, the duplicate-start refusal, the requirement that each further assessment is a
+separately reviewed decision bound in the active configuration through a controlled transition, and that an
+assessment follows only a review that was not approved.

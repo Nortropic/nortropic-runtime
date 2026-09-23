@@ -1,3 +1,31 @@
+# AP11 — GÄLLANDE INGÅNG: komplettering och tredje helhetsbedömning (2026-09-23)
+
+Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE, mätt 2026-09-23. Aktiv release runtime 7abea494 / kontor df5ed5dc, konfiguration 4cfa59b7. Scopet står
+`paused` (journalsekvens 117) med 26 av 48 räknade anrop; implementationsförsök 1 av 6 för vardera arbetsdel.
+A och B är integrerade (kontorets PR 28 -> dd866764 och PR 29 -> df5ed5dc). Två helhetsbedömningar är inte
+godkända och står oförändrade: `office-ap11` (step-36, inconclusive, tio fynd) och `office-ap11-assessment-2`
+(anrop 26, inconclusive, sex fynd). Ägaren har delegerat den tekniska ledningen till verifierat avslut
+(kontorets beslut AP11-DELEGERING-20260923); slutkraven, 48/6, sekretessen och behörighetsreglerna är oförändrade.
+
+GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`, en pekare till den senaste
+daterade posten. Nästa handling och kvarvarande processer står där; i sammandrag:
+
+1. Publicera revisionen med läsbar leverans (D024), båda domarna levererade ordagrant, den generella och
+   granskade bedömningsbindningen och vägran att köra en bedömningsidentitet två gånger.
+2. Övergång 10: binda `office-ap11-assessment-3` till sitt beslut och sin separata granskning, bära den andra
+   bedömningens stängda historik (säkrad i `closed-histories-preserved-20260923T173106Z`) och pröva den nya
+   releasens förberedelse mot det verkliga scopet utan att skriva i det.
+3. Den tredje helhetsbedömningen, med den levande G6-demonstrationen i den form som
+   `qualification/G6-R3-FORM.md` fastställer och som separat granskats innan den genomförs.
+
+VIKTIGT: kör inte `assess` på release 7abea494. Dess bundna identitet är den redan körda
+`office-ap11-assessment-2`, och motorn glömmer den stängda körningen ungefär 2026-09-24T15:23Z; först den nya
+releasen vägrar det i scopet självt.
+
+Operatörsvägen: docs/runbook.md, avsnittet "AP11: operating the finite commitment".
+
 # AP11 — host recovery active; the review stalls because the host never finishes handing over its prompt
 
 2026-09-22T18:40Z. Office **docs/plan.md alone owns the milestones, next action and resume point.**
@@ -445,6 +473,9 @@ NÄSTA HANDLING, i ordning:
    releasens verkliga förberedelse mot det verkliga scopet utan att skriva i det.
 4. Lämna ägaren aktiveringsbegäran. Efter aktiveringen besvaras diagnosen genom den
    granskade värdsvarsvägen (`continue`), och bedömningen fortsätter under en ny nyckel.
+
+GENOMFÖRT (tillagt i efterhand, inget ovan ändrat): övergång 9 aktiverades av ägaren 2026-09-23T15:17Z, den
+andra bedömningen körde som anrop 26 och gav inconclusive. Gällande nästa steg står i planens ingång överst.
 
 A/B, den första helhetsdomen, samma åtagande och faktisk förbrukning bevaras. Taken
 48/6 ändras inte. Ingen ny interaktiv start, reset eller ombyggnad av de levererade

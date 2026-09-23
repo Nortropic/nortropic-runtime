@@ -29,6 +29,16 @@ POLL_SECONDS = 30
 # native command (a timer) is recorded, so earlier histories replay unchanged. Forward-only:
 # a history in which this signal was processed no longer replays under earlier parent code.
 HOST_WAIT_SECONDS = 6*3600
+# The one accepted application. Named here rather than imported: this module is loaded inside the workflow
+# sandbox, and the assessment module that owns the same name reaches host code that has no place there.
+APPLICATION = 'office-ap11'
+
+
+def key_prefix(identity):
+    """The counted-step key prefix of a run identity: the original application keeps the build's 'step-', and
+    every further assessment uses its own full identity, so a stage on disk says which run consumed it and no
+    new identity needs a code change to get a namespace of its own."""
+    return 'step-' if identity == APPLICATION else identity + '-step-'
 
 
 @workflow.defn
@@ -68,12 +78,13 @@ class FiniteDevelopment:
     # prepare_call creates its stage with exist_ok=False - so the collision is not a refusal but a repeating
     # host-diagnosis loop that rebuilds the whole evidence package and records spurious operator answers into
     # the very evidence it is delivering. Every run identity therefore owns its own prefix.
-    KEY_PREFIX = 'step-'
+    def key_prefix(self):
+        return key_prefix(APPLICATION)
 
     async def step(self, operation, **fields):
         self.sequence += 1
         request = {'contract_sha256': self.expected, 'operation': operation,
-                   'key': self.KEY_PREFIX + str(self.sequence), **fields}
+                   'key': self.key_prefix() + str(self.sequence), **fields}
         while True:
             self.wake = False
             try:
@@ -87,7 +98,7 @@ class FiniteDevelopment:
                 self.continuation = None
                 # Do not replay a consumed side effect. A fresh operation key
                 # preserves all earlier reservations, artifacts and diagnosis.
-                self.sequence += 1; request['key'] = self.KEY_PREFIX + str(self.sequence)
+                self.sequence += 1; request['key'] = self.key_prefix() + str(self.sequence)
                 continue
             if result.get('capacity_wait'):
                 self.phase = 'waiting_capacity'; self.reason = result['reason']
@@ -197,18 +208,21 @@ class FiniteDevelopment:
 
 @workflow.defn
 class FiniteAssessment(FiniteDevelopment):
-    """A second whole-goal assessment of the SAME already delivered application.
+    """A further whole-goal assessment of the SAME already delivered application.
 
     It reuses the counted step machinery, the signals and the state query of the build workflow, and nothing
-    else of it, but NOT its key namespace: it shares the build's scope, whose earlier keys already exist. It never runs the interactive session, never prepares or reviews a draft, never freezes a task,
+    else of it, but NOT its key namespace: it shares the build's scope, whose earlier keys already exist. It never
+    runs the interactive session, never prepares or reviews a draft, never freezes a task,
     never starts a child and never publishes: the delivery it assesses already exists and re-driving it is
     exactly what this entry is for avoiding. The preserved delivery is verified BEFORE the counted review, so a
     scope without both integrations refuses without spending a model call.
     """
 
-    # The full run identity, so a stage on disk says which run consumed it. identifier() allows 80
-    # characters of [a-z0-9-]; this prefix plus a sequence stays well inside that.
-    KEY_PREFIX = 'office-ap11-assessment-2-step-'
+    # The run's own identity as the engine holds it, so a stage on disk says which run consumed it. For the second
+    # assessment this is exactly the prefix it ran under, so its recorded history replays unchanged. identifier()
+    # allows 80 characters of [a-z0-9-]; an assessment identity plus '-step-' and a sequence stays well inside that.
+    def key_prefix(self):
+        return key_prefix(workflow.info().workflow_id)
 
     @workflow.run
     async def run(self, expected: str) -> dict:

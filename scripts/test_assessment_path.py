@@ -75,8 +75,13 @@ class FakeClient:
 
 class OperatorPathTests(unittest.TestCase):
     def context(self, directory, bound=True, control_value='active', approved=False,
-                predecessor='COMPLETED', calls=(('step-36', 'final-review'),), result=True):
-        """A whole isolated world: a scope directory, a configuration, and a fake engine."""
+                predecessor='COMPLETED', calls=(('step-36', 'final-review'),), result=True, unchanged=False,
+                started=False):
+        """A whole isolated world: a scope directory, a configuration, and a fake engine.
+
+        The scope carries the measured shape of selected evidence: the current qualification index, and the index
+        the review being followed was actually given, inside that review's own workspace. By default they differ,
+        as they do after a real completion; `unchanged` makes the package the one that review already had."""
         root = Path(directory)
         context_dir = root / 'development-context'
         context_dir.mkdir(parents=True, exist_ok=True)
@@ -105,6 +110,15 @@ class OperatorPathTests(unittest.TestCase):
             stage.mkdir(parents=True, exist_ok=True)
             if result:
                 stage.joinpath('result.json').write_text(json.dumps({'answer': {'verdict': 'inconclusive'}}))
+            delivered = stage / 'workspace' / 'qualification'
+            delivered.mkdir(parents=True, exist_ok=True)
+            delivered.joinpath('index.json').write_text(json.dumps({'files': {'RECORD.json': 'a' * 64}}))
+        (scope_dir / 'qualification').mkdir(parents=True, exist_ok=True)
+        (scope_dir / 'qualification' / 'index.json').write_text(
+            json.dumps({'files': {'RECORD.json': 'a' * 64 if unchanged else 'b' * 64}}))
+        if started:
+            (scope_dir / assessment.STARTS).mkdir(parents=True, exist_ok=True)
+            (scope_dir / assessment.STARTS / (ID + '.json')).write_text('{}')
         recorded = []
         scope = SimpleNamespace(directory=scope_dir, expected='c' * 64,
                                 controls=recorded,
@@ -228,6 +242,57 @@ class OperatorPathTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(ValueError):
                 self.run_action('assess', directory, control_value='paused')
+
+    def test_the_package_the_previous_review_already_had_is_refused_before_anything_starts(self):
+        """Owner mandate 2026-09-23: a further assessment is for completed evidence, never another draw with
+        the same package until some reviewer happens to approve."""
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError) as caught:
+                self.run_action('assess', directory, unchanged=True)
+            self.assertIn('already had', str(caught.exception))
+
+    def test_an_identity_with_a_counted_call_in_this_scope_never_starts_again(self):
+        """The engine forgets a closed execution one day after it closed, and REJECT_DUPLICATE then lets the same
+        id start again. Measured against the real scope: office-ap11-assessment-2 has consumed a call under its own
+        namespace, so this is exactly the state its bound identity is in once the engine has removed the run."""
+        with tempfile.TemporaryDirectory() as directory:
+            calls = (('step-36', 'final-review'), (ID + '-step-3', 'final-review'))
+            with self.assertRaises(ValueError) as caught:
+                self.run_action('assess', directory, predecessor='NOT_FOUND', calls=calls)
+            self.assertIn('never started again', str(caught.exception))
+
+    def test_a_recorded_start_refuses_even_before_any_call_was_counted(self):
+        """A run that stopped before its first reservation leaves no call behind; its start record still does."""
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError) as caught:
+                self.run_action('assess', directory, predecessor='NOT_FOUND', started=True)
+            self.assertIn('never started again', str(caught.exception))
+
+    def test_the_start_is_recorded_only_after_the_engine_accepted_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config, scope, client, policy = self.context(directory)
+            record = scope.directory / assessment.STARTS / (ID + '.json')
+
+            async def refused(*args, **kwargs):
+                raise RuntimeError('engine refused the start')
+            client.start_workflow = refused
+
+            class FakeService:
+                async def __aenter__(self_inner):
+                    return client
+
+                async def __aexit__(self_inner, *exc):
+                    return False
+            with patch.object(control, 'require_active_code', return_value=config), \
+                 patch.object(control, 'active_scope', return_value=(scope, config)), \
+                 patch.object(control, 'SharedService', FakeService), \
+                 patch.object(assessment.host, 'policy', return_value=policy):
+                with self.assertRaises(RuntimeError):
+                    asyncio.run(control.operate('assess'))
+            self.assertFalse(record.exists(), 'a start the engine did not accept burns no identity')
+        with tempfile.TemporaryDirectory() as directory:
+            _code, client = self.run_action('assess', directory)
+            self.assertEqual([s['id'] for s in client.started], [ID])
 
 
 class AssessmentWorkflowTests(unittest.TestCase):
@@ -375,7 +440,7 @@ class CountedKeyNamespaceTests(unittest.TestCase):
     engine, so none of them can see a key at all.
     """
 
-    def keys(self, workflow_class, count=3):
+    def keys(self, workflow_class, count=3, identity=ID):
         from runtime import development_workflow
         seen = []
 
@@ -386,7 +451,10 @@ class CountedKeyNamespaceTests(unittest.TestCase):
 
         instance = workflow_class()
         instance.expected = 'c' * 64
-        with patch.object(development_workflow.workflow, 'execute_activity', execute_activity):
+        # The prefix is read from the engine's own record of the run; outside a worker that is this double.
+        info = SimpleNamespace(workflow_id=identity)
+        with patch.object(development_workflow.workflow, 'execute_activity', execute_activity), \
+             patch.object(development_workflow.workflow, 'info', return_value=info):
             async def drive():
                 for _ in range(count):
                     await instance.step('control')
@@ -404,8 +472,24 @@ class CountedKeyNamespaceTests(unittest.TestCase):
 
     def test_the_prefix_names_the_identity_it_belongs_to(self):
         """So a stage on disk says which run consumed it, rather than only which sequence number."""
-        self.assertEqual(FiniteAssessment.KEY_PREFIX, ID + '-step-')
-        self.assertEqual(FiniteDevelopment.KEY_PREFIX, 'step-')
+        from runtime.development_workflow import key_prefix
+        self.assertEqual(key_prefix(ID), ID + '-step-')
+        self.assertEqual(key_prefix('office-ap11'), 'step-')
+        self.assertEqual(self.keys(FiniteAssessment, count=1), [ID + '-step-1'])
+
+    def test_every_further_identity_gets_its_own_namespace_without_a_code_change(self):
+        second = self.keys(FiniteAssessment, identity='office-ap11-assessment-2')
+        third = self.keys(FiniteAssessment, identity='office-ap11-assessment-3')
+        self.assertEqual(third, ['office-ap11-assessment-3-step-1', 'office-ap11-assessment-3-step-2',
+                                 'office-ap11-assessment-3-step-3'])
+        self.assertEqual(set(second) & set(third), set())
+        self.assertEqual(self.keys(FiniteDevelopment, identity='office-ap11-assessment-3'),
+                         ['step-1', 'step-2', 'step-3'], 'the build keeps its own prefix whatever id it is given')
+
+    def test_the_second_assessment_replays_under_exactly_the_prefix_it_ran_under(self):
+        """Its recorded history names office-ap11-assessment-2-step-3; derived from its id, the key is the same."""
+        self.assertEqual(self.keys(FiniteAssessment, count=3, identity='office-ap11-assessment-2')[-1],
+                         'office-ap11-assessment-2-step-3')
 
     def test_a_retried_key_after_an_activity_error_stays_in_the_namespace(self):
         """The error path advances the key by one and must not fall back to the build's prefix."""
@@ -417,7 +501,7 @@ class CountedKeyNamespaceTests(unittest.TestCase):
                        if isinstance(n, ast.Assign) and "'key'" in ast.unparse(n)]
         self.assertTrue(assignments, 'the retry path assigns a fresh key')
         for text in assignments:
-            self.assertIn('KEY_PREFIX', text, 'every key the step builds uses the run\'s own prefix')
+            self.assertIn('self.key_prefix()', text, 'every key the step builds uses the run\'s own prefix')
 
 
 class StopCoversTheRunningAssessmentTests(OperatorPathTests):

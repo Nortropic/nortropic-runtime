@@ -64,7 +64,10 @@ async def operate(action, reason=None):
             # What it follows: an actual whole-goal review that was NOT approved, and runs that are really
             # closed. The second check is what keeps a second writer off this one scope; REJECT_DUPLICATE
             # still protects the new identity against being started twice itself.
-            assessment.preserved_refusal(scope, config)
+            followed, _ = assessment.preserved_refusal(scope, config)
+            assessment.changed_evidence(scope, followed)
+            # Retention-proof: REJECT_DUPLICATE below refuses only what the engine still holds.
+            assessment.unused_identity(scope, current)
             for earlier in assessment.identities(config)[:-1]:
                 try:
                     described = await asyncio.wait_for(client.get_workflow_handle(earlier).describe(), 10)
@@ -79,6 +82,7 @@ async def operate(action, reason=None):
                     raise ValueError('The application a further assessment follows is still running: '+earlier)
             await client.start_workflow(FiniteAssessment.run,scope.expected,id=current,task_queue='development',
                 id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
+            assessment.record_start(scope, current, datetime.now(timezone.utc).isoformat())
         elif action == 'stop':
             # Scope is closed before cancellation, so queued task starts and
             # new publication effects remain denied even if cancellation lags.
