@@ -633,6 +633,7 @@ class PreflightAndPendingTest(unittest.TestCase):
             'WORK = {"reconciliation": [], "handoff": []}\n'
             'RECIPES = {"reconciliation": "acceptance/recipe_a.py", "handoff": "acceptance/recipe_b.py"}\n')
         (release/'office/tools/kontor_result.py').write_text('def render(goal):\n    return goal\n')
+        (release/'office/tools/agarbild.py').write_text('def owner_view(result):\n    return result\n')
         (release/'office/acceptance/recipe_a.py').write_text('# frozen acceptance for A\n')
         (release/'office/acceptance/recipe_b.py').write_text('# frozen acceptance for B\n')
         (self.directory/'drafts').mkdir(exist_ok=True)
@@ -676,6 +677,10 @@ class PreflightAndPendingTest(unittest.TestCase):
         self.assertEqual(delivered['acceptance/recipe_a.py'], b'# frozen acceptance for A\n')
         self.assertEqual(delivered['acceptance/recipe_b.py'], b'# frozen acceptance for B\n')
         self.assertFalse([name for name in delivered if name.startswith('acceptance/acceptance/')])
+        # Both reused readers arrive with the bytes the release's own Office copy carries; D027 adds the owner view,
+        # under the name the reviewer's instructions give it.
+        self.assertEqual(delivered['office/kontor_result.py'], b'def render(goal):\n    return goal\n')
+        self.assertEqual(delivered['tools/agarbild.py'], b'def owner_view(result):\n    return result\n')
 
 
 class FreezeExecutorsTest(unittest.TestCase):

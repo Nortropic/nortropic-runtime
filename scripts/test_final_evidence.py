@@ -274,12 +274,15 @@ class DeliveryBoundTests(unittest.TestCase):
 
     Owner decision of 2026-09-23: final-review gets 3 MiB because the measured whole-goal material is
     2111037 bytes; every other role keeps 2 MiB; the per-file bound is untouched; and the bound follows the
-    HOST's role choice, never anything the model or the package could influence.
+    HOST's role choice, never anything the model or the package could influence. D027, under the owner's words of
+    2026-09-24 that what is required is done: final-review gets 4 MiB, because the active release's own preparation,
+    measured against the real scope before the sixth assessment, already delivered the first part of the application's
+    history (events 1 to 510) as a gap under 3 MiB. The figure is the operator session's choice. Nothing else changed.
     """
 
     def test_only_the_whole_goal_review_was_raised(self):
         from runtime.development_host import CONTEXT_BYTES
-        self.assertEqual(CONTEXT_BYTES['final-review'], 3145728)
+        self.assertEqual(CONTEXT_BYTES['final-review'], 4194304)
         self.assertEqual(CONTEXT_BYTES[None], 2097152)
         self.assertEqual(set(CONTEXT_BYTES), {None, 'final-review'},
                          'exactly one role is named; every other role falls to the default')

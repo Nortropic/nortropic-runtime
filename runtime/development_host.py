@@ -517,7 +517,12 @@ def review_attempts(task_id):
 # This is a deliberate widening of ONE role's context bound, not a general one. It buys room for evidence, not
 # for looser rules: every other guard stands, the per-file reader bound is unchanged, nothing is truncated, and
 # anything still undelivered remains an explicit gap rather than a silence.
-CONTEXT_BYTES = {None: 2*1024*1024, 'final-review': 3*1024*1024}
+#
+# Raised again on 2026-09-24 under the owner's words that what is required is done (D027): each further assessment
+# adds its own history, decision, review and run record, and measured before the sixth assessment the 3 MiB bound
+# already delivered the first part of the application's history as a named gap to the one review that examines the
+# whole. The 4 MiB figure is the operator session's choice.
+CONTEXT_BYTES = {None: 2*1024*1024, 'final-review': 4*1024*1024}
 
 RUN_FIELDS = ('attempt', 'elapsed_seconds', 'exit_code', 'provider_completed', 'model_started', 'process_group_removed',
               'model', 'reported_model')

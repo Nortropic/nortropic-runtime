@@ -1097,3 +1097,25 @@ and in `development_interactive` (the interactive route, every start of which is
 `attempt.py` is not affected: it waits in `select.select`, which lets the handler's exception through.
 
 This changes no ceiling, role, bound, verdict or acceptance criterion.
+
+## D027 — 2026-09-24: the examining review gets the room the whole evidence needs, and the reader B reuses
+
+Each further assessment adds its own native history, decision, separate review and run record to the package the
+next whole-goal review receives, and history parts that do not fit are dropped oldest first as named review gaps.
+Measured with the ACTIVE release d17d562e's own preparation against the real scope after the fifth assessment, with
+the qualification index then bound (35 records) and before the sixth assessment's own additions: under the 3 MiB
+bound the package was 2935830 bytes in 136 files because the first part of the application's history (part 1 of 7,
+events 1 to 510) did not fit and was delivered as a named gap. With this change the same preparation delivers every
+part: 3196024 bytes in 139 files, 998280 bytes under the new bound, no gaps. The 3 MiB bound was the owner's
+decision of 2026-09-23; on 2026-09-24 the owner decided that what is required to make it work is done. The 4 MiB
+figure is the operator session's choice under those words.
+
+Decision: the final-review delivery bound is 4 MiB. Every other role keeps 2 MiB, the per-file and per-line reader
+bounds are unchanged, and a shortfall still becomes a named gap, never a silent shortening.
+
+Also: the package delivers the Office owner-view reader from the release's own Office copy under the name the
+reviewer's instructions give it, `tools/agarbild.py`. The continued review of the fifth assessment found B's reuse of
+that reader checkable only from its caller, because the instructions name the reader and the inventory did not carry
+it.
+
+This changes no ceiling, role, verdict or acceptance criterion.

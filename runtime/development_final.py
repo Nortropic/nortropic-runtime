@@ -562,6 +562,10 @@ def prepare(scope,config,key):
     # The reused reader and the two delivered candidates: G1 turns on reuse of an existing component rather
     # than a new engine, and that is only checkable against the modules themselves.
     files['office/kontor_result.py']=read_regular(Path(config['directory'])/'office/tools','kontor_result.py')
+    # The owner-view reader B reuses, from the same copy and under the name the instructions give it (D027). The
+    # continued review of the fifth assessment found that reuse checkable only from its caller, because the reader it
+    # was told of as tools/agarbild.py was not in the inventory.
+    files['tools/agarbild.py']=read_regular(Path(config['directory'])/'office/tools','agarbild.py')
     for work,event in state['integrated'].items():
         for name in sorted(load(event['task'])['allowed_paths']):
             if name.startswith('tools/') and not Path(name).name.startswith('test_'):
