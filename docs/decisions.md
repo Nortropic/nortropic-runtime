@@ -1075,3 +1075,25 @@ further, separately bound assessment follow such a withheld approval, and still 
 closed the commitment. An approval by a review that continues nothing closes exactly as before.
 
 This only narrows when the commitment may close. It changes no ceiling, role, bound, verdict or acceptance criterion.
+
+## D026 — 2026-09-23: a termination signal to a running model guardian ends the call
+
+The fourth whole-goal assessment's interruption was sent as fixed in advance: SIGTERM to the guardian of the first
+counted review, after its pid, start time and module were verified against the record the Runtime wrote at launch.
+The signal was delivered - nothing pending, nothing blocked - and the review ran on to its verdict 197 seconds after
+it started. Measured cause: the guardian's handler raised `InterruptedError`, and the loop waits almost all the time in
+`streams.select()`, whose standard implementations catch `InterruptedError` and return no events. The exception was
+swallowed and the loop continued. Reproduced with the unchanged release code in an isolated scope. No test had ever
+sent a signal to a real guardian process; every earlier test called `execute()` in-process.
+
+Decision: the handler only records the signal, and the loop ends the call on its next pass with the same reason as
+before (`goal call signal`), so the provider group is removed and the incomplete result is written by the guardian
+itself. A signal that arrives before the provider runs ends it on the first pass; one that arrives after the provider
+has finished changes nothing. A real-process test sends SIGTERM to a real guardian waiting on a silent provider and
+fails against the previous code.
+
+The same raising handler exists in `private_stage.model` (AP10's private stage, outside this commitment's mandate)
+and in `development_interactive` (the interactive route, every start of which is spent). Neither is changed here.
+`attempt.py` is not affected: it waits in `select.select`, which lets the handler's exception through.
+
+This changes no ceiling, role, bound, verdict or acceptance criterion.

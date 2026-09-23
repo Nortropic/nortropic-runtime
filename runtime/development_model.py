@@ -143,9 +143,12 @@ def execute(request):
     prompt_file = stage / 'stdin.txt'
     with prompt_file.open('x') as stream:
         stream.write(data['prompt'])
-    proc = None; reason = None; removed = False; start = time.monotonic()
+    proc = None; reason = None; removed = False; start = time.monotonic(); signalled = []
     def interrupted(sig, frame):
-        raise InterruptedError('goal call signal')
+        # Recorded here and acted on by the loop, never raised from the handler (D026). The loop waits almost all the
+        # time inside streams.select(), and the standard selectors catch InterruptedError and return no events, so a
+        # handler that raised it was swallowed there and the call ran on to its end as if nothing had been sent.
+        signalled.append(sig)
     old = {sig: signal.signal(sig, interrupted) for sig in (signal.SIGINT, signal.SIGTERM)}
     try:
         with (stage/'events.jsonl').open('xb') as out, (stage/'stderr.log').open('xb') as err, \
@@ -163,6 +166,8 @@ def execute(request):
                 os.set_blocking(source.fileno(), False)
                 streams.register(source, selectors.EVENT_READ, target)
             while streams.get_map() or proc.poll() is None:
+                if signalled:
+                    raise InterruptedError('goal call signal')
                 if os.getppid() != parent or process_identity(parent) != parent_identity:
                     raise InterruptedError('call owner ended')
                 if scope.inspect()['control'] not in ('active', 'paused'):
