@@ -445,10 +445,13 @@ def prepare(scope,config,key):
     #
     # The frozen acceptance recipes: G3 turns on these living outside candidate write access and producing the
     # acceptance, rather than the candidate's own test doing it. Read from the RELEASE's own office copy, which
-    # is the code that actually ran.
+    # is the code that actually ran. The policy names each recipe relative to the Office root
+    # ('acceptance/ap11_reconciliation.py'), exactly as the build read it (development_host), so it is read and
+    # delivered under that same path - reading it below office/acceptance doubled the directory and refused the
+    # second assessment's preparation before any model ran.
     active=host.policy(config)
     for recipe in sorted(active.RECIPES.values()):
-        files['acceptance/'+recipe]=read_regular(Path(config['directory'])/'office/acceptance',recipe)
+        files[recipe]=read_regular(Path(config['directory'])/'office',recipe)
     # The reused reader and the two delivered candidates: G1 turns on reuse of an existing component rather
     # than a new engine, and that is only checkable against the modules themselves.
     files['office/kontor_result.py']=read_regular(Path(config['directory'])/'office/tools','kontor_result.py')

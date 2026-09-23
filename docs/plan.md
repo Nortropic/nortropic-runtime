@@ -407,27 +407,44 @@ skrivskyddad granskning som godkände utan blockerande fynd. Dess icke-blockeran
 observationer har var sin motiverad disposition i granskarposten
 `.runtime/ap11/build/ap11-hostcheck-binding-reviewer.json`.
 
-KANDIDAT `ap11-assessment-start` (denna). Genomgången av den direkta bedömningsvägen
-fann en lucka med tidsgräns: `assess` beskriver applikationen den följer, och motorn tar
-bort en stängd körning ett dygn efter stängning. `office-ap11` stängde 05:25:49Z; efter
-det svarar motorn NOT_FOUND och `assess` skulle ha kraschat i stället för att starta -
-fast en borttagen körning bevisligen inte är igång. NOT_FOUND räknas nu som stängd;
-varje annat motorfel stoppar fortfarande. Att applikationen verkligen kördes och inte
-godkändes läser `preserved_refusal()` ur scopet som förut, och bedömningens förberedelse
-levererar historiken ur det verifierade arkivet (`closed-histories-preserved-20260923T055116Z`).
+PUBLICERAT 2026-09-23: `ap11-assessment-start` som PR #45, merge-commit
+9ae9e5617a84c2aff73a8daad0f0fa01c297e85d. `assess` räknar NOT_FOUND för applikationen
+den följer som stängd; varje annat motorfel stoppar fortfarande.
+
+ÖVERGÅNG 8 AKTIVERAD av ägaren 2026-09-23T14:34Z (`executor-transition-8.py`, granskad):
+release 9ae9e561 med konfiguration c1c539e7, `development.assessments` bunden till
+`office-ap11-assessment-2`, Claude-kopian 2.1.257. Återläsningen var fullständig och
+utan problem, AP-10-schemat ombundet. Scopet återupptogs 14:38Z med bokfört skäl och
+den andra bedömningen startades 14:38:59Z.
+
+DEN ANDRA BEDÖMNINGENS FÖRBEREDELSE VÄGRADES innan någon modell körde, och det är
+bevarat: steget `preserved-delivery` passerade, men `final-review`-förberedelsen föll i
+`development_final.prepare` med `[Errno 2] No such file or directory: 'acceptance'`.
+Ingen reservation gjordes (fortfarande 25 av 48), ingen stegkatalog skapades, och
+bedömningen väntar i `waiting_host_diagnosis` vid sekvens 2 - en otidsbestämd väntan som
+bara ett värdsvar släpper. Orsak: kontorspolicyns `RECIPES` anger recepten relativt
+kontorets rot (`acceptance/ap11_reconciliation.py`), men raden som PR #43 lade till läste
+dem under `office/acceptance/` och dubblerade katalogen. Provets fixtur hade nakna
+filnamn och kunde därför inte se felet.
+
+KANDIDAT `ap11-final-review-recipes` (denna). Recepten läses nu under `office/` med
+policyns egen relativa sökväg, precis som bygget läste dem (`development_host`), och
+levereras under samma sökväg. Fixturen har policyns uppmätta form. Den verkliga
+förberedelsen är körd med den rättade koden mot det verkliga scopet och den aktiva
+releasen, med bara stegkatalogen omdirigerad: hela leveransen byggdes, 84 filer och
+2 258 515 byte av 3 MiB, och scopet var oförändrat. Samma körning med den aktiva
+releasens kod återskapade exakt driftfelet (`.runtime/ap11/claude-path/final-review-recipes-20260923/`).
 
 NÄSTA HANDLING, i ordning:
 
 1. Riktad granskning av denna kandidat och publicerarens nya profilrad.
-2. Publicera under namnet `ap11-assessment-start` med nytt värdkontrollkvitto för
+2. Publicera under namnet `ap11-final-review-recipes` med nytt värdkontrollkvitto för
    commiten. Läs tillbaka integrationen.
-3. Bygg övergång 8 genom att återanvända övergång 7:s väg med just de ändringar som
-   behövs: staga `assessment-2.md` och `assessment-2-review.json` i
-   `development-context/`, sätt `development.assessments`, och pinna den NYA
-   integrerade revisionen - inte 6bb78de2. Ingen allmän refaktorering. Övergången ska
-   kontrollera att den nya releasen löser Claude-kopian och att den verifierar.
-4. Lämna ägaren aktiveringsbegäran med `LC_ALL=C`, färsk check, exakta bindningar och
-   faktisk driftpåverkan.
+3. Bygg övergång 9 ur övergång 8: pinna den nya revisionen, bär bedömningsbindningen
+   oförändrad, kräv att bedömningen väntar orörd i värddiagnos, och pröva den nya
+   releasens verkliga förberedelse mot det verkliga scopet utan att skriva i det.
+4. Lämna ägaren aktiveringsbegäran. Efter aktiveringen besvaras diagnosen genom den
+   granskade värdsvarsvägen (`continue`), och bedömningen fortsätter under en ny nyckel.
 
 A/B, den första helhetsdomen, samma åtagande och faktisk förbrukning bevaras. Taken
 48/6 ändras inte. Ingen ny interaktiv start, reset eller ombyggnad av de levererade
