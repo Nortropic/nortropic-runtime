@@ -66,7 +66,15 @@ async def operate(action, reason=None):
             # still protects the new identity against being started twice itself.
             assessment.preserved_refusal(scope, config)
             for earlier in assessment.identities(config)[:-1]:
-                described = await asyncio.wait_for(client.get_workflow_handle(earlier).describe(), 10)
+                try:
+                    described = await asyncio.wait_for(client.get_workflow_handle(earlier).describe(), 10)
+                except RPCError as error:
+                    # The engine removes a closed execution one day after it closed, and a removed execution is
+                    # not running. That it really ran and was not approved is what preserved_refusal() above read
+                    # from the scope; its history is then delivered from the verified archive.
+                    if error.status != RPCStatusCode.NOT_FOUND:
+                        raise
+                    continue
                 if described.status == WorkflowExecutionStatus.RUNNING:
                     raise ValueError('The application a further assessment follows is still running: '+earlier)
             await client.start_workflow(FiniteAssessment.run,scope.expected,id=current,task_queue='development',

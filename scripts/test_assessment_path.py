@@ -15,6 +15,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from temporalio.service import RPCError
+
 from runtime import development_assessment as assessment
 from runtime import development_control as control
 from runtime.development_workflow import FiniteAssessment, FiniteDevelopment
@@ -42,10 +44,14 @@ class FakeClient:
 
     def get_workflow_handle(self, name, **kwargs):
         from temporalio.client import WorkflowExecutionStatus
+        from temporalio.service import RPCStatusCode
         status = WorkflowExecutionStatus.RUNNING if self.predecessor == 'RUNNING' else \
             WorkflowExecutionStatus.COMPLETED
 
         async def describe():
+            # What the real engine answers for an execution its retention has removed, or on any other failure.
+            if self.predecessor in ('NOT_FOUND', 'UNAVAILABLE'):
+                raise RPCError('probe', getattr(RPCStatusCode, self.predecessor), b'')
             return SimpleNamespace(status=status)
 
         async def query(*args, **inner):
@@ -195,6 +201,22 @@ class OperatorPathTests(unittest.TestCase):
             with self.assertRaises(ValueError) as caught:
                 self.run_action('assess', directory, predecessor='RUNNING')
             self.assertIn('still running', str(caught.exception))
+
+    def test_a_predecessor_the_engine_removed_by_retention_does_not_block_the_start(self):
+        """The engine removes a closed execution one day after it closed, and then answers NOT_FOUND. The
+        application this assessment follows completed on 2026-09-23, so without this the assessment could no
+        longer be started at all a day later - although a removed execution is certainly not running."""
+        with tempfile.TemporaryDirectory() as directory:
+            code, client = self.run_action('assess', directory, predecessor='NOT_FOUND')
+            self.assertEqual(code, 0)
+            self.assertEqual([s['id'] for s in client.started], [ID])
+            self.assertIs(client.started[0]['run'], FiniteAssessment.run)
+
+    def test_any_other_engine_failure_on_the_predecessor_still_refuses(self):
+        """Only NOT_FOUND means removed. An engine that cannot answer says nothing about whether it runs."""
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(RPCError):
+                self.run_action('assess', directory, predecessor='UNAVAILABLE')
 
     def test_an_approved_previous_review_refuses(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -331,14 +331,18 @@ ingenting grindade på dem alls.
     publiceraren mäter, till modulens och basklassfilens byte, och till det bevarade
     scopets journalhuvud.
   - `publish_construction` VÄGRAR en runtime-publicering vars kvitto inte stämmer.
-    Prövat mot elva manipulerade kvitton; alla vägrade av rätt skäl.
+    Prövat, i den publicerade versionen, mot 25 manipulerade kvitton och 5 förhandsposter;
+    alla vägrade av rätt skäl (`.runtime/ap11/claude-path/hostcheck-binding-20260923/`).
   - Kvittot är pinnat i `PREVIEWED` och i invokationsposten, så det inte kan bytas
     mellan torrkörning och skarp körning.
   - `required_scope()` använder värdens egen `Scope`-kontroll och förankras i DEN
     AKTIVA RELEASENS kontrakt - utifrån, inte i katalogen som prövas. En helkopia av
     scopet avvisas.
-  - Skip-bindningen fångar alla former unittest hedrar: anrop, `raise`, dekorator
-    inklusive den enkla, klassattribut och `load_tests`-hook.
+  - Skip-bindningen fångar anrop, `raise`, dekorator inklusive den enkla, tilldelning av
+    klassattributet och en `load_tests`-definition. Några ovanliga former (annoterad
+    tilldelning, `setattr`, aliasimport, `load_tests` bunden till en lambda) ser den inte
+    statiskt; en sådan överhoppning fälls ändå av kvittots `skipped == 0` och av att
+    svitens sista rad måste vara exakt `OK`.
 
 VIKTIGT OM GRANSKNINGEN. Publiceraren ligger i `.runtime/ap11/build/`, UTANFÖR
 kandidatrepot, så den syns inte i `git diff origin/main..HEAD`. Två granskningar i rad
@@ -397,21 +401,32 @@ Rättningen hör därför hit: Runtime håller en egen kopia av exakt de kvalifi
 samma version, samma vägran; ingen fallback till PATH; ägarens egen CLI lämnas orörd.
 AP-10:s privata steg använder Codex och berörs inte av detta.
 
+PUBLICERAT 2026-09-23: `ap11-hostcheck-binding` som PR #44, merge-commit
+4c6789b9079fafa5f635eedbec8261a109df0f48 (kandidat d5c95980), efter en separat
+skrivskyddad granskning som godkände utan blockerande fynd. Dess icke-blockerande
+observationer har var sin motiverad disposition i granskarposten
+`.runtime/ap11/build/ap11-hostcheck-binding-reviewer.json`.
+
+KANDIDAT `ap11-assessment-start` (denna). Genomgången av den direkta bedömningsvägen
+fann en lucka med tidsgräns: `assess` beskriver applikationen den följer, och motorn tar
+bort en stängd körning ett dygn efter stängning. `office-ap11` stängde 05:25:49Z; efter
+det svarar motorn NOT_FOUND och `assess` skulle ha kraschat i stället för att starta -
+fast en borttagen körning bevisligen inte är igång. NOT_FOUND räknas nu som stängd;
+varje annat motorfel stoppar fortfarande. Att applikationen verkligen kördes och inte
+godkändes läser `preserved_refusal()` ur scopet som förut, och bedömningens förberedelse
+levererar historiken ur det verifierade arkivet (`closed-histories-preserved-20260923T055116Z`).
+
 NÄSTA HANDLING, i ordning:
 
-1. Riktad granskning av denna kandidat OCH publicerarens gate, den senare levererad som
-   egen diff mot den version som publicerade PR #43. Tillgodoräkna giltiga tidigare
-   granskningar och prov.
-2. Håll den godkända kandidatens och publicerarens byte fasta genom
-   publiceringsförberedelsen. Ingen ogranskad efterändring med efterhandsnot.
-3. Publicera under namnet `ap11-hostcheck-binding`. Kör om `run_host_checks.py` efter
-   varje commit-ändring, eftersom kvittot binder commiten. Läs tillbaka integrationen.
-4. Bygg övergång 8 genom att återanvända övergång 7:s väg med just de ändringar som
+1. Riktad granskning av denna kandidat och publicerarens nya profilrad.
+2. Publicera under namnet `ap11-assessment-start` med nytt värdkontrollkvitto för
+   commiten. Läs tillbaka integrationen.
+3. Bygg övergång 8 genom att återanvända övergång 7:s väg med just de ändringar som
    behövs: staga `assessment-2.md` och `assessment-2-review.json` i
    `development-context/`, sätt `development.assessments`, och pinna den NYA
    integrerade revisionen - inte 6bb78de2. Ingen allmän refaktorering. Övergången ska
    kontrollera att den nya releasen löser Claude-kopian och att den verifierar.
-5. Lämna ägaren aktiveringsbegäran med `LC_ALL=C`, färsk check, exakta bindningar och
+4. Lämna ägaren aktiveringsbegäran med `LC_ALL=C`, färsk check, exakta bindningar och
    faktisk driftpåverkan.
 
 A/B, den första helhetsdomen, samma åtagande och faktisk förbrukning bevaras. Taken
