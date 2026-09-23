@@ -614,7 +614,9 @@ class PreflightAndPendingTest(unittest.TestCase):
         from runtime import development_final as final
         self.chain('interactive-retry-3'); stage = self.directory/'calls/interactive-retry-3'
         for name in ('interactive-input.json', 'session-exit.json', 'result.json'): (stage/name).write_text(json.dumps({'last': name}))
-        (stage/'operator-input.raw').write_bytes(b'\x03\x03'); (self.directory/'journal.jsonl').write_text('{"sequence":1}\n')
+        (stage/'operator-input.raw').write_bytes(b'\x03\x03'); (self.directory/'journal.jsonl').write_text(json.dumps({'event': {'kind': 'control', 'reason': 'fixture', 'value': 'active'}, 'previous': 'd'*64, 'sequence': 1, 'sha256': 'e'*64})+'\n')
+        # Every real scope has its head record beside the journal; the delivery binds the journal to it.
+        (self.directory/'head.json').write_text(json.dumps({'sequence': 1, 'sha256': 'e'*64}))
         evidence = self.directory/'qualification'; evidence.mkdir(); (evidence/'g2.md').write_text('interval')
         (evidence/'index.json').write_text(json.dumps({'observed_at': 'now', 'scope': 'G1-G10',
                                                        'files': {'g2.md': hashlib.sha256(b'interval').hexdigest()}}))

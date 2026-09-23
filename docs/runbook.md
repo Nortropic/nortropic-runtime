@@ -241,3 +241,23 @@ engine/publication source and authority remain outside the candidate workspace.
 Acceptance must execute candidate code through the existing read-only sandbox,
 never import it into privileged host Python. The result module is only loaded
 by the office CLI's explicit read-only `resultat` action after delivery.
+
+## AP11: operating the finite commitment
+
+Operator commands run from the integration worktree with the host root named, never from a primary checkout whose
+release code lacks the managed guards:
+
+    cd "<runtime>/.runtime/ap11/integrations/evidence-access"
+    LC_ALL=C NR_HOST_ROOT="<runtime>" ../../../temporal-venv/bin/python -m runtime.development_control <action> --reason "..."
+
+`status` reads and starts nothing. `pause` and `resume` write the scope control and wake the waiting parent; a pause
+stops new starts and retries and lets already started work finish; the pause and every consumed call persist over
+restarts. `stop` is terminal for the commitment and cancels only its own running workflows. `continue` answers a
+parent waiting for host diagnosis with a host fact; it is refused unless the scope is active. `assess` starts the
+further whole-goal assessment the ACTIVE configuration binds: only after an actual review that was not approved,
+only when every earlier run is closed, only with evidence that differs from what that review was given, and never
+under an identity the scope has already seen run. Every refusal comes before anything is started or written.
+
+A further assessment exists only as a separately reviewed decision bound in `development.assessments` by a controlled
+release transition (D024). Its identity follows from its position in that list, and its calls count against the
+same 48/6.

@@ -11,7 +11,7 @@ import json
 import unittest
 from pathlib import Path
 
-from runtime.development_workflow import FiniteAssessment, FiniteDevelopment
+from runtime.development_workflow import key_prefix
 from scripts.test_final_evidence import IsolatedProofDeliveryTests, TriggerRecordTests
 
 
@@ -128,27 +128,45 @@ class PreservedEvidenceChecks(IsolatedProofDeliveryTests, TriggerRecordTests):
 class PopulatedScopeTests(unittest.TestCase):
     """Against the REAL scope this application filled, not a fixture.
 
-    The owner's requirement: the re-assessment must be able to use an already populated scope without
+    The owner's requirement: a further assessment must be able to use an already populated scope without
     reusing old stages, without starting A/B again, and without producing operator records for events that
     did not actually happen. The first two are checked here against the actual stage names on disk; the
     third follows from them, because the spurious host answers came from the collision loop.
+
+    Every run identity owns the namespace key_prefix() derives from it. What must hold on this host is that the
+    identity a NEW start would have to use has a namespace no stage occupies, and that every identity that has
+    already run is refused by the scope itself, whatever the engine's retention still remembers.
     """
 
-    def scope_directory(self):
-        from runtime.release import ROOT
-        directory = ROOT / '.runtime/ap11/application'
-        required_scope()
-        return directory
+    @staticmethod
+    def real_scope(directory):
+        """The host's own Scope over the directory the presence guard returned, bound to the ACTIVE contract."""
+        from runtime import release
+        from runtime.development_scope import Scope
+        return Scope(directory, release.installed()['development']['contract_sha256'])
 
-    def test_no_assessment_key_can_land_on_a_stage_this_scope_already_has(self):
-        directory = self.scope_directory()
-        existing = {p.name for p in (directory / 'calls').iterdir() if p.is_dir()}
+    def candidate(self, scope):
+        """The first bound assessment identity this scope has not seen run, or, if every bound one has run, the
+        next identity a separately reviewed decision would have to bind."""
+        from runtime import development_assessment as assessment, release
+        bound = assessment.assessments(release.installed())
+        for index, entry in enumerate(bound):
+            try:
+                assessment.unused_identity(scope, entry['id'])
+                return entry['id']
+            except ValueError:
+                continue
+        return assessment.assessment_id(len(bound))
+
+    def test_no_key_of_the_next_identity_can_land_on_a_stage_this_scope_already_has(self):
+        scope = self.real_scope(required_scope())
+        existing = {p.name for p in (scope.directory / 'calls').iterdir() if p.is_dir()}
         self.assertTrue(existing, 'the scope really is populated')
+        prefix = key_prefix(self.candidate(scope))
         # Far beyond what one assessment can spend: its own ceiling is the shared 48.
         for sequence in range(1, 200):
-            key = FiniteAssessment.KEY_PREFIX + str(sequence)
-            with self.subTest(key=key):
-                self.assertNotIn(key, existing)
+            with self.subTest(key=prefix + str(sequence)):
+                self.assertNotIn(prefix + str(sequence), existing)
 
     def test_an_inherited_namespace_really_does_reach_an_existing_stage(self):
         """Why the prefix exists, stated against the real stages rather than as a hypothetical - and stated
@@ -162,33 +180,45 @@ class PopulatedScopeTests(unittest.TestCase):
         straight into one. A correctness that depends on which sequence numbers happened to materialise is
         not a correctness, which is what the prefix removes.
         """
-        directory = self.scope_directory()
-        existing = {p.name for p in (directory / 'calls').iterdir() if p.is_dir()}
-        inherited = [FiniteDevelopment.KEY_PREFIX + str(n) for n in range(2, 12)]
+        existing = {p.name for p in (self.real_scope(required_scope()).directory / 'calls').iterdir() if p.is_dir()}
+        inherited = [key_prefix('office-ap11') + str(n) for n in range(2, 12)]
         collisions = [key for key in inherited if key in existing]
         self.assertTrue(collisions,
                         'an inherited namespace reaches an existing stage within a few advances: ' +
                         repr(sorted(existing)))
-        self.assertNotIn(FiniteDevelopment.KEY_PREFIX + '2', existing,
-                         'and specifically NOT at step-2, contrary to the prediction')
-        self.assertEqual([k for k in inherited if k in existing][0], FiniteDevelopment.KEY_PREFIX + '4',
-                         'the first one it would reach is step-4')
+        self.assertNotIn('step-2', existing, 'and specifically NOT at step-2, contrary to the prediction')
+        self.assertEqual(collisions[0], 'step-4', 'the first one it would reach is step-4')
 
-    def test_the_assessment_key_is_a_valid_scope_identity(self):
+    def test_the_next_identity_key_is_a_valid_scope_identity(self):
         from runtime.development_scope import identifier
         for sequence in (1, 48):
-            key = FiniteAssessment.KEY_PREFIX + str(sequence)
+            key = key_prefix(self.candidate(self.real_scope(required_scope()))) + str(sequence)
             self.assertEqual(identifier(key), key)
             self.assertLessEqual(len(key), 80)
 
-    def test_the_preserved_run_keeps_its_keys_journal_and_verdict(self):
-        """Nothing in the assessment path renames, removes or rewrites what the first run recorded."""
-        directory = self.scope_directory()
-        self.assertTrue((directory / 'journal.jsonl').is_file(), 'the journal is still there')
-        stages = {p.name for p in (directory / 'calls').iterdir() if p.is_dir()}
-        self.assertTrue(any(name.startswith(FiniteDevelopment.KEY_PREFIX) for name in stages))
-        self.assertFalse(any(name.startswith(FiniteAssessment.KEY_PREFIX) for name in stages),
-                         'no assessment stage exists yet: nothing has been run')
+    def test_every_identity_that_has_run_is_refused_by_the_scope_itself(self):
+        """Measured, not assumed: the second assessment consumed call 26 under its own namespace, so once the
+        engine has removed that run, only the scope stands between its identity and a second run."""
+        from runtime import development_assessment as assessment
+        scope = self.real_scope(required_scope())
+        ran = sorted({call['nonce'].rsplit('-step-', 1)[0] for call in scope.inspect()['calls']
+                      if '-assessment-' in call['nonce']})
+        self.assertIn('office-ap11-assessment-2', ran)
+        for identity in ran:
+            with self.subTest(identity=identity):
+                with self.assertRaises(ValueError):
+                    assessment.unused_identity(scope, identity)
+
+    def test_the_preserved_runs_keep_their_keys_journal_and_verdict(self):
+        """Nothing in the assessment path renames, removes or rewrites what earlier runs recorded, and nothing
+        has yet run under the identity a new start would use."""
+        scope = self.real_scope(required_scope())
+        self.assertTrue((scope.directory / 'journal.jsonl').is_file(), 'the journal is still there')
+        stages = {p.name for p in (scope.directory / 'calls').iterdir() if p.is_dir()}
+        self.assertIn('step-36', stages, 'the first whole-goal review stage is preserved')
+        self.assertIn('office-ap11-assessment-2-step-3', stages, 'the second whole-goal review stage is preserved')
+        self.assertFalse(any(name.startswith(key_prefix(self.candidate(scope))) for name in stages),
+                         'no stage exists yet under the identity a new start would use')
 
 
 if __name__ == '__main__':

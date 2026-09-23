@@ -1,15 +1,20 @@
-"""A second whole-goal assessment of the SAME accepted application, under its own run identity.
+"""Further whole-goal assessments of the SAME accepted application, each under its own run identity.
 
 The engine refuses a second run of a workflow id that already exists, whatever its outcome, and that refusal is
 the protection against a rejected application being quietly re-run until it passes. It is kept. What this module
-adds is narrower: a separately reviewed owner decision may bind ONE further assessment, which runs under its own
-identity against the same scope, the same frozen commitment and the same ceilings.
+adds is narrower: a separately reviewed decision may bind a further assessment, which runs under its own identity
+against the same scope, the same frozen commitment and the same ceilings.
+
+The identities are not chosen by a decision. The n-th bound entry IS office-ap11-assessment-(n+1), follows the
+entry before it, and exists only as a separately reviewed decision in the active configuration. A new entry needs
+no code change, and a decision still cannot mint a name of its own.
 
 What it deliberately does not do: reopen, reset or re-run the application it follows, refund or raise the 48/6
 ceilings, remove the duplicate-start protection for any identity including its own, or alter the recorded result
 of the review it follows. An assessment may only follow a review that was actually NOT approved - overturning an
-approval is not a re-assessment - and the application it follows must really be closed before it starts, which
-is what keeps a second writer off the same scope.
+approval is not a re-assessment -, the run it follows must really be closed before it starts, which is what keeps
+a second writer off the same scope, and the evidence must have changed since the review it follows: the same
+package offered again until some reviewer approves it is exactly what is refused.
 """
 from pathlib import Path
 
@@ -18,12 +23,17 @@ from .development_scope import decode, identifier
 from .snapshot import read_regular
 
 APPLICATION='office-ap11'
-# Further whole-goal assessments exist ONLY as separately reviewed owner decisions bound in the active
-# configuration (development.assessments, an ordered list), exactly as further interactive starts do. Each entry
-# names the run it follows and how that run really ended. This is not a general re-run right.
-ASSESSMENTS=('office-ap11-assessment-2',)
+# Further whole-goal assessments exist ONLY as separately reviewed decisions bound in the active configuration
+# (development.assessments, an ordered list), exactly as further interactive starts do. Each entry names the run it
+# follows and how that run really ended. This is not a general re-run right.
 ASSESSMENT_KEYS={'id','after','previous_outcome','decision','decision_sha256','review','review_sha256'}
 OUTCOMES=('whole_goal_not_approved',)
+
+
+def assessment_id(index):
+    """The only identity the entry at this position of the ordered list may have: the first further assessment is
+    the second assessment of the commitment, so position 0 is office-ap11-assessment-2."""
+    return '%s-assessment-%d' % (APPLICATION, index + 2)
 
 
 def assessments(config):
@@ -31,11 +41,11 @@ def assessments(config):
     decision and separate review, or an empty tuple."""
     bound=(config.get('development') or {}).get('assessments')
     if bound is None:return ()
-    if not isinstance(bound,list) or not bound or len(bound)>len(ASSESSMENTS):
+    if not isinstance(bound,list) or not bound:
         raise ValueError('Exact reviewed assessment list required')
     directory=Path(config['directory'])/'development-context';previous=APPLICATION
     for index,entry in enumerate(bound):
-        if (not isinstance(entry,dict) or set(entry)!=ASSESSMENT_KEYS or entry['id']!=ASSESSMENTS[index]
+        if (not isinstance(entry,dict) or set(entry)!=ASSESSMENT_KEYS or entry['id']!=assessment_id(index)
                 or entry['after']!=previous or entry['previous_outcome'] not in OUTCOMES
                 or not all(isinstance(entry[key],str) and entry[key] for key in ASSESSMENT_KEYS)):
             raise ValueError('Exact reviewed assessment binding required')
@@ -84,3 +94,51 @@ def preserved_refusal(scope,config):
     if host.policy(config).review(result['answer']):
         raise ValueError('The previous whole-goal review was approved; there is nothing to re-assess')
     return nonce,result
+
+
+# Where the host records that an assessment identity was started. The engine's duplicate refusal forgets a closed
+# execution one day after it closed, and after that the same id would start again as if it had never run. The
+# scope is the one record that outlives retention, so the refusal that must outlive it is kept there.
+STARTS='assessment-starts'
+
+
+def unused_identity(scope,identity):
+    """Refuse an assessment identity this scope has already seen run, whatever the engine still remembers.
+
+    Seen means either the host's own start record, or any counted reservation in this identity's key namespace:
+    the second covers a run started before start records existed, as office-ap11-assessment-2 was.
+    """
+    from .development_workflow import key_prefix
+    if identity==APPLICATION:
+        raise ValueError('The original application is never started as an assessment')
+    prefix=key_prefix(identifier(identity))
+    if ((scope.directory/STARTS/(identity+'.json')).exists()
+            or any(call['nonce'].startswith(prefix) for call in scope.inspect()['calls'])):
+        raise ValueError('This assessment identity has already run in this scope and is never started again: '+identity)
+
+
+def record_start(scope,identity,observed):
+    """Written by the host only AFTER the engine accepted the start, append only, never rewritten."""
+    from .private_stage import write
+    directory=scope.directory/STARTS
+    if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+        raise ValueError('Assessment start record directory is not a directory')
+    directory.mkdir(mode=0o700,exist_ok=True)
+    write(directory/(identifier(identity)+'.json'),{'identity':identity,'observed_at':observed,
+        'source':'host operator action assess, recorded after the engine accepted the start'})
+
+
+def changed_evidence(scope,nonce):
+    """The selected whole-goal evidence must differ from what the review it follows was actually given.
+
+    Compared on the bytes of the qualification index delivered into that review's own workspace, which binds every
+    selected record by hash, against the index the next preparation would read. An identical index is the same
+    package offered again, and a further assessment exists for completed evidence, not for another draw.
+    """
+    delivered=scope.directory/'calls'/identifier(nonce)/'workspace'/'qualification'
+    current=scope.directory/'qualification'
+    if not (current/'index.json').is_file():
+        raise ValueError('No selected whole-goal evidence to assess')
+    if (delivered/'index.json').is_file() and read_regular(delivered,'index.json')==read_regular(current,'index.json'):
+        raise ValueError('The selected evidence is the package the previous review already had; complete it first')
+    return host.sha(read_regular(current,'index.json'))

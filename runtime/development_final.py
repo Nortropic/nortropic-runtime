@@ -55,6 +55,94 @@ READER_LINE_BYTES = 22000
 # read_regular's own per-file bound, the one that refused the first whole-history delivery. Named here
 # so the companion check and the part check cannot drift apart.
 READ_BOUND = 262144
+# The release revision's own isolated proofs, delivered as source so a reviewer holds the exact text whose recorded
+# run the selected qualification evidence reports. Source alone is not a run: each one's run record, against this
+# same revision, is a qualification record. Read from the ACTIVE release's runtime revision, never a working copy.
+PROOFS = ('scripts/test_development_scope.py', 'scripts/test_development_control.py',
+          'scripts/test_development_workflow.py', 'scripts/test_development_final.py',
+          'scripts/test_development_host.py', 'scripts/test_development_model.py',
+          'scripts/test_development_binding.py', 'scripts/test_goal_amendment.py',
+          'scripts/test_shared_service.py', 'scripts/test_claude_roles.py', 'scripts/test_claude_driver.py',
+          'scripts/test_model_binding.py', 'scripts/test_delivery_gates.py', 'scripts/test_assessment_path.py',
+          'scripts/test_development_assessment.py')
+
+
+def readable_json(value):
+    """A derived JSON delivery printed over short lines.
+
+    The recurring defect behind two whole-goal findings was not any one file: host-derived JSON was written with
+    json.dumps on ONE line, which every byte check passes and the reviewer's line-based reader cannot open once the
+    line is past its bound. Every derived JSON file therefore goes out through this, and readable_delivery() refuses
+    a package in which any delivered line is still past that bound.
+    """
+    return json.dumps(value, indent=1, ensure_ascii=False, default=str).encode()
+
+
+def readable_delivery(files):
+    """Refuse a package the reviewer could not actually read, instead of handing it over.
+
+    Every line of every delivered file must be within READER_LINE_BYTES, and every file within READ_BOUND. The one
+    exception is a verbatim native history part: an event past the bound stays in its part verbatim, and is
+    accepted only where the index records it as an unreadable line with its readable companion or its stated gap.
+    """
+    index = json.loads(files.get('NATIVE_HISTORY_INDEX.json', b'{"workflows": {}}'))
+    parts = {part['file']: part for entry in index.get('workflows', {}).values() for part in entry.get('parts', [])}
+    for name, body in files.items():
+        if len(body) > READ_BOUND:
+            raise ValueError('Delivered file %s is %d bytes, past the per-file bound %d' % (name, len(body), READ_BOUND))
+        covered = {u.get('line') for u in parts[name].get('unreadable_lines', [])} if name in parts else set()
+        for number, line in enumerate(body.split(b'\n'), 1):
+            if len(line.rstrip(b',')) > READER_LINE_BYTES and number not in covered:
+                raise ValueError('Delivered file %s has a line of %d bytes at line %d, past what the reviewer can '
+                                 'open' % (name, len(line), number))
+    return files
+
+
+def owner_of(nonce, identities):
+    """The run identity whose counted-key namespace this nonce is in: the longest matching prefix."""
+    from .development_workflow import key_prefix
+    matches = [name for name in identities if nonce.startswith(key_prefix(name))]
+    return max(matches, key=len) if matches else None
+
+
+def whole_goal_reviews(scope, config, records):
+    """Every whole-goal review this commitment has had, in journal order, from the host's own preserved records.
+
+    A completed review is delivered with its answer verbatim, so a later assessment holds the verdicts it follows
+    rather than a description of them. A review that did not complete is delivered as what the host measured about
+    it - its result record's scalars and the size and hash of the stream it left - and never with that stream's
+    content: an interrupted reviewer's partial reading is not evidence for, and must not steer, the next one.
+    """
+    sequences = {}
+    for row in records:
+        event = row['event']
+        if event.get('kind') in ('call', 'launch', 'started') and event.get('nonce'):
+            sequences.setdefault(event['nonce'], {})[event['kind']] = row['sequence']
+    identities = assessment.identities(config)
+    reviews = []
+    for call in scope.inspect()['calls']:
+        if call.get('role') != 'final-review':
+            continue
+        nonce = call['nonce']; stage = scope.directory / 'calls' / identifier(nonce)
+        entry = {'nonce': nonce, 'identity': owner_of(nonce, identities), 'journal': sequences.get(nonce, {})}
+        if (stage / 'result.json').is_file():
+            result = decode(read_regular(stage, 'result.json'))
+            entry['result'] = {key: result.get(key) for key in ('completed', 'reason', 'process_group_removed',
+                                                                'model_started', 'elapsed_seconds')}
+            entry['session'] = (result.get('provider') or {}).get('thread_id')
+            if result.get('completed') is True:
+                entry['answer'] = result.get('answer')
+        else:
+            entry['result'] = None
+            entry['note'] = 'No preserved result for this reservation; it stays consumed and is not a verdict.'
+        if (stage / 'events.jsonl').is_file():
+            stream = read_regular(stage, 'events.jsonl', limit=1024*1024)
+            entry['stream'] = {'bytes': len(stream), 'lines': stream.count(b'\n'), 'sha256': host.sha(stream)}
+        reviews.append(entry)
+    return {'note': 'Every whole-goal review of this commitment in journal order, read from the host\'s own preserved '
+                    'stage records. journal gives the scope journal sequence of its reservation, launch and start. A '
+                    'completed review carries its answer verbatim; one that did not complete carries only what the '
+                    'host measured about it, never its partial stream.', 'reviews': reviews}
 
 
 def readable_event(event):
@@ -248,14 +336,19 @@ def history_parts(histories, room):
                 # would grow under indent instead of shrinking. A companion the reader cannot open is the
                 # same failure this whole split exists to correct, so it is named as a gap rather than
                 # written: the verbatim event stays in its part either way.
-                if len(readable) > READ_BOUND:
+                # The same holds for a companion that would still carry a line the reader cannot open - a payload
+                # that is not base64 JSON stays one long string under indent. Found by the gate's own test.
+                longest = max(len(line) for line in readable.split(b'\n'))
+                if len(readable) > READ_BOUND or longest > READER_LINE_BYTES:
                     record['readable_copy'] = None
                     record['readable_copy_bytes'] = len(readable)
+                    record['readable_copy_longest_line'] = longest
                     record['note'] = ('This line is too long for a line-based reader to open, and its '
-                                      'readable companion would ALSO be past the reader per-file bound of '
-                                      '%d bytes, so none was written. The event is still in the part '
-                                      'verbatim and the part still hashes to what the index records. Treat '
-                                      'this event as delivered but not readable in place.' % READ_BOUND)
+                                      'readable companion would ALSO be past what that reader can open (the '
+                                      'per-file bound of %d bytes or a line over %d bytes), so none was '
+                                      'written. The event is still in the part verbatim and the part still '
+                                      'hashes to what the index records. Treat this event as delivered but '
+                                      'not readable in place.' % (READ_BOUND, READER_LINE_BYTES))
                     part.setdefault('unreadable_lines', []).append(record)
                     continue
                 files[copy_name] = readable
@@ -398,27 +491,41 @@ def prepare(scope,config,key):
     # Which executions were read live and which came from a verified archive, with the identity each was
     # bound by. An archive evidences past events; it is never a current observation, and the reviewer is
     # told which it is holding rather than having to assume.
-    files['NATIVE_HISTORY_SOURCES.json']=json.dumps(sources,indent=1).encode()
+    files['NATIVE_HISTORY_SOURCES.json']=readable_json(sources)
     # The actual full histories stay private. They are delivered SPLIT into ordered hash-bound parts, built last
     # so the room they get is measured against everything else rather than guessed; one file may not exceed
     # read_regular's bound and the bundle may not exceed prepare_call's. Marking oversized history unavailable
     # would be correct error handling but would not be a reviewable basis, so the events themselves go out.
-    files['ACTUAL_REPORTS.json']=json.dumps(reports).encode()
-    files['ACTUAL_REMOTE.json']=json.dumps(receipts).encode()
-    files['ACTUAL_AP10.json']=json.dumps(watch,default=str).encode()
-    files['SCOPE.json']=json.dumps(state).encode()
-    files['SCOPE_JOURNAL.json']=json.dumps([decode(line) for line in read_regular(scope.directory,'journal.jsonl').splitlines()]).encode()
+    files['ACTUAL_REPORTS.json']=readable_json(reports)
+    files['ACTUAL_REMOTE.json']=readable_json(receipts)
+    files['ACTUAL_AP10.json']=readable_json(watch)
+    files['SCOPE.json']=readable_json(state)
+    # The journal itself, row for row, as a derived read copy tied to the original bytes by their hash. The rows
+    # keep their own sequence, previous and sha256, so the chain order is readable in place.
+    journal=read_regular(scope.directory,'journal.jsonl',limit=1024*1024);records=[decode(line) for line in journal.splitlines()]
+    files['SCOPE_JOURNAL.json']=readable_json({'source':'journal.jsonl of this scope','source_sha256':host.sha(journal),
+        'rows':len(records),'head':decode(read_regular(scope.directory,'head.json')),
+        'how_to_read':'journal is every row of the scope journal in order, verbatim as decoded JSON. Each row carries '
+                      'its sequence, the sha256 of the row before it and its own sha256, which is the chain. This '
+                      'file is a re-serialisation for reading, bound to the original bytes by source_sha256.',
+        'journal':records})
+    # Every whole-goal review this commitment has had: the verdicts a further assessment follows, verbatim.
+    files['WHOLE_GOAL_REVIEWS.json']=readable_json(whole_goal_reviews(scope,config,records))
+    # The separately reviewed decision binding each further assessment, and its review, as the release holds them.
+    for entry in assessment.assessments(config):
+        for name in (entry['decision'],entry['review']):
+            files['assessments/'+name]=read_regular(Path(config['directory'])/'development-context',name)
     # Every answer the HOST itself gave to a diagnosis. These are operator interventions, and one of them can let a
     # host-interrupted review be re-run, so the whole-goal review must see them as such and not have to infer them
     # from signal payloads in the native history.
-    files['HOST_ANSWERS.json']=json.dumps(host.host_answers(scope)).encode()
+    files['HOST_ANSWERS.json']=readable_json(host.host_answers(scope))
     from .development_interactive import (selected_nonce, retry_evidence, trigger_record,
                                           NONCE, RETRIES, EXTENSIONS)
     nonce=selected_nonce(scope,config);stage=scope.directory/'calls'/nonce
     files.update(retry_evidence(scope,nonce))
     for name in ('input.json','interactive-input.json','session-exit.json','result.json'):
         files['interactive/'+name]=read_regular(stage,name)
-    files['interactive/OPERATOR_INPUT.json']=json.dumps({'bytes_hex':read_regular(stage,'operator-input.raw',limit=16384).hex()}).encode()
+    files['interactive/OPERATOR_INPUT.json']=readable_json({'bytes_hex':read_regular(stage,'operator-input.raw',limit=16384).hex()})
     # Why each Ctrl-C pair was sent, for EVERY preserved interactive session and not only the selected one.
     # The first whole-goal review had the operator bytes without a session to bind them to and without the
     # justification amendment section 4 requires. The host cannot testify to what the operator intended, so
@@ -491,9 +598,10 @@ def prepare(scope,config,key):
     # here; the proofs for them exist in isolation and were described rather than delivered. Read from the ACTIVE
     # release's own runtime revision, so the reviewer holds the text that belongs to the running release and not
     # whatever a working copy happens to contain.
-    files['proofs/test_development_scope.py']=git(repository(RUNTIME),'show',
-        config['runtime_revision']+':scripts/test_development_scope.py',raw=True)
+    for path in PROOFS:
+        files['proofs/'+Path(path).name]=git(repository(RUNTIME),'show',config['runtime_revision']+':'+path,raw=True)
     files.update(history_parts(histories,host.CONTEXT_BYTES['final-review']-sum(len(v) for v in files.values())-40*1024))
+    readable_delivery(files)
     context={'goal_amendments':host.amendment_notice(amended),'remaining_action':'Independently examine entire actual G1-G10 chain and approve closure or identify exact gaps',
         'observed_at':datetime.now(timezone.utc).isoformat(),'runtime_revision':config['runtime_revision'],
         'office_revision':config['office_revision'],'config_sha256':config['config_sha256'],
@@ -503,6 +611,11 @@ def prepare(scope,config,key):
             'original, the parts in order with their own hashes and event-id ranges, and any gap. A part is a '
             'slice, never a summary; where the index reports a gap, treat it as missing evidence rather than '
             'reading the delivered parts as the whole history.',
+        'earlier_reviews':'WHOLE_GOAL_REVIEWS.json holds every earlier whole-goal review of this commitment in journal '
+            'order: a completed one with its answer verbatim, one that did not complete with only what the host '
+            'measured about it. assessments/ holds the separately reviewed decision binding each further assessment '
+            'and its review. proofs/ holds the release revision\'s own isolated proof sources; their recorded runs '
+            'are qualification records, and a source file alone is not a run.',
         'closure_condition':'Approval permits only stopping office-ap11 after this review. Host must read back stopped scope; AP10 stays active. No next goal.'}
     return host.prepare_call(scope.expected,key,'final-review','goal',context,files)
 
