@@ -622,11 +622,14 @@ class PreflightAndPendingTest(unittest.TestCase):
         for name in ('development-context/authority.md', 'development-context/goal.md', 'office/AGENTS.md'): (release/name).write_text(name)
         # The preparation now reads the release's own Office copy for the artefacts the first whole-goal review
         # named as missing: the frozen acceptance recipes that produced the acceptance, and the reader the
-        # candidates reuse. The fixture has to carry the shape the real code reads, or it proves nothing.
+        # candidates reuse. The fixture has to carry the shape the REAL POLICY has, or it proves nothing: bare
+        # names here once matched a reader that doubled the directory, and the real second assessment refused.
+        # Measured in the Office policy the releases carry (tools/development_policy.py at df5ed5dc): RECIPES maps
+        # each work to a path relative to the Office root, 'acceptance/ap11_reconciliation.py'.
         (release/'office/tools').mkdir(); (release/'office/acceptance').mkdir()
         (release/'office/tools/development_policy.py').write_text(
             'WORK = {"reconciliation": [], "handoff": []}\n'
-            'RECIPES = {"reconciliation": "recipe_a.py", "handoff": "recipe_b.py"}\n')
+            'RECIPES = {"reconciliation": "acceptance/recipe_a.py", "handoff": "acceptance/recipe_b.py"}\n')
         (release/'office/tools/kontor_result.py').write_text('def render(goal):\n    return goal\n')
         (release/'office/acceptance/recipe_a.py').write_text('# frozen acceptance for A\n')
         (release/'office/acceptance/recipe_b.py').write_text('# frozen acceptance for B\n')
@@ -667,6 +670,10 @@ class PreflightAndPendingTest(unittest.TestCase):
         self.assertEqual(len(expected), 9); self.assertEqual({name: delivered.get(name) for name in expected}, expected)
         self.assertEqual(json.loads(delivered['interactive/result.json']), {'last': 'result.json'})
         self.assertEqual(json.loads(delivered['interactive/OPERATOR_INPUT.json']), {'bytes_hex': '0303'})
+        # The recipes arrive under the policy's own relative path, with the bytes the release carries.
+        self.assertEqual(delivered['acceptance/recipe_a.py'], b'# frozen acceptance for A\n')
+        self.assertEqual(delivered['acceptance/recipe_b.py'], b'# frozen acceptance for B\n')
+        self.assertFalse([name for name in delivered if name.startswith('acceptance/acceptance/')])
 
 
 class FreezeExecutorsTest(unittest.TestCase):
