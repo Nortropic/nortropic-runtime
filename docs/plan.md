@@ -1,6 +1,27 @@
-# AP11 — GÄLLANDE INGÅNG: väktarens avbrott rättat (D026); demonstrationen i den femte bedömningen (2026-09-23)
+# AP11 — GÄLLANDE INGÅNG: demonstrationen genomförd; den sjätte bedömningen prövar den (2026-09-24)
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE, mätt 2026-09-23T22:15Z. Aktiv release runtime d17d562e / kontor df5ed5dc, konfiguration 8d3c0ada (övergång 12).
+Scopet står `paused` med 30 av 48 räknade anrop. `office-ap11-assessment-5` bar G6-demonstrationen enligt formens
+revision 6: anrop 29 avbröts med en verifierad SIGTERM och väktaren skrev själv sitt ofullständiga resultat (D026),
+körningen parkerades, en fortsättning vägrades medan scopet var pausat, och efter återupptagning och värdsvar gjorde en
+färsk session (anrop 30) den återstående granskningen. Anrop 30 svarade inconclusive: den är händelsens andra halva.
+Posterna G6-LIVE.json och FIFTH-ASSESSMENT-RUN.json är bundna.
+
+Nästa, i ordning:
+
+1. D027: slutgranskningens leveransgräns 4 MiB, vald av operatörssessionen under ägarens ord 2026-09-24 att det som
+   krävs görs (under 3 MiB föll historikens första del bort som lucka), och ägarvyläsaren levererad; publiceras genom
+   den skyddade integrationen, isolerad provkörning på den nya revisionen.
+2. Övergång 13 aktiverar D027-revisionen och binder `office-ap11-assessment-6`, vars enda räknade granskning (anrop 31)
+   prövar hela kedjan med den genomförda demonstrationen. Förväntad förbrukning 31 av 48.
+
+GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`.
+
+Operatörsvägen: docs/runbook.md, avsnittet "AP11: operating the finite commitment".
+
+# AP11 — historik 2026-09-23T21:30Z: väktarens avbrott rättat (D026); demonstrationen i den femte bedömningen
 
 LÄGE, mätt 2026-09-23T21:30Z. Aktiv release runtime 5edc7338 / kontor df5ed5dc, konfiguration ebf792b2 (övergång 11).
 Scopet står `paused` med 28 av 48 räknade anrop. A och B är integrerade. Fyra helhetsbedömningar är inte godkända och
@@ -19,7 +40,7 @@ Nästa, i ordning:
 3. Övergång 12 aktiverar D026-revisionen och binder den femte bedömningen; övergång 13 binder den sjätte efter att
    den femte har slutat. Förväntad förbrukning 31 av 48.
 
-GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`.
+Återupptagningsposten var då den som RESUMPTION-CURRENT.json pekade på.
 
 Operatörsvägen: docs/runbook.md, avsnittet "AP11: operating the finite commitment".
 
