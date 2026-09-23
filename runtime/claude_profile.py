@@ -3,7 +3,6 @@ import json
 import hashlib
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import uuid
 
@@ -16,10 +15,16 @@ BINARY_SHA256 = '64590d7d9d9c189d33fb3dfa58c5408eaf2a10fe556bd84155d95efaab46b60
 
 
 def qualified_binary():
-    selected = shutil.which('claude')
-    if not selected:
+    """The pinned CLI, from the host's own copy beside its pinned Codex and Temporal binaries.
+
+    Resolving `claude` on PATH shared the binary with the owner's own chat, so an update of that global
+    install stopped every Runtime Claude role: on 2026-09-23 it updated itself from the qualified 2.1.257
+    to 2.1.280. The host keeps exactly the qualified bytes instead, checked by the same hash as before.
+    """
+    from .release import ROOT
+    binary = ROOT / '.runtime/bin' / ('claude-' + VERSION)
+    if binary.is_symlink() or not binary.is_file():
         raise ValueError('Qualified Claude CLI is unavailable')
-    binary = Path(selected).resolve(strict=True)
     if hashlib.sha256(binary.read_bytes()).hexdigest() != BINARY_SHA256:
         raise ValueError('Claude binary changed; qualify the new version before execution')
     return str(binary)
