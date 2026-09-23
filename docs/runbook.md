@@ -182,7 +182,10 @@ engine.lock. It stops service/worker groups after bounded observation. Never sta
 another service while a recorded writer or listener is alive.
 
 Routine support checks are `python3 -m unittest discover -s scripts -p "test_*.py" -v`
-and `git diff --check`. Native replay runs without provider calls using
+and `git diff --check`. The suite builds real Claude commands, so the root it resolves
+(the checkout itself, or NR_HOST_ROOT) must hold .runtime/bin/claude-2.1.257; an
+integration worktree reaches the host's copy through its .runtime/bin link, and a fresh
+checkout without one fails those tests closed (D023). Native replay runs without provider calls using
 `.runtime/temporal-venv/bin/python -m scripts.replay_runtime`. Historical experiment
 scripts refuse their existing state/output paths; they are evidence reproductions,
 not restart commands. A new host restoration is not yet an end-to-end tested path.
