@@ -1060,3 +1060,18 @@ accepted the start.
 Unchanged: the 48/6 ceilings, the duplicate-start refusal, the requirement that each further assessment is a
 separately reviewed decision bound in the active configuration through a controlled transition, and that an
 assessment follows only a review that was not approved.
+
+## D025 — 2026-09-23: the continued half of an interruption never closes the commitment by approving
+
+The third whole-goal assessment found that a G6 demonstration carried inside an assessment run has no independent
+examiner inside that run: the interrupted review is its subject and the continued review is its second half, so an
+approval by the continued review would be self-approval (amendment section 5). A separate review of the next form found
+that the code would nevertheless close the commitment on such an approval.
+
+Decision: close() withholds the closure when the approving review continues an interrupted whole-goal review of its
+own run (another final-review call of the same run with no completed result). The approval is recorded as given, the
+scope is paused with that reason, nothing is stopped and no final record is written. preserved_refusal() lets a
+further, separately bound assessment follow such a withheld approval, and still refuses to follow an approval that
+closed the commitment. An approval by a review that continues nothing closes exactly as before.
+
+This only narrows when the commitment may close. It changes no ceiling, role, bound, verdict or acceptance criterion.

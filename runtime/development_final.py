@@ -625,6 +625,14 @@ def close(scope,config,nonce):
     if not host.policy(config).review(result['answer']):
         scope.control('paused','Whole-goal review not approved; preserve specific evidence gaps')
         return {'approved':False,'review':nonce,'decision':result['answer'],'whole_goal_complete':False}
+    # The continued half of an interruption in its own run cannot be the independent examination of that interruption
+    # (G6, amendment section 5: no self-approval). Its approval is recorded as given and the closure is withheld for a
+    # separate assessment; nothing is stopped.
+    if assessment.continues_an_interruption(scope,nonce):
+        scope.control('paused','Whole-goal review approved as the continuation of an interrupted review in its own run; '
+                               'closure waits for a separate examination')
+        return {'approved':True,'closure_withheld':'continuation of an interrupted review in the same run',
+                'review':nonce,'decision':result['answer'],'whole_goal_complete':False}
     reviewer=result['provider']['thread_id']
     reports=decode(read_regular(scope.directory/'calls'/identifier(nonce)/'workspace','ACTUAL_REPORTS.json'))
     prior_runs=set()

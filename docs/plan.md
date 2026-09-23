@@ -1,28 +1,22 @@
-# AP11 — GÄLLANDE INGÅNG: komplettering och tredje helhetsbedömning (2026-09-23)
+# AP11 — GÄLLANDE INGÅNG: G6-demonstrationen i egen körning, bedömd av en separat (2026-09-23)
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
-LÄGE, mätt 2026-09-23. Aktiv release runtime 7abea494 / kontor df5ed5dc, konfiguration 4cfa59b7. Scopet står
-`paused` (journalsekvens 117) med 26 av 48 räknade anrop; implementationsförsök 1 av 6 för vardera arbetsdel.
-A och B är integrerade (kontorets PR 28 -> dd866764 och PR 29 -> df5ed5dc). Två helhetsbedömningar är inte
-godkända och står oförändrade: `office-ap11` (step-36, inconclusive, tio fynd) och `office-ap11-assessment-2`
-(anrop 26, inconclusive, sex fynd). Ägaren har delegerat den tekniska ledningen till verifierat avslut
-(kontorets beslut AP11-DELEGERING-20260923); slutkraven, 48/6, sekretessen och behörighetsreglerna är oförändrade.
+LÄGE, mätt 2026-09-23T20:10Z. Aktiv release runtime 6c7a6db8 / kontor df5ed5dc, konfiguration e99d20a4 (övergång 10).
+Scopet står `paused` med 27 av 48 räknade anrop. A och B är integrerade. Tre helhetsbedömningar är inte godkända och
+står oförändrade: `office-ap11` (step-36), `office-ap11-assessment-2` (anrop 26) och `office-ap11-assessment-3`
+(anrop 27), alla inconclusive. Den tredje bar G6-provet enligt formens revision 2, men avbrottet kunde inte göras innan
+granskningen var klar, och dess dom fann formens struktur otillräcklig: demonstrationen och dess bedömning måste
+ligga i olika körningar. Ägaren har delegerat den tekniska ledningen (AP11-DELEGERING-20260923); slutkraven och
+48/6 är oförändrade.
 
-GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`, en pekare till den senaste
-daterade posten. Nästa handling och kvarvarande processer står där; i sammandrag:
+GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`. I sammandrag:
 
-1. Publicera revisionen med läsbar leverans (D024), båda domarna levererade ordagrant, den generella och
-   granskade bedömningsbindningen och vägran att köra en bedömningsidentitet två gånger.
-2. Övergång 10: binda `office-ap11-assessment-3` till sitt beslut och sin separata granskning, bära den andra
-   bedömningens stängda historik (säkrad i `closed-histories-preserved-20260923T173106Z`) och pröva den nya
-   releasens förberedelse mot det verkliga scopet utan att skriva i det.
-3. Den tredje helhetsbedömningen, med den levande G6-demonstrationen i den form som
-   `qualification/G6-R3-FORM.md` fastställer och som separat granskats innan den genomförs.
-
-VIKTIGT: kör inte `assess` på release 7abea494. Dess bundna identitet är den redan körda
-`office-ap11-assessment-2`, och motorn glömmer den stängda körningen ungefär 2026-09-24T15:23Z; först den nya
-releasen vägrar det i scopet självt.
+1. Publicera revisionen där ett godkännande från den fortsatta halvan av ett avbrott aldrig stänger åtagandet (D025).
+2. Övergång 11: binda `office-ap11-assessment-4`, som bär demonstrationen: dess första räknade granskning avbryts vid
+   en mätt punkt, körningen fortsätter ur bevarat läge och en färsk räknad session gör den återstående granskningen.
+3. Övergång 12: binda `office-ap11-assessment-5`, en separat körning vars enda granskning bedömer hela kedjan med
+   den färdiga demonstrationen. Förväntad förbrukning 30 av 48.
 
 Operatörsvägen: docs/runbook.md, avsnittet "AP11: operating the finite commitment".
 
