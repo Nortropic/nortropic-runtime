@@ -1,6 +1,23 @@
-# AP11 — GÄLLANDE INGÅNG: demonstrationen genomförd; den sjätte bedömningen prövar den (2026-09-24)
+# AP11 — GÄLLANDE INGÅNG: AP-11 GODKÄNT OCH AVSLUTAT (2026-09-24)
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE, återläst 2026-09-23T23:00Z. Det ändliga åtagandet `office-ap11` är avslutat. `office-ap11-assessment-6`, dess
+enda räknade granskning (anrop 31), godkände hela slutacceptansen utan blockerande fynd, och `close()` satte scopet
+till `stopped` (journalrad 144) och skrev `final.json`. 31 av 48 anrop förbrukade, implementationsförsök 1 av 6 per
+arbetsdel. Aktiv release runtime 2def3667 / kontor df5ed5dc, konfiguration d4f2e63e (övergång 13). AP-10 är orört:
+schemat opausat, nästa körning 07:00Z.
+
+Vägen: sex helhetsbedömningar; de fem första inconclusive och bevarade. G6-demonstrationen bars av den femte (anrop
+29 avbrutet av en verifierad SIGTERM, anrop 30 fortsatte ur bevarat läge) och prövades av den sjätte. Två fel funna
+live och rättade: väktarens avbrott (D026) och slutgranskningens leveransgräns (D027).
+
+Nästa: inget inom AP-11. Det stängda scopet återöppnas inte, och inget startas under dess identiteter. Nästa uppdrag
+är ägarens.
+
+Stängningsposten: `.runtime/ap11/claude-path/sixth-assessment-20260924/CLOSURE-READBACK.json`.
+
+# AP11 — historik 2026-09-23T22:15Z: demonstrationen genomförd; den sjätte bedömningen prövar den
 
 LÄGE, mätt 2026-09-23T22:15Z. Aktiv release runtime d17d562e / kontor df5ed5dc, konfiguration 8d3c0ada (övergång 12).
 Scopet står `paused` med 30 av 48 räknade anrop. `office-ap11-assessment-5` bar G6-demonstrationen enligt formens
@@ -17,7 +34,7 @@ Nästa, i ordning:
 2. Övergång 13 aktiverar D027-revisionen och binder `office-ap11-assessment-6`, vars enda räknade granskning (anrop 31)
    prövar hela kedjan med den genomförda demonstrationen. Förväntad förbrukning 31 av 48.
 
-GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`.
+Återupptagningsposten var då den som RESUMPTION-CURRENT.json pekade på.
 
 Operatörsvägen: docs/runbook.md, avsnittet "AP11: operating the finite commitment".
 
