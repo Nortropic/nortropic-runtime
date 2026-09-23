@@ -63,10 +63,17 @@ class FiniteDevelopment:
         if self.phase == 'waiting_host_diagnosis' and isinstance(reason, str) and reason.strip():
             self.continuation = reason
 
+    # The counted call stages live in ONE scope, keyed by this prefix and a sequence. A run that restarts the
+    # sequence in a scope another run already used would collide on the first key that run consumed, and
+    # prepare_call creates its stage with exist_ok=False - so the collision is not a refusal but a repeating
+    # host-diagnosis loop that rebuilds the whole evidence package and records spurious operator answers into
+    # the very evidence it is delivering. Every run identity therefore owns its own prefix.
+    KEY_PREFIX = 'step-'
+
     async def step(self, operation, **fields):
         self.sequence += 1
         request = {'contract_sha256': self.expected, 'operation': operation,
-                   'key': 'step-' + str(self.sequence), **fields}
+                   'key': self.KEY_PREFIX + str(self.sequence), **fields}
         while True:
             self.wake = False
             try:
@@ -80,7 +87,7 @@ class FiniteDevelopment:
                 self.continuation = None
                 # Do not replay a consumed side effect. A fresh operation key
                 # preserves all earlier reservations, artifacts and diagnosis.
-                self.sequence += 1; request['key'] = 'step-' + str(self.sequence)
+                self.sequence += 1; request['key'] = self.KEY_PREFIX + str(self.sequence)
                 continue
             if result.get('capacity_wait'):
                 self.phase = 'waiting_capacity'; self.reason = result['reason']
@@ -187,3 +194,34 @@ class FiniteDevelopment:
                 'results': self.results, 'reason': self.reason,
                 'continuations': self.continuations, 'final': self.final,
                 'whole_goal_complete': bool(self.final and self.final.get('whole_goal_complete') is True)}
+
+@workflow.defn
+class FiniteAssessment(FiniteDevelopment):
+    """A second whole-goal assessment of the SAME already delivered application.
+
+    It reuses the counted step machinery, the signals and the state query of the build workflow, and nothing
+    else of it, but NOT its key namespace: it shares the build's scope, whose earlier keys already exist. It never runs the interactive session, never prepares or reviews a draft, never freezes a task,
+    never starts a child and never publishes: the delivery it assesses already exists and re-driving it is
+    exactly what this entry is for avoiding. The preserved delivery is verified BEFORE the counted review, so a
+    scope without both integrations refuses without spending a model call.
+    """
+
+    # The full run identity, so a stage on disk says which run consumed it. identifier() allows 80
+    # characters of [a-z0-9-]; this prefix plus a sequence stays well inside that.
+    KEY_PREFIX = 'office-ap11-assessment-2-step-'
+
+    @workflow.run
+    async def run(self, expected: str) -> dict:
+        self.expected = expected
+        self.phase = 'verifying_preserved_delivery'
+        delivered = await self.step('preserved-delivery')
+        if delivered.get('control_wait'):
+            self.phase = 'stopped'; self.reason = delivered
+            return self.state()
+        if not delivered.get('complete'):
+            self.phase = 'preserved_delivery_incomplete'; self.reason = delivered
+            return self.state()
+        self.phase = 'awaiting_whole_goal_review'
+        self.final = await self.step('final-review')
+        self.phase = 'completed' if self.final.get('whole_goal_complete') is True else 'whole_goal_not_approved'
+        return self.state()

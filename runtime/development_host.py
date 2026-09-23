@@ -281,7 +281,7 @@ def prepare_call(expected, nonce, role, work, context, files, extra=None):
     # reader can open; CONTEXT.json itself is bound by input.json's workspace_sha256 like every other file.
     context = {**context, 'delivered_files': delivered_files(files)}
     files['CONTEXT.json'] = json.dumps(context, ensure_ascii=False, indent=2).encode()
-    if sum(len(value) for value in files.values()) > 2*1024*1024:
+    if sum(len(value) for value in files.values()) > CONTEXT_BYTES.get(role, CONTEXT_BYTES[None]):
         raise ValueError('Selected development context exceeds its bound')
     for name, content in files.items():
         if (Path(name).is_absolute() or any(part in ('', '.', '..') for part in name.split('/'))
@@ -507,6 +507,18 @@ def review_attempts(task_id):
 # 'model' and 'reported_model' are named model ids, not host text: which model was started and which one the
 # provider said it was. A release that changes only the selection keeps the same runtime_revision, so without
 # these a diagnosis could not tell two otherwise identical runs apart.
+# How much selected context a role may be delivered. Every role keeps the 2 MiB it has always had. The
+# whole-goal review is the one role whose subject IS the whole goal: it is delivered the complete native
+# history of the parent and both children, the scope journal, both remote integrations, the host's own account
+# and the named artefacts the acceptance points at. Measured on this goal, that material is about 2.1 MB, so
+# the old bound would force a choice between refusing the delivery and shortening the evidence - and a
+# whole-goal review that cannot see the whole goal is the defect this release exists to correct.
+#
+# This is a deliberate widening of ONE role's context bound, not a general one. It buys room for evidence, not
+# for looser rules: every other guard stands, the per-file reader bound is unchanged, nothing is truncated, and
+# anything still undelivered remains an explicit gap rather than a silence.
+CONTEXT_BYTES = {None: 2*1024*1024, 'final-review': 3*1024*1024}
+
 RUN_FIELDS = ('attempt', 'elapsed_seconds', 'exit_code', 'provider_completed', 'model_started', 'process_group_removed',
               'model', 'reported_model')
 REVIEW_RUN_FIELDS = RUN_FIELDS            # the name the earlier releases used for this set

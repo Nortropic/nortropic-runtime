@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import pty
+import re
 import selectors
 import signal
 import subprocess
@@ -207,6 +208,121 @@ def retry_evidence(scope,nonce):
             # The whole-goal reviewer sees the ending each extension follows (a hold, or a refused task), exactly as answered.
             files['interactive/retry%d-answer.json'%index]=read_regular(scope.directory/'calls'/earlier/'workspace','.scratch/answer.json')
     return files
+
+
+ANSI=re.compile(rb'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[()][B0]|\x1b[=>]|\x1b\][^\x07]*\x07')
+DONE=re.compile(r'done\s*\d{1,2}:\d{2}\s*(?:AM|PM)')
+RESUME=re.compile(r'claude\s+--resume\s+([0-9a-f-]{36})')
+ACKNOWLEDGED='Press Ctrl-C again to exit'
+IDLE='❯'
+
+
+def trigger_record(stage):
+    """Why each Ctrl-C pair was sent, derived from the preserved bytes rather than asserted.
+
+    Amendment section 4 requires every pair to be justified by a POSITIVELY OBSERVED idle prompt after the
+    final completed turn. The operator types those bytes; the host only records them, so it cannot testify to
+    the intent. What it can do is read back what its own recording contains, in the order the terminal wrote
+    it, and refuse to produce a record where that order is not actually there.
+
+    The load-bearing observation is the TUI's own answer to the FIRST 0x03. It writes 'Press Ctrl-C again to
+    exit' only when there is nothing to interrupt; a busy session treats the same byte as an interrupt and says
+    so instead. So that line, appearing after a completed turn and an idle prompt in an append-only stream, is
+    the terminal itself reporting it was idle - not the host's account of it.
+    """
+    for name in ('operator-input.raw','terminal.raw','native-interactive-session.jsonl','session-exit.json'):
+        if not (stage/name).is_file():
+            # A missing piece is reported as one. Producing a record from the rest would justify the pair on
+            # evidence that is not there.
+            return {'available':False,'reason':'Preserved interactive evidence is incomplete: no '+name}
+    operator=read_regular(stage,'operator-input.raw',limit=16384)
+    if not operator or set(operator)!={3} or len(operator)%2:
+        return {'available':False,'reason':'Preserved operator bytes are not whole Ctrl-C pairs',
+                'operator_bytes_hex':operator.hex()}
+    text=ANSI.sub(b'',read_regular(stage,'terminal.raw',limit=8*1024*1024)).decode('utf8','replace')
+    pairs=len(operator)//2
+    # EVERY pair, not the first one. Amendment section 4 asks each pair to be justified, and a record that
+    # counted the pairs but checked only the first would assert justification the bytes do not carry. Each
+    # pair leaves its own acknowledgement in the stream, because the terminal answers each FIRST Ctrl-C;
+    # so the count of acknowledgements must equal the count of pairs, and each must follow a completed turn
+    # and an idle prompt that come after the previous pair.
+    acknowledgements=[]
+    at=text.find(ACKNOWLEDGED)
+    while at>=0:
+        acknowledgements.append(at)
+        at=text.find(ACKNOWLEDGED,at+len(ACKNOWLEDGED))
+    if not acknowledgements:
+        return {'available':False,'reason':'Terminal never acknowledged a first Ctrl-C as an idle exit request',
+                'operator_bytes_hex':operator.hex(),'pairs':pairs,'verified_pairs':0}
+    if len(acknowledgements)!=pairs:
+        return {'available':False,'pairs':pairs,'verified_pairs':len(acknowledgements),
+                'operator_bytes_hex':operator.hex(),
+                'reason':'The preserved terminal acknowledges %d Ctrl-C pairs, but %d were recorded; a record '
+                         'must not justify more pairs than the bytes show'%(len(acknowledgements),pairs)}
+    order=[];previous=0
+    for index,acknowledged in enumerate(acknowledgements,1):
+        head=text[previous:acknowledged]
+        completed=None
+        for completed in DONE.finditer(head):pass
+        if completed is None:
+            return {'available':False,'pairs':pairs,'verified_pairs':index-1,
+                    'operator_bytes_hex':operator.hex(),
+                    'reason':'No completed turn is recorded before Ctrl-C pair %d'%index}
+        idle=head.rfind(IDLE)
+        if idle<completed.end():
+            return {'available':False,'pairs':pairs,'verified_pairs':index-1,
+                    'operator_bytes_hex':operator.hex(),
+                    'reason':'No idle prompt is recorded between the completed turn and Ctrl-C pair %d'%index}
+        order.append({'pair':index,
+            'final completed turn, as the terminal printed it':completed.group(0),
+            'offsets':{'completed_turn':previous+completed.start(),'idle_prompt':previous+idle,
+                       'acknowledgement':acknowledged}})
+        previous=acknowledged+len(ACKNOWLEDGED)
+    # The summary block below quotes the LAST verified pair. Its offsets are taken from that pair's own
+    # record, which already holds absolute positions. An earlier version re-searched a slice starting at the
+    # match, which made the reported offset always 0 while the two beside it stayed absolute - an offset that
+    # does not locate the text it is printed next to, in a record whose basis line invites exactly that check.
+    last=order[-1]
+    completed_quote=last['final completed turn, as the terminal printed it']
+    completed_at=last['offsets']['completed_turn']
+    idle=last['offsets']['idle_prompt'];acknowledged=last['offsets']['acknowledgement']
+    rows=[decode(line) for line in read_regular(stage,'native-interactive-session.jsonl',
+                                                limit=32*1024*1024).splitlines() if line.strip()]
+    turns=[r for r in rows if r.get('type')=='assistant'
+           and (r.get('message') or {}).get('stop_reason')=='end_turn']
+    errors=[r for r in rows if r.get('type')=='error' or r.get('is_error')
+            or (r.get('message') or {}).get('stop_reason')=='error']
+    exit_record=decode(read_regular(stage,'session-exit.json'))
+    session=exit_record.get('provider',{}).get('thread_id')
+    resume=RESUME.search(text)
+    final=turns[-1] if turns else None
+    record={'available':bool(turns) and not errors and session is not None
+                         and resume is not None and resume.group(1)==session
+                         and final.get('sessionId')==session,
+        'pairs':pairs,'verified_pairs':len(order),'per_pair':order,
+        'operator_bytes_hex':operator.hex(),
+        'session_id':session,
+        'session_id_in_terminal':resume.group(1) if resume else None,
+        'session_id_in_final_turn':final.get('sessionId') if final else None,
+        'final_completed_turn':{'timestamp':final.get('timestamp'),'version':final.get('version'),
+                                'model':(final.get('message') or {}).get('model'),
+                                'stop_reason':(final.get('message') or {}).get('stop_reason')} if final else None,
+        'completed_turns':len(turns),'provider_error_rows':len(errors),
+        'observed_order':[
+            {'what':'final completed turn, as the terminal printed it','quote':completed_quote,
+             'terminal_offset':completed_at},
+            {'what':'idle prompt after that turn','quote':IDLE,'terminal_offset':idle},
+            {'what':'terminal acknowledging the first Ctrl-C as an idle exit request, not an interrupt',
+             'quote':ACKNOWLEDGED,'terminal_offset':acknowledged}],
+        'terminal_sha256':host.sha(read_regular(stage,'terminal.raw',limit=8*1024*1024)),
+        'native_session_sha256':host.sha(read_regular(stage,'native-interactive-session.jsonl',limit=32*1024*1024)),
+        'basis':'Offsets are into the ANSI-stripped preserved terminal, whose raw bytes hash to terminal_sha256. '
+                'The stream is append-only, so a later offset was written later.'}
+    if not record['available']:
+        record['reason']=('No completed turn in the native session record' if not turns else
+                          'The native session record contains a provider error row' if errors else
+                          'The session the terminal and the final turn name is not the one the host recorded')
+    return record
 
 
 def claude_state():

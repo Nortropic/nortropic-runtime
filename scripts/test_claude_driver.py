@@ -620,20 +620,41 @@ class PreflightAndPendingTest(unittest.TestCase):
                                                        'files': {'g2.md': hashlib.sha256(b'interval').hexdigest()}}))
         release = self.root/'release'; (release/'development-context').mkdir(parents=True); (release/'office').mkdir()
         for name in ('development-context/authority.md', 'development-context/goal.md', 'office/AGENTS.md'): (release/name).write_text(name)
+        # The preparation now reads the release's own Office copy for the artefacts the first whole-goal review
+        # named as missing: the frozen acceptance recipes that produced the acceptance, and the reader the
+        # candidates reuse. The fixture has to carry the shape the real code reads, or it proves nothing.
+        (release/'office/tools').mkdir(); (release/'office/acceptance').mkdir()
+        (release/'office/tools/development_policy.py').write_text(
+            'WORK = {"reconciliation": [], "handoff": []}\n'
+            'RECIPES = {"reconciliation": "recipe_a.py", "handoff": "recipe_b.py"}\n')
+        (release/'office/tools/kontor_result.py').write_text('def render(goal):\n    return goal\n')
+        (release/'office/acceptance/recipe_a.py').write_text('# frozen acceptance for A\n')
+        (release/'office/acceptance/recipe_b.py').write_text('# frozen acceptance for B\n')
+        (self.directory/'drafts').mkdir(exist_ok=True)
+        for work in ('step-5', 'step-28'):
+            (self.directory/'drafts'/work).mkdir(); (self.directory/'drafts'/work/'frozen.json').write_text(
+                json.dumps({'task': work}))
         goal = hashlib.sha256(b'development-context/goal.md').hexdigest(); (self.directory/'contract.json').write_text(json.dumps({'acceptance_sha256': goal}))
         (release/'development-context/amendment-a.md').write_text('amendment'); amended = hashlib.sha256(b'amendment').hexdigest()
         (release/'development-context/amendment-a-review.json').write_text(json.dumps({'reviewer': 'separate context', 'verdict': 'approved',
                                                                                          'sha256': amended, 'amends_sha256': goal}))
         bound = [{'file': 'amendment-a.md', 'sha256': amended, 'review': 'amendment-a-review.json',
                   'review_sha256': hashlib.sha256((release/'development-context/amendment-a-review.json').read_bytes()).hexdigest()}]
-        receipt = {'url': 'https://example.invalid/pull/1', 'candidate': 'c'*40, 'tree': 't'*40}
-        state = {'integrated': {work: {'task': work, 'receipt': receipt} for work in ('reconciliation', 'handoff')}}
+        receipt = {'url': 'https://example.invalid/pull/1', 'candidate': 'c'*40, 'tree': 't'*40,
+                   'merge_commit': 'm'*40}
+        state = {'integrated': {work: {'task': work, 'receipt': receipt} for work in ('reconciliation', 'handoff')},
+                 'calls': [{'nonce': 'step-4', 'role': 'preparation-review', 'work': 'reconciliation'}]}
         scope = SimpleNamespace(directory=self.directory, expected='x', inspect=lambda: state)
         report = {'verified_delivery': True, 'integration': receipt, 'state': {'results': [{'workspace_name': 'w'}]}}
-        async def native(task_ids): return {}, {}
+        # The real signature: histories, the watch status, and which of them were read live versus from a
+        # verified archive. A double that returned the old pair would hide a caller that stopped saying so.
+        async def native(applications, task_ids): return {}, {}, {}
         delivered = {}; examined = {}
         def call(expected, key, role, work, context, files): delivered.update(files); examined.update(context); return {'nonce': key}
-        with patch.object(final, 'load', side_effect=lambda name: {'id': name, 'base': 'b'*40}), patch.object(final, 'inspect', return_value=report), \
+        with patch.object(final, 'load', side_effect=lambda name: {'id': name, 'base': 'b'*40,
+                 'allowed_paths': ['tools/%s.py' % name, 'tools/test_%s.py' % name]}), \
+             patch.object(final, 'git', side_effect=lambda *a, **k: b'# candidate\n'), \
+             patch.object(final, 'repository', side_effect=lambda target: target), patch.object(final, 'inspect', return_value=report), \
              patch.object(final, 'task_directory', return_value=self.root), patch.object(final, 'native_evidence', side_effect=native), \
              patch.object(final, 'Publisher', return_value=SimpleNamespace(api=lambda path: {}, reconcile=lambda *a: receipt)), \
              patch.object(final.host, 'prepare_call', side_effect=call):

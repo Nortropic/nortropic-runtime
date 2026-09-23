@@ -114,6 +114,13 @@ def development_step(request: dict) -> dict:
     operation = request['operation']; key = identifier(request['key'])
     if operation == 'control':
         return {'control': control}
+    if operation == 'preserved-delivery':
+        # A direct assessment must never enter the build sequence. This reports what is ALREADY
+        # integrated - no model call, no capacity reservation, nothing prepared - so an assessment
+        # refuses before spending anything if the delivery it exists to assess is not actually there.
+        state = scope.inspect()
+        return {'control': control, 'integrated': sorted(state['integrated']),
+                'complete': set(state['integrated']) == {'reconciliation', 'handoff'}}
     # Even an observation/cancel preparation must not occupy AP10's time budget.
     # B preparation includes remote binding + exact Git extraction (up to480s),
     # a bounded model guardian (490s) and cleanup. Reserve the whole host step.
