@@ -643,5 +643,207 @@ class CompanionReadabilityTests(unittest.TestCase):
             self.assertLessEqual(len(files[name]), READ_BOUND, name)
 
 
+class HostChecksAreStillBoundTests(unittest.TestCase):
+    """The published suite must notice if the separate host checks disappear.
+
+    Independent review of the move found that nothing bound them: no test_*.py referenced the module, and
+    the dependency ran the other way, so deleting or renaming it would have left this suite green while
+    seven checks vanished. This is the binding, and it lives in the suite that is actually read.
+    """
+
+    EXPECTED = {
+        'PreservedEvidenceChecks': (
+            'test_the_run_record_names_the_text_that_was_actually_delivered',
+            'test_the_qualification_index_binds_every_preserved_record',
+            'test_the_real_preserved_sessions_divide_exactly_as_measured'),
+        'PopulatedScopeTests': (
+            'test_no_assessment_key_can_land_on_a_stage_this_scope_already_has',
+            'test_an_inherited_namespace_really_does_reach_an_existing_stage',
+            'test_the_assessment_key_is_a_valid_scope_identity',
+            'test_the_preserved_run_keeps_its_keys_journal_and_verdict'),
+    }
+
+    def module(self):
+        import ast
+        path = Path(__file__).with_name('hostcheck_preserved_state.py')
+        self.assertTrue(path.is_file(), 'the separate host checks still exist: ' + str(path))
+        return ast.parse(path.read_text()), path
+
+    def test_every_moved_check_is_still_there_under_its_own_name(self):
+        import ast
+        tree, _path = self.module()
+        found = {node.name: {m.name for m in node.body
+                             if isinstance(m, ast.FunctionDef) and m.name.startswith('test')}
+                 for node in tree.body if isinstance(node, ast.ClassDef)}
+        for klass, methods in self.EXPECTED.items():
+            with self.subTest(klass=klass):
+                self.assertIn(klass, found, 'a moved class was renamed or removed')
+                self.assertTrue(set(methods) <= found[klass],
+                                'missing: ' + repr(sorted(set(methods) - found[klass])))
+
+    SKIP_FORMS = ('skip', 'skipTest', 'SkipTest', 'skipUnless', 'skipIf', 'expectedFailure')
+
+    def test_the_moved_checks_fail_rather_than_skip_without_the_preserved_state(self):
+        """A skip there would be the same indistinguishability the move was meant to remove, only now
+        outside the run anyone reads.
+
+        Matching only `.skipTest(...)` was not enough: a decorator is the idiomatic way anyone would
+        reintroduce a host guard, and it would have restored the hole undetected. The check is STRUCTURAL,
+        over the parsed tree, so the module may still describe in prose why it does not skip - a textual
+        scan failed on its own explanation.
+        """
+        import ast
+        tree, _path = self.module()
+
+        def named(node):
+            return getattr(node, 'id', None) or getattr(node, 'attr', None)
+
+        found = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and named(node.func) in self.SKIP_FORMS:
+                found.append('call ' + named(node.func))
+            if isinstance(node, ast.Raise) and node.exc is not None:
+                target = node.exc.func if isinstance(node.exc, ast.Call) else node.exc
+                if named(target) in self.SKIP_FORMS:
+                    found.append('raise ' + str(named(target)))
+            for decorator in getattr(node, 'decorator_list', []):
+                target = decorator.func if isinstance(decorator, ast.Call) else decorator
+                if named(target) in self.SKIP_FORMS:
+                    found.append('decorator ' + named(target))
+            # unittest also honours a class attribute and a module hook, neither of which is a call or a
+            # decorator. The earlier list caught neither, so a one-word @unittest.skip - the plainest form
+            # of all - restored the hole the rejection named, with this very check green.
+            for target in getattr(node, 'targets', []):
+                if named(target) in ('__unittest_skip__', '__unittest_expecting_failure__'):
+                    found.append('class attribute ' + named(target))
+            if isinstance(node, ast.FunctionDef) and node.name == 'load_tests':
+                found.append('load_tests hook, which can return an empty suite')
+        self.assertEqual(found, [], 'the separate host checks must never skip, in any form')
+
+    def test_the_presence_guard_is_reached_and_can_actually_fail(self):
+        """Every host-bound check routes its requirement through one helper. A binding that only says the
+        helper EXISTS would let a one-line edit make all of them pass on an empty checkout."""
+        import ast
+        tree, _path = self.module()
+        guard = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'required_scope']
+        self.assertEqual(len(guard), 1, 'the presence guard is still there')
+        # CALL it against a root without the preserved state. Asserting that its body contains a `raise`
+        # is not the same as it raising: wrapping that raise in a condition that is never true leaves the
+        # statement in place and every host check passing on an empty checkout.
+        import tempfile
+        from runtime import release
+        from scripts import hostcheck_preserved_state as host_checks
+        with tempfile.TemporaryDirectory() as empty:
+            with patch.object(release, 'ROOT', Path(empty)):
+                with self.assertRaises(AssertionError) as caught:
+                    host_checks.required_scope()
+        self.assertIn('preserved application', str(caught.exception),
+                      'and it says what is missing rather than failing obscurely')
+        reached = set()
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for method in node.body:
+                if not (isinstance(method, ast.FunctionDef) and method.name.startswith('test')):
+                    continue
+                calls = {getattr(c.func, 'id', getattr(c.func, 'attr', None)) for c in ast.walk(method)
+                         if isinstance(c, ast.Call)}
+                if {'required_scope', 'scope_directory'} & calls:
+                    reached.add(node.name + '.' + method.name)
+        for klass, methods in self.EXPECTED.items():
+            for method in methods:
+                name = klass + '.' + method
+                if name.endswith('test_the_assessment_key_is_a_valid_scope_identity'):
+                    continue            # reads no host state; listed only so a rename is still caught
+                with self.subTest(check=name):
+                    self.assertIn(name, reached, 'this check does not reach the presence guard')
+
+    @staticmethod
+    def lay_out_the_paths(root):
+        """The four paths the guard asks for, exactly as a skeleton or a stale copy would have them."""
+        application = root / '.runtime/ap11/application'
+        (application / 'calls').mkdir(parents=True)
+        (application / 'qualification').mkdir()
+        for name in ('journal.jsonl', 'qualification/index.json', 'qualification/G8-ISOLATED-PROOF-RUN.json'):
+            (application / name).write_text('{}\n')
+
+    def test_the_right_paths_without_the_active_binding_are_refused(self):
+        """Paths existing is what a skeleton has too; the scope must be tied to the ACTIVE release."""
+        import tempfile
+        from runtime import release
+        from scripts import hostcheck_preserved_state as host_checks
+        with tempfile.TemporaryDirectory() as skeleton:
+            skeleton = Path(skeleton)
+            self.lay_out_the_paths(skeleton)
+            with patch.object(release, 'ROOT', skeleton), \
+                    patch.object(release, 'ACTIVE', skeleton / '.runtime/ap10/active.json'):
+                with self.assertRaises(AssertionError) as caught:
+                    host_checks.required_scope()
+        self.assertIn('no ACTIVE release', str(caught.exception))
+
+    def test_a_copy_carrying_its_own_consistent_binding_is_refused(self):
+        """The self-referential anchor one level up. A copy of the whole root brings its own pointer and a
+        configuration that pointer really does hash, so both agree with each other. What the copy cannot
+        change is that the configuration names the root it was copied FROM, and the host's own reading of
+        the binding compares that with the root it is running against."""
+        import hashlib
+        import tempfile
+        from runtime import release
+        from scripts import hostcheck_preserved_state as host_checks
+        with tempfile.TemporaryDirectory() as copy:
+            copy = Path(copy)
+            self.lay_out_the_paths(copy)
+            config = copy / '.runtime/ap10/releases/copied/config.json'
+            config.parent.mkdir(parents=True)
+            config.write_text(json.dumps({'host_root': str(copy.parent / 'the-root-it-was-copied-from'),
+                                          'development': {'contract_sha256': '0' * 64}}))
+            active = copy / '.runtime/ap10/active.json'
+            active.write_text(json.dumps({'config': str(config),
+                                          'sha256': hashlib.sha256(config.read_bytes()).hexdigest()}))
+            with patch.object(release, 'ROOT', copy), patch.object(release, 'ACTIVE', active):
+                with self.assertRaises(AssertionError) as caught:
+                    host_checks.required_scope()
+        self.assertIn('does not verify on this host', str(caught.exception))
+        self.assertIn('Pinned canonical state/target mapping differs', str(caught.exception),
+                      'refused for naming another root, not for some other shortcoming of the fixture')
+
+    def test_the_runner_without_the_preserved_state_writes_a_failing_receipt_naming_its_imports(self):
+        """End to end, in the suite that is read: the separate run fails rather than skips when the preserved
+        state is absent, and its receipt says where the code it exercised was imported from."""
+        import os
+        import subprocess
+        import sys
+        import tempfile
+        runner = Path(__file__).resolve().with_name('run_host_checks.py')
+        root = runner.parents[1]
+        with tempfile.TemporaryDirectory() as empty:
+            receipt = Path(empty) / 'receipt.json'
+            environment = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'LANG', 'TMPDIR')}
+            environment.update(NR_HOST_ROOT=empty, PYTHONDONTWRITEBYTECODE='1')
+            done = subprocess.run([sys.executable, '-B', str(runner), str(receipt)], env=environment,
+                                  capture_output=True, timeout=300)
+            self.assertEqual(done.returncode, 1, done.stdout.decode(errors='replace')[-2000:])
+            value = json.loads(receipt.read_text())
+        self.assertIs(value['successful'], False)
+        self.assertEqual(value['skipped'], 0, 'absent state is a failure, never a skip')
+        self.assertGreater(value['failures'] + value['errors'], 0)
+        self.assertEqual(value['imported']['scripts.hostcheck_preserved_state'],
+                         str(root / 'scripts/hostcheck_preserved_state.py'))
+        self.assertEqual(value['imported']['scripts.test_final_evidence'], str(root / 'scripts/test_final_evidence.py'))
+        for name, file in value['imported'].items():
+            with self.subTest(module=name):
+                self.assertTrue(Path(file).is_relative_to(root), file)
+
+    def test_it_still_imports_the_classes_it_extends(self):
+        """If those were renamed or split, the host run would error rather than quietly cover less."""
+        import ast
+        tree, _path = self.module()
+        imported = {alias.name for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
+                    for alias in node.names}
+        self.assertLessEqual({'IsolatedProofDeliveryTests', 'TriggerRecordTests'}, imported)
+        for name in ('IsolatedProofDeliveryTests', 'TriggerRecordTests'):
+            self.assertIn(name, globals(), name + ' is still defined in this module')
+
+
 if __name__ == '__main__':
     unittest.main()

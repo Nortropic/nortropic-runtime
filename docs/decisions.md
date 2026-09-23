@@ -1008,3 +1008,27 @@ Limits: `--effort` stays pinned at medium and is not part of the selection; the 
 activation, not at task freeze, so a frozen task carries its executor but not its model; and no allow-list
 of qualified models exists yet — the check proves the model that answered is the one asked for, never that
 it is one already proven.
+
+
+## D023 — 2026-09-23: the Runtime keeps its own copy of the qualified Claude CLI
+
+D019 pinned the Claude CLI by SHA256, but `qualified_binary()` resolved `claude` on PATH: the Runtime
+shared one binary with the owner's own chat. On 2026-09-23 that global install updated itself from 2.1.257
+to 2.1.280 (`npm install --global @anthropic-ai/claude-code@latest`, 12:44:52Z). The pin did what it was
+built to do and refused every Runtime Claude role; it also turned the published suite red, because the
+model-binding tests build real commands. D022's owner decision that the global CLI is not updated for
+AP-11 could not hold once the owner's own tool updated itself.
+
+Decision: the Runtime keeps exactly the qualified bytes in `.runtime/bin/claude-2.1.257`, beside its pinned
+`codex-0.155.1` and `temporal-1.9.1`, and `qualified_binary()` reads that copy. The hash, the version the
+provider must report and both refusal messages are unchanged; a missing copy, a symlink in its place or
+changed bytes refuse before any model could start, and nothing falls back to PATH. The owner's global CLI
+is left as it is.
+
+The copy is the member `package/claude` of `@anthropic-ai/claude-code-darwin-arm64@2.1.257`, fetched with
+`npm pack` (which verifies the registry integrity) and accepted only because its SHA256 equals the D019 pin.
+Provenance, code signature and the subscription route measured through the copy are in
+evidence/claude-host-copy/provenance.json.
+
+This is not a requalification and not a new version: no model, right, payment path or acceptance
+requirement changes. Moving to a newer CLI remains a separate qualified step.

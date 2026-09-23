@@ -297,20 +297,127 @@ tasks och deras förberedelsegranskningar, G8:s isolerade takvägransprov (käll
 läses ur releasens egen revision), G2:s utlösningspost (härledd ur bevarade byte)
 samt C1/C3-förutsättningarna (levereras via ACTIVE_SELECTION.json).
 
-ÅTERSTÅENDE STEG, i ordning:
+LÄGE VID SKRIVARBYTE 2026-09-23 (andra bytet). G6, dokumentationen av den andra
+bedömningsvägen, samt beslut och separat granskning för `office-ap11-assessment-2`
+är utförda. PUBLICERAT: PR #43, merge-commit 6bb78de263aed35f09379c1fd6bd0909c3ae56cb.
 
-1. G6 — verklig avbrotts- och mottagardemonstration. Kräver genuint kvarvarande
-   arbete, verkligt avbrott, bevarat läge, verifierad överlämning av skrivansvar
-   och en färsk behörig mottagare som själv hittar och genomför steget. Kvotpaus
-   och utförarbyte är uttryckligen uteslutna av tillägg A-r2 § 6.
-2. Dokumentera den andra bedömningsvägen: en post i `docs/decisions.md` och ett
-   operatörsavsnitt i `docs/runbook.md` för `runtime/development_assessment.py`.
-   Vägen finns i kod och prov men är odokumenterad, och detta repo dokumenterar
-   varje operatörsväg på de två ställena.
-3. Beslutsdokument och separat granskning för bedömningsidentiteten
-   `office-ap11-assessment-2`, bundna med hash i nästa release.
-4. Samla ändringarna i en kontrollerad övergång och lämna ägaren en fullständig
-   aktiveringsbegäran med `LC_ALL=C`, aktuell check och faktisk driftpåverkan.
+G6 är demonstrerat: verkligt kvarvarande kompletteringsarbete avbröts vid en mätt
+punkt, skrivaren verifierades borta efter inhämtning, och en färsk auktoriserad
+mottagare fann och genomförde det återstående steget genom den dokumenterade vägen
+utan facit. Underlag i qualification/G6-RECEIVER-TAKEOVER.json; det kasserade
+försöket, avbrutet före varje skrivning, är bevarat och INTE tillgodoräknat.
+
+Beslut och granskning för bedömningsidentiteten ligger i kontorets
+`evidence/ap11/local/`: `assessment-2.md` (1cd959b9...) och
+`assessment-2-review.json` (438eff30...).
+
+OPUBLICERAD KANDIDAT, som nästa skrivare tar vid i:
+  arbetsplats  .runtime/ap11/integrations/evidence-access
+  gren         ap11/evidence-access
+  kandidat     huvudet på grenen - en commit ovanpå basen. Exakt hash i
+               `.runtime/ap11/claude-path/RESUMPTION-20260923.json`; en commit kan
+               inte innehålla sin egen hash, och kandidaten bär denna plan.
+  bas          origin/main = 6bb78de2
+  status       OPUBLICERAD och OGRANSKAD
+
+VAD KANDIDATEN GÖR. Den gör de obligatoriska värdkontrollerna till en del av den
+verifieringsväg publiceringen faktiskt förlitar sig på, i stället för ett påstående
+bredvid den. Kontrollerna ligger avsiktligt utanför det mönster publiceraren
+upptäcker, eftersom en överhoppning inuti den körningen inte går att skilja från en
+kontroll som tyst slutat köra. Följden, som oberoende granskning fann, var att
+ingenting grindade på dem alls.
+
+  - `scripts/run_host_checks.py` kör dem och skriver ett kvitto bundet till commiten
+    publiceraren mäter, till modulens och basklassfilens byte, och till det bevarade
+    scopets journalhuvud.
+  - `publish_construction` VÄGRAR en runtime-publicering vars kvitto inte stämmer.
+    Prövat mot elva manipulerade kvitton; alla vägrade av rätt skäl.
+  - Kvittot är pinnat i `PREVIEWED` och i invokationsposten, så det inte kan bytas
+    mellan torrkörning och skarp körning.
+  - `required_scope()` använder värdens egen `Scope`-kontroll och förankras i DEN
+    AKTIVA RELEASENS kontrakt - utifrån, inte i katalogen som prövas. En helkopia av
+    scopet avvisas.
+  - Skip-bindningen fångar alla former unittest hedrar: anrop, `raise`, dekorator
+    inklusive den enkla, klassattribut och `load_tests`-hook.
+
+VIKTIGT OM GRANSKNINGEN. Publiceraren ligger i `.runtime/ap11/build/`, UTANFÖR
+kandidatrepot, så den syns inte i `git diff origin/main..HEAD`. Två granskningar i rad
+avslog delvis för att underlaget inte nådde granskaren: först filer lagda platt medan
+diffen pekade på `scripts/…`, sedan publiceraren som en fil bredvid i stället för som
+egen diff, i en katalog granskaren inte kunde lista. Nästa granskning måste få
+publicerarens ändring som EGEN DIFF, och varje fil på den sökväg diffen namnger.
+
+Prov vid överlämning. Standardsviten: 384 prov, rent `OK`, inga överhoppningar,
+`python3 -m unittest discover -s scripts -p "test_*.py"`. Värdkontrollerna:
+`scripts/hostcheck_preserved_state.py`, 27 kontroller, noll fel, noll överhoppade,
+körda med NR_HOST_ROOT mot primärutcheckningen. Kvitton i
+`.runtime/ap11/claude-path/` och i `.runtime/ap11/build/ap11-hostcheck-binding-hostcheck.json`.
+Ett rent `OK` från standardsviten ersätter INTE värdkontrollerna.
+
+Drift- och förbrukningsläge. Tjänsten körs och ska fortsätta köra: daemon, Temporal
+på 127.0.0.1:7339 och workern. Scopet står `paused` med skälet "Whole-goal review not
+approved; preserve specific evidence gaps", 25 räknade anrop mot taket 48, båda
+arbetena integrerade, `office-ap11` COMPLETED med `whole_goal_not_approved`. AP-10
+orört. Inget skrivande arbete lämnat aktivt.
+
+Bevarat, får inte skrivas över: grenen `ap11/assessment-path-history`, samtliga
+publiceringskvitton och suite-loggar under `.runtime/ap11/build/`, och granskningarnas
+råströmmar. Nya prov ska använda nya filnamn.
+
+LÄGE VID TREDJE SKRIVAREN 2026-09-23. Överlämningen verifierades innan något skrevs:
+kandidaten effc5799 med exakt de överlämnade byten, basen lika med origin/main, ingen
+annan skrivare aktiv, tjänsten igång, scopet `paused` vid sekvens 112 med 25/48. Den
+överlämnade kandidaten är bevarad på den lokala grenen `ap11/hostcheck-binding-handover`.
+Publicerarens före-version (den som publicerade PR #43, sha256 3e48124e) fanns bara som
+hash i kvittona; den är återställd ur efter-versionen och verifierad mot just den hashen,
+och bevarad bredvid den överlämnade efter-versionen (c184d260) i `.runtime/ap11/build/`.
+De tidigare granskningspaketen och råströmmarna är kopierade från den flyktiga
+sessionskatalogen till `.runtime/ap11/claude-path/hostcheck-reviews-20260923/`.
+
+Denna kandidat stänger, före granskningen, tre luckor i just den koppling som ska
+granskas. Ankaret var fortfarande självrefererande en nivå upp: `required_scope()` läste
+pekaren i den rot NR_HOST_ROOT anger, så en kopia av hela roten bar sin egen pekare. Nu
+används värdens egen läsning av den accepterade bindningen, `release.installed()`, som
+kräver att konfigurationen är den pekaren hashar och att den namnger just denna rot.
+Publiceraren läste scopets huvud i den katalog kvittot själv namngav; nu måste kvittot
+avse värdens eget scope under publicerarens rot. Och kvittot säger nu var den prövade
+koden faktiskt importerades ifrån, vilket publiceraren kräver ligger i kandidaten.
+
+NYTT HINDER, upptäckt vid övertagandet, och dess rättning i denna kandidat. Den globala
+Claude Code-installationen uppdaterade sig själv 12:44:52Z (`npm install --global
+@anthropic-ai/claude-code@latest`) från den kvalificerade 2.1.257 till 2.1.280. Eftersom
+`qualified_binary()` slog upp `claude` på PATH vägrar D019:s pin nu varje Claude-roll i
+den aktiva releasen, också den andra bedömningens enda räknade anrop (kontrollen sker
+före reservationen, så ingen av de 48 förbrukas, men bedömningens nyckel skulle
+förbrukas). Den gjorde också standardsviten röd, eftersom modellbindningsproven bygger
+riktiga kommandon; publiceraren kör hela sviten, så ingen runtime-kandidat kunde
+publiceras, och grinden kräver en värdkontrollöpare som bara finns i denna kandidat.
+Rättningen hör därför hit: Runtime håller en egen kopia av exakt de kvalificerade byten,
+`.runtime/bin/claude-2.1.257`, bredvid Codex- och Temporal-binärerna (D023). Samma hash,
+samma version, samma vägran; ingen fallback till PATH; ägarens egen CLI lämnas orörd.
+AP-10:s privata steg använder Codex och berörs inte av detta.
+
+NÄSTA HANDLING, i ordning:
+
+1. Riktad granskning av denna kandidat OCH publicerarens gate, den senare levererad som
+   egen diff mot den version som publicerade PR #43. Tillgodoräkna giltiga tidigare
+   granskningar och prov.
+2. Håll den godkända kandidatens och publicerarens byte fasta genom
+   publiceringsförberedelsen. Ingen ogranskad efterändring med efterhandsnot.
+3. Publicera under namnet `ap11-hostcheck-binding`. Kör om `run_host_checks.py` efter
+   varje commit-ändring, eftersom kvittot binder commiten. Läs tillbaka integrationen.
+4. Bygg övergång 8 genom att återanvända övergång 7:s väg med just de ändringar som
+   behövs: staga `assessment-2.md` och `assessment-2-review.json` i
+   `development-context/`, sätt `development.assessments`, och pinna den NYA
+   integrerade revisionen - inte 6bb78de2. Ingen allmän refaktorering. Övergången ska
+   kontrollera att den nya releasen löser Claude-kopian och att den verifierar.
+5. Lämna ägaren aktiveringsbegäran med `LC_ALL=C`, färsk check, exakta bindningar och
+   faktisk driftpåverkan.
+
+A/B, den första helhetsdomen, samma åtagande och faktisk förbrukning bevaras. Taken
+48/6 ändras inte. Ingen ny interaktiv start, reset eller ombyggnad av de levererade
+arbetsdelarna. Mandatet för riktad granskning, publicering och övergångsförberedelse
+består över skrivarbytet; invänta inget nytt körbesked.
 
 Färska mottagare läser AGENTS.md, därefter denna plan, verifierar att tidigare
 skrivare stoppat och inspekterar bevarat läge före varje skrivning.

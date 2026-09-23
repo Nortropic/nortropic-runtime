@@ -1,0 +1,37 @@
+{
+ "observed_at": "2026-09-23T13:23:28+00:00",
+ "why": "qualified_binary() resolved `claude` on PATH, the owner's global install. That install updated itself to 2.1.280 on 2026-09-23 (npm install --global @anthropic-ai/claude-code@latest at 12:44:52Z), so the D019 pin refused every Runtime Claude role. The Runtime now keeps its own copy of the qualified bytes, like codex-0.155.1 and temporal-1.9.1.",
+ "source": {
+  "package": "@anthropic-ai/claude-code-darwin-arm64",
+  "version": "2.1.257",
+  "registry_tarball": "https://registry.npmjs.org/@anthropic-ai/claude-code-darwin-arm64/-/claude-code-darwin-arm64-2.1.257.tgz",
+  "registry_integrity": "sha512-VQQfNs9fiSmtDK4kgK18gQ9cXE8Nw44BogYYLZ3mGxWASplyYWhORMs+loNilBDmspBWhyVxVA4iGBPEpgxkmQ==",
+  "fetched_with": "npm pack @anthropic-ai/claude-code-darwin-arm64@2.1.257 (npm verifies the registry integrity)",
+  "tarball_sha256": "54c80ce110673637cf932dee41a02f31c95ad1a8bd1455adf480a9a271cdb54a",
+  "member": "package/claude"
+ },
+ "installed": {
+  "path": ".runtime/bin/claude-2.1.257",
+  "sha256": "64590d7d9d9c189d33fb3dfa58c5408eaf2a10fe556bd84155d95efaab46b60e",
+  "bytes": 199011264,
+  "equals_d019_pin": true,
+  "reports": "2.1.257 (Claude Code)",
+  "code_signature": [
+   "Identifier=com.anthropic.claude-code",
+   "TeamIdentifier=Q6L2SF6YDW"
+  ]
+ },
+ "subscription_route_through_the_copy": {
+  "loggedIn": true,
+  "authMethod": "claude.ai",
+  "apiProvider": "firstParty",
+  "subscriptionType": "max"
+ },
+ "global_install_now": {
+  "path": "/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe",
+  "sha256": "387a5c5dcdbb815085edf0baf79591f9d8894efe922bceaf3d75b1b08055229d",
+  "untouched": "the owner's own CLI is not changed by this"
+ },
+ "why_the_bytes_are_the_qualified_ones": "npm installs the platform package member package/claude as bin/claude.exe (hard link or copy, install.cjs); for 2.1.280 the packed member and the installed bin/claude.exe have the same sha256. The member of the 2.1.257 package has exactly the sha256 D019 pinned from the installed 2.1.257 binary.",
+ "not_measured_here": "No model call was made with the copy for this record; the published suite and the host checks exercise the command shapes, and the first real call is measured by provider_result against VERSION and the selected model."
+}

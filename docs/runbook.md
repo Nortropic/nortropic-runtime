@@ -145,7 +145,8 @@ for the actual current checkpoint; the command above is not a request to resubmi
 The current workstation is installed and qualified. Do not reinstall or update it
 as part of ordinary resume. [dependencies.json](../evidence/v0.1/dependencies.json)
 records current binary hashes, Python3.12.13, macOS26.3 and arm64. Claude2.1.257's
-binary SHA256 is enforced by runtime/claude_profile.py; its native installed CLI
+binary SHA256 is enforced by runtime/claude_profile.py on the Runtime's own copy,
+.runtime/bin/claude-2.1.257, never on whatever `claude` PATH resolves to (D023); it
 uses existing account credentials. A changed version/auth route requires a new
 bounded qualification, never automatic API fallback.
 
@@ -159,6 +160,9 @@ and their retained download/inspection records before extraction:
 - temporalio/cli release v1.9.1: temporal_cli_1.9.1_darwin_arm64.tar.gz; selected
   regular temporal member to .runtime/bin/temporal-1.9.1. Download and inspected
   archive hash/members: evidence/durable-probe/cli-download/ and cli-inspection.json.
+- npm @anthropic-ai/claude-code-darwin-arm64@2.1.257, fetched with `npm pack`; only
+  the regular member package/claude to .runtime/bin/claude-2.1.257, used only if its
+  SHA256 equals BINARY_SHA256. Record: evidence/claude-host-copy/provenance.json.
 - Python SDK and every transitive package/version/hash are fixed by
   config/temporal-probe-requirements.lock. The recorded installation used inspected
   wheels, no source build or extra startup .pth code (wheel-inspection.json).
