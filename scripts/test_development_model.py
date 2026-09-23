@@ -1,10 +1,13 @@
 """Isolated fake-provider process tests, explicitly not application evidence."""
 import hashlib
 import json
+import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -86,6 +89,80 @@ class ModelTests(unittest.TestCase):
         events = self.events(); events[1]['item']['text'] = '{"reason":"quota usage limit"}'
         self.assertTrue(self.run_fixture(events)['completed'])
         self.assertEqual(self.scope.inspect()['control'], 'active')
+
+
+# The real guardian in its own process, as the worker starts it; only what run_fixture() substitutes is substituted.
+GUARDIAN = '''
+import json, sys
+from pathlib import Path
+from unittest.mock import patch
+from runtime import development_model as model
+from runtime.development_scope import Scope
+root, expected, provider = Path(sys.argv[1]), sys.argv[2], json.loads(sys.argv[3])
+with patch.object(model, 'active_scope', return_value=(Scope(root / 'scope', expected), {})), \\
+     patch.object(model, 'command', return_value=provider), \\
+     patch.object(model, 'require_workspace_instructions', return_value={}), \\
+     patch.object(model, 'environment', return_value={}):
+    print(json.dumps(model.execute(json.load(sys.stdin))))
+'''
+
+
+class GuardianSignalTests(unittest.TestCase):
+    """The guardian's own termination handling, driven by a REAL signal to a REAL guardian process (D026).
+
+    Found live, not by review: the fourth assessment's interruption sent SIGTERM to the verified guardian and the
+    counted review ran on to its verdict. The handler raised InterruptedError, which selectors.select() catches and
+    turns into an empty result, so a signal that arrived while the loop waited on the provider - nearly always - was
+    lost. Every earlier test called execute() in-process and never signalled it.
+    """
+
+    def setUp(self):
+        ModelTests.setUp(self)
+        data = json.loads((self.stage/'input.json').read_text()); data['seconds'] = 60
+        raw = json.dumps(data).encode(); (self.stage/'input.json').write_bytes(raw)
+        self.request = dict(self.request, input_sha256=hashlib.sha256(raw).hexdigest())
+
+    def tearDown(self):
+        ModelTests.tearDown(self)
+
+    def test_a_termination_signal_ends_a_running_call_and_removes_its_provider(self):
+        # One event, then silence: the guardian then waits in streams.select(), where the signal used to be lost.
+        provider = [sys.executable, '-u', '-c', 'import json,time\n'
+                    'print(json.dumps({"type":"thread.started","thread_id":"synthetic"}),flush=True)\ntime.sleep(60)', '-']
+        events = self.stage/'events.jsonl'
+        with subprocess.Popen([sys.executable, '-B', '-c', GUARDIAN, str(self.root), self.scope.expected,
+                               json.dumps(provider)], cwd=Path(__file__).resolve().parents[1],
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              start_new_session=True) as guardian:
+            try:
+                guardian.stdin.write(json.dumps(self.request).encode()); guardian.stdin.close()
+                deadline = time.monotonic() + 20
+                while not (events.is_file() and events.stat().st_size):
+                    self.assertIsNone(guardian.poll(), guardian.stderr.read() if guardian.poll() is not None else '')
+                    self.assertLess(time.monotonic(), deadline); time.sleep(.05)
+                time.sleep(.5)
+                sent = time.monotonic(); os.kill(guardian.pid, signal.SIGTERM)
+                guardian.wait(timeout=10)
+                ended = time.monotonic() - sent
+                out, err = guardian.stdout.read(), guardian.stderr.read()
+            finally:
+                if guardian.poll() is None:
+                    guardian.kill(); guardian.wait()
+                if (self.stage/'launch.json').is_file():
+                    try:
+                        os.killpg(json.loads((self.stage/'launch.json').read_text())['provider_pid'], signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+        self.assertEqual(guardian.returncode, 0, err)
+        result = json.loads(out)
+        self.assertEqual((result['completed'], result['reason'], result['process_group_removed']),
+                         (False, 'goal call signal', True))
+        self.assertEqual(json.loads((self.stage/'result.json').read_text()), result)
+        self.assertLess(ended, 5)
+        launch = json.loads((self.stage/'launch.json').read_text())
+        self.assertNotEqual(subprocess.run(['ps', '-p', str(launch['provider_pid'])], capture_output=True).returncode, 0)
+        # Counted once and never refunded: the interrupted call stays reserved and started.
+        self.assertEqual(self.scope.inspect()['started'], [self.nonce])
 
 
 if __name__ == '__main__':

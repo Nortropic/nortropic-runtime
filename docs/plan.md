@@ -1,6 +1,29 @@
-# AP11 — GÄLLANDE INGÅNG: G6-demonstrationen i egen körning, bedömd av en separat (2026-09-23)
+# AP11 — GÄLLANDE INGÅNG: väktarens avbrott rättat (D026); demonstrationen i den femte bedömningen (2026-09-23)
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE, mätt 2026-09-23T21:30Z. Aktiv release runtime 5edc7338 / kontor df5ed5dc, konfiguration ebf792b2 (övergång 11).
+Scopet står `paused` med 28 av 48 räknade anrop. A och B är integrerade. Fyra helhetsbedömningar är inte godkända och
+står oförändrade: `office-ap11` (step-36) och `office-ap11-assessment-2`, `-3` och `-4` (anrop 26, 27 och 28), alla
+inconclusive. Den fjärde skulle bära G6-demonstrationen enligt formens revision 5. Avbrottet skickades som bestämt
+(SIGTERM till den verifierade väktaren) men verkade inte: väktarens hanterare kastade `InterruptedError`, som
+standardbibliotekets selectors sväljer, så granskningen gick till sin dom. Orsaken är mätt och återskapad isolerat och
+rättad i D026. Ägarens delegering (AP11-DELEGERING-20260923) gäller; slutkraven och 48/6 är oförändrade.
+
+Nästa, i ordning:
+
+1. Publicera D026 genom den skyddade integrationen och spela in den isolerade provkörningen på den nya revisionen,
+   med provet som skickar en verklig signal till en verklig väktare.
+2. G6-formens revision 6: `office-ap11-assessment-5` bär demonstrationen, `office-ap11-assessment-6` bedömer den i
+   en separat körning. Separat granskning före körning.
+3. Övergång 12 aktiverar D026-revisionen och binder den femte bedömningen; övergång 13 binder den sjätte efter att
+   den femte har slutat. Förväntad förbrukning 31 av 48.
+
+GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`.
+
+Operatörsvägen: docs/runbook.md, avsnittet "AP11: operating the finite commitment".
+
+# AP11 — historik 2026-09-23T20:10Z: G6-demonstrationen i egen körning, bedömd av en separat
 
 LÄGE, mätt 2026-09-23T20:10Z. Aktiv release runtime 6c7a6db8 / kontor df5ed5dc, konfiguration e99d20a4 (övergång 10).
 Scopet står `paused` med 27 av 48 räknade anrop. A och B är integrerade. Tre helhetsbedömningar är inte godkända och
@@ -10,7 +33,7 @@ granskningen var klar, och dess dom fann formens struktur otillräcklig: demonst
 ligga i olika körningar. Ägaren har delegerat den tekniska ledningen (AP11-DELEGERING-20260923); slutkraven och
 48/6 är oförändrade.
 
-GÄLLANDE ÅTERUPPTAGNINGSPOST: `.runtime/ap11/claude-path/RESUMPTION-CURRENT.json`. I sammandrag:
+Återupptagningsposten var då den som RESUMPTION-CURRENT.json pekade på. I sammandrag:
 
 1. Publicera revisionen där ett godkännande från den fortsatta halvan av ett avbrott aldrig stänger åtagandet (D025).
 2. Övergång 11: binda `office-ap11-assessment-4`, som bär demonstrationen: dess första räknade granskning avbryts vid
