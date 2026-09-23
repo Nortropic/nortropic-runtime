@@ -278,3 +278,39 @@ No project-wide time/token budget was invented; individual calls are bounded.
 
 After final release checks are complete, this mandate ends. Further improvements
 need a concrete accepted task; do not start an open-ended optimization loop.
+
+## AP-11 komplettering och andra helhetsbedömning (2026-09-23)
+
+Tillämpningen `office-ap11` levererade A (`ap11-step-5`, reconciliation) och B
+(`ap11-step-28`, handoff); båda är integrerade. Helhetsgranskningen `step-36` gav
+`inconclusive` med tio blockerande fynd. Körningen är COMPLETED med sitt verkliga
+resultat och scopet står `paused` med skälet bevarat. Ägaren godkände 2026-09-23
+komplettering av bevisen och en andra helhetsbedömning av samma åtagande.
+
+Domen och originalkörningen bevaras. Ingen reset, ingen omkörning av A/B, ingen
+ny köridentitet som suddar avslaget eller budgeten. Samma scope, samma faktiska
+förbrukning och samma tak 48/6.
+
+Åtgärdade fynd, genom leverans snarare än beskrivning: oläsbara bevis (delad
+historik med en händelse per rad), namngivna men oinventerade källor, frysta
+tasks och deras förberedelsegranskningar, G8:s isolerade takvägransprov (källan
+läses ur releasens egen revision), G2:s utlösningspost (härledd ur bevarade byte)
+samt C1/C3-förutsättningarna (levereras via ACTIVE_SELECTION.json).
+
+ÅTERSTÅENDE STEG, i ordning:
+
+1. G6 — verklig avbrotts- och mottagardemonstration. Kräver genuint kvarvarande
+   arbete, verkligt avbrott, bevarat läge, verifierad överlämning av skrivansvar
+   och en färsk behörig mottagare som själv hittar och genomför steget. Kvotpaus
+   och utförarbyte är uttryckligen uteslutna av tillägg A-r2 § 6.
+2. Dokumentera den andra bedömningsvägen: en post i `docs/decisions.md` och ett
+   operatörsavsnitt i `docs/runbook.md` för `runtime/development_assessment.py`.
+   Vägen finns i kod och prov men är odokumenterad, och detta repo dokumenterar
+   varje operatörsväg på de två ställena.
+3. Beslutsdokument och separat granskning för bedömningsidentiteten
+   `office-ap11-assessment-2`, bundna med hash i nästa release.
+4. Samla ändringarna i en kontrollerad övergång och lämna ägaren en fullständig
+   aktiveringsbegäran med `LC_ALL=C`, aktuell check och faktisk driftpåverkan.
+
+Färska mottagare läser AGENTS.md, därefter denna plan, verifierar att tidigare
+skrivare stoppat och inspekterar bevarat läge före varje skrivning.

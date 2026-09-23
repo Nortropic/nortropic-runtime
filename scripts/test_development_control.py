@@ -2,6 +2,7 @@
 import unittest
 from unittest.mock import AsyncMock,patch
 from types import SimpleNamespace
+from temporalio.client import WorkflowExecutionStatus
 from temporalio.service import RPCError,RPCStatusCode
 from runtime.development_control import operate
 
@@ -11,8 +12,11 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         current={'control':'active','tasks':{'own':{}}};events=[]
         def control(value,reason):current['control']=value;events.append(value)
         scope=SimpleNamespace(control=control,inspect=lambda:current)
-        own=SimpleNamespace(cancel=AsyncMock(side_effect=[RPCError('transient',RPCStatusCode.UNAVAILABLE,b''),None]))
-        parent=SimpleNamespace(cancel=AsyncMock(),query=AsyncMock(return_value={'phase':'stopped'}))
+        running=AsyncMock(return_value=SimpleNamespace(status=WorkflowExecutionStatus.RUNNING))
+        own=SimpleNamespace(cancel=AsyncMock(side_effect=[RPCError('transient',RPCStatusCode.UNAVAILABLE,b''),None]),
+                            describe=running)
+        parent=SimpleNamespace(cancel=AsyncMock(),query=AsyncMock(return_value={'phase':'stopped'}),
+                               describe=running)
         service=AsyncMock();service.__aenter__.return_value=SimpleNamespace(get_workflow_handle=lambda name:own if name=='own' else parent)
         with patch('runtime.development_control.require_active_code',return_value={'development':{'contract_sha256':'fixture'},'config_sha256':'fixture'}),patch('runtime.development_control.active_scope',return_value=(scope,{})),patch('runtime.development_control.SharedService',return_value=service):
             with self.assertRaisesRegex(RuntimeError,'Scope is stopped'):await operate('stop','first')
@@ -22,7 +26,12 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_bound_not_started_and_missing_parent_do_not_block_other_child_stop(self):
         not_found=RPCError('not started',RPCStatusCode.NOT_FOUND,b'')
+        # A stop now asks what is actually running before it cancels: cancelling a closed or never started
+        # execution is not a stop, it is an error the branch would then have to report. A workflow that was
+        # never started answers NOT_FOUND to the question, exactly as it did to the cancel.
         handles={name:SimpleNamespace(cancel=AsyncMock(side_effect=not_found if name!='running' else None),
+            describe=AsyncMock(side_effect=not_found) if name!='running'
+            else AsyncMock(return_value=SimpleNamespace(status=WorkflowExecutionStatus.RUNNING)),
             query=AsyncMock(side_effect=not_found)) for name in ('bound','running','office-ap11')}
         events=[]
         scope=SimpleNamespace(control=lambda state,reason:events.append((state,reason)),
@@ -34,7 +43,9 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
              patch('runtime.development_control.SharedService',return_value=service):
             result=await operate('stop','accepted scoped stop')
         self.assertEqual(events,[('stopped','accepted scoped stop')])
-        for handle in handles.values():handle.cancel.assert_awaited_once()
+        handles['running'].cancel.assert_awaited_once()
+        for name in ('bound','office-ap11'):
+            handles[name].cancel.assert_not_awaited()      # never started: nothing to cancel, and no error
         self.assertFalse(result['native']['available'])
 
     async def test_status_unavailable_never_changes_control_or_cancels(self):
