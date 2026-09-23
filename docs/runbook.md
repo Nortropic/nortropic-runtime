@@ -261,3 +261,6 @@ under an identity the scope has already seen run. Every refusal comes before any
 A further assessment exists only as a separately reviewed decision bound in `development.assessments` by a controlled
 release transition (D024). Its identity follows from its position in that list, and its calls count against the
 same 48/6.
+
+An approval by the continued half of an interrupted review in its own run pauses the scope instead of closing it
+(D025); a separately bound further assessment then examines the whole event.

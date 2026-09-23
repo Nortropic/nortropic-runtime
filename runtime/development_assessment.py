@@ -91,9 +91,32 @@ def preserved_refusal(scope,config):
     if not (stage/'result.json').is_file():
         raise ValueError('The whole-goal review it follows has no preserved result')
     result=decode(read_regular(stage,'result.json'))
-    if host.policy(config).review(result['answer']):
+    # An approval that closed nothing may be followed: the review continued an interrupted review of its own run, so
+    # it is part of the event a G6 examination has to judge, and close() withheld the closure for a separate one.
+    if host.policy(config).review(result['answer']) and not continues_an_interruption(scope,nonce):
         raise ValueError('The previous whole-goal review was approved; there is nothing to re-assess')
     return nonce,result
+
+
+def continues_an_interruption(scope,nonce):
+    """True when another whole-goal review of the SAME run was started and never completed.
+
+    Such a review is the continued half of an interruption in its own run. It is a fresh session with no part in the
+    interrupted call, but it is part of the event: it cannot be the independent examination of that event, so an
+    approval it gives must not close the commitment by itself (close() withholds it) and a separate assessment may
+    follow it. Read from the preserved stages, never assumed.
+    """
+    prefix='step-' if nonce.startswith('step-') else nonce.rsplit('-step-',1)[0]+'-step-'
+    for call in scope.inspect()['calls']:
+        other=call.get('nonce')
+        if call.get('role')!='final-review' or other==nonce or not str(other).startswith(prefix):
+            continue
+        if other.startswith('step-')!=nonce.startswith('step-'):
+            continue
+        stage=scope.directory/'calls'/identifier(other)
+        if not (stage/'result.json').is_file() or decode(read_regular(stage,'result.json')).get('completed') is not True:
+            return True
+    return False
 
 
 # Where the host records that an assessment identity was started. The engine's duplicate refusal forgets a closed
