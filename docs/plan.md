@@ -1,37 +1,45 @@
-# AP-10-RÄTTNING — GÄLLANDE INGÅNG: AP-10:s privata steg ska ta emot en avslutningssignal
+# AP-10-RÄTTNING — GÄLLANDE INGÅNG: rättningen är levererad och aktiv; nästa är underhållsärendet om ingångarna
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
-LÄGE 2026-09-24, registrerat efter ägarbeslutet AP10-SIGNAL-OCH-AQUARIUM-BEREDNING-20260924 (kontorets beslutslogg).
-Modellvalet (steg 3) är levererat och avslutat, AP-11 är avslutat; ingetdera återöppnas. Den Runtime-del som nu gäller
-är arbete A, en riktad rättning; arbete B (beredningen av Aquarium v0) är kontorets och står i kontorets plan.
+LÄGE 2026-09-24 13:40Z, efter ägarbeslutet AP10-SIGNAL-OCH-AQUARIUM-BEREDNING-20260924 (kontorets beslutslogg).
+Modellvalet (steg 3) och AP-11 är avslutade; ingetdera återöppnas. Arbete A, den riktade rättningen, är levererat och
+aktivt. Arbete B, beredningen av Aquarium v0, är kontorets: byggbeslutet är publicerat i kontoret och väntar på ägarens
+accept.
 
-Drift vid registreringen: aktiv konfiguration `145edd45` (runtime `221df157`, kontoret `df5ed5dc`), AP-10:s schema
-bundet till den och opausat, nästa ordinarie körning 2026-09-25 07:00Z, inget arbete i motorn.
+Drift nu: aktiv konfiguration `e756fe5b` (runtime `c1cdaf5d`, kontoret `df5ed5dc`), AP-10:s schema bundet till den och
+opausat, nästa ordinarie körning 2026-09-25 07:00Z, inget arbete i motorn.
 
-Felet: `runtime/private_stage.py` `model()` installerar en signalhanterare som kastar InterruptedError medan slingan
-nästan hela tiden väntar i `selectors.select()`, som fångar InterruptedError och returnerar inga händelser - samma
-mekanism som D026 rättade i AP-11:s väktare. Reproducerat 2026-09-24 med den då aktiva releasens egen kod (runtime
-`2def3667`; `private_stage.py` är oförändrad i den nu aktiva `221df157`): en SIGTERM till AP-10:s stegväktare fick
-anropet att gå vidare till sin tidsgräns (`.runtime/modellval/observations/ap10-private-stage-sigterm-20260924.json`).
+Felet var: `runtime/private_stage.py` `model()` installerade en signalhanterare som kastade InterruptedError medan
+slingan nästan hela tiden väntade i `selectors.select()`, som fångar InterruptedError och returnerar inga händelser -
+samma mekanism som D026 rättade i AP-11:s väktare. Reproducerat 2026-09-24 med den då aktiva releasens egen kod: en
+SIGTERM till AP-10:s stegväktare fick anropet att gå vidare till sin tidsgräns
+(`.runtime/modellval/observations/ap10-private-stage-sigterm-20260924.json`).
 
-Före nästa ordinarie omgång (2026-09-25 07:00Z) bedöms den faktiska stoppförmågan. Behövs en tillfällig paus för säker
-hantering pausas just AP-10-åtagandet genom dess befintliga kontrollväg (`runtime.obligation pause`), med schema och
-historik bevarade, och återupptas först när förutsättningarna är verifierade.
+LEVERERAT (D031). Stoppvägen kartlades ur koden och rättningen gjordes enligt D026: hanteraren registrerar signalen och
+slingan avslutar anropet. Före- och eftermätning i isolerad värdrot genom aktivitetens verkliga stoppsekvens: före dödades
+väktaren efter 6 s nåd utan eget avbrottsbesked (8,4 s); efter avslutar den själv på 0,34 s och registrerar avbrottet
+(0,65 s). Fyra prov med riktiga processer och tre fällda mutationer; separat granskning; skyddad integration som PR 58
+(hela sviten, 508 prov, och värdproven gröna på exakt kandidat). Stoppförmågan inför omgången 2026-09-25 räckte redan
+före rättningen - ett stopp nådde fram och lämnade inga processer - så ingen paus behövdes.
 
-Ordning: (1) kartlägg den verkliga stoppvägen (aktivitetens SIGTERM med 6 s nåd, gruppstopp, `cleanup_private_run`,
-`obligation stop`); (2) rätta enligt D026 där mekanismen är densamma; (3) pröva med riktig process och signal genom den
-berörda vägen, före och efter; (4) separat granskning och skyddad integration; (5) kontrollerad kodövergång som ägaren
-aktiverar; den nödvändiga ombindningen av AP-10:s konfigurationshash får ingå, men inga andra ändringar av AP-10.
-
-STEG 1-3 KLARA (D031): stoppvägen kartlagd ur koden; rättningen gjord enligt D026; före- och eftermätning i isolerad
-värdrot genom aktivitetens verkliga stoppsekvens (före: väktaren dödad efter 6 s nåd, inget eget avbrottsbesked, 8,4 s;
-efter: väktaren avslutar själv på 0,34 s, avbrottet registrerat, 0,65 s), fyra prov med riktiga processer och tre
-fällda mutationer. Stoppförmågan inför omgången 2026-09-25 07:00Z: ett stopp når fram och lämnar inga processer, så ingen
-paus behövs; det som fattas utan rättningen är stegets eget avbrottsbesked. Nästa: steg 4 och 5.
+AKTIVERAT: ägaren aktiverade övergång 15 2026-09-24T13:39Z, konfiguration `e756fe5b` i stället för `145edd45`, med exakt
+två ändrade Runtime-filer (`runtime/private_stage.py` och dess prov) och modellvalet oförändrat. Efterkontrollen fann
+tjänsten igång med rätt identiteter, AP-10:s schema ombundet och i övrigt oförändrat, AP-10:s kommando oförändrat och
+AP-11 orört; återläst 13:40Z. Övergångens poster ligger i `.runtime/ap10-signal/`.
 
 Funnet vid sidan av, inte åtgärdat: väktarens identitet registreras före macOS-ramverkets omstart av Python och stämmer
 därför aldrig med en levande väktare (D031). Ett namngivet uppföljningsärende för ägaren.
+
+Iakttagelse, inte beställd åtgärd: bevakningens omgångar sedan 2026-09-22 slutar korrekt som otillräckliga eftersom
+leverantören inte tar emot analysens anrop (kapacitet). Bevakningens privata steg skriver ingen modellvalsfråga; D030
+frågar i utvecklingsvägen. Bevakningens modell följer inte modellvalet (AP-10:s kommando är oförändrat av det), och den
+ändras inte inom något gällande mandat.
+
+NÄSTA: underhållsärendet UNDERHALL-INGANGAR-20260924 (kontorets beslutslogg): ingångarna ska följa main och inget arbete
+ligga bara lokalt. Först en läsande mätning av primärutcheckningarna; primärutcheckningens ändrade
+`runtime/integration.py` och ospårade `evidence/runs` bevaras, och ett grenbyte föreslås först när det är visat att inget
+levande beror på dess spårade filer.
 
 Inte beställt: ny generell signalhanterare, vakthundsplattform, schemaläggare eller omkvalificering av AP-10; ingen
 ändring av bevakningens sakuppdrag, källor, modellval, resursramar eller körschema. De vilande posterna
