@@ -1,0 +1,22 @@
+{
+  "id": "runtime-evidence-index-tree-1",
+  "target": "Nortropic/nortropic-runtime",
+  "base": "52ee556a6148a1d7956bc244a6fc32fc5f1ba629",
+  "allowed_paths": [
+    "tools/evidence_index.py",
+    "tools/test_evidence_index.py",
+    "tools/EVIDENCE_INDEX.md"
+  ],
+  "brief": "tasks/evidence-index-tree.md",
+  "acceptance": "acceptance/evidence_index.py",
+  "acceptance_sha256": "334d2d54bb6e2f1651aaf7a6d4b4c96c3a2d4f8be58d12bf90a24eda58a9f96d",
+  "attempt_seconds": 600,
+  "automatic_retries": 0,
+  "steps": [
+    {
+      "provider": "claude",
+      "prompt": "Implement the accepted task in TASK.md. You are the isolated implementation process with Read, Edit and Write on exactly tools/evidence_index.py, tools/test_evidence_index.py and tools/EVIDENCE_INDEX.md; you have no shell, cannot run tests or git, and must not perform operator startup, edit host plans, publish or call external services. The host performs Runtime coordination, writer inspection, acceptance, review and publication. Read TASK.md and the three files first, keep every existing behaviour and test, then add the tree selection mode, its tests and its documentation. Verify your work by careful reading against the brief. Report what you implemented and what remains uncertain because you could not execute anything."
+    }
+  ],
+  "review_provider": "claude"
+}
