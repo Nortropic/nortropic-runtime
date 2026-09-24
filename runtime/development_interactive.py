@@ -420,7 +420,7 @@ def claude_completed(rows, model=None):
     return False,None
 
 
-def interactive_command(workspace,prompt):
+def interactive_command(workspace,prompt,model=None):
     # A process-local table avoids dotted-path quoting ambiguity. Never answer
     # the TUI's persistent trust prompt or change the user's config. Refuse any
     # project-local executable/config layer that trust could newly enable.
@@ -428,7 +428,7 @@ def interactive_command(workspace,prompt):
         if parent==Path.home():break
         if (parent/'.codex').exists():
             raise ValueError('Project-local Codex layers require separate review')
-    argv=command(workspace,writable=False);cut=argv.index('exec')
+    argv=command(workspace,writable=False,model=model);cut=argv.index('exec')
     trust='projects={'+json.dumps(str(ROOT))+'={trust_level="trusted"}}'
     # The pinned CLI otherwise increments a global model-introduction counter.
     # Suppress that UI bookkeeping for this process; do not rebind global guards.
@@ -502,13 +502,13 @@ def execute(request):
     # One value for this session: the launch below and the completion check further down must never
     # measure different models, or a session that ran exactly what it was told would be recorded as a
     # failure and burn an interactive start.
-    chosen_model=models(config)['claude'] if selected=='claude' else None
+    chosen_model=models(config)[selected]
     if selected=='claude':
         claude_profile.require_subscription();session=str(uuid.uuid4())
         prompt=prompt.replace('the operator will close this interactive session','the operator will close this interactive session (two Ctrl-C)')
         argv=claude_interactive_command(workspace,prompt,session,model=chosen_model);authority_before=claude_authority(claude_state(),workspace)
     else:
-        argv=interactive_command(workspace,prompt)
+        argv=interactive_command(workspace,prompt,model=chosen_model)
     write(stage/'consumed.json',{'nonce':nonce,'input_sha256':request['input_sha256']})
     write(stage/'interactive-input.json',{'prompt':prompt,'provider':selected,'session_id':session,'command_kind':'interactive CLI without exec subcommand',
         'handover':'Root relinquishes technical drafting to this session; only terminal closure is an operator action before independent interval',

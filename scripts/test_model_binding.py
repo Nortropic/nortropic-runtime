@@ -36,6 +36,9 @@ CHOSEN = 'claude-opus-5'
 # one everything else rests on. If it normalised the name, every run under a selection would fail the
 # identity check while still spending a call.
 MEASURED = json.loads(Path('evidence/claude-model-binding/opus5-review-init-shape.json').read_text())
+# The pinned Codex CLI's own resolution of the startup chain's arguments (config/read, no thread, no turn). Codex exec
+# reports no model identity in its event stream, so this measured resolution is the premise the Codex choice rests on.
+CODEX_MEASURED = json.loads(Path('evidence/codex-model-binding/config-read-shape.json').read_text())
 
 
 def config(selection=None):
@@ -71,11 +74,12 @@ class ModelSelectionTests(unittest.TestCase):
         self.assertEqual(chosen['claude'], CHOSEN)
         self.assertEqual(chosen['codex'], profile.MODEL, 'choosing one executor never moves the other')
 
-    def test_a_codex_model_choice_is_refused_while_its_startup_chain_still_picks_its_own(self):
-        """Configured-but-not-run is a silent divergence. Until the Codex chain reads this selection,
-        naming a different Codex model refuses instead of being accepted and ignored."""
-        with self.assertRaises(ScopeClosed):
-            models(config({'codex': 'gpt-6-other'}))
+    def test_a_codex_choice_is_returned_for_codex_only(self):
+        """D022 refused this while the Codex startup chain still picked its own model. That chain now takes the
+        chosen name (D028), so the choice is returned, and choosing Codex never moves Claude."""
+        chosen = models(config({'codex': 'gpt-6-other'}))
+        self.assertEqual(chosen['codex'], 'gpt-6-other')
+        self.assertEqual(chosen['claude'], claude_profile.MODEL)
 
     def test_naming_the_codex_baseline_explicitly_is_allowed(self):
         self.assertEqual(models(config({'claude': CHOSEN, 'codex': profile.MODEL})),
@@ -100,8 +104,9 @@ class ModelSelectionTests(unittest.TestCase):
         for bad in ('', '   ', '-anything', None, 5, ['claude-opus-5'],
                     ' claude-opus-5', 'claude-opus-5 ', 'claude\x00opus',
                     'claude-opus-5\n--restricted', 'claude opus 5', 'x' * 200):
-            with self.subTest(bad=bad), self.assertRaises(ScopeClosed):
-                models(config({'claude': bad}))
+            for executor in EXECUTORS:
+                with self.subTest(bad=bad, executor=executor), self.assertRaises(ScopeClosed):
+                    models(config({executor: bad}))
 
     def test_real_model_ids_are_accepted(self):
         """The rule must not be so narrow that the models actually on offer cannot be chosen."""
@@ -111,13 +116,17 @@ class ModelSelectionTests(unittest.TestCase):
                 self.assertEqual(models(config({'claude': good}))['claude'], good)
 
     def test_the_profile_and_the_selection_apply_the_same_rule(self):
-        """A name must not pass one validator and fail the other."""
+        """A name must not pass one validator and fail the other - for either executor's profile."""
         for name in (' claude-opus-5', 'claude\x00opus', '-x', '', 'x' * 200):
             with self.subTest(name=name):
                 with self.assertRaises(ScopeClosed):
                     models(config({'claude': name}))
+                with self.assertRaises(ScopeClosed):
+                    models(config({'codex': name}))
                 with self.assertRaises(ValueError):
                     claude_profile.selected_model(name)
+                with self.assertRaises(ValueError):
+                    profile.selected_model(name)
 
     def test_the_selection_covers_exactly_the_two_executors(self):
         self.assertEqual(set(EXECUTORS), {'codex', 'claude'})
@@ -137,6 +146,102 @@ class CodexBaselineTests(unittest.TestCase):
     def test_the_codex_startup_chain_specifies_exactly_one_model(self):
         specified = [a for a in worker_command() if a.startswith('model=')]
         self.assertEqual(len(specified), 1, 'one explicit model, so there is no ambiguity about what runs')
+
+
+class CodexChoiceTests(unittest.TestCase):
+    """The Codex startup chain takes the release's choice as its one model argument (D028).
+
+    Without a choice it must build exactly the command it always built: AP-10's private stage and every
+    unbound call use that default, so the default is the part that must not move.
+    """
+    OTHER = 'gpt-6-other'
+    SHAPES = ({'writable': False}, {'writable': True}, {'writable': True, 'allowed_paths': ['tools/a.py']})
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.workspace = Path(self.temp.name)
+
+    def test_no_choice_is_the_recorded_baseline_in_every_shape(self):
+        self.assertEqual(worker_command(), worker_command(profile.MODEL))
+        self.assertIn('model="gpt-6-astra"', worker_command(), 'the default is the literal baseline, not a lookup')
+        for shape in self.SHAPES:
+            with self.subTest(shape=shape):
+                self.assertEqual(profile.command(self.workspace, **shape),
+                                 profile.command(self.workspace, **shape, model=profile.MODEL))
+
+    def test_the_choice_is_the_one_model_argument(self):
+        for shape in self.SHAPES:
+            with self.subTest(shape=shape):
+                argv = profile.command(self.workspace, **shape, model=self.OTHER)
+                self.assertEqual([a for a in argv if a.startswith('model=')], ['model="%s"' % self.OTHER])
+
+    def test_the_choice_changes_the_model_and_nothing_else(self):
+        """Not a licence to change the permission profile, the reasoning effort or the subcommand."""
+        for shape in self.SHAPES:
+            with self.subTest(shape=shape):
+                base = profile.command(self.workspace, **shape)
+                chosen = profile.command(self.workspace, **shape, model=self.OTHER)
+                self.assertEqual(len(base), len(chosen))
+                self.assertEqual([(a, b) for a, b in zip(base, chosen) if a != b],
+                                 [('model="%s"' % profile.MODEL, 'model="%s"' % self.OTHER)])
+                self.assertIn('model_reasoning_effort="%s"' % profile.REASONING_EFFORT, chosen)
+
+    def test_an_unusable_name_never_reaches_the_codex_argument_list(self):
+        for bad in ('--restricted', '', '  ', 7, 'gpt\x00astra', 'gpt-6-astra ', 'a b', 'gpt-6-astra"\nsandbox_mode="danger-full-access'):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                profile.command(self.workspace, writable=False, model=bad)
+
+
+class CodexResolutionTests(unittest.TestCase):
+    """What the pinned Codex CLI itself made of the chain's arguments, measured - and that this code builds them."""
+
+    def test_the_measured_cli_took_the_model_argument_verbatim_from_the_command_line(self):
+        for label, case in CODEX_MEASURED['cases'].items():
+            with self.subTest(case=label):
+                self.assertEqual(case['model_argument'], ['model="%s"' % case['resolved_model']])
+                self.assertEqual(case['origin_model'], 'sessionFlags', 'the command line decided, over the owner config')
+                self.assertEqual(case['resolved_reasoning_effort'], profile.REASONING_EFFORT,
+                                 'and a choice leaves the pinned reasoning effort where it was')
+        self.assertEqual(CODEX_MEASURED['cases']['probe_name']['resolved_model'], 'nr-probe.model-1')
+        self.assertTrue(CODEX_MEASURED['layer_sets_model']['user'], 'the owner config names a model too: a real override')
+        self.assertEqual(set(CODEX_MEASURED['requests']), {'initialize', 'initialized', 'config/read'}, 'no thread, no turn')
+
+    def test_the_measured_arguments_are_the_ones_this_code_builds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for label, chosen in (('no_choice', None), ('probe_name', 'nr-probe.model-1')):
+                with self.subTest(case=label):
+                    argv = profile.command(Path(directory), writable=False, model=chosen)
+                    self.assertEqual([a for a in argv if a.startswith('model=')],
+                                     CODEX_MEASURED['cases'][label]['model_argument'])
+
+    def test_the_default_was_measured_unchanged_against_the_active_release(self):
+        unchanged = CODEX_MEASURED['default_unchanged']
+        self.assertTrue(unchanged['worker_command_identical'])
+        self.assertEqual(unchanged['identical_per_shape'], dict.fromkeys(('read_only', 'writable', 'allowed', 'interactive'), True))
+
+
+class PrivateStageBaselineTests(unittest.TestCase):
+    """AP-10's private stage is outside the development selection: it launches the recorded baseline."""
+
+    def test_the_private_stage_launches_exactly_the_default_codex_command(self):
+        from runtime import private_stage
+        with tempfile.TemporaryDirectory() as directory:
+            stage = Path(directory) / 'stage'; stage.mkdir()
+            workspace = Path(directory) / 'workspace'; workspace.mkdir()
+            launched = []; real = private_stage.subprocess.Popen
+
+            def popen(argv, *args, **kwargs):
+                # Only the provider launch is intercepted; the host's own process reads (ps) still run.
+                if argv[0] != profile.command(workspace, writable=False)[0]:
+                    return real(argv, *args, **kwargs)
+                launched.append(list(argv)); raise OSError('fixture: no provider is started')
+            with patch.object(private_stage.subprocess, 'Popen', side_effect=popen), \
+                 patch.object(private_stage, 'require_workspace_instructions', return_value={}):
+                result = private_stage.model(stage, workspace, 'a prompt', {'type': 'object'}, 5, os.getppid())
+            expected = profile.command(workspace, writable=False)
+            self.assertEqual(launched, [expected[:-1] + ['--output-schema', str(workspace / 'OUTPUT_SCHEMA.json'), '-']])
+            self.assertIn('model="%s"' % profile.MODEL, launched[0])
+            self.assertFalse(result['completed'])
 
 
 class ClaudeCommandTests(unittest.TestCase):
@@ -331,6 +436,76 @@ class AttemptWireThroughTests(unittest.TestCase):
         self.assertIn('Provider preflight failed', report['reason'])
         self.assertIn('model selection', report['reason'])
         self.assertFalse(report['model_started'], 'and no model was started')
+        self.assertIsNone(launch, 'no launch marker for a run that never launched')
+
+    def run_codex_attempt(self, selection, bound=True):
+        """The same real attempt path for a Codex step. The Codex profile is the REAL one; only its launch is a
+        plain Python process emitting the measured exec event shape (thread.started, one turn.completed)."""
+        from runtime import attempt as attempt_module
+        from runtime import release as release_module
+        seen = {}
+
+        def spy(workspace, writable=True, allowed_paths=None, model=None):
+            seen['model'] = model
+            seen['argv'] = profile.command(workspace, writable=writable, allowed_paths=allowed_paths, model=model)
+            body = ('import json,sys\n'
+                    'sys.stdin.buffer.read()\n'
+                    'print(json.dumps({"type": "thread.started", "thread_id": "t-1"}))\n'
+                    'print(json.dumps({"type": "turn.completed", "usage": {}}))\n')
+            return [sys.executable, '-c', body]
+
+        task = {'id': 'wire', 'attempt_seconds': 60, 'allowed_paths': ['tools/x.py'],
+                'target': 'Nortropic/nortropic-projektkontor', 'steps': [{'provider': 'codex'}]}
+        with patch.object(attempt_module, 'load', return_value=task), \
+             patch.object(attempt_module, 'task_directory', return_value=self.state), \
+             patch.object(attempt_module, 'evidence_directory', return_value=self.evidence), \
+             patch.object(attempt_module, 'command', spy), \
+             patch.object(attempt_module, 'claude_command', side_effect=AssertionError('a codex step never builds Claude')), \
+             patch.object(attempt_module, 'require_subscription', side_effect=AssertionError('no Claude preflight for codex')), \
+             patch.object(attempt_module, 'reserve_task_call', return_value=None), \
+             patch.object(attempt_module, 'ROOT', self.root), \
+             patch.object(profile, 'require_workspace_instructions', return_value=None), \
+             patch.object(release_module, 'require_active_code', return_value=config(selection)), \
+             patch.object(release_module, 'require_workspace_instructions', return_value=None), \
+             patch.dict(os.environ):
+            if bound:
+                os.environ['NR_CONFIG_SHA256'] = 'x' * 64
+            else:
+                os.environ.pop('NR_CONFIG_SHA256', None)
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = attempt_module.execute('wire', 1, 'a prompt', 30, role='implementation', provider='codex')
+        report = json.loads((self.evidence / 'attempt-1' / 'result.json').read_text())
+        marker = self.evidence / 'attempt-1' / 'launch.json'
+        return code, seen, report, json.loads(marker.read_text()) if marker.is_file() else None
+
+    def test_the_releases_codex_choice_reaches_the_launched_command(self):
+        code, seen, report, _ = self.run_codex_attempt({'codex': 'gpt-6-other'})
+        self.assertEqual(seen['model'], 'gpt-6-other', 'the release configuration decided the Codex model')
+        self.assertEqual([a for a in seen['argv'] if a.startswith('model=')], ['model="gpt-6-other"'],
+                         'and the real Codex profile put it in the argument list as its one model')
+        self.assertEqual(report['model'], 'gpt-6-other', 'the record says which model was started')
+        self.assertTrue(report['provider_completed'])
+        self.assertEqual(code, 0)
+
+    def test_a_codex_step_under_a_release_without_a_choice_runs_the_baseline(self):
+        _, seen, report, _ = self.run_codex_attempt({'claude': CHOSEN})
+        self.assertEqual(seen['model'], profile.MODEL, 'choosing Claude never moves Codex')
+        self.assertIn('model="%s"' % profile.MODEL, seen['argv'])
+        self.assertEqual(report['model'], profile.MODEL)
+
+    def test_an_unbound_codex_run_keeps_the_baseline(self):
+        """No release binding, no lookup: the profile's own recorded model, as before."""
+        _, seen, report, _ = self.run_codex_attempt({'codex': 'gpt-6-other'}, bound=False)
+        self.assertIsNone(seen['model'])
+        self.assertIn('model="%s"' % profile.MODEL, seen['argv'])
+        self.assertEqual(report['model'], profile.MODEL)
+
+    def test_an_invalid_codex_selection_is_a_diagnosable_preflight_failure(self):
+        code, _, report, launch = self.run_codex_attempt({'codex': '--restricted'})
+        self.assertEqual(code, 1)
+        self.assertIn('Provider preflight failed', report['reason'])
+        self.assertIn('model selection', report['reason'])
+        self.assertFalse(report['model_started'])
         self.assertIsNone(launch, 'no launch marker for a run that never launched')
 
     def test_the_record_says_which_model_ran_and_which_one_the_provider_reported(self):

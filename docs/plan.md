@@ -1,6 +1,34 @@
-# AP11 — GÄLLANDE INGÅNG: AP-11 GODKÄNT OCH AVSLUTAT (2026-09-24)
+# MODELLVAL — GÄLLANDE INGÅNG: det återanvändbara modellvalet för Claude Code och Codex (steg 3)
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE 2026-09-24. AP-11 är avslutat och återöppnas inte; posten närmast nedan är dess avslut. Gällande uppdrag är det
+ägaren beslutade 2026-09-22 och bekräftade 2026-09-24: ett återanvändbart modellval för både Claude och Codex, i
+befintliga Office och Runtime, med separat granskning och skyddad integration, redovisat skilt från AP-11. Kontorets
+beslutspost MODELLVAL-FORTSÄTTNING-20260924 bär beslutet; här står Runtimes steg. Meningen "Nästa uppdrag är
+ägarens" i AP-11-posten nedan är ersatt av detta.
+
+Tillgodoräknat och inte att börja om: valet i den frysta releasekonfigurationen med vägran i stället för reserv,
+identitetskontrollen mot valt namn och körposten (D022), kvalificeringen av `claude-opus-5` och Runtimes egen kopia av
+den kvalificerade Claude-CLI:n (D023).
+
+Del 1, Codex-startkedjan kopplad till valet: D028. Kedjan tar valets namn som sin enda modellparameter på alla
+utvecklingsvägar som Codex kan driva. Utan val är kommandot byte för byte detsamma som den aktiva releasens, uppmätt
+mot dess egen kod; AP-10:s privata steg läser inte valet. Ingenting aktiveras: den aktiva konfigurationen anger ingen
+Codex-modell.
+
+Kvar, i ordning:
+ 2. En enkel befintlig ingång för modellbyte utan källkodsredigering. I dag kräver ett byte en egen härledd och
+    granskad releaseövergång.
+ 3. En konkret modellvalsfråga till ägaren när vald modell saknar kapacitet, utan automatisk växling.
+Varje del som Runtime-ändring med separat granskning och skyddad integration; varje driftbyte genom kontrollerad,
+granskad övergång som ägaren aktiverar.
+
+Öppna poster, inte del av steg 3 om inte ägaren beslutar det: resonemangsnivån ingår inte i valet (Claude `medium`,
+Codex `high`); valet binds vid aktivering, inte vid uppgiftsfrysning; ingen tillåtlista över kvalificerade modeller
+finns; Codex-binären kontrolleras inte med kontrollsumma vid körning, som Claude-CLI:n gör.
+
+# AP11 — historik 2026-09-24: AP-11 godkänt och avslutat
 
 LÄGE, återläst 2026-09-23T23:00Z. Det ändliga åtagandet `office-ap11` är avslutat. `office-ap11-assessment-6`, dess
 enda räknade granskning (anrop 31), godkände hela slutacceptansen utan blockerande fynd, och `close()` satte scopet

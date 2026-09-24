@@ -68,13 +68,10 @@ def models(config):
             or any(not isinstance(value, str) or not MODEL_NAME.match(value)
                    for value in chosen.values())):
         raise ScopeClosed('Invalid explicit model selection')
-    # Only the Claude route reads its model from here yet. The Codex startup chain still specifies its
-    # model itself, so a different Codex value would be configured and then not run - a silent divergence
-    # between what the configuration says and what executes. It is refused rather than ignored until that
-    # chain is wired to this selection and exercised.
-    if chosen.get('codex', CODEX_MODEL) != CODEX_MODEL:
-        raise ScopeClosed('Codex model selection is not wired to its startup chain yet')
-    return {'claude': chosen.get('claude', CLAUDE_MODEL), 'codex': CODEX_MODEL}
+    # Both routes read their model from here. The Codex startup chain takes the chosen name as its one model
+    # argument (D028); until then a different Codex value was refused, because it would have been configured
+    # and then not run.
+    return {'claude': chosen.get('claude', CLAUDE_MODEL), 'codex': chosen.get('codex', CODEX_MODEL)}
 
 
 def claude_unavailable(records):
@@ -132,7 +129,7 @@ def execute(request):
         require_subscription(); require_workspace_instructions(workspace)
         argv = claude_command(workspace, (), writable=False, model=selected) + ['--json-schema', json.dumps(data['schema'])]
     else:
-        argv = command(workspace, writable=False)
+        argv = command(workspace, writable=False, model=selected)
         argv = argv[:-1] + ['--output-schema', str(workspace / 'OUTPUT_SCHEMA.json'), '-']
     parent = os.getppid()
     parent_identity = process_identity(parent)
