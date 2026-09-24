@@ -1,4 +1,4 @@
-# MODELLVAL — GÄLLANDE INGÅNG: det återanvändbara modellvalet för Claude Code och Codex (steg 3)
+# MODELLVAL — GÄLLANDE INGÅNG: modellvalet för Claude Code och Codex är levererat och aktivt (steg 3)
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
@@ -18,21 +18,34 @@ aktiva releasens, uppmätt mot dess egen kod; AP-10:s privata steg läser inte v
 
 Del 2, ingången för modellbyte utan källkodsredigering: D029, integrerad som PR 53. `scripts/model_choice.py` är
 övergången skriven en gång, med modellen som parameter och `development.models` som det enda den kan ändra; den körs som
-den aktiva releasens egen kopia, och `activate` är ägarens steg (runbook, "Changing the model choice"). Den kan användas
-först när en release som bär den är aktiv.
+den aktiva releasens egen kopia, och `activate` är ägarens steg (runbook, "Changing the model choice"). Den aktiva
+releasen bär den sedan del 4.
 
-Del 3, modellvalsfrågan vid kapacitetsbrist: D030. När ett målanrop eller ett task-försök slutar med leverantörens egen
-kapacitets- eller åtkomstvägran skriver värden en fråga till ägaren - vänta, eller byt modell med verktyget, med exakta
-kommandon och de kvalificerade alternativen - och byter ingenting själv. `show` listar frågorna.
+Del 3, modellvalsfrågan vid kapacitetsbrist: D030, integrerad som PR 54. När ett målanrop eller ett task-försök slutar
+med leverantörens egen kapacitets- eller åtkomstvägran skriver värden en fråga till ägaren - vänta, eller byt modell med
+verktyget, med exakta kommandon och de kvalificerade alternativen - och byter ingenting själv. `show` listar frågorna.
 
-Kvar:
- 4. En kontrollerad kodövergång som aktiverar release med del 1-3; därefter görs modellbyten med verktyget.
-Varje del som Runtime-ändring med separat granskning och skyddad integration; varje driftbyte genom kontrollerad,
-granskad övergång som ägaren aktiverar. Ingenting av detta är aktiverat ännu.
+Del 4, aktiveringen: övergång 14 (`.runtime/modellval/transition-14/`), komponerad av verktygets granskade sekvens med
+kodövergångens egna kontroller och separat granskad, stegades och kontrollerades mot den levande värden och aktiverades
+av ägaren 2026-09-24T07:26Z: konfiguration `416517ae`, runtime `221df157`, kontoret oförändrat `df5ed5dc`. Efterkontrollen
+fann tjänsten igång under sin nya identitet, AP-10:s schema ombundet i sin konfigurationshash och i övrigt oförändrat
+(nästa körning 2026-09-25 07:00Z), AP-10:s kommando oförändrat och AP-11 orört (scopet `stopped` på rad 144).
+
+Modellbyten görs nu med verktyget (runbook, "Changing the model choice"). Dess första verkliga körning: `show`, och
+`stage` plus `check` av ett uttryckligt Codex-val av den nuvarande modellen (konfiguration `145edd45`, samma modeller
+körs), där varje förvillkor höll. Det valet är stegat och inte aktiverat; om själva bytet ska övas är ägarens beslut.
+
+Nästa: inget kvar inom steg 3.
 
 Öppna poster, inte del av steg 3 om inte ägaren beslutar det: resonemangsnivån ingår inte i valet (Claude `medium`,
-Codex `high`); valet binds vid aktivering, inte vid uppgiftsfrysning; ingen tillåtlista över kvalificerade modeller
-finns; Codex-binären kontrolleras inte med kontrollsumma vid körning, som Claude-CLI:n gör.
+Codex `high`); valet binds vid aktivering, inte vid uppgiftsfrysning, så de två vilande utvecklingsuppgifterna
+`office-watch-policy-1` och `office-assignment-cli-1` kör den nya koden om de återupptas; ingen tillåtlista över
+kvalificerade modeller finns; Codex-binären kontrolleras inte med kontrollsumma vid körning, som Claude-CLI:n gör;
+tjänstens identitetskörningar från tidigare konfigurationer ligger kvar vilande, en till per aktivering.
+
+Iakttagelse utanför steg 3, inte åtgärdad: AP-10:s privata steg sväljer en avslutningssignal på samma sätt som AP-11:s
+väktare gjorde före D026 (reproducerat 2026-09-24 med den då aktiva releasens egen kod: anropet gick vidare till sin
+tidsgräns). Det hör till AP-10:s mandat och är ägarens att avgöra.
 
 # AP11 — historik 2026-09-24: AP-11 godkänt och avslutat
 
