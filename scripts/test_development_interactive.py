@@ -45,6 +45,17 @@ class SessionTests(unittest.TestCase):
             (self.workspace/'.codex').mkdir()
             with self.assertRaisesRegex(ValueError,'Project-local'):interactive_command(self.workspace,'fixture')
 
+    def test_the_interactive_codex_command_carries_the_chosen_model(self):
+        """The REAL Codex profile under the interactive command: the choice is its one model argument (D028)."""
+        self.workspace.mkdir(); (self.root/'.codex/config.toml').write_text('')
+        with patch('runtime.development_interactive.ROOT',self.root),patch('runtime.development_interactive.Path.home',return_value=self.root):
+            chosen=interactive_command(self.workspace,'fixture',model='gpt-6-other')
+            baseline=interactive_command(self.workspace,'fixture')
+        self.assertEqual([a for a in chosen if a.startswith('model=')],['model="gpt-6-other"'])
+        self.assertEqual([a for a in baseline if a.startswith('model=')],['model="gpt-6-astra"'])
+        self.assertEqual([(a,b) for a,b in zip(baseline,chosen) if a!=b],[('model="gpt-6-astra"','model="gpt-6-other"')])
+        self.assertEqual(chosen[-1],'fixture');self.assertNotIn('exec',chosen)
+
     def test_retry_keeps_failed_call_and_requires_exact_unchanged_selection(self):
         directory=self.root/'scope';stage=directory/'calls/interactive-start';stage.mkdir(parents=True)
         prior={'completed':False,'process_group_removed':True};(stage/'result.json').write_text(json.dumps(prior))

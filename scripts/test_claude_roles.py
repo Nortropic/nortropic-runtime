@@ -220,7 +220,7 @@ class AttemptRoleBindingTest(unittest.TestCase):
             with self.subTest(role=role, provider=provider), self.assertRaisesRegex(ValueError, 'Unqualified provider/role'):
                 self.guard(value, role, provider)
 
-    def launch(self, provider, active=False):
+    def launch(self, provider, active=False, selection={'claude': MODEL_CHOICE}):
         """Run attempt.execute up to the launch record; the provider process itself is refused."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); state = root / 'state'; ws = state / 'commit-1'; ws.mkdir(parents=True)
@@ -233,8 +233,9 @@ class AttemptRoleBindingTest(unittest.TestCase):
                 # Real signature, including the release's explicit model choice for this run.
                 calls['claude'] = {'allowed': list(allowed), 'writable': writable, 'model': model}
                 return ['pinned-claude', '--tools', 'Read']
-            def codex(workspace, writable=True, allowed_paths=None):
-                calls['codex'] = {'writable': writable}; return ['codex', 'exec', '-']
+            def codex(workspace, writable=True, allowed_paths=None, model=None):
+                # Real signature, including the release's explicit Codex choice (D028).
+                calls['codex'] = {'writable': writable, 'model': model}; return ['codex', 'exec', '-']
             order = []
             env = {'NR_CONFIG_SHA256': 'x'} if active else {}
             with mock.patch.object(attempt, 'ROOT', root), mock.patch.object(attempt, 'load', return_value=accepted), \
@@ -244,7 +245,7 @@ class AttemptRoleBindingTest(unittest.TestCase):
                  mock.patch.object(attempt, 'command', side_effect=codex), \
                  mock.patch.object(attempt, 'require_subscription', return_value={'subscriptionType': 'max'}), \
                  mock.patch('runtime.release.require_workspace_instructions', side_effect=lambda w: order.append('guard')), \
-                 mock.patch('runtime.release.require_active_code', return_value={'development': {'models': {'claude': MODEL_CHOICE}}}), \
+                 mock.patch('runtime.release.require_active_code', return_value={'development': {'models': selection}}), \
                  mock.patch.object(attempt, 'environment', return_value={}), \
                  mock.patch.object(attempt, 'reserve_task_call', return_value=None), \
                  mock.patch.object(attempt.subprocess, 'Popen', side_effect=OSError('provider launch refused in this test')), \
@@ -269,11 +270,20 @@ class AttemptRoleBindingTest(unittest.TestCase):
 
     def test_codex_review_launch_is_unchanged(self):
         code, record, report, calls, order = self.launch('codex')
-        self.assertEqual(calls, {'codex': {'writable': False}})
+        self.assertEqual(calls, {'codex': {'writable': False, 'model': None}}, 'an unbound run looks nothing up')
         self.assertEqual(record['command'][-3], '--output-schema'); self.assertEqual(record['command'][-1], '-')
         self.assertTrue(record['command'][-2].endswith('REVIEW_SCHEMA.json'))
         self.assertNotIn('--json-schema', record['command']); self.assertEqual(order, [])
         self.assertEqual(code, 1); self.assertFalse(report['provider_completed'])
+
+    def test_codex_review_under_a_release_runs_the_releases_codex_model(self):
+        """The same preflight resolves the choice for either reviewer (D028); choosing Claude never moves Codex."""
+        for selection, expected in (({'claude': MODEL_CHOICE}, 'gpt-6-astra'), ({'codex': 'gpt-6-other'}, 'gpt-6-other')):
+            with self.subTest(selection=selection):
+                code, record, report, calls, order = self.launch('codex', active=True, selection=selection)
+                self.assertEqual(calls, {'codex': {'writable': False, 'model': expected}})
+                self.assertEqual(record['command'][-3], '--output-schema')
+                self.assertEqual(code, 1); self.assertFalse(report['provider_completed'])
 
 
 class ManagedSettingsBindingTest(unittest.TestCase):

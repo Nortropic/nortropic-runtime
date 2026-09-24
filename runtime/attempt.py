@@ -11,7 +11,7 @@ import sys
 import time
 
 from scripts.bounded import stop_group
-from .profile import ROOT, command, environment, MODEL as CODEX_MODEL
+from .profile import ROOT, command, environment, selected_model as codex_model
 from .task import load, task_directory, evidence_directory
 from .targets import OFFICE
 from .provider_result import parse as parse_provider
@@ -106,18 +106,19 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
         output.mkdir(exist_ok=False)
         try:
             subscription = require_subscription() if provider == 'claude' else None
-            if provider == 'claude' and os.environ.get('NR_CONFIG_SHA256'):
-                # Same order as the Codex profile: a changed bound input stops BEFORE a model call.
+            if os.environ.get('NR_CONFIG_SHA256'):
                 from .release import require_active_code, require_workspace_instructions
-                require_workspace_instructions(workspace)
-                # The release's explicit model choice. Resolved in the same handler as the other
-                # preflight refusals so a release transition, a drifted baseline or a misspelt key is
-                # reported as a diagnosable preflight failure instead of an uncaught crash that leaves
-                # no result at all. ScopeClosed is a ValueError, so it lands here too.
+                if provider == 'claude':
+                    # Same order as the Codex profile: a changed bound input stops BEFORE a model call.
+                    require_workspace_instructions(workspace)
+                # The release's explicit model choice, for whichever executor runs (D022, D028). Resolved in
+                # the same handler as the other preflight refusals so a release transition, a drifted
+                # baseline or a misspelt key is reported as a diagnosable preflight failure instead of an
+                # uncaught crash that leaves no result at all. ScopeClosed is a ValueError, so it lands here too.
                 from .development_model import models
-                model = models(require_active_code())['claude']
+                model = models(require_active_code())[provider]
             # A Claude reviewer receives the read-only profile: no edit tool and no file grant.
-            argv = claude_command(workspace, task['allowed_paths'], writable=role == 'implementation', model=model) if provider == 'claude' else command(workspace, writable=role == 'implementation', allowed_paths=task['allowed_paths'] if task['target'] == OFFICE else None)
+            argv = claude_command(workspace, task['allowed_paths'], writable=role == 'implementation', model=model) if provider == 'claude' else command(workspace, writable=role == 'implementation', allowed_paths=task['allowed_paths'] if task['target'] == OFFICE else None, model=model)
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             report = {'task':task_id,'attempt':number,'provider':provider,'provider_completed':False,
                       'reason':'Provider preflight failed: '+str(error),'process_group_removed':True,
@@ -207,7 +208,7 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                   # Which model this run was started as. A release that changes only the selection keeps
                   # the same runtime_revision, so the revision no longer implies the model and the record
                   # has to say it. parse contributes the identity the provider itself reported.
-                  'model': selected_model(model) if provider == 'claude' else CODEX_MODEL,
+                  'model': selected_model(model) if provider == 'claude' else codex_model(model),
                   'provider_completed': finished, 'exit_code': code,
                   **parsed, 'role': role,
                   'model_started': proc is not None,

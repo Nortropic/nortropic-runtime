@@ -1,0 +1,67 @@
+{
+ "source": "Actual no-model measurement 2026-09-24 with the project-local Codex CLI 0.155.1: the app-server started with exactly the global argument prefix runtime.profile.command(writable=False) builds for the exec route, then initialize and config/read. No thread and no turn were requested. Reduced mechanically to the resolved model, reasoning effort and the type of the layer each came from; paths, the owner's own configuration values and the rest of the response are omitted. The raw protocol stays in the private evidence root, named by its hash.",
+ "why": "The premise the Codex choice rests on, measured rather than assumed: that the pinned CLI takes the model argument the startup chain passes VERBATIM as its effective model, from the command-line layer, over the owner's own config.toml that names a model too. codex exec --json reports no model identity of its own, so this resolution is what can be checked, once per CLI, and it is checked here.",
+ "cli": {
+  "version": "0.155.1",
+  "binary_sha256": "8eaf1ad12fe6bf89b1710330f58900014322c7c5af677e43be116d8ac5fc0a9e"
+ },
+ "requests": [
+  "config/read",
+  "initialize",
+  "initialized"
+ ],
+ "layers": [
+  "sessionFlags",
+  "user",
+  "system"
+ ],
+ "layer_sets_model": {
+  "sessionFlags": true,
+  "user": true,
+  "system": false
+ },
+ "cases": {
+  "no_choice": {
+   "model_argument": [
+    "model=\"gpt-6-astra\""
+   ],
+   "resolved_model": "gpt-6-astra",
+   "resolved_reasoning_effort": "high",
+   "origin_model": "sessionFlags",
+   "origin_reasoning_effort": "sessionFlags",
+   "raw_sha256": "0e8c0cf38816693c6f2dc04b68b49ea290088aa5b03c14486a7412c3a7a31c0a"
+  },
+  "probe_name": {
+   "model_argument": [
+    "model=\"nr-probe.model-1\""
+   ],
+   "resolved_model": "nr-probe.model-1",
+   "resolved_reasoning_effort": "high",
+   "origin_model": "sessionFlags",
+   "origin_reasoning_effort": "sessionFlags",
+   "raw_sha256": "b2e24c5f98d29796da1793b0c5f396ba5e3535f7fe6e2641d3ddc61aa9524370"
+  }
+ },
+ "default_unchanged": {
+  "what": "The default command built by the ACTIVE release's own code (runtime 2def3667) and by this change, in separate interpreters that each reported importing from their own code root, for the same workspace and host root.",
+  "worker_command_identical": true,
+  "identical_per_shape": {
+   "read_only": true,
+   "writable": true,
+   "allowed": true,
+   "interactive": true
+  },
+  "explicit_baseline_identical_per_shape": {
+   "read_only": true,
+   "writable": true,
+   "allowed": true,
+   "interactive": true
+  },
+  "probe_name_changes_only": [
+   [
+    "model=\"gpt-6-astra\"",
+    "model=\"nr-probe.model-1\""
+   ]
+  ]
+ }
+}

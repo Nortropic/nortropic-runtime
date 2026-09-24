@@ -17,7 +17,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from runtime import claude_profile, development_host as host, development_interactive as interactive, development_model as model
+from runtime import claude_profile, development_host as host, development_interactive as interactive, development_model as model, profile
 from runtime.development_scope import Scope, ScopeClosed, initialize
 from scripts.test_development_scope import contract
 
@@ -175,6 +175,29 @@ class StructuredCallTest(unittest.TestCase):
             result = model.execute(self.request)
         self.assertTrue(result['completed'], result)
         self.assertEqual(json.loads((self.stage/'launch.json').read_text())['provider'], 'codex')
+
+    def test_a_codex_role_is_launched_as_the_releases_codex_model(self):
+        """The goal-call route hands the release's Codex choice to the profile (D028), as it does for Claude;
+        without one it hands over the recorded baseline by name."""
+        events = [{'type': 'thread.started', 'thread_id': 'synthetic'},
+                  {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': '{"action":"hold"}'}},
+                  {'type': 'turn.completed', 'usage': {'input_tokens': 1}}]
+        source = 'import json\nfor e in '+repr(events)+': print(json.dumps(e),flush=True)'
+        for selection, expected in (({'codex': 'gpt-6-other'}, 'gpt-6-other'), (None, profile.MODEL)):
+            with self.subTest(selection=selection):
+                self.tearDown(); self.setUp(); seen = []
+                def codex(workspace, writable=True, allowed_paths=None, model=None):
+                    # The real signature: a double that accepted anything would hide a choice that never arrived.
+                    seen.append((writable, allowed_paths, model)); return [sys.executable, '-u', '-c', source, '-']
+                development = {'executors': {'review': 'claude'}, **({'models': selection} if selection else {})}
+                with patch.object(model, 'active_scope', return_value=(self.scope, {'development': development})), \
+                     patch.object(model, 'command', side_effect=codex), \
+                     patch.object(model, 'claude_command', side_effect=AssertionError('driver was not selected as claude')), \
+                     patch.object(model, 'require_subscription', side_effect=AssertionError('no Claude preflight for a codex role')), \
+                     patch.object(model, 'require_workspace_instructions', return_value={}), patch.object(model, 'environment', return_value={}):
+                    result = model.execute(self.request)
+                self.assertTrue(result['completed'], result)
+                self.assertEqual(seen, [(False, None, expected)])
 
 
 SESSION_ID = '0f1e2d3c-4b5a-4978-8695-a4b3c2d1e0f9'
@@ -508,6 +531,24 @@ class InteractiveExecuteTest(unittest.TestCase):
              patch.object(interactive, 'interactive_command', side_effect=ValueError('codex route reached')), \
              patch.object(interactive.os, 'isatty', return_value=True):
             with self.assertRaisesRegex(ValueError, 'codex route reached'): interactive.execute(self.request)
+        self.assertFalse((self.stage/'consumed.json').exists())
+
+    def test_the_codex_interactive_route_is_given_the_releases_codex_model(self):
+        """One value per session for either executor (D028): the Codex launch takes the release's choice, and
+        it is resolved before anything is consumed."""
+        (self.home/'mode').write_text('honest'); seen = []
+        def codex(workspace, prompt, model=None):
+            seen.append(model); raise ValueError('codex route reached')
+        for selection in ({'codex': 'gpt-6-other'}, None):
+            development = {'executors': {'driver': 'claude'}, **({'models': selection} if selection else {})}
+            with patch.object(interactive, 'active_scope', return_value=(self.scope, {'development': development})), \
+                 patch.object(interactive, 'require_workspace_instructions', return_value={}), \
+                 patch.object(interactive, 'claude_interactive_command', side_effect=AssertionError('interactive was not selected as claude')), \
+                 patch.object(claude_profile, 'require_subscription', side_effect=AssertionError('no Claude preflight for a codex selection')), \
+                 patch.object(interactive, 'interactive_command', side_effect=codex), \
+                 patch.object(interactive.os, 'isatty', return_value=True):
+                with self.assertRaisesRegex(ValueError, 'codex route reached'): interactive.execute(self.request)
+        self.assertEqual(seen, ['gpt-6-other', profile.MODEL])
         self.assertFalse((self.stage/'consumed.json').exists())
 
 

@@ -1119,3 +1119,44 @@ that reader checkable only from its caller, because the instructions name the re
 it.
 
 This changes no ceiling, role, verdict or acceptance criterion.
+
+## D028 — 2026-09-24: the Codex startup chain runs the release's model choice
+
+D022 made the model an explicit release choice, `development.models.{claude,codex}`, but only the Claude route read
+it. The Codex startup chain specified its own model in `worker_command()` (`gpt-6-astra`, reasoning effort `high`),
+so a Codex value that differed from that baseline was refused rather than configured and silently not run. This is
+part 1 of step 3 of the owner decision of 2026-09-22, a reusable model choice for both executors, which the owner
+confirmed on 2026-09-24 after AP-11 closed. It is accounted for separately from AP-11.
+
+Decision: `worker_command(model)` takes the model as a parameter whose default is the recorded baseline, and
+`profile.command(..., model=None)` passes `profile.selected_model(model)`, checked by the same plain-model-id rule as
+the Claude profile before the name can reach an argument list. `models(config)` returns the chosen Codex model
+instead of refusing it. Every development route Codex can drive passes the release's choice: task attempts
+(implementation and review, whose preflight now resolves the selection for either executor, and whose run record
+states the Codex model started), the read-only goal roles and the interactive route. As for Claude, an invalid
+selection now refuses a Codex call in its preflight, before anything is launched or consumed. The choice replaces the
+model argument and nothing else: the reasoning effort stays pinned and is not part of the choice, as Claude's
+`--effort` is not.
+
+Unchanged by design: without a choice the command is byte-identical to what the active release builds. Measured in
+separate interpreters, each reporting that it imported its own code root, with the active release's code (runtime
+2def3667) and with this change for the same inputs: `worker_command()` and all four command shapes (read-only,
+writable, writable with allowed paths, interactive) are identical, and a probe name changes exactly the one model
+argument. AP-10's private stage is outside the development selection: it does not read `development.models` and keeps
+the recorded baseline, and a test fails if it launches anything but the default command.
+
+What the CLI itself does was measured, not assumed. `codex exec --json` reports no model identity in its event stream
+(a thread id, items and usage), so the per-run identity comparison D022 applies to Claude has nothing to compare for
+Codex. What can be checked is the pinned CLI's own resolution of the arguments. The 0.155.1 app-server, started with
+exactly the global argument prefix the exec route carries, answered `config/read` (no thread, no turn) with the
+passed model verbatim as its effective model, from the command-line layer and over the owner's own config.toml that
+names a model too, with the reasoning effort unchanged; this held for the baseline and for a probe name. The reduced
+shape is in evidence/codex-model-binding/, bound to a test that rebuilds the same arguments from this code; the raw
+protocol stays private.
+
+Limits: selectable is not qualified. No Codex model other than the baseline has run under this chain, and a
+different choice still needs its own proportionate qualification and a controlled release transition. The Codex
+binary is identified by its versioned project-local path and is not hash-checked at run time as the Claude CLI is
+(D019, D023). As before, the Codex interactive completion check reads no model and the goal-call record names the
+provider but not the model. Nothing is activated by this change: the active configuration names no Codex model, so
+every running path builds the same command as before.
