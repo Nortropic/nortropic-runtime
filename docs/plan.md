@@ -1,6 +1,35 @@
-# MODELLVAL — GÄLLANDE INGÅNG: modellvalet för Claude Code och Codex är levererat och aktivt (steg 3)
+# AP-10-RÄTTNING — GÄLLANDE INGÅNG: AP-10:s privata steg ska ta emot en avslutningssignal
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE 2026-09-24, registrerat efter ägarbeslutet AP10-SIGNAL-OCH-AQUARIUM-BEREDNING-20260924 (kontorets beslutslogg).
+Modellvalet (steg 3) är levererat och avslutat, AP-11 är avslutat; ingetdera återöppnas. Den Runtime-del som nu gäller
+är arbete A, en riktad rättning; arbete B (beredningen av Aquarium v0) är kontorets och står i kontorets plan.
+
+Drift vid registreringen: aktiv konfiguration `145edd45` (runtime `221df157`, kontoret `df5ed5dc`), AP-10:s schema
+bundet till den och opausat, nästa ordinarie körning 2026-09-25 07:00Z, inget arbete i motorn.
+
+Felet: `runtime/private_stage.py` `model()` installerar en signalhanterare som kastar InterruptedError medan slingan
+nästan hela tiden väntar i `selectors.select()`, som fångar InterruptedError och returnerar inga händelser - samma
+mekanism som D026 rättade i AP-11:s väktare. Reproducerat 2026-09-24 med den då aktiva releasens egen kod (runtime
+`2def3667`; `private_stage.py` är oförändrad i den nu aktiva `221df157`): en SIGTERM till AP-10:s stegväktare fick
+anropet att gå vidare till sin tidsgräns (`.runtime/modellval/observations/ap10-private-stage-sigterm-20260924.json`).
+
+Före nästa ordinarie omgång (2026-09-25 07:00Z) bedöms den faktiska stoppförmågan. Behövs en tillfällig paus för säker
+hantering pausas just AP-10-åtagandet genom dess befintliga kontrollväg (`runtime.obligation pause`), med schema och
+historik bevarade, och återupptas först när förutsättningarna är verifierade.
+
+Ordning: (1) kartlägg den verkliga stoppvägen (aktivitetens SIGTERM med 6 s nåd, gruppstopp, `cleanup_private_run`,
+`obligation stop`); (2) rätta enligt D026 där mekanismen är densamma; (3) pröva med riktig process och signal genom den
+berörda vägen, före och efter; (4) separat granskning och skyddad integration; (5) kontrollerad kodövergång som ägaren
+aktiverar; den nödvändiga ombindningen av AP-10:s konfigurationshash får ingå, men inga andra ändringar av AP-10.
+
+Inte beställt: ny generell signalhanterare, vakthundsplattform, schemaläggare eller omkvalificering av AP-10; ingen
+ändring av bevakningens sakuppdrag, källor, modellval, resursramar eller körschema. De vilande posterna
+(`office-watch-policy-1`, `office-assignment-cli-1`, tjänstens gamla identitetskörningar) rörs inte; kontorets plan
+anger vad som prövas före en eventuell åtgärd.
+
+# MODELLVAL — historik 2026-09-24: modellvalet för Claude Code och Codex är levererat och aktivt (steg 3)
 
 LÄGE 2026-09-24. AP-11 är avslutat och återöppnas inte; posten närmast nedan är dess avslut. Gällande uppdrag är det
 ägaren beslutade 2026-09-22 och bekräftade 2026-09-24: ett återanvändbart modellval för både Claude och Codex, i
