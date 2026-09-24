@@ -216,6 +216,18 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                   'interrupted': interrupted, 'process_group_removed': removed,
                   'elapsed_seconds': round(time.monotonic() - started, 3),
                   'evidence': str(output.relative_to(ROOT))}
+        if not finished and not parse_error:
+            # A failed run whose provider said it has no capacity: the owner is asked which way to go (D030), after the
+            # run's own record is complete. The run stays a failure awaiting diagnosis exactly as before, nothing is
+            # switched, and nothing here can keep its result from being written.
+            try:
+                from .development_model import capacity_lost
+                from .model_question import ask_safely
+                if capacity_lost(provider, records):
+                    report['model_question'] = ask_safely(provider, report['model'], records,
+                                                          {'kind': 'task attempt', 'task': task_id, 'attempt': number, 'role': role})
+            except Exception as error:
+                report['model_question'] = 'not written: %r' % error
         (output / 'result.json').write_text(json.dumps(report, indent=2) + '\n')
         print(json.dumps(report))
         return 0 if finished else 1

@@ -1213,3 +1213,47 @@ owner activates a change. The choice still binds at activation, not at task free
 qualified one. The idle service-identity workflows of earlier configurations stay running (23 measured on 2026-09-24,
 4 events each, beside the two idle development tasks), and each activation adds one; that is unchanged here. The tool starts no model and changes no ceiling, role, executor,
 revision, scope or AP-10 setting beyond the schedule's config hash, which every transition rebinds.
+
+## D030 — 2026-09-24: a model without capacity puts a concrete question to the owner, and nothing switches
+
+Quota or access loss has been a persisted wait since D022: a goal call sets its scope to `quota`, a task attempt ends
+failed and waits for diagnosis, and the host never switches model or executor. What the wait lacked is part 3 of step 3
+of the owner decision of 2026-09-22: a concrete model-choice question to the owner when the selected model lacks
+capacity.
+
+Decision: the host writes one question record when a call ends with the provider's own capacity or access refusal.
+- It applies to goal calls and task attempts. The classification is exactly the existing one: from Claude's failed
+  terminal or Codex's error rows, never from agent text. It is factored out as `capacity_lost` and now also applies to
+  task attempts.
+- The record goes under `.runtime/ap10/model-questions/`, is never overwritten, and is named in the call's result as
+  `model_question`.
+- It states the executor, the model that was started, and the provider's own words, bounded and taken from those same
+  rows.
+- It offers two choices. The owner can wait, which changes nothing. Or the owner can change that executor's model with
+  the reviewed tool (D029). For that choice the question gives the active release's exact commands and the models this
+  Runtime has qualified for that executor, other than the refused one: `claude-fable-5-1` (D019) and `claude-opus-5`
+  (D022) for Claude, `gpt-6-astra` (D004, D028) for Codex. A model outside that list is selectable but not qualified.
+- It states that buying credits, upgrades, new subscriptions or any other payment path are not a choice, whatever the
+  provider suggests. The Codex refusal measured on 2026-09-21 offered to "purchase more credits", and the pinned binary
+  also carries an "Upgrade to Plus" variant.
+- Nothing is switched automatically, and the record says so. The run's outcome and the scope's control are exactly as
+  before.
+- The tool's `show` lists the newest questions and marks whether the model each one is about is still the chosen one.
+The qualified table (`model_question.QUALIFIED`) is information for the owner, not an allow-list: any plain model id
+stays selectable (D022).
+
+The wordings are measured, not invented. Codex's usage-limit line is recorded as its own interactive terminal printed
+it on 2026-09-21, preserved in the closed AP-11 scope. The exec event types (`error` with a message, `turn.failed` with
+an error carrying one) and the usage-limit strings are those of the pinned binary. Claude's failed terminals have the
+shapes the existing tests record. Thirteen properties were each removed in turn, and the test that carries each one
+failed; one further mutation, widening the Codex row filter, is equivalent and was not counted, since no other exec
+event type carries a top-level message or error.
+
+Limits:
+- A Codex usage-limit row on the exec path has not itself been observed; its shape is the pinned binary's own event
+  type. If it differed, the question would carry no words but would still be written.
+- The interactive AP-11 route cannot run again and does not ask the question.
+- The question is a host record, not a message sent anywhere: the owner, or the operator session, reads it with
+  `show`.
+- A question that cannot be written is recorded in the result instead of failing the call.
+- Nothing is activated by this change.

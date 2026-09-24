@@ -18,6 +18,7 @@ from .release import ROOT, require_active_code, require_workspace_instructions
 from .profile import command, environment, MODEL as CODEX_MODEL
 from .claude_profile import command as claude_command, require_subscription, MODEL as CLAUDE_MODEL, MODEL_NAME
 from .provider_result import parse
+from .model_question import ask_safely
 from .review import claude_response
 from .private_stage import stop_private_group, write
 from .shared import process_identity
@@ -72,6 +73,14 @@ def models(config):
     # argument (D028); until then a different Codex value was refused, because it would have been configured
     # and then not run.
     return {'claude': chosen.get('claude', CLAUDE_MODEL), 'codex': chosen.get('codex', CODEX_MODEL)}
+
+
+def capacity_lost(provider, records):
+    """Quota or access loss, from the provider's own terminal or error rows only; agent text is never authority."""
+    if provider == 'claude':
+        return claude_unavailable(records)
+    errors = json.dumps([e for e in records if e.get('type') in ('error', 'turn.failed')]).lower()
+    return any(word in errors for word in QUOTA_WORDS)
 
 
 def claude_unavailable(records):
@@ -218,14 +227,18 @@ def execute(request):
         reason = reason or str(error)
     # Only provider error events can trigger this classification; agent text is
     # never authority to change control. Unknown failure remains inconclusive.
-    errors = json.dumps([e for e in records if e.get('type') in ('error', 'turn.failed')]).lower()
-    if claude_unavailable(records) if provider == 'claude' else any(word in errors for word in QUOTA_WORDS):
+    capacity = capacity_lost(provider, records)
+    if capacity:
         if scope.inspect()['control'] in ('active', 'paused'):
             scope.control('quota', 'Native provider reported quota/access failure; preserve original events')
     result = {'completed': reason is None and proc is not None and proc.returncode == 0 and removed,
               'reason': reason, 'answer': answer, 'provider': parsed,
               'process_group_removed': removed, 'model_started': proc is not None,
               'elapsed_seconds': round(time.monotonic()-start, 3), 'nonce': nonce}
+    if capacity:
+        # The wait persists as before; the owner is asked which way to go (D030), after the call's own record is complete.
+        # Nothing is switched, and ask_safely records a question it cannot write instead of raising.
+        result['model_question'] = ask_safely(provider, selected, records, {'kind': 'goal call', 'role': data['role'], 'nonce': nonce})
     write(stage / 'result.json', result)
     return result
 

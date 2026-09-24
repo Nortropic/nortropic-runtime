@@ -78,7 +78,7 @@ if __name__ == '__main__':
     os.environ['LC_ALL'] = 'C'
     sys.path.insert(0, str(CODE_ROOT))
 
-from runtime import daemon, release                                           # noqa: E402
+from runtime import daemon, model_question, release                           # noqa: E402
 from runtime.development_model import executors, models                      # noqa: E402
 from runtime.private_stage import check_private_processes                    # noqa: E402
 from runtime.run import check_unfinished_writers                             # noqa: E402
@@ -177,12 +177,20 @@ def copy_release(source, target, files):
         refuse('the copy holds other files than the configuration binds')
 
 
+def questions(config):
+    """The newest model-choice questions (D030), each marked by whether the model it is about is still the one chosen."""
+    running = models(config)
+    return [{**q, 'still_selected': q.get('model') is not None and running.get(q.get('executor')) == q.get('model')}
+            for q in model_question.recent()]
+
+
 def show(host):
     old, raw = active_release(host); config = json.loads(raw)
     development = config.get('development') or {}
     print(json.dumps({'active_config_sha256': old['config_sha256'], 'release': old['directory'],
                       'selection': development.get('models'), 'models_run': models(config),
-                      'executors': executors(config), 'tool': str(Path(old['directory']) / TOOL)}, indent=2))
+                      'executors': executors(config), 'tool': str(Path(old['directory']) / TOOL),
+                      'questions': questions(config)}, indent=2, ensure_ascii=False))
 
 
 def stage(host, requested, code_root=CODE_ROOT, now=None):

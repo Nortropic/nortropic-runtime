@@ -80,6 +80,27 @@ class HostCase(unittest.TestCase):
         return tool.stage(self.host.root, requested, code_root=code_root or self.host.release / 'runtime', now=now)
 
 
+class QuestionListTests(HostCase):
+    """show lists the newest model-choice questions (D030), each marked by whether its model is still the chosen one."""
+
+    def test_questions_are_listed_newest_first_and_marked_by_the_selection(self):
+        from runtime import model_question
+        with patch.object(model_question, 'ROOT', self.host.root), patch.object(tool.release, 'installed', return_value=None):
+            model_question.ask('claude', 'claude-fable-5-1', 'limit', {'kind': 'goal call'}, now=NOW)
+            model_question.ask('claude', 'claude-opus-5', 'session limit', {'kind': 'task attempt'}, now=NOW + timedelta(seconds=1))
+            listed = tool.questions(self.host.config)
+        self.assertEqual([(q['model'], q['still_selected']) for q in listed], [('claude-opus-5', True), ('claude-fable-5-1', False)])
+
+    def test_an_unreadable_question_is_named_and_never_marked_still_selected(self):
+        from runtime import model_question
+        with patch.object(model_question, 'ROOT', self.host.root):
+            model_question.home().mkdir(parents=True)
+            (model_question.home() / '20260924T090000000000Z-claude.json').write_text('{not json')
+            listed = tool.questions(self.host.config)
+        self.assertEqual(listed, [{'path': '.runtime/ap10/model-questions/20260924T090000000000Z-claude.json', 'unreadable': True,
+                                   'still_selected': False}])
+
+
 class HostRootTests(unittest.TestCase):
     def test_the_host_is_read_from_the_release_location(self):
         self.assertEqual(tool.host_root(Path('/h/.runtime/ap10/releases/r/runtime')), Path('/h'))
