@@ -192,4 +192,101 @@ class PrivateTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'Unfinished private'):ps.check_private_processes()
             with patch.object(ps,'HOME',home),patch.object(ps,'process_identity',return_value=None),patch.object(ps.os,'killpg',side_effect=ProcessLookupError):ps.check_private_processes()
 
+
+# The real stage guardian, model() in its own process as private_activity starts it; only the provider command, the
+# instruction check and the storage sample are substituted. The provider is NATIVE (a shell keeping one child in its
+# group), as the real Codex binary is: a venv Python would re-exec itself on macOS and change its ps identity.
+GUARDIAN = r"""
+import json, os, sys
+from pathlib import Path
+code, stage, work, pids, provider, seconds = sys.argv[1:7]; sys.path.insert(0, code)
+from unittest.mock import patch
+from runtime import private_stage as ps
+argv = ['/bin/sh', '-c', provider, 'provider', pids, '-']
+with patch.object(ps, 'command', return_value=argv), patch.object(ps, 'require_workspace_instructions'), \
+     patch.object(ps, 'private_size', return_value=0):
+    print(json.dumps(ps.model(Path(stage), Path(work), 'synthetic', {}, int(seconds), os.getppid())))
+"""
+SILENT = 'sleep 60 & printf \'{"provider": %d, "child": %d}\' $$ $! > "$1"; wait'
+SPOKE_THEN_SILENT = ('printf \'{"type":"thread.started","thread_id":"t"}\\n{"type":"item.completed","item":{"type":"agent_message",'
+                     '"text":"{}"}}\\n\'; ' + SILENT)
+# A provider that answers: its exact events are written by the test and replayed by the shell.
+ANSWER_EVENTS = [{'type': 'thread.started', 'thread_id': 't'},
+                 {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': json.dumps({'decision': 'hold'})}},
+                 {'type': 'turn.completed', 'usage': {}}]
+
+
+class StageSignalTests(unittest.TestCase):
+    """D031: a termination signal to the waiting stage guardian ends its call, within the activity's own stop."""
+
+    def run_guardian(self, provider, seconds=30):
+        import subprocess
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        root = Path(self.temp.name).resolve(); self.stage = root / 'analysis'; self.stage.mkdir(); work = root / 'work'; work.mkdir()
+        self.pids = root / 'pids.json'
+        code = str(Path(ps.__file__).resolve().parents[1])
+        environment = dict(os.environ, PYTHONDONTWRITEBYTECODE='1'); environment.pop('NR_CONFIG_SHA256', None)
+        self.proc = subprocess.Popen([sys.executable, '-B', '-c', GUARDIAN, code, str(self.stage), str(work), str(self.pids),
+                                      provider, str(seconds)], env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                     text=True, start_new_session=True)
+        self.addCleanup(lambda: self.proc.poll() is None and self.proc.kill())
+        import time
+        end = time.monotonic() + 20
+        while not ((self.stage / 'launch.json').exists() and self.pids.exists()) and time.monotonic() < end:
+            time.sleep(.05)
+        return json.loads(self.pids.read_text())
+
+    def gone(self, pid):
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        return False
+
+    def stop_as_the_activity_does(self):
+        """private_activity's finally: SIGTERM, then at most 6 s for the guardian to end by itself."""
+        import signal, subprocess, time
+        time.sleep(.3); sent = time.monotonic(); self.proc.send_signal(signal.SIGTERM)
+        try:
+            self.proc.wait(timeout=6)
+        except subprocess.TimeoutExpired:
+            self.fail('the guardian did not end within the activity grace: the signal was swallowed')
+        return time.monotonic() - sent
+
+    def test_a_termination_signal_ends_the_waiting_call_within_the_activitys_grace(self):
+        pids = self.run_guardian(SILENT)
+        elapsed = self.stop_as_the_activity_does()
+        self.assertLess(elapsed, 3, 'the guardian ends its call itself, long before the 6 s grace')
+        self.assertEqual(self.proc.returncode, 0)
+        result = json.loads((self.stage / 'result.json').read_text())
+        self.assertEqual((result['completed'], result['reason'], result['process_group_removed']), (False, 'InterruptedError', True))
+        self.assertTrue(self.gone(pids['provider']) and self.gone(pids['child']), 'the provider and its child are removed')
+        self.assertEqual(json.loads((self.stage / 'budget.json').read_text())['model_calls'], 1, 'and the call stays consumed')
+
+    def test_an_interrupted_call_is_never_a_completed_answer(self):
+        """The provider had already spoken; the interruption still leaves no valid terminal and no completed stage."""
+        self.run_guardian(SPOKE_THEN_SILENT)
+        self.stop_as_the_activity_does()
+        result = json.loads((self.stage / 'result.json').read_text())
+        self.assertFalse(result['completed']); self.assertFalse(result['provider']['valid_terminal'])
+        self.assertEqual(result['reason'], 'InterruptedError')
+
+    def test_the_stage_deadline_still_ends_a_silent_call(self):
+        import time
+        pids = self.run_guardian(SILENT, seconds=2); start = time.monotonic()
+        self.proc.wait(timeout=10)
+        self.assertLess(time.monotonic() - start, 6)
+        result = json.loads((self.stage / 'result.json').read_text())
+        self.assertEqual((result['completed'], result['reason'], result['process_group_removed']), (False, 'TimeoutError', True))
+        self.assertTrue(self.gone(pids['provider']) and self.gone(pids['child']))
+
+    def test_a_normal_call_still_completes_with_its_answer(self):
+        events = Path(tempfile.mkdtemp()) / 'events.jsonl'; self.addCleanup(lambda: events.unlink(missing_ok=True))
+        events.write_text(''.join(json.dumps(e) + '\n' for e in ANSWER_EVENTS))
+        self.run_guardian('printf \'{"provider": %%d, "child": 0}\' $$ > "$1"; cat \'%s\'' % events)
+        self.proc.wait(timeout=10)
+        result = json.loads((self.stage / 'result.json').read_text())
+        self.assertTrue(result['completed'], result); self.assertEqual(result['answer'], {'decision': 'hold'})
+        self.assertTrue(result['provider']['valid_terminal']); self.assertTrue(result['process_group_removed'])
+
 if __name__=='__main__':unittest.main()

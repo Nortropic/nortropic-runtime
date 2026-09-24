@@ -24,6 +24,15 @@ Ordning: (1) kartlägg den verkliga stoppvägen (aktivitetens SIGTERM med 6 s n�
 berörda vägen, före och efter; (4) separat granskning och skyddad integration; (5) kontrollerad kodövergång som ägaren
 aktiverar; den nödvändiga ombindningen av AP-10:s konfigurationshash får ingå, men inga andra ändringar av AP-10.
 
+STEG 1-3 KLARA (D031): stoppvägen kartlagd ur koden; rättningen gjord enligt D026; före- och eftermätning i isolerad
+värdrot genom aktivitetens verkliga stoppsekvens (före: väktaren dödad efter 6 s nåd, inget eget avbrottsbesked, 8,4 s;
+efter: väktaren avslutar själv på 0,34 s, avbrottet registrerat, 0,65 s), fyra prov med riktiga processer och tre
+fällda mutationer. Stoppförmågan inför omgången 2026-09-25 07:00Z: ett stopp når fram och lämnar inga processer, så ingen
+paus behövs; det som fattas utan rättningen är stegets eget avbrottsbesked. Nästa: steg 4 och 5.
+
+Funnet vid sidan av, inte åtgärdat: väktarens identitet registreras före macOS-ramverkets omstart av Python och stämmer
+därför aldrig med en levande väktare (D031). Ett namngivet uppföljningsärende för ägaren.
+
 Inte beställt: ny generell signalhanterare, vakthundsplattform, schemaläggare eller omkvalificering av AP-10; ingen
 ändring av bevakningens sakuppdrag, källor, modellval, resursramar eller körschema. De vilande posterna
 (`office-watch-policy-1`, `office-assignment-cli-1`, tjänstens gamla identitetskörningar) rörs inte; kontorets plan

@@ -1257,3 +1257,47 @@ Limits:
   `show`.
 - A question that cannot be written is recorded in the result instead of failing the call.
 - Nothing is activated by this change.
+
+## D031 — 2026-09-24: a termination signal to AP-10's private stage guardian ends its call
+
+AP-10's private stage guardian (`runtime/private_stage.py` `model()`) installed a SIGINT/SIGTERM handler that raised
+InterruptedError, while its loop waits almost all the time inside `selectors.select()`, which catches InterruptedError
+and returns no events: the mechanism D026 fixed in AP-11's guardian. Owner decision of 2026-09-24 (Office
+AP10-SIGNAL-OCH-AQUARIUM-BEREDNING-20260924): fix exactly this, within AP-10's existing stop model.
+
+The stop model, read from the code: `private_activity` stops a stage it is leaving (cancellation, or its time, log or
+storage limit) by sending SIGTERM to the guardian, giving it at most 6 s to end by itself, then stopping the guardian's
+process group and running `cleanup_private_run`, which stops the provider's own recorded group. `obligation stop`
+reaches the guardian through the same activity by cancelling the round.
+
+Measured before, in an isolated host root with the active release's own code (runtime 221df157; `private_stage.py` is
+unchanged since 2def3667) and exactly that stop sequence, with a native silent provider keeping one child: the guardian
+never ended by itself; the provider and its child ran on through the whole grace; after 6 s the guardian was killed
+(exit -9) and the cleanup removed the provider's group, 8.4 s after the signal; no `result.json` was written, so the
+stage's own record of the interruption was missing; the call stayed consumed. The stop reached its end and left no
+process behind, so the next round was not blocked: no pause was needed. What failed was the guardian's own orderly
+interruption.
+
+Decision: the handler records the signal and the loop acts on it, raising InterruptedError outside `select`, as in
+D026. Nothing else changes: who sends the signal, the 6 s grace, the group stop and the cleanup, and the watch's
+mission, sources, model choice, resource limits and schedule.
+
+Measured after, in the same isolated sequence with this change: the guardian ended by itself 0.34 s after the signal and
+removed the provider's group within the grace; it wrote `result.json` with `completed: false`, reason
+`InterruptedError`, `process_group_removed: true`; the call stayed consumed; the guardian exited 0; 0.65 s end to end.
+An interrupted stage is never an answer: the Office watch policy reads a model stage only when it completed, its group
+was removed and the provider's terminal is valid (`tools/bevakning.py` `_stage`), and the round skips review when the
+analysis did not complete. Four real-process tests cover the signal within the activity's grace, an interrupted call
+that stays incomplete although the provider had spoken, the deadline that still ends a silent call, and a normal call
+that still completes with its answer; three mutations, the old defect among them, make them fail.
+
+Found alongside and not fixed here, as it lies outside the bounded fix: the guardian's identity is recorded (dispatch
+`*.launch.json`) immediately after its launch, before the macOS framework Python re-executes itself, so a live
+guardian's `ps` identity never equals the recorded one (measured: the command changes from the venv python path to
+`Python.app` within 0.5 s). `check_private_processes` therefore cannot recognise a live leftover guardian by identity
+(the provider's record, a native binary with a stable identity, still catches a live provider), and
+`cleanup_private_run` refuses as "Recorded PID reused" if a guardian is still alive when it runs - which the activity's
+own group stop prevents in the normal path, and which this fix makes rarer since the guardian now ends itself.
+
+Limits: a process test is not a performed watch, and no model ran; the change binds only once a release carrying it is
+active; SIGKILL cannot be caught and stays the cleanup's job.

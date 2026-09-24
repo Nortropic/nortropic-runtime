@@ -75,8 +75,12 @@ def model(stage, workspace, prompt, schema, seconds, parent):
     prompt_file=stage/'stdin.txt'
     with prompt_file.open('x') as f:f.write(prompt)
     prompt_file.chmod(0o600)
-    proc=None;reason=None;start=time.monotonic()
-    def interrupted(sig, frame):raise InterruptedError('stage signal')
+    proc=None;reason=None;start=time.monotonic();signalled=[]
+    def interrupted(sig, frame):
+        # Recorded here and acted on by the loop, never raised from the handler (D026, D031). The loop waits almost all
+        # the time inside streams.select(), and the standard selectors catch InterruptedError and return no events, so a
+        # handler that raised it was swallowed there and the call ran on to its bound while the activity's stop waited.
+        signalled.append(sig)
     old={sig:signal.signal(sig,interrupted) for sig in (signal.SIGINT,signal.SIGTERM)}
     try:
         with (stage/'events.jsonl').open('xb') as out,(stage/'stderr.log').open('xb') as err,prompt_file.open('rb') as inp,selectors.DefaultSelector() as streams:
@@ -88,6 +92,7 @@ def model(stage, workspace, prompt, schema, seconds, parent):
             record.update(provider_pid=proc.pid,provider_identity=process_identity(proc.pid))
             write(stage/'launch.json',record)
             while streams.get_map() or proc.poll() is None:
+                if signalled:raise InterruptedError('stage signal')
                 if os.getppid()!=parent or process_identity(parent)!=record['parent_identity']:
                     raise InterruptedError('worker parent ended')
                 if time.monotonic()-start>seconds:raise TimeoutError('model deadline')
