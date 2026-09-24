@@ -265,6 +265,22 @@ same 48/6.
 An approval by the continued half of an interrupted review in its own run pauses the scope instead of closing it
 (D025); a separately bound further assessment then examines the whole event.
 
+## The entry follows main
+
+The primary checkout stands on `main` equal to `origin/main`, with no commits of its own; work happens in separate
+clones or worktrees. Start every session with `python3 -B scripts/check_entry.py`: it fetches `origin` and warns when
+the entry is on another branch or a detached commit, has commits of its own or lags, has changed tracked files, or holds
+a local branch with no copy on origin that the plan on `origin/main` does not name. It changes nothing; its only write
+is the fetch of remote-tracking references, and it always exits 0. When it warns, read the plan from `origin/main`
+(`git show origin/main:docs/plan.md`) and report the deviation. After each protected publication, fast-forward the
+entry if it is clean (`git fetch origin main` and `git merge --ff-only origin/main`); otherwise report the deviation in
+the delivery note. A working branch ends published, archived as a git bundle under `.runtime/`, or kept with a named
+reason in the plan.
+
+The routine is deliberately not in `AGENTS.md`: the active release binds the entry's `AGENTS.md` as a native
+instruction input (`release.instruction_guards`), so changing it makes every new model call refuse until a release
+staged with the new bytes is active, and the code transitions refuse a changed instruction input by design (D032).
+
 ## Changing the model choice
 
 The model each executor runs is `development.models` in the active release configuration (D022, D028). It is changed

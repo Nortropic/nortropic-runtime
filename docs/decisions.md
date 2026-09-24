@@ -1301,3 +1301,36 @@ own group stop prevents in the normal path, and which this fix makes rarer since
 
 Limits: a process test is not a performed watch, and no model ran; the change binds only once a release carrying it is
 active; SIGKILL cannot be caught and stays the cleanup's job.
+
+## D032 — 2026-09-24: the entry follows main; the bound AGENTS.md is not changed for it
+
+The owner's maintenance order (Office UNDERHALL-INGANGAR-20260924) asks that both primary checkouts stand on `main`
+equal to `origin/main`, that a session compares its entry with `origin/main` before it reads the plan, that the entry is
+fast-forwarded after each protected publication, that no working branch lives only locally, and that the routine is
+written into each repository's `AGENTS.md` and the plan's routine.
+
+Measured, read only, before anything was changed: the Runtime primary checkout stood on an older working branch. The
+service does not read its tracked files: it runs `-m runtime.daemon` with the active release's directory as its working
+directory, and the venv has no path hooks. The protected publisher, the Office `tools/kontor.py` and a new session do
+read them, and each of them assumes main: the publisher already refused unless the entry's `runtime/integration.py`
+equals main, while the other modules it imports were the old branch's. So after transition 15 was activated and read
+back, the entry was switched to main; the staged `runtime/integration.py` was main's byte for byte, and the untracked
+run evidence under `evidence/runs` was neither tracked on main nor touched.
+
+The entry's `AGENTS.md`, however, is one of the native instruction inputs the active release binds:
+`release.instruction_guards()` hashes `AGENTS.md`, `AGENTS.override.md` and `.codex/config.toml` in the host root and
+its parents and under `.runtime`, `.runtime/tasks`, `.runtime/ap10` and `.runtime/ap10/rounds`, the Codex home and the
+managed Claude settings, and `installed()` refuses when any of them differs from the release's configuration. Changing
+the entry's `AGENTS.md` would therefore make every new model call refuse - the AP-10 watch included - until a release
+staged with the new bytes is active, and the code transitions refuse a changed instruction input by design.
+
+Decision: the routine lives in the plan's routine section and in the runbook ("The entry follows main"), with a start
+check that only warns, `scripts/check_entry.py`; `AGENTS.md`, which already sends a session to the plan, is unchanged.
+The check compares the branch, the tip against `origin/main`, the tracked changes and the local branches with no copy
+on origin that the plan on `origin/main` does not name; it switches nothing and writes no file, permission or setting,
+and it does not read the bound instruction inputs. Ten tests run it against real Git repositories in a temporary
+directory.
+
+Limits: the check warns and does not enforce; a branch counts as accounted for when the plan on `origin/main` names
+it. Bringing the routine into `AGENTS.md` itself needs a controlled transition that stages the new instruction bytes,
+which is the owner's decision.
