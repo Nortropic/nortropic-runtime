@@ -11,7 +11,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from runtime import development_model as model, development_host as host
+from runtime import development_model as model, development_host as host, model_question
 from runtime.development_scope import Scope, ScopeClosed, initialize
 from scripts.test_development_scope import contract
 
@@ -34,6 +34,9 @@ class ModelTests(unittest.TestCase):
         raw = json.dumps(data).encode(); (self.stage/'input.json').write_bytes(raw)
         self.request = {'contract_sha256': self.scope.expected, 'nonce': self.nonce,
                         'input_sha256': hashlib.sha256(raw).hexdigest()}
+        # A capacity question is a host record; here it lands in this test's own directory, never in the checkout.
+        for patcher in (patch.object(model_question, 'ROOT', self.root), patch('runtime.release.installed', return_value=None)):
+            patcher.start(); self.addCleanup(patcher.stop)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -84,6 +87,17 @@ class ModelTests(unittest.TestCase):
         self.assertFalse(result['completed']); self.assertEqual(self.scope.inspect()['control'], 'quota')
         with self.assertRaises(ScopeClosed): self.scope.reserve('goal', 'driver', 'new')
         self.assertEqual(len(self.scope.inspect()['calls']), 1)
+        # The wait now carries the owner's question (D030): which executor and model, in the provider's own words.
+        question = json.loads((self.root / result['model_question']).read_text())
+        self.assertEqual((question['executor'], question['model'], question['provider_said']), ('codex', 'gpt-6-astra', 'usage limit reached'))
+        self.assertEqual(question['where'], {'kind': 'goal call', 'role': 'driver', 'nonce': self.nonce})
+        self.assertIs(question['automatic_switch'], False)
+
+    def test_a_failure_that_is_not_capacity_asks_nothing(self):
+        result = self.run_fixture([{'type': 'thread.started', 'thread_id': 'fixture'},
+                                   {'type': 'turn.failed', 'error': {'message': 'stream disconnected'}}])
+        self.assertFalse(result['completed']); self.assertNotIn('model_question', result)
+        self.assertFalse(model_question.home().exists())
 
     def test_agent_claim_of_quota_is_not_provider_authority(self):
         events = self.events(); events[1]['item']['text'] = '{"reason":"quota usage limit"}'

@@ -291,3 +291,9 @@ The tool sets `LC_ALL=C` and the host root itself. Records: `.runtime/ap10/model
 
 A model that is selectable is not thereby qualified; a new model needs its own proportionate qualification. The choice
 binds at activation: an idle development task that is resumed afterwards runs the new choice, and `check` lists them.
+
+When the chosen model has no capacity, the run waits exactly as before and the host writes a question to the owner
+(D030): `show` lists the newest ones under `questions`, each with the executor, the model, the provider's own words and
+whether that model is still the chosen one; the record itself, under `.runtime/ap10/model-questions/`, holds the two
+choices with the exact commands and the models qualified for that executor. Waiting needs no action. Nothing is
+switched until the owner runs the tool, and buying credits or upgrades is never one of the choices.

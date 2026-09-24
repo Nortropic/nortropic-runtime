@@ -22,7 +22,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from runtime import claude_profile, development_interactive as interactive, profile
+from runtime import claude_profile, development_interactive as interactive, model_question, profile
 from runtime.development_host import RUN_FIELDS
 from runtime.development_model import models, EXECUTORS
 from runtime.development_scope import ScopeClosed
@@ -438,7 +438,7 @@ class AttemptWireThroughTests(unittest.TestCase):
         self.assertFalse(report['model_started'], 'and no model was started')
         self.assertIsNone(launch, 'no launch marker for a run that never launched')
 
-    def run_codex_attempt(self, selection, bound=True):
+    def run_codex_attempt(self, selection, bound=True, failure=None):
         """The same real attempt path for a Codex step. The Codex profile is the REAL one; only its launch is a
         plain Python process emitting the measured exec event shape (thread.started, one turn.completed)."""
         from runtime import attempt as attempt_module
@@ -448,10 +448,11 @@ class AttemptWireThroughTests(unittest.TestCase):
         def spy(workspace, writable=True, allowed_paths=None, model=None):
             seen['model'] = model
             seen['argv'] = profile.command(workspace, writable=writable, allowed_paths=allowed_paths, model=model)
+            last = failure or {"type": "turn.completed", "usage": {}}
             body = ('import json,sys\n'
                     'sys.stdin.buffer.read()\n'
                     'print(json.dumps({"type": "thread.started", "thread_id": "t-1"}))\n'
-                    'print(json.dumps({"type": "turn.completed", "usage": {}}))\n')
+                    'print(json.dumps(%r))\n' % last)
             return [sys.executable, '-c', body]
 
         task = {'id': 'wire', 'attempt_seconds': 60, 'allowed_paths': ['tools/x.py'],
@@ -467,6 +468,7 @@ class AttemptWireThroughTests(unittest.TestCase):
              patch.object(profile, 'require_workspace_instructions', return_value=None), \
              patch.object(release_module, 'require_active_code', return_value=config(selection)), \
              patch.object(release_module, 'require_workspace_instructions', return_value=None), \
+             patch.object(model_question, 'ROOT', self.root), patch.object(release_module, 'installed', return_value=None), \
              patch.dict(os.environ):
             if bound:
                 os.environ['NR_CONFIG_SHA256'] = 'x' * 64
@@ -507,6 +509,21 @@ class AttemptWireThroughTests(unittest.TestCase):
         self.assertIn('model selection', report['reason'])
         self.assertFalse(report['model_started'])
         self.assertIsNone(launch, 'no launch marker for a run that never launched')
+
+    def test_a_run_without_capacity_asks_the_owner_and_stays_a_failure(self):
+        """D030: the provider's own usage-limit words become the owner's question; the run still waits for diagnosis."""
+        limit = {'type': 'turn.failed', 'error': {'message': 'You\u2019ve hit your usage limit. try again at Sep 27th, 2026 7:16 PM.'}}
+        code, seen, report, _ = self.run_codex_attempt({'codex': 'gpt-6-other'}, failure=limit)
+        self.assertEqual(code, 1); self.assertFalse(report['provider_completed'])
+        question = json.loads((self.root / report['model_question']).read_text())
+        self.assertEqual((question['executor'], question['model']), ('codex', 'gpt-6-other'), 'the model that was started')
+        self.assertIn('hit your usage limit', question['provider_said'])
+        self.assertEqual(question['where'], {'kind': 'task attempt', 'task': 'wire', 'attempt': 1, 'role': 'implementation'})
+
+    def test_a_failure_that_is_not_capacity_asks_nothing(self):
+        code, _, report, _ = self.run_codex_attempt({'codex': 'gpt-6-other'}, failure={'type': 'turn.failed', 'error': {'message': 'stream disconnected'}})
+        self.assertEqual(code, 1); self.assertNotIn('model_question', report)
+        self.assertFalse(model_question.home().exists())
 
     def test_the_record_says_which_model_ran_and_which_one_the_provider_reported(self):
         """A release that changes only the selection keeps the same runtime_revision, so the revision no

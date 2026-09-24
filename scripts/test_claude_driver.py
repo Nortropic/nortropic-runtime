@@ -17,7 +17,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from runtime import claude_profile, development_host as host, development_interactive as interactive, development_model as model, profile
+from runtime import claude_profile, development_host as host, development_interactive as interactive, development_model as model, model_question, profile
 from runtime.development_scope import Scope, ScopeClosed, initialize
 from scripts.test_development_scope import contract
 
@@ -85,6 +85,8 @@ class StructuredCallTest(unittest.TestCase):
                 'seconds': 5, 'workspace_sha256': {n: hashlib.sha256(v).hexdigest() for n, v in files.items()}}
         raw = json.dumps(data).encode(); (self.stage/'input.json').write_bytes(raw)
         self.request = {'contract_sha256': self.scope.expected, 'nonce': self.nonce, 'input_sha256': hashlib.sha256(raw).hexdigest()}
+        for patcher in (patch.object(model_question, 'ROOT', self.root), patch('runtime.release.installed', return_value=None)):
+            patcher.start(); self.addCleanup(patcher.stop)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -141,6 +143,9 @@ class StructuredCallTest(unittest.TestCase):
                                      'structured_output': None})
         result, _ = self.run_fixture(events, code=1)
         self.assertFalse(result['completed']); self.assertEqual(self.scope.inspect()['control'], 'quota')
+        question = json.loads((self.root / result['model_question']).read_text())
+        self.assertEqual((question['executor'], question['model']), ('claude', claude_profile.MODEL))
+        self.assertIn('session limit', question['provider_said'])
 
     def test_access_status_is_quota_but_quota_words_outside_the_error_text_are_not(self):
         measured = {'is_error': True, 'subtype': 'success', 'terminal_reason': 'api_error', 'api_error_status': 403, 'structured_output': None,
