@@ -33,7 +33,11 @@ fann tjänsten igång under sin nya identitet, AP-10:s schema ombundet i sin kon
 
 Modellbyten görs nu med verktyget (runbook, "Changing the model choice"). Dess första verkliga körning: `show`, och
 `stage` plus `check` av ett uttryckligt Codex-val av den nuvarande modellen (konfiguration `145edd45`, samma modeller
-körs), där varje förvillkor höll. Det valet är stegat och inte aktiverat; om själva bytet ska övas är ägarens beslut.
+körs), där varje förvillkor höll. Ägaren aktiverade det valet 2026-09-24T11:51Z, verktygets första verkliga byte:
+tjänsten igång under sin nya identitet, AP-10:s schema ombundet till `145edd45` och i övrigt oförändrat (nästa körning
+2026-09-25 07:00Z), inget arbete i motorn och AP-11 orört. Bytet har därmed körts i drift och inte bara mot dubbletter.
+Aktiv konfiguration är `145edd45`: runtime `221df157`, kontoret `df5ed5dc`, och Codex-modellen står nu uttryckligen i
+valet.
 
 Nästa: inget kvar inom steg 3.
 
