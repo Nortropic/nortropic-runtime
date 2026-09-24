@@ -1160,3 +1160,56 @@ binary is identified by its versioned project-local path and is not hash-checked
 (D019, D023). As before, the Codex interactive completion check reads no model and the goal-call record names the
 provider but not the model. Nothing is activated by this change: the active configuration names no Codex model, so
 every running path builds the same command as before.
+
+## D029 — 2026-09-24: a model change is one run of a reviewed tool, not a new derived transition
+
+D022 made the model part of the frozen release configuration, changed only through a controlled release transition.
+Every change so far needed its own transition script, derived from the previous one by counted replacements (the last,
+for AP-11, is some 1,400 lines, most of them about that commitment), and its own separate review. This is part 2 of
+step 3 of the owner decision of 2026-09-22: a simple existing entry for changing the model without editing source.
+
+Decision: `scripts/model_choice.py` is that transition written once, with the model as its parameter: `show`,
+`stage [--claude MODEL] [--codex MODEL]`, `check`, `activate` (the owner), `forward` and `rebind`. Its one invariant is
+that the staged configuration equals the active one except `development.models`; it is checked mechanically at staging
+and again before activation. Staging copies the active release byte for byte, every bound file with its mode, verified
+against the configuration on both sides, and the copy holds exactly the bound files. The new release directory is
+named `<runtime>-<office>-models-<UTC time>`, since release directories were named by their revisions and a model
+change keeps them. The release's own `models()` judges the selection before anything is written, so a choice that
+release could not run is refused at staging, not after a switch. Existing releases and records are never overwritten.
+
+Every action runs only as the copy inside the release the active pointer names, and refuses otherwise, including a
+byte-identical copy in another release. Every module it uses, and the tool itself, are then bytes that release binds
+and `installed()` verifies; a copy in a checkout would judge a choice by code the release does not run. Staging also
+requires the active release to bind these tool bytes, and every later action compares the staged record's tool hash
+with its own bytes. After a switch the new release is the active one, so `rebind` is run with its copy. The first release that carries the tool therefore has to be activated by a controlled code
+transition as before. From then on, each release the tool makes carries the same tool.
+
+Activation is the sequence of the reviewed AP-11 transitions (executor-transition-13) without their AP-11 checks. It
+first measures the preconditions, and refuses before anything is stopped unless all of them hold:
+- the tool bytes, the staged configuration and the active selection are unchanged since staging, and the staged files
+  verify;
+- no AP-10 run is in progress, and the next one is at least 20 minutes away;
+- the AP-10 schedule is bound to the active selection, and the recorded service is alive;
+- no work is in progress in the engine: running workflows are allowed only when idle, and the idle development tasks
+  are listed, because a resumed task runs the new choice;
+- the staged release meets its own daemon start requirements now;
+- there is a way back: the active release passes its own offline start check.
+Then it takes an online database backup, stops the service, selects and starts the staged release and confirms it. On
+a failed start it restores and restarts the previous release. After a confirmed start it rebinds ONLY the config hash
+of the AP-10 schedule and reads everything back. Without a way back it does not begin: a switch that could leave the
+service and AP-10 down with nothing to restore is a changed operational risk, which is the owner's to decide and not
+a tool run's.
+
+Measured without changing anything, 2026-09-24: the tool's own engine-facing reads against the live engine and
+service returned the schedule shape its tests assume, a schedule bound to the active selection, no busy work, two idle
+development tasks (`office-watch-policy-1`, `office-assignment-cli-1`), the service alive and bound, the active release
+startable offline, and the daemon start requirements met from the archives the release binds. Tested on a synthetic
+host, with real staging, copying and database backup, the real control flow of the stop, the start confirmation,
+the forward path with its restore, and the decision whether to rebind, and doubles with the real signatures for the
+engine and launchctl; each of twenty guards was removed in turn and the test that carries it failed.
+
+Limits: the switch itself has run only against doubles until the first release carrying the tool is active and the
+owner activates a change. The choice still binds at activation, not at task freeze. A selectable model is not a
+qualified one. The idle service-identity workflows of earlier configurations stay running (23 measured on 2026-09-24,
+4 events each, beside the two idle development tasks), and each activation adds one; that is unchanged here. The tool starts no model and changes no ceiling, role, executor,
+revision, scope or AP-10 setting beyond the schedule's config hash, which every transition rebinds.

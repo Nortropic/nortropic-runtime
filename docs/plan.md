@@ -12,17 +12,20 @@ Tillgodoräknat och inte att börja om: valet i den frysta releasekonfiguratione
 identitetskontrollen mot valt namn och körposten (D022), kvalificeringen av `claude-opus-5` och Runtimes egen kopia av
 den kvalificerade Claude-CLI:n (D023).
 
-Del 1, Codex-startkedjan kopplad till valet: D028. Kedjan tar valets namn som sin enda modellparameter på alla
-utvecklingsvägar som Codex kan driva. Utan val är kommandot byte för byte detsamma som den aktiva releasens, uppmätt
-mot dess egen kod; AP-10:s privata steg läser inte valet. Ingenting aktiveras: den aktiva konfigurationen anger ingen
-Codex-modell.
+Del 1, Codex-startkedjan kopplad till valet: D028, integrerad som PR 52. Kedjan tar valets namn som sin enda
+modellparameter på alla utvecklingsvägar som Codex kan driva. Utan val är kommandot byte för byte detsamma som den
+aktiva releasens, uppmätt mot dess egen kod; AP-10:s privata steg läser inte valet.
+
+Del 2, ingången för modellbyte utan källkodsredigering: D029. `scripts/model_choice.py` är övergången skriven en gång,
+med modellen som parameter och `development.models` som det enda den kan ändra; den körs som den aktiva releasens egen
+kopia, och `activate` är ägarens steg (runbook, "Changing the model choice"). Den kan användas först när en release som
+bär den är aktiv.
 
 Kvar, i ordning:
- 2. En enkel befintlig ingång för modellbyte utan källkodsredigering. I dag kräver ett byte en egen härledd och
-    granskad releaseövergång.
  3. En konkret modellvalsfråga till ägaren när vald modell saknar kapacitet, utan automatisk växling.
+ 4. En kontrollerad kodövergång som aktiverar release med del 1-3; därefter görs modellbyten med verktyget.
 Varje del som Runtime-ändring med separat granskning och skyddad integration; varje driftbyte genom kontrollerad,
-granskad övergång som ägaren aktiverar.
+granskad övergång som ägaren aktiverar. Ingenting av detta är aktiverat ännu.
 
 Öppna poster, inte del av steg 3 om inte ägaren beslutar det: resonemangsnivån ingår inte i valet (Claude `medium`,
 Codex `high`); valet binds vid aktivering, inte vid uppgiftsfrysning; ingen tillåtlista över kvalificerade modeller

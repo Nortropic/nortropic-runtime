@@ -264,3 +264,30 @@ same 48/6.
 
 An approval by the continued half of an interrupted review in its own run pauses the scope instead of closing it
 (D025); a separately bound further assessment then examines the whole event.
+
+## Changing the model choice
+
+The model each executor runs is `development.models` in the active release configuration (D022, D028). It is changed
+by one reviewed tool (D029), never by editing source and never by hand: the active release's OWN copy of
+`scripts/model_choice.py`, which refuses to run from anywhere else. From any directory:
+
+    R="<runtime>"; A="$(dirname "$(/usr/bin/python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["config"])' "$R/.runtime/ap10/active.json")")"
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" show
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" stage --claude <model> [--codex <model>]
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" check
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" activate
+
+`show` reads the selection, what each executor runs and which executor drives which role. `stage` copies the active
+release byte for byte into a new release directory whose configuration differs ONLY in `development.models`, after the
+release's own rule has accepted the names, and prints the next two commands with their paths; nothing is stopped or
+selected. `check` measures every precondition of the switch and changes nothing. `activate` is the owner's step, in
+their own logged-in terminal: it backs up the database, stops the service, selects and starts the staged release,
+restores and restarts the previous one if the new one does not start, and then rebinds only the config hash of the
+AP-10 schedule. It refuses to begin while an AP-10 run is in progress or less than 20 minutes away, while any work
+runs in the engine, or without a way back. After a stop that did not complete, `forward` continues; after a switch
+whose schedule rebinding failed, `rebind` completes only that, run with the NEW release's copy, which is then the
+active one (the message names it). Staging again makes a new record; `check` and `activate` always take the newest.
+The tool sets `LC_ALL=C` and the host root itself. Records: `.runtime/ap10/model-transitions/<time>/`.
+
+A model that is selectable is not thereby qualified; a new model needs its own proportionate qualification. The choice
+binds at activation: an idle development task that is resumed afterwards runs the new choice, and `check` lists them.
