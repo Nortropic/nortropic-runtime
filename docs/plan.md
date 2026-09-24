@@ -1,4 +1,15 @@
-# AP-10-RÄTTNING — GÄLLANDE INGÅNG: rättningen är levererad och aktiv; nästa är underhållsärendet om ingångarna
+# Rutin: ingången följer main
+
+Gäller varje session (kontorets UNDERHALL-INGANGAR-20260924; D032). Börja med `python3 -B scripts/check_entry.py`: den
+hämtar och jämför ingången med `origin/main` och varnar, men ändrar inget. Avviker ingången läses planen från
+`origin/main` (`git show origin/main:docs/plan.md`) och avvikelsen rapporteras. Efter varje skyddad publicering
+snabbspolas ingången om den är ren, annars redovisas avvikelsen i leveransbeskedet. Ingen arbetsgren lever bara lokalt:
+den slutar publicerad, arkiverad eller kvar med namngivet skäl i planen. `AGENTS.md` bär inte rutinen: den är en bunden
+instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gällande posten nedan.
+
+---
+
+# AP-10-RÄTTNING — GÄLLANDE INGÅNG: rättningen är levererad och aktiv; underhållet av ingångarna är genomfört
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
@@ -36,10 +47,26 @@ leverantören inte tar emot analysens anrop (kapacitet). Bevakningens privata st
 frågar i utvecklingsvägen. Bevakningens modell följer inte modellvalet (AP-10:s kommando är oförändrat av det), och den
 ändras inte inom något gällande mandat.
 
-NÄSTA: underhållsärendet UNDERHALL-INGANGAR-20260924 (kontorets beslutslogg): ingångarna ska följa main och inget arbete
-ligga bara lokalt. Först en läsande mätning av primärutcheckningarna; primärutcheckningens ändrade
-`runtime/integration.py` och ospårade `evidence/runs` bevaras, och ett grenbyte föreslås först när det är visat att inget
-levande beror på dess spårade filer.
+UNDERHÅLLET UNDERHALL-INGANGAR-20260924 (kontorets beslutslogg) - GENOMFÖRT 2026-09-24. Mätt läsande: ingången stod på
+den äldre arbetsgrenen `work/ap10-private-profile` (28 egna commits, 30 bakom); 57 lokala grenar, varav 8 utan kopia på
+origin; ingen stash. Det enda unika värt att publicera var det accepterade kvalificeringsuppdraget `evidence-index-tree`,
+publicerat som PR 60 (kontorets motsvarighet: kontorets PR 38); resten är AP-11:s mellan- och avvisade kandidater och
+ersatta planlägen, på main i annan form eller historik. De åtta grenarna finns kvar och är arkiverade som git bundle i
+`.runtime/maintenance-20260924/branches-without-origin-copy-20260924.bundle` (SHA256
+`a5def2eb9ac88dbce62710f3602cb88ae18180e12efb5618f8db1d1a19162d58`): ap11/assessment-path-history,
+ap11/final-review-room-rejected-1, ap11/hostcheck-binding-handover, ap11/third-assessment-reviewed-1,
+ap11/third-assessment-steps, backup/ap11-activation-v1, work/ap10-private-profile och work/ap10-runtime-service. Kvar
+med namngivet skäl: maintenance/aterfunnet-uppdrag och maintenance/aterfunnet-uppdrag-r1, den första granskningsrundans
+commit för uppdraget, med samma träd som det publicerade; bara meddelandet rättades.
+
+Ingången står sedan 2026-09-24T13:59Z på `main` lika med `origin/main`. Mätningen visade först att tjänsten inte läser
+primärutcheckningens spårade filer (den kör releasens egen kod) och att de läsare som finns - den skyddade publiceraren,
+kontorets `tools/kontor.py` och nya sessioner - förutsätter main. Den köade `runtime/integration.py` var byte för byte
+mains och är oförändrad, de 535 ospårade filerna under `evidence/runs` är orörda och privata, och de bundna
+instruktionsingångarna är oförändrade. Protokollet står i rutinen överst i denna plan och i runbooken, med
+`scripts/check_entry.py` (D032).
+
+NÄSTA: inget kvar i Runtime inom gällande mandat. Aquarium v0 är kontorets och väntar på ägarens accept.
 
 Inte beställt: ny generell signalhanterare, vakthundsplattform, schemaläggare eller omkvalificering av AP-10; ingen
 ändring av bevakningens sakuppdrag, källor, modellval, resursramar eller körschema. De vilande posterna
