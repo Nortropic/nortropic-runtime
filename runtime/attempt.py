@@ -17,7 +17,7 @@ from .targets import OFFICE
 from .provider_result import parse as parse_provider
 from .claude_profile import command as claude_command, require_subscription, selected_model
 from .review import strict_object
-from .development_binding import reserve_task_call
+from .development_binding import reserve_task_call, REVIEW_BUDGET_SECONDS
 from .development_scope import ScopeClosed
 
 
@@ -79,12 +79,18 @@ def transfer(proc, payload, command, seconds, started, control=None):
             pass
 
 
-def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=None, role="implementation", workspace_name=None, provider="codex"):
+def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=None, role="implementation", workspace_name=None, provider="codex", binding=None):
     task = load(task_id, task_digest)
     if type(number) is not int or number < 1 or (number > 1 and not change_reason):
         raise ValueError('Explicit attempt and changed prerequisite required')
-    if role not in ('implementation', 'review') or not 1 <= seconds <= task['attempt_seconds']:
+    # A bound review (it carries its budget in its binding) is bounded by the review frame, 180..900 s, not by the
+    # implementation's time. Every other call keeps its former ceiling, the accepted attempt time.
+    ceiling = (REVIEW_BUDGET_SECONDS[1] if role == 'review' and binding is not None and not task.get('development')
+               else task['attempt_seconds'])
+    if role not in ('implementation', 'review') or not 1 <= seconds <= ceiling:
         raise ValueError('Invalid role or invocation limit')
+    if binding is not None and (role != 'review' or not isinstance(binding, dict) or binding.get('review_seconds') != seconds):
+        raise ValueError('A review binding belongs to a review with exactly its budget')
     # The executor is the accepted task's explicit choice for this role. A caller
     # cannot substitute another one; an absent reviewer choice is original Codex.
     accepted = ({task.get('review_provider', 'codex')} if role == 'review'
@@ -133,6 +139,8 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                   'role': role, 'task_sha256': task_digest,
                   'change_reason': change_reason,
                   'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest()}
+        if binding is not None:
+            record['binding'] = binding       # the accepted and the used Runtime revision and the budget of this review
         if role == 'review' and provider == 'claude':
             # Host-written schema; the native CLI refuses invalid JSON before any model call.
             record['command'] = record['command'] + ['--json-schema', (workspace / 'REVIEW_SCHEMA.json').read_text()]
@@ -216,6 +224,8 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                   'interrupted': interrupted, 'process_group_removed': removed,
                   'elapsed_seconds': round(time.monotonic() - started, 3),
                   'evidence': str(output.relative_to(ROOT))}
+        if binding is not None:
+            report['binding'] = binding
         if not finished and not parse_error:
             # A failed run whose provider said it has no capacity: the owner is asked which way to go (D030), after the
             # run's own record is complete. The run stays a failure awaiting diagnosis exactly as before, nothing is

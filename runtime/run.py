@@ -27,7 +27,11 @@ from .snapshot import read_regular
 from .task import validate, task_directory, evidence_directory, load
 from .workflow import DevelopmentTask
 from .targets import repository, origin, TARGETS, OFFICE
+from .development_binding import review_budget, review_frames, review_observation, REVIEW_MODEL_SECONDS
 from scripts.bounded import stop_group
+
+FORMER_OPERATOR_SECONDS = 4200   # the operator's outer bound for every run without a review budget, as before
+OUTER_MARGIN_SECONDS = 300       # history fetch, receipts and cleanup after a derived observation ends
 
 
 def check_unfinished_writers():
@@ -122,7 +126,74 @@ def prepare(task_file):
     return task, output
 
 
-async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_restored=False, review_repair=None, review_retry=None):
+def descends(accepted, active):
+    """True when the accepted Runtime revision is an ancestor of the active one in the host repository."""
+    if not all(isinstance(x, str) and len(x) == 40 for x in (accepted, active)):
+        return False
+    return subprocess.run(['git', '-C', str(ROOT), 'merge-base', '--is-ancestor', accepted, active],
+                          capture_output=True, timeout=30).returncode == 0
+
+
+def revision_binding(task, review_retry):
+    """The Runtime revision this run of an office task uses (RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925).
+
+    Normally only the accepted revision. A review-only continuation may instead run under the ACTIVE release -
+    installed, hash-bound and executing as that release - when its revision descends from the accepted one: the
+    reviewed release a controlled transition activated, never an arbitrary later checkout. Anything else refuses.
+    """
+    config = installed()
+    used = revision() if config else git(ROOT, 'rev-parse', 'HEAD')
+    binding = {'accepted': task['runtime_revision'], 'used': used,
+               'config_sha256': config['config_sha256'] if config else None}
+    if used == task['runtime_revision'] and (config or not git(ROOT, 'diff', 'HEAD', '--name-only')):
+        return binding
+    if (review_retry and config is not None and os.environ.get('NR_CONFIG_SHA256') == config['config_sha256']
+            and descends(task['runtime_revision'], used)):
+        return binding
+    raise ValueError('Resume requires the unchanged accepted Runtime revision')
+
+
+def observation_seconds(task, review_retry=None, review_seconds=None):
+    """How long the operator observes: exactly the former bound, or one derived from the review budget."""
+    former = task['attempt_seconds'] * len(task['steps']) + 420
+    budget = review_seconds if review_seconds is not None else task.get('review_seconds')
+    if budget is None:
+        return former
+    if review_retry:
+        return review_observation(budget)
+    return former - review_frames(REVIEW_MODEL_SECONDS)['activity'] + review_observation(budget)
+
+
+def settled(status, required_attempt=0, required_publication=0, required_reviews=0):
+    """Whether the observed run has reached what this operator waits for.
+
+    A capacity wait is a native timer inside the run, not a wait for the operator, so observation goes on through it.
+    """
+    phase = status['phase']
+    return ((phase == 'completed' or (phase.startswith('waiting_') and phase != 'waiting_capacity'))
+            and status['attempts'] >= required_attempt
+            and status.get('publication_attempts', 0) >= required_publication
+            and (len(status.get('reviews', [])) >= required_reviews or phase == 'waiting_diagnosis'))
+
+
+def operator_bound(task_file, options):
+    """The operator's outer bound: the former one without a review budget, otherwise derived from the same frames."""
+    try:
+        task = json.loads(Path(task_file).read_text())
+        if options.get('review_seconds') is None and task.get('review_seconds') is None:
+            return FORMER_OPERATOR_SECONDS
+        return max(FORMER_OPERATOR_SECONDS,
+                   observation_seconds(task, options.get('review_retry'), options.get('review_seconds')) + OUTER_MARGIN_SECONDS)
+    except (OSError, ValueError, KeyError, TypeError):
+        return FORMER_OPERATOR_SECONDS
+
+
+async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_restored=False, review_repair=None, review_retry=None, review_seconds=None):
+    if review_seconds is not None:
+        # An explicit budget belongs to a review-only continuation; a repair keeps its former bounds.
+        if not review_retry:
+            raise ValueError('A review budget is given only with a review-only continuation')
+        review_budget(review_seconds)
     if resume:
         selected = json.loads(Path(task_file).read_text())
         if access_restored:
@@ -135,9 +206,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
     else:
         if diagnosis or reconcile or access_restored or review_repair or review_retry: raise ValueError('Signals require --resume of an existing task')
         task, output = prepare(task_file)
-    if task['target'] == OFFICE:
-        if (revision() if installed() else git(ROOT, 'rev-parse', 'HEAD')) != task['runtime_revision'] or (not installed() and git(ROOT, 'diff', 'HEAD', '--name-only')):
-            raise ValueError('Resume requires the unchanged accepted Runtime revision')
+    runtime_binding = revision_binding(task, bool(review_retry)) if task['target'] == OFFICE else None
     worker = None
     # Existing report workflow is retained when establishing the central DB.
     old_database = ROOT/'.runtime/tasks/runtime-run-report-1/temporal.sqlite'
@@ -186,25 +255,29 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
                         number = prior['review_number']
                         required_reviews = number + 1
                         if action == 'repair': required_attempt = prior['attempts'] + 1
-                        await handle.signal(DevelopmentTask.continue_after_review,
-                            {'task_sha256': digest(task), 'candidate': prior['results'][-1]['candidate'],
-                             'review_number': number, 'expected_attempt': prior['attempts'],
-                             'action': action, 'reason': review_repair or review_retry})
-                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile,'access_restored':access_restored,'review_repair':review_repair,'review_retry':review_retry},indent=2)+'\n')
+                        continuation = {'task_sha256': digest(task), 'candidate': prior['results'][-1]['candidate'],
+                                        'review_number': number, 'expected_attempt': prior['attempts'],
+                                        'action': action, 'reason': review_repair or review_retry}
+                        crossing = runtime_binding is not None and runtime_binding['used'] != runtime_binding['accepted']
+                        if action == 'review_only' and (crossing or review_seconds is not None):
+                            # A round that crosses a revision or carries a budget is bound to the accepted and the used
+                            # revision, the release and its budget; an ordinary continuation is sent exactly as before.
+                            if runtime_binding is not None:
+                                continuation['runtime'] = runtime_binding
+                            if review_seconds is not None:
+                                continuation['review_seconds'] = review_seconds
+                        await handle.signal(DevelopmentTask.continue_after_review, continuation)
+                    (output/'resume.json').write_text(json.dumps({'prior':prior,'diagnosis':diagnosis,'reconcile':reconcile,'access_restored':access_restored,'review_repair':review_repair,'review_retry':review_retry,'review_seconds':review_seconds,'runtime_binding':runtime_binding},indent=2)+'\n')
                 else:
                     handle=await client.start_workflow(DevelopmentTask.run,task,id=task['id'],task_queue='development',
                                                        id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
-                end=asyncio.get_running_loop().time()+task['attempt_seconds']*len(task['steps'])+420
+                end=asyncio.get_running_loop().time()+observation_seconds(task, review_retry, review_seconds)
                 while asyncio.get_running_loop().time()<end:
                     status=await asyncio.wait_for(handle.query(DevelopmentTask.state),10)
                     snapshot = output/'state.json.tmp'
                     snapshot.write_text(json.dumps(status,indent=2)+'\n')
                     snapshot.replace(output/'state.json')
-                    if ((status['phase']=='completed' or status['phase'].startswith('waiting_'))
-                            and status['attempts'] >= required_attempt
-                            and status.get('publication_attempts',0) >= required_publication
-                            and (len(status.get('reviews', [])) >= required_reviews
-                                 or status['phase'] == 'waiting_diagnosis')):break
+                    if settled(status, required_attempt, required_publication, required_reviews):break
                     if worker is not None and worker.poll() is not None:raise RuntimeError('Worker exited; inspect preserved state')
                     await asyncio.sleep(.5)
                 else:raise TimeoutError('Bounded observation ended; inspect existing workflow before retry')
@@ -222,7 +295,7 @@ async def main(task_file, resume=False, diagnosis=None, reconcile=None, access_r
 async def bounded(task_file, **options):
     task=asyncio.create_task(main(task_file, **options));loop=asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM,task.cancel)
-    try:return await asyncio.wait_for(task,4200)
+    try:return await asyncio.wait_for(task,operator_bound(task_file, options))
     finally:loop.remove_signal_handler(signal.SIGTERM)
 
 
@@ -238,5 +311,6 @@ if __name__=='__main__':
     signals.add_argument('--access-restored', action='store_true', help='Resume a reviewed frozen continuation at its native access checkpoint')
     signals.add_argument('--review-repair', help='Diagnosed concrete rejection: repair same task, test and review again')
     signals.add_argument('--review-retry', help='Changed prerequisite for missing/invalid review; keep candidate unchanged')
+    parser.add_argument('--review-seconds', type=int, help='Explicit review budget, 180..900 s, only with --review-retry')
     args=parser.parse_args()
-    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile,access_restored=args.access_restored,review_repair=args.review_repair,review_retry=args.review_retry)))
+    raise SystemExit(asyncio.run(bounded(args.accepted_task,resume=args.resume,diagnosis=args.diagnosis,reconcile=args.reconcile,access_restored=args.access_restored,review_repair=args.review_repair,review_retry=args.review_retry,review_seconds=args.review_seconds)))

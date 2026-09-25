@@ -1,6 +1,8 @@
 """Host-owned activities; native engine history and retry policy govern sequencing."""
+import asyncio
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -11,12 +13,12 @@ from scripts.bounded import stop_group
 from .candidate import prepare, git
 from .integration import Publisher, digest, require_gate
 from .profile import ROOT
-from .release import CODE_ROOT
+from .release import CODE_ROOT, revision
 from .review import SCHEMA, verdict
 from .snapshot import snapshot, read_regular
 from .task import load, task_directory, evidence_directory, frozen_verifier
-from .development_capacity import before_activity
-from .development_binding import activity_seconds, model_seconds
+from .development_capacity import before_activity, inspect_capacity
+from .development_binding import activity_seconds, model_seconds, review_frames, HOST_MARGIN_SECONDS
 
 
 def invoke(request):
@@ -24,7 +26,7 @@ def invoke(request):
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, start_new_session=True)
     try:
-        stdout, stderr = proc.communicate(json.dumps(request).encode(), timeout=request['seconds'] + 15)
+        stdout, stderr = proc.communicate(json.dumps(request).encode(), timeout=request['seconds'] + HOST_MARGIN_SECONDS)
     finally:
         removed = stop_group(proc)
     try:
@@ -111,12 +113,51 @@ def execute_claude(request: dict) -> dict:
     return execute_implementation({**request, 'provider':'claude'})
 
 
+def review_admission(occupied):
+    """The existing admission from the native watch schedule, for a budgeted review at actual slot entry.
+
+    A budgeted review holds the service's one activity slot longer than the former 210 s, and AP-10's first stage has
+    only 105 s from scheduling to completion. So the review starts only when its whole activity plus 60 s fits before
+    the next watch run and no watch run is going on; otherwise the workflow waits on a native timer. A failed read is
+    never spare capacity. The watch's schedule, command and resources are not touched.
+    """
+    try:
+        observed = asyncio.run(inspect_capacity(occupied))
+    except Exception as error:
+        observed = {'available': False, 'wait_seconds': 30,
+                    'reason': 'Native capacity unavailable: ' + type(error).__name__}
+    return None if observed['available'] else {'capacity_wait': True, 'capacity': observed}
+
+
+def review_binding(task, runtime, seconds):
+    """What one review round is bound to: the accepted and the used Runtime revision, the release and its budget.
+
+    A review-only continuation names the revision and the release it was sent under; the round refuses to start under
+    any other. (A release that changes only the model selection keeps its Runtime revision, so the release is compared too.)
+    """
+    used = revision()
+    if runtime is not None and (not isinstance(runtime, dict) or runtime.get('used') != used
+                                or runtime.get('accepted') != task.get('runtime_revision')
+                                or runtime.get('config_sha256') != os.environ.get('NR_CONFIG_SHA256')):
+        raise ValueError('Review continuation is bound to another Runtime revision or release')
+    return {'accepted_runtime_revision': task.get('runtime_revision'), 'runtime_revision': used,
+            'config_sha256': os.environ.get('NR_CONFIG_SHA256'), 'review_seconds': seconds}
+
+
 @activity.defn
 def review_candidate(request: dict) -> dict:
     task = load(request['task_id'], request['task_digest'])
-    wait = before_activity(task, activity_seconds(task, 'review') or 210)
+    budget = request.get('review_seconds')
+    seconds = model_seconds(task, 'review', budget)
+    budgeted = budget is not None or task.get('review_seconds') is not None
+    # An unbudgeted review keeps its former admission path; a budgeted one passes the watch admission
+    # (RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925). A round that carries a budget or a Runtime binding is bound below.
+    wait = (review_admission(review_frames(seconds)['activity']) if budgeted
+            else before_activity(task, activity_seconds(task, 'review') or 210))
     if wait:
         return wait
+    binding = (review_binding(task, request.get('runtime'), seconds)
+               if budgeted or request.get('runtime') is not None else None)
     subject = request['subject']
     workspace = task_directory(task['id']) / request['workspace_name']
     if git(workspace, 'rev-parse', 'HEAD') != subject['candidate']:
@@ -138,20 +179,28 @@ def review_candidate(request: dict) -> dict:
     number = request.get('review_number', 1)
     # The reviewer executor is the accepted task's explicit choice; absent is Codex.
     provider = task.get('review_provider', 'codex')
-    result = invoke({'task_id': task['id'], 'number': number, 'prompt': prompt,
-                     'change_reason': request.get('change_reason'),
-                     'seconds': model_seconds(task, 'review'), 'task_digest': digest(task),
-                     'role': 'review', 'workspace_name': request['workspace_name'],
-                     'provider': provider})
+    call = {'task_id': task['id'], 'number': number, 'prompt': prompt,
+            'change_reason': request.get('change_reason'),
+            'seconds': seconds, 'task_digest': digest(task),
+            'role': 'review', 'workspace_name': request['workspace_name'],
+            'provider': provider}
+    if binding is not None:
+        call['binding'] = binding
+    result = invoke(call)
     output = evidence_directory(task['id']) / ('review-' + str(number))
     if not result.get('provider_completed'):
-        return {'terminal_status': 'incomplete', 'provider_result': result}
+        outcome = {'terminal_status': 'incomplete', 'provider_result': result}
+        if binding is not None:
+            outcome['binding'] = binding
+        return outcome
     decision = verdict(output / 'events.jsonl', provider)
     receipt = {k: subject[k] for k in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256')}
     # A separate process and context, not a claim of independent judgment when the
     # author used the same model family. The gate still requires a different run.
     receipt.update(scope='whole_task', terminal_status='completed', reviewer_provider=provider,
                    reviewer_run=result['thread_id'], provider_result=result, **decision)
+    if binding is not None:
+        receipt['binding'] = binding
     (output / 'decision.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return receipt
 

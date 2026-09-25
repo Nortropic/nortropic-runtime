@@ -11,7 +11,7 @@ with workflow.unsafe.imports_passed_through():
     from .review import recovery_kind
     from .revision import require_revision
     from .task import validate
-    from .development_binding import activity_seconds
+    from .development_binding import activity_seconds, review_budget, review_frames, REVIEW_MODEL_SECONDS
 
 
 @workflow.defn
@@ -58,6 +58,20 @@ class DevelopmentTask:
                     'candidate': self.review_subject['candidate'],
                     'review_number': len(self.reviews), 'expected_attempt': self.attempts,
                     'action': self.review_recovery}
+        budget, runtime = request.get('review_seconds'), request.get('runtime')
+        if budget is not None or runtime is not None:
+            # Only a review-only continuation may carry a budget or a Runtime binding; a repair keeps its former bounds.
+            if self.review_recovery != 'review_only' or request.get('action') != 'review_only':
+                return
+            try:
+                if budget is not None:
+                    review_budget(budget)
+            except ValueError:
+                return
+            if runtime is not None and (not isinstance(runtime, dict)
+                                        or runtime.get('accepted') != self.accepted_task.get('runtime_revision')
+                                        or not isinstance(runtime.get('used'), str)):
+                return
         if (all(request.get(key) == value for key, value in expected.items())
                 and isinstance(request.get('reason'), str) and request['reason'].strip()):
             self.review_request = request
@@ -128,15 +142,25 @@ class DevelopmentTask:
                          source_evidence=latest['evidence'] + '/acceptance.json')
             request = {'task_id': task['id'], 'task_digest': digest(task), 'subject': subject,
                        'workspace_name': latest['workspace_name']}
+            budget = None
             if self.reviews:
-                request.update(review_number=len(self.reviews) + 1,
-                               change_reason=self.review_continuations[-1]['reason'])
+                continuation = self.review_continuations[-1]
+                request.update(review_number=len(self.reviews) + 1, change_reason=continuation['reason'])
+                budget = continuation.get('review_seconds')
+                if continuation.get('runtime') is not None:
+                    request['runtime'] = continuation['runtime']
+            if budget is None:
+                budget = task.get('review_seconds')
+            if budget is not None:
+                # The explicit budget (RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925); absent, the request is exactly the former one.
+                request['review_seconds'] = budget
             self.review_subject = subject
             self.phase = 'reviewing'
             self.waiting_reason = None
             try:
                 self.review = await self.execute_activity(review_candidate, request,
-                    start_to_close_timeout=timedelta(seconds=210), retry_policy=RetryPolicy(maximum_attempts=1))
+                    start_to_close_timeout=timedelta(seconds=review_frames(request.get('review_seconds', REVIEW_MODEL_SECONDS))['activity']),
+                    retry_policy=RetryPolicy(maximum_attempts=1))
             except ActivityError as error:
                 self.review = {'terminal_status': 'incomplete', 'reason': str(error)}
             self.reviews.append({'subject': subject, 'tests': tests, 'result': self.review})
@@ -214,17 +238,20 @@ class DevelopmentTask:
     async def execute_activity(self, function, request, **options):
         """Capacity waits are native timers, never a sleeping activity slot.
 
-        Ordinary histories execute exactly their former commands. Only the new
-        explicitly scoped profile may return the no-start capacity observation.
+        Ordinary histories execute exactly their former commands. Only the
+        explicitly scoped profile and a budgeted review may return the no-start
+        capacity observation.
         """
         phase = self.phase
+        # A budgeted review may also return the no-start capacity observation; every other history is unchanged.
+        admitted = self.accepted_task.get('development') or (function == review_candidate and 'review_seconds' in request)
         if self.accepted_task.get('development'):
             kind = ('review' if function == review_candidate else
                     'publication' if function == publish_candidate else 'implementation')
             options['start_to_close_timeout'] = timedelta(seconds=activity_seconds(self.accepted_task, kind))
         while True:
             result = await workflow.execute_activity(function, request, **options)
-            if not (self.accepted_task.get('development') and result.get('capacity_wait')):
+            if not (admitted and result.get('capacity_wait')):
                 return result
             self.phase = 'waiting_capacity'
             self.waiting_reason = result['capacity']['reason']
