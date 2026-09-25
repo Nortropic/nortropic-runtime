@@ -1405,3 +1405,32 @@ Not shown here, and planned in the Office plan: the whole-engine test on an isol
 after Aquarium's endurance test, the release with its isolated start rehearsal, transition 16, and the usage test
 `office-aquarium-arkivdatum-1` across the transition. The replays are credited within their reach: they do not replace
 the test of the new continuation.
+
+Shown after integration, 2026-09-25, after Aquarium's endurance test (Office RUNTIME-GRANSKNINGSBUDGET-ANVANDNINGSPROV-20260925):
+- Whole-engine test on an isolated engine (its own ports 7439-7441 and database; the real `DevelopmentTask`, review
+  activity and operator continuation; a stand-in reviewer that needed 200 s; the implementation and the publication
+  recorded stand-ins; a scripted watch schedule under the real admission rule). A first review under the former bound
+  stopped at 180.07 s (exit 124, deadline, process group removed) and the task waited in `waiting_review` /
+  `review_only`. The continuation under a later revision descending from the accepted one, with a 300 s budget, was
+  refused admission three times while the scripted watch run was due, waited on three native 30 s timers, then ran
+  inside a 330 s activity and reached an approving verdict on the same frozen candidate with no second implementation;
+  the signal and the launch, result and decision records carried both revisions, the configuration hash and the
+  budget. A SIGTERM to the attempt process during a budgeted review ended it as interrupted (exit 130) with its
+  process group removed. Both histories replay without nondeterminism. A first run stopped after three seconds on a
+  fault in the test's own fixture (it skipped the evidence directory `run.prepare` creates), not in Runtime.
+- The release of transition 16 (configuration `e814c757`, runtime `a9a5eca1`, office `df5ed5dc`, the model choice
+  unchanged, exactly the nine expected files) was staged and checked. The 11 open `DevelopmentTask` histories of the
+  live engine replay without nondeterminism against it. An isolated start rehearsal on a port- and root-shifted copy of
+  the live database started the new daemon twice, about a second each; all 11 tasks answered a state query through the
+  new worker without a failed task, and both SIGTERM stops were clean. Launchd, the real PATH, an unpaused AP-10
+  schedule and model or publication calls were not part of the rehearsal.
+- The usage test `office-aquarium-arkivdatum-1` ran under the then active release `c1cdaf5d`. Runtime's own review
+  finished in 49.7 s, within the former 180 s bound, and approved; Runtime published it (Office PR 63). The continuation
+  across a revision with an explicit budget is therefore shown only in isolation, not in operation.
+- The owner activated transition 16 on 2026-09-25 at 18:06Z. Read back: the service runs `e814c757` (runtime
+  `a9a5eca1`) from the new release's directory; AP-10's schedule is bound to it, unpaused, next run 2026-09-26 07:00Z;
+  all 11 idle `DevelopmentTask` executions answer through the new worker, with no failed task in their histories. The
+  closed AP-11 commitment and its paused capacity watch are untouched.
+- Open, not attributed to D033: during this change's protected publication one unnamed test of the whole suite failed
+  in 2 of 16 runs, both direct publisher dry runs; 13 runs whose output was kept, and the publication itself, were
+  green (Office `evidence/granskningsbudget/local/runtime-publication-DIAGNOSTIC-NOTE.md`, private). Not diagnosed.
