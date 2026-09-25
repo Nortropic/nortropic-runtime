@@ -9,7 +9,7 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# GRANSKNINGSBUDGET — GÄLLANDE INGÅNG: bygget pågår enligt kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925
+# GRANSKNINGSBUDGET — GÄLLANDE INGÅNG: genomfört och aktivt sedan övergång 16 (kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925)
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
@@ -17,24 +17,32 @@ LÄGE 2026-09-25: ägaren accepterade byggbeslutet RUNTIME-GRANSKNINGSBUDGET-BER
 preciseringar (kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925, PR 56). Beslutet här är D033: en uttrycklig
 granskningstid på 180-900 sekunder per uppdrag eller vid fortsatt granskning, tidsramarna ur en härledning, oförändrad
 stopp- och städväg, fortsatt `review_only` av samma frusna kandidat, fortsättning under den aktiva releasen när dess
-revision härstammar från uppdragets, och tillträdeskontrollen för budgeterade granskningar. Drift oförändrad: aktiv
-konfiguration `e756fe5b` (runtime `c1cdaf5d`, kontoret `df5ed5dc`). Ingen release byggs eller aktiveras medan Aquariums
-uthållighetsprov pågår.
+revision härstammar från uppdragets, och tillträdeskontrollen för budgeterade granskningar.
+
+LÄGE 2026-09-25 18:07Z: allt i ordningen nedan är genomfört. Drift nu: aktiv konfiguration `e814c757` (runtime
+`a9a5eca1`, kontoret `df5ed5dc`, modellvalet oförändrat), aktiverad av ägaren med övergång 16 kl. 18:06Z och läst
+tillbaka. AP-10:s schema är bundet till den och opausat, med nästa ordinarie körning 2026-09-26 07:00Z; de elva vilande
+uppgifterna svarar genom den nya arbetaren. Vad helhetsprovet, releasen, startövningen och användningsprovet visade står
+i D033. Nästa steg här: inget; ett nytt Runtime-bygge behöver ett eget accepterat uppdrag.
 
 Ordningen (kontorets plan äger helheten):
- 1. Implementation, lätta isolerade prov, separat granskning och skyddad integration: denna ändring.
+ 1. Implementation, lätta isolerade prov, separat granskning och skyddad integration (PR 62). Genomfört.
  2. Efter uthållighetsprovets slut och stoppkontroll: helhetsprovet på isolerad motor (egen port och egen databas, en
-    låtsasgranskare), release och isolerad startövning.
- 3. Kontorets `kontor.py --granskningstid` på kontorets main; Aquariums leverans.
- 4. Användningsprovet `office-aquarium-arkivdatum-1` startas under `c1cdaf5d`, före övergången.
+    låtsasgranskare), release och isolerad startövning. Genomfört; helhetsprovets första körning föll på ett fel i
+    provets egen fixtur och kördes om efter rättelse.
+ 3. Kontorets `kontor.py --granskningstid` på kontorets main; Aquariums leverans. Genomfört (kontorets PR 57 och 61).
+ 4. Användningsprovet `office-aquarium-arkivdatum-1` startas under `c1cdaf5d`, före övergången. Genomfört: granskningen
+    blev klar på 49,7 sekunder och godkände, och Runtime publicerade själv (kontorets PR 63).
  5. Övergång 16, som ägaren aktiverar med ett komplett kommando (`LC_ALL=C`, färsk kontroll, bindningar, driftpåverkan
-    och återhämtningsväg).
+    och återhämtningsväg). Genomfört av ägaren 2026-09-25 18:06Z.
  6. Stannade användningsprovets granskning vid 180 sekunder, fortsätter det under den nya releasen med granskningstiden
     720 sekunder: `kontor.py fortsatt --task ... --review-retry SKÄL --granskningstid 720`. Blev den klar inom 180
-    sekunder prövas revisionsfortsättningen bara isolerat, och det redovisas så.
+    sekunder prövas revisionsfortsättningen bara isolerat, och det redovisas så. Behövdes inte: fortsättningen är
+    prövad bara isolerat.
 
 Kvarstående begränsning, inte åtgärdad: tillträde för vanliga implementationsaktiviteter. Samexistensen med AP-10 är
-inte löst i sin helhet.
+inte löst i sin helhet. Öppet och inte tillskrivet D033: ett onamngivet prov i hela sviten föll i 2 av 16 körningar vid
+publiceringen av PR 62 (båda publicerarens direkta provkörningar); det är inte diagnostiserat (D033).
 
 Kvar med namngivet skäl: runtime/granskningsbudget-r1, den första granskningsrundans kandidat (underkänd för att
 bindningen följde varje fortsättning, också en vanlig, utan prov och utan att D033 sa det), bevarad som historik och
