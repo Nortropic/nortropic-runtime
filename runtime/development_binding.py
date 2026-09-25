@@ -1,4 +1,4 @@
-"""Bind AP11 child effects to the separately activated host contract.
+"""Bind AP11 child effects to the separately activated host contract, and derive the frames of one review.
 
 Ordinary development and AP10 private work keep their existing profile. A task
 cannot opt itself into another scope or supply a host path. No activation here.
@@ -29,10 +29,49 @@ def activity_seconds(task, kind):
 REVIEW_MODEL_SECONDS = 180
 DEVELOPMENT_REVIEW_MODEL_SECONDS = 300
 
+# An explicit review budget (office decision RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925). Measured 2026-09-25: three
+# office reviews were still reading the candidate when the fixed 180 s bound ended them, and complete reviews of the same
+# candidates took 391-488 s. An accepted task may carry `review_seconds`, and a review-only continuation may give one;
+# absent keeps exactly the former bound. Every frame of one review is derived here from that one value.
+REVIEW_BUDGET_SECONDS = (180, 900)
+HOST_MARGIN_SECONDS = 15        # the host waits this long beyond any model process's own bound (activities.invoke)
+ACTIVITY_MARGIN_SECONDS = 30    # the Temporal activity beyond the model bound: 180 -> 210, as before
+WATCH_RUN_SECONDS = 1200        # AP-10's scheduled run is bounded by this execution timeout (obligation.definition)
+CAPACITY_POLL_SECONDS = 30      # the native timer between two admission checks (workflow.execute_activity)
+OBSERVATION_MARGIN_SECONDS = 60
 
-def model_seconds(task, kind):
+
+def review_budget(value):
+    if type(value) is not int or not REVIEW_BUDGET_SECONDS[0] <= value <= REVIEW_BUDGET_SECONDS[1]:
+        raise ValueError('A review budget is a whole number of seconds within %d..%d' % REVIEW_BUDGET_SECONDS)
+    return value
+
+
+def review_frames(seconds):
+    """The model process, the host's wait on it and the Temporal activity of one review, from one value."""
+    return {'model': seconds, 'host': seconds + HOST_MARGIN_SECONDS, 'activity': seconds + ACTIVITY_MARGIN_SECONDS}
+
+
+def review_observation(seconds):
+    """How long an operator observes one budgeted review: a possible admission wait, then the review itself.
+
+    Admission refuses while the whole activity plus 60 s would reach the next watch run, and while that run lasts (at
+    most its execution timeout); the workflow checks again on a native timer, so up to two timer periods are added.
+    """
+    activity = review_frames(seconds)['activity']
+    admission = activity + 60 + WATCH_RUN_SECONDS + 2 * CAPACITY_POLL_SECONDS
+    return admission + activity + OBSERVATION_MARGIN_SECONDS
+
+
+def model_seconds(task, kind, budget=None):
     if kind != 'review':
         raise ValueError('Only the review model bound is derived here')
+    if task.get('development') and (budget is not None or task.get('review_seconds') is not None):
+        raise ScopeClosed('The finite development profile keeps its own review bound')
+    if budget is not None:
+        return review_budget(budget)
+    if task.get('review_seconds') is not None:
+        return review_budget(task['review_seconds'])
     bound = DEVELOPMENT_REVIEW_MODEL_SECONDS if task.get('development') else REVIEW_MODEL_SECONDS
     return min(bound, task['attempt_seconds'])
 

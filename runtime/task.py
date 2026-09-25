@@ -49,6 +49,13 @@ def validate(task):
     # keeps its exact digest and history. A present value is part of the digest.
     if 'review_provider' in task and task['review_provider'] not in ('codex', 'claude'):
         raise ValueError('Invalid review provider')
+    # Absent keeps the former review bound, so every earlier accepted task keeps its exact digest and history. A present
+    # value is an explicit budget within the accepted frame and part of the digest (RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925).
+    if 'review_seconds' in task:
+        from .development_binding import review_budget
+        review_budget(task['review_seconds'])
+        if 'development' in task:
+            raise ValueError('The finite development profile keeps its own review bound')
     if not re.fullmatch('[0-9a-f]{64}', task.get('acceptance_sha256', '')):
         raise ValueError('Frozen acceptance digest required')
     if 'development' in task:

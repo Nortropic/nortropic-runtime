@@ -9,9 +9,40 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# AP-10-RÄTTNING — GÄLLANDE INGÅNG: rättningen är levererad och aktiv; underhållet av ingångarna är genomfört
+# GRANSKNINGSBUDGET — GÄLLANDE INGÅNG: bygget pågår enligt kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE 2026-09-25: ägaren accepterade byggbeslutet RUNTIME-GRANSKNINGSBUDGET-BEREDNING-20260925 (kontorets PR 55) med
+preciseringar (kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925, PR 56). Beslutet här är D033: en uttrycklig
+granskningstid på 180-900 sekunder per uppdrag eller vid fortsatt granskning, tidsramarna ur en härledning, oförändrad
+stopp- och städväg, fortsatt `review_only` av samma frusna kandidat, fortsättning under den aktiva releasen när dess
+revision härstammar från uppdragets, och tillträdeskontrollen för budgeterade granskningar. Drift oförändrad: aktiv
+konfiguration `e756fe5b` (runtime `c1cdaf5d`, kontoret `df5ed5dc`). Ingen release byggs eller aktiveras medan Aquariums
+uthållighetsprov pågår.
+
+Ordningen (kontorets plan äger helheten):
+ 1. Implementation, lätta isolerade prov, separat granskning och skyddad integration: denna ändring.
+ 2. Efter uthållighetsprovets slut och stoppkontroll: helhetsprovet på isolerad motor (egen port och egen databas, en
+    låtsasgranskare), release och isolerad startövning.
+ 3. Kontorets `kontor.py --granskningstid` på kontorets main; Aquariums leverans.
+ 4. Användningsprovet `office-aquarium-arkivdatum-1` startas under `c1cdaf5d`, före övergången.
+ 5. Övergång 16, som ägaren aktiverar med ett komplett kommando (`LC_ALL=C`, färsk kontroll, bindningar, driftpåverkan
+    och återhämtningsväg).
+ 6. Stannade användningsprovets granskning vid 180 sekunder, fortsätter det under den nya releasen med granskningstiden
+    720 sekunder: `kontor.py fortsatt --task ... --review-retry SKÄL --granskningstid 720`. Blev den klar inom 180
+    sekunder prövas revisionsfortsättningen bara isolerat, och det redovisas så.
+
+Kvarstående begränsning, inte åtgärdad: tillträde för vanliga implementationsaktiviteter. Samexistensen med AP-10 är
+inte löst i sin helhet.
+
+Kvar med namngivet skäl: runtime/granskningsbudget-r1, den första granskningsrundans kandidat (underkänd för att
+bindningen följde varje fortsättning, också en vanlig, utan prov och utan att D033 sa det), bevarad som historik och
+arkiverad som git bundle i kontorets `evidence/granskningsbudget/local/`.
+
+# AP-10-RÄTTNING — HISTORIK: rättningen är levererad och aktiv; underhållet av ingångarna är genomfört
+
+Historik sedan 2026-09-25; den gällande ingången står ovan.
 
 LÄGE 2026-09-24 13:40Z, efter ägarbeslutet AP10-SIGNAL-OCH-AQUARIUM-BEREDNING-20260924 (kontorets beslutslogg).
 Modellvalet (steg 3) och AP-11 är avslutade; ingetdera återöppnas. Arbete A, den riktade rättningen, är levererat och

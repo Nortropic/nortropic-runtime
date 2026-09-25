@@ -1334,3 +1334,74 @@ directory.
 Limits: the check warns and does not enforce; a branch counts as accounted for when the plan on `origin/main` names
 it. Bringing the routine into `AGENTS.md` itself needs a controlled transition that stages the new instruction bytes,
 which is the owner's decision.
+
+## D033 — 2026-09-25: an explicit review budget, derived frames and a bounded continuation across a Runtime revision
+
+Owner decision of 2026-09-25 (Office RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925, the accept of
+RUNTIME-GRANSKNINGSBUDGET-BEREDNING-20260925; Office PRs 55 and 56).
+
+Measured before, from preserved traces: Runtime's own reviews of `office-aquarium-projection-4`, `-scene-3` and
+`-window-2` were still reading the candidate (last reads after 102, 147 and 162 s, all successful, 124-150 events) when
+the model process's own bound ended them at 180.8-180.9 s (exit 124, interrupted deadline, process group removed),
+with no terminal result. Every task without the finite development binding had fixed frames: 180 s for the model,
+195 s for the host's wait and 210 s for the Temporal activity. Complete separate reviews of the same three candidates,
+with the same model, effort and read-only profile but the chain driver's larger material, took 391, 420 and 488 s.
+And `run.py` refused every continuation of an office task under a Runtime revision other than the accepted one, while
+the existing access continuation is not qualified for office tasks: a waiting task could not use a new bound.
+
+Decision:
+- An office task may carry `review_seconds`, 180..900, validated and part of its digest; a review-only continuation may
+  give one (`run.py --review-seconds`, in the Office `kontor.py fortsatt --review-retry ... --granskningstid N`).
+  Absent keeps exactly the former bound, and earlier tasks keep their digest and history. The finite development
+  profile keeps its own bound and refuses a budget.
+- One derivation, `development_binding.review_frames`: model N, host N+15, activity N+30 (180/195/210 unchanged). When
+  a budget applies, the operator's observation and outer bound derive from the same values (`review_observation`);
+  without one, both stay exactly as before. The observation goes on through `waiting_capacity`.
+- Stop and cleanup are unchanged: the model process's own deadline in `transfer`, the signal path and `stop_group`; an
+  interrupted review stays incomplete.
+- Continued review is the existing `review_only`: the same frozen candidate, a new review number, a fresh reviewer, the
+  earlier reviews kept and no implementation. A budget or a Runtime binding is accepted only on a review-only
+  continuation: the workflow drops a repair signal that carries either, and `run.py` refuses a budget without
+  `--review-retry`.
+- Revision binding: a review-only continuation may run under the ACTIVE release - installed, hash-bound and executing
+  as that release (`NR_CONFIG_SHA256`) - when its revision descends from the accepted one in the host repository
+  (`git merge-base --is-ancestor`). Every other difference still refuses. The operator binds a round only when it
+  crosses a revision or carries a budget; an ordinary continuation under the accepted revision without a budget is sent
+  exactly as before. A bound round carries the accepted and the used revision, the configuration hash of the release
+  and its budget in the signal; the review activity refuses to start under another revision or release; the round's
+  launch, result and decision records carry the binding; and only a bound round gets the review ceiling of 900 s in
+  the host's own check. The frozen task input is not rewritten.
+- AP-10: the service has one activity slot, and AP-10's first stage has 105 s from scheduling to completion. A budgeted
+  review therefore passes the existing admission (`development_capacity.inspect_capacity` with the whole activity,
+  N+30) at slot entry, and otherwise returns the no-start capacity observation, which the workflow waits out on a
+  native 30 s timer - the path the finite development profile already used. AP-10's schedule, command and resources
+  are unchanged.
+
+Properties to know: outside the activated release a budgeted review cannot be admitted, because the watch observation
+requires the active release, so it waits; the isolated whole-engine test replaces that observation. The observation's
+admission allowance assumes one watch run; a repeatedly refused admission ends the operator's observation as a bounded
+TimeoutError, never as a result. Descent is checked by the operator (`run.py`); the workflow and the activity check
+identity, and the installed release is the control. The observation now goes on through `waiting_capacity` for every
+run; only the finite development profile, closed with AP-11, reached that phase before.
+
+Left outside: admission for ordinary implementation activities (an implementation in an ordinary office task can still
+hold the slot across AP-10's daily run; not observed so far, and the coexistence with AP-10 is not solved as a whole);
+a general capacity platform, a second worker or changed concurrency; the parked Aquarium tasks; AP-11.
+
+Tests: `scripts/test_review_budget.py` (32) drives the real call sites without an engine or a model - the task
+validation; the attempt bound and the binding in the launch and result records; the review activity (budget,
+admission with the whole activity, a crossing without a budget on the former admission, the binding in the decision
+record, refusal under another revision or release, an unreadable watch as no capacity); the real `DevelopmentTask`
+code with a recording stand-in for `temporalio.workflow` (an unbudgeted request exactly as before under 210 s, a
+budgeted one under 750 s after a native-timer capacity wait, a stopped review continued as review-only with budget and
+binding on the same candidate, and a repair that keeps its former bounds); `run.py`'s revision rule with real Git
+descent, the derived observation and outer bound at their call sites, and the continuation signal through the real
+`main` in all four shapes (crossing or not, budget or not; the ordinary one exactly as before). Each of 34 mutants of
+the changed call sites fails these tests, and the control passes. All 25 preserved `DevelopmentTask` histories under
+`evidence/runs` replay without nondeterminism against this code (offline Replayer); a deliberate extra timer before
+the review fails the 15 that reached review. The whole suite: 550 tests.
+
+Not shown here, and planned in the Office plan: the whole-engine test on an isolated engine with a stand-in reviewer
+after Aquarium's endurance test, the release with its isolated start rehearsal, transition 16, and the usage test
+`office-aquarium-arkivdatum-1` across the transition. The replays are credited within their reach: they do not replace
+the test of the new continuation.
