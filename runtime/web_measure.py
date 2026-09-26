@@ -199,13 +199,18 @@ def run(argv=None):
         log = (run_directory / 'matning.log').open('wb')
         started_node = time.monotonic()
         try:
-            outcome = subprocess.run([str(common.NODE), str(common.WEB / 'measure.mjs'),
-                                      str(run_directory / 'matning-konfig.json')],
-                                     cwd=run_directory, env=env, stdout=log, stderr=subprocess.STDOUT,
-                                     timeout=MEASURE_SECONDS, start_new_session=True)
-            node_exit = outcome.returncode
-        except subprocess.TimeoutExpired:
-            node_exit = 'tidsgräns'
+            node = subprocess.Popen([str(common.NODE), str(common.WEB / 'measure.mjs'),
+                                     str(run_directory / 'matning-konfig.json')],
+                                    cwd=run_directory, env=env, stdout=log, stderr=subprocess.STDOUT,
+                                    start_new_session=True)
+            try:
+                node_exit = node.wait(timeout=MEASURE_SECONDS)
+            except subprocess.TimeoutExpired:
+                common.end_group(node)
+                node_exit = 'tidsgräns'
+            except BaseException:
+                common.end_group(node)
+                raise
         finally:
             log.close()
         node_seconds = round(time.monotonic() - started_node, 1)
@@ -213,6 +218,8 @@ def run(argv=None):
         if server is not None:
             server.shutdown()
             server.server_close()
+        # Also after an error or an interrupt: Chrome runs in a group of its own and must not outlive the run (D035).
+        survivors = common.end_chrome(run_directory / '.chrome-profil')
     shutil.rmtree(run_directory / '.chrome-profil', ignore_errors=True)
     result_file = run_directory / 'matning-resultat.json'
     result = json.loads(result_file.read_text()) if result_file.is_file() else {'fatal': 'inget resultat'}
@@ -248,6 +255,7 @@ def run(argv=None):
                'viewports': VIEWPORTS, 'tools': tools, 'browser_half': {'exit': node_exit, 'seconds': node_seconds,
                                                                        'result': result},
                'detector': detectors, 'chrome_profile_removed': not (run_directory / '.chrome-profil').exists(),
+               'chrome_running_after_stop': survivors,
                'secret': {'used': bool(secret), 'hits_removed': removed},
                'outcome': outcome_name, 'reason': reason}
     common.write_receipt(run_directory, receipt)
@@ -257,7 +265,11 @@ def run(argv=None):
 
 if __name__ == '__main__':
     try:
-        sys.exit(run())
+        with common.stop_signals():
+            sys.exit(run())
     except ValueError as error:
         print(json.dumps({'outcome': 'vagrad', 'reason': str(error)}, ensure_ascii=False))
         sys.exit(2)
+    except common.Stopped as error:
+        print(json.dumps({'outcome': 'avbruten', 'reason': str(error)}, ensure_ascii=False))
+        sys.exit(3)

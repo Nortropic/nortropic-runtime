@@ -5,18 +5,26 @@ the pinned tool copy and the sandbox binary, and a skip inside the suite would b
 quietly stopped. They run separately, and scripts/run_web_host_checks.py records their result as a receipt bound to
 the commit, the bytes it exercised, where they were imported from, and the tool identities.
 
-Nothing here starts a model or reaches anything but 127.0.0.1.
+Nothing here starts a model or reaches anything but this host (127.0.0.1, or `localhost` in D035's check).
 """
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
 import secrets as token_source
 import shutil
+import signal
+import socket
+import subprocess
+import sys
 import tempfile
+import time
 import unittest
+from unittest import mock
 
-from runtime import web_boundary, web_common as common, web_measure
-from runtime.release import ROOT
+from runtime import web_boundary, web_common as common, web_measure, web_visitor
+from runtime.release import CODE_ROOT, ROOT
 
 
 def latest(profile, label):
@@ -128,6 +136,196 @@ class MeasurementChecks(unittest.TestCase):
         after = log[max(header) + 1:]
         self.assertTrue(after and all(r.get('cookie_present') and not r.get('header_present') for r in after))
         self.assertFalse([r for r in log if r.get('status') == 401])
+
+
+class VisitorStartChecks(unittest.TestCase):
+    def setUp(self):
+        self.parent = Path(tempfile.mkdtemp()).resolve()
+
+    def tearDown(self):
+        shutil.rmtree(self.parent)
+
+    def test_the_holder_reaches_a_target_whose_name_is_not_the_proxys_address(self):
+        # Before D035 the host rules left only the target's name resolvable, so a target not named 127.0.0.1 left
+        # the browser unable to reach its own proxy. `localhost` is such a name and still only reaches this host.
+        site = web_boundary.Site('A', self.parent / 'namn.jsonl')
+        site.start()
+        run = self.parent / 'korning'
+        (run / 'spar').mkdir(parents=True)
+        workspace = web_visitor.prepare_workspace(self.parent, 'claude', 10)
+        origin = 'http://localhost:%d' % site.port
+        holder = None
+        try:
+            holder, ready = web_visitor.start_holder(run, workspace, origin + '/', [origin], 'desktop', 10)
+            self.assertIsNone(web_visitor.start_problem(ready, [origin]), ready)
+            self.assertEqual(ready['start'], origin + '/')
+            self.assertIn('EXCLUDE 127.0.0.1', ready['resolver_rules'])
+            code, text = web_boundary.run_action('claude', workspace, ['read'])
+            self.assertEqual(code, 0, text)
+            self.assertIn('ADRESS: %s/' % origin, text)
+        finally:
+            if holder:
+                web_visitor.stop_holder(holder)
+            common.end_chrome(run / '.chrome-profil')
+            site.stop()
+        log = web_boundary.read_log(self.parent / 'namn.jsonl')
+        self.assertTrue(log and all(row['host'] == 'localhost:%d' % site.port for row in log), log)
+
+    def test_no_model_starts_when_the_start_page_does_not_open(self):
+        with socket.socket() as probe:
+            probe.bind(('127.0.0.1', 0))
+            closed = probe.getsockname()[1]
+        task = self.parent / 'UPPGIFT.md'
+        task.write_text('Hitta kontaktsidan.')
+        never = mock.Mock(side_effect=AssertionError('a model would start'))
+        with mock.patch.object(web_visitor, 'claude_command', never), \
+                mock.patch.object(web_visitor, 'codex_command', never), contextlib.redirect_stdout(io.StringIO()):
+            code = web_visitor.run(['--start', 'http://127.0.0.1:%d/' % closed, '--tillatna',
+                                    'http://127.0.0.1:%d' % closed, '--uppgift', str(task), '--vy', 'mobil',
+                                    '--utforare', 'claude', '--modell', 'claude-opus-5', '--etikett', 'vardkontroll-start'])
+        self.assertEqual(code, 1)
+        never.assert_not_called()
+        run = latest('provare', 'vardkontroll-start')
+        receipt = json.loads((run / 'KVITTO.json').read_text())
+        self.assertEqual(receipt['outcome'], 'start_misslyckades')
+        self.assertIsNone(receipt['session'])
+        self.assertTrue(receipt['start_problem'])
+        self.assertTrue(receipt['holder_stopped'] and receipt['chrome_profile_removed'])
+        for absent in ('start.json', 'session.jsonl', 'slutrapport.txt'):
+            self.assertFalse((run / absent).exists(), absent)
+
+
+def processes_naming(text):
+    listing = subprocess.run(['/bin/ps', '-axww', '-o', 'pid=,command='], capture_output=True, text=True,
+                             check=True).stdout
+    return [int(line.split(None, 1)[0]) for line in listing.splitlines() if text in line]
+
+
+def until(condition, seconds):
+    deadline = time.monotonic() + seconds
+    while not condition() and time.monotonic() < deadline:
+        time.sleep(0.2)
+    return condition()
+
+
+class ChildChecks(unittest.TestCase):
+    """No child of a run outlives it (D035): not after a time limit, an error, SIGTERM, or a killed command."""
+
+    def setUp(self):
+        self.parent = Path(tempfile.mkdtemp()).resolve()
+        self.site = web_boundary.Site('A', self.parent / 'a.jsonl')
+        self.site.start()
+        self.started = []
+
+    def tearDown(self):
+        for process in self.started:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            process.stdout.close()
+        self.site.stop()
+        shutil.rmtree(self.parent)
+
+    def command(self, *arguments):
+        environment = dict(os.environ, NR_HOST_ROOT=str(ROOT))
+        process = subprocess.Popen([sys.executable, '-B', *arguments], cwd=CODE_ROOT, env=environment,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+        self.started.append(process)
+        return process
+
+    def running_measurement(self, label):
+        """The run directory of a measurement command once its Chrome is running."""
+        def found():
+            runs = sorted((ROOT / '.runtime/profiler/matning').glob('*-' + label))
+            return runs and common.chrome_processes(runs[-1] / '.chrome-profil') and runs[-1]
+        self.assertTrue(until(found, 60), 'the measurement never started its Chrome')
+        return found()
+
+    def test_a_measurement_ended_by_its_time_limit_leaves_no_chrome(self):
+        with mock.patch.object(web_measure, 'MEASURE_SECONDS', 4):
+            web_measure.run(['--mal', self.site.url('/'), '--etikett', 'vardkontroll-tidsgrans'])
+        run = latest('matning', 'vardkontroll-tidsgrans')
+        receipt = json.loads((run / 'KVITTO.json').read_text())
+        self.assertEqual(receipt['browser_half']['exit'], 'tidsgräns')
+        self.assertEqual(common.chrome_processes(run / '.chrome-profil'), [])
+        self.assertEqual(processes_naming(str(run / 'matning-konfig.json')), [])
+
+    def test_a_visitor_that_fails_after_its_holder_started_leaves_no_holder_and_no_chrome(self):
+        task = self.parent / 'UPPGIFT.md'
+        task.write_text('Hitta kontaktsidan.')
+        failing = mock.Mock(side_effect=RuntimeError('provfel efter start'))
+        with mock.patch.object(web_visitor, 'claude_command', failing), \
+                mock.patch.object(web_visitor, 'codex_command', failing), self.assertRaises(RuntimeError):
+            web_visitor.run(['--start', self.site.url('/'), '--tillatna', 'http://127.0.0.1:%d' % self.site.port,
+                             '--uppgift', str(task), '--vy', 'mobil', '--utforare', 'claude', '--modell',
+                             'claude-opus-5', '--etikett', 'vardkontroll-fel'])
+        failing.assert_called_once()
+        run = latest('provare', 'vardkontroll-fel')
+        self.assertTrue((run / 'hallare-stopp.json').is_file())
+        self.assertEqual(common.chrome_processes(run / '.chrome-profil'), [])
+        self.assertEqual(processes_naming(str(run / 'hallare-konfig.json')), [])
+
+    def test_a_measurement_command_stopped_by_sigterm_ends_its_children_before_it_exits(self):
+        process = self.command('-m', 'runtime.web_measure', '--mal', self.site.url('/'), '--etikett',
+                               'vardkontroll-sigterm')
+        run = self.running_measurement('vardkontroll-sigterm')
+        process.send_signal(signal.SIGTERM)
+        output, _ = process.communicate(timeout=90)
+        # Checked at once: the command's own cleanup, not the children noticing later that their parent is gone.
+        self.assertEqual(common.chrome_processes(run / '.chrome-profil'), [])
+        self.assertEqual(processes_naming(str(run / 'matning-konfig.json')), [])
+        self.assertEqual(process.returncode, 3, output)
+        self.assertEqual(json.loads(output.strip().splitlines()[-1])['outcome'], 'avbruten')
+        self.assertFalse((run / 'KVITTO.json').exists())
+
+    def test_a_measurement_whose_command_was_killed_ends_by_itself(self):
+        # A local address that accepts and never answers, so the measurement cannot finish by itself in the window.
+        with socket.socket() as silent:
+            silent.bind(('127.0.0.1', 0))
+            silent.listen(16)
+            process = self.command('-m', 'runtime.web_measure', '--mal',
+                                   'http://127.0.0.1:%d/' % silent.getsockname()[1], '--etikett', 'vardkontroll-dod')
+            run = self.running_measurement('vardkontroll-dod')
+            process.kill()
+            process.wait()
+            self.assertTrue(until(lambda: not common.chrome_processes(run / '.chrome-profil')
+                                  and not processes_naming(str(run / 'matning-konfig.json')), 20))
+
+    def test_a_holder_whose_command_was_killed_stops_by_itself(self):
+        run = self.parent / 'korning'
+        (run / 'spar').mkdir(parents=True)
+        origin = 'http://127.0.0.1:%d' % self.site.port
+        script = ('import sys, tempfile, time; from pathlib import Path; from runtime import web_visitor as v; '
+                  'w = v.prepare_workspace(Path(tempfile.mkdtemp()), "claude", 10); '
+                  'v.start_holder(Path(sys.argv[1]), w, sys.argv[2] + "/", [sys.argv[2]], "desktop", 10); '
+                  'print("klar", flush=True); time.sleep(600)')
+        process = self.command('-c', script, str(run), origin)
+        self.assertEqual(process.stdout.readline().strip(), 'klar')
+        self.assertTrue(processes_naming(str(run / 'hallare-konfig.json')))
+        process.kill()
+        process.wait()
+        self.assertTrue(until(lambda: not common.chrome_processes(run / '.chrome-profil')
+                              and not processes_naming(str(run / 'hallare-konfig.json')), 20))
+        self.assertTrue((run / 'hallare-stopp.json').is_file())
+
+    def test_a_holder_whose_command_was_killed_during_its_start_ends_by_itself(self):
+        # The start page never answers, so the holder is still in its start navigation, before its full stop is armed.
+        run = self.parent / 'korning'
+        (run / 'spar').mkdir(parents=True)
+        with socket.socket() as silent:
+            silent.bind(('127.0.0.1', 0))
+            silent.listen(16)
+            origin = 'http://127.0.0.1:%d' % silent.getsockname()[1]
+            script = ('import sys, tempfile; from pathlib import Path; from runtime import web_visitor as v; '
+                      'w = v.prepare_workspace(Path(tempfile.mkdtemp()), "claude", 10); '
+                      'v.start_holder(Path(sys.argv[1]), w, sys.argv[2] + "/", [sys.argv[2]], "desktop", 10)')
+            process = self.command('-c', script, str(run), origin)
+            self.assertTrue(until(lambda: common.chrome_processes(run / '.chrome-profil'), 60), 'Chrome never started')
+            self.assertFalse((run / 'hallare-klar.json').exists())
+            process.kill()
+            process.wait()
+            self.assertTrue(until(lambda: not common.chrome_processes(run / '.chrome-profil')
+                                  and not processes_naming(str(run / 'hallare-konfig.json')), 20))
 
 
 if __name__ == '__main__':

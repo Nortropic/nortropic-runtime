@@ -337,8 +337,17 @@ no run is retried automatically. A protection exception is only ever a private f
 
 The visitor starts no model until the model-free host check of its barriers has passed for exactly the current bytes,
 Chrome and Node (`.runtime/profiler/vardprov/godkant-<identity>.json`); otherwise it runs that check first (about a
-minute). Whether a scenario succeeded is decided by a separate reading of `KONTROLL.md`, the trace and the site, never
-by the visitor's own report.
+minute). Nor does it start one when the start page did not open without an error, below status 400, inside the
+allowlist: the run then closes as `start_misslyckades` (D035), with the reason in the receipt's `start_problem`.
+Whether a scenario succeeded is decided by a separate reading of `KONTROLL.md`, the trace and the site, never by the
+visitor's own report.
+
+A stopped run leaves none of its processes running (D035). One Ctrl-C, SIGTERM or SIGHUP to a profile command ends
+its model session, holder, Node and Chrome before it exits with `avbruten` (exit 3) and no receipt; further signals are
+ignored until then. The run directory and the temporary workspace stay as they were, nothing in them counts, and they
+are not searched for the protection value. Should the command be killed outright, the holder and the measurement end
+themselves within seconds; a model CLI ends by itself. To check for leftovers, look for processes naming the run's
+`.chrome-profil`.
 
 Tools: the pinned copy is installed once from an existing npm install whose lock names the same versions, and is
 checked tree by tree against `config/web-tools.lock.json`; nothing is downloaded:

@@ -8,7 +8,8 @@ The same holder, action command, grammar, workspace and receipt serve both execu
 on the model's side: for Claude a PreToolUse guard, dontAsk and Read only inside the workspace; for Codex the
 sandbox with no network and writes only into the queue and scratch. The workspace lies outside every repository, so
 neither CLI picks up a project's instructions. Before any model starts, the model-free host check (barrier tests A
-and C) must have passed for exactly these bytes, this Chrome and this Node; otherwise it runs first.
+and C) must have passed for exactly these bytes, this Chrome and this Node; otherwise it runs first. No model starts
+either when the holder's start page did not open inside the allowed origins (outcome start_misslyckades, D035).
 """
 import argparse
 import hashlib
@@ -166,11 +167,25 @@ def start_holder(run, workspace, start, allowed, view, max_actions, secret_kind=
     while not (run / 'hallare-klar.json').exists():
         if process.poll() is not None or time.monotonic() > deadline:
             stop_holder(process)
+            common.end_chrome(profile_directory)
             log.close()
             raise RuntimeError('The browser holder did not become ready (see hallare.log)')
         time.sleep(0.2)
     log.close()
     return process, json.loads((run / 'hallare-klar.json').read_text())
+
+
+def start_problem(ready, allowed):
+    """Why no model may start on this holder, or None: the start page must have opened, below 400, inside the allowlist."""
+    if ready.get('start_error'):
+        return 'startsidan kunde inte öppnas: ' + str(ready['start_error'])[:200]
+    status = ready.get('start_status')
+    if not isinstance(status, int) or isinstance(status, bool) or not 100 <= status < 400:
+        return 'startsidan svarade inte med en status under 400 (%s)' % status
+    parts = urllib.parse.urlsplit(str(ready.get('start') or ''))
+    if parts.scheme not in ('http', 'https') or '%s://%s' % (parts.scheme, parts.netloc) not in allowed:
+        return 'startsidan hamnade utanför de tillåtna adresserna'
+    return None
 
 
 def stop_holder(process):
@@ -352,9 +367,44 @@ def run(argv=None):
     workspace = prepare_workspace(temporary, args.utforare, args.max_handlingar)
     holder, ready = start_holder(run_directory, workspace, args.start, args.allowed, args.vy, args.max_handlingar,
                                  args.undantag_sort, secret)
+    try:
+        return visit(args, started, tools, checked, secret, run_directory, temporary, workspace, holder, ready)
+    finally:
+        # Also after an error or an interrupt: neither the holder nor its Chrome outlives the run (D035).
+        stop_holder(holder)
+        common.end_chrome(run_directory / '.chrome-profil')
+
+
+def visit(args, started, tools, checked, secret, run_directory, temporary, workspace, holder, ready):
+    """Everything after the holder started; run() stops the holder and its Chrome whatever happens here."""
     secret_used = bool(secret)
     secret_value = secret
     secret = None
+    parameters = {'start': args.start, 'allowed': args.allowed, 'view': args.vy, 'executor': args.utforare,
+                  'model': args.modell, 'max_actions': args.max_handlingar, 'seconds_limit': args.tid,
+                  'bindings': args.bindings, 'label': args.etikett,
+                  'exception': args.undantag_sort if secret_used else None}
+    problem = start_problem(ready, args.allowed)
+    if problem:
+        stop_holder(holder)
+        survivors = common.end_chrome(run_directory / '.chrome-profil')
+        shutil.copytree(workspace, run_directory / 'arbetsyta', symlinks=True)
+        shutil.rmtree(temporary, ignore_errors=True)
+        stopped = json.loads((run_directory / 'hallare-stopp.json').read_text()) if (run_directory / 'hallare-stopp.json').exists() else None
+        removed = common.remove_contaminated(run_directory, common.secret_hits(run_directory, secret_value)) if secret_used else []
+        secret_value = None
+        outcome = 'hemlighet_i_utdata' if removed else 'start_misslyckades'
+        receipt = {'profile': 'provare', 'code': common.code_files(*CODE), **common.code_root_info(),
+                   'started_at': started, 'parameters': parameters,
+                   'task_sha256': common.sha256_bytes(args.task_text.encode()), 'tools': tools, 'preflight': checked,
+                   'holder_ready': ready, 'holder_stopped': stopped, 'start_problem': problem,
+                   'chrome_profile_removed': not (run_directory / '.chrome-profil').exists(),
+                   'chrome_running_after_stop': survivors, 'session': None,
+                   'trace': summarize_trace(run_directory), 'secret': {'used': secret_used, 'hits_removed': removed},
+                   'outcome': outcome}
+        common.write_receipt(run_directory, receipt)
+        print(json.dumps({'run': str(run_directory), 'outcome': outcome, 'reason': problem}, ensure_ascii=False))
+        return 1
     prompt = PROMPT.format(task=args.task_text.strip())
     if args.utforare == 'claude':
         from .claude_profile import require_subscription
@@ -368,27 +418,12 @@ def run(argv=None):
     (run_directory / 'start.json').write_text(json.dumps({'argv': argv_used, 'cwd': str(workspace),
                                                           'prompt_sha256': common.sha256_bytes(prompt.encode())},
                                                          indent=1, ensure_ascii=False) + '\n')
-    stream = (run_directory / 'session.jsonl').open('wb')
     begun = time.monotonic()
-    outcome_kind = 'exit'
-    process = subprocess.Popen(argv_used, cwd=workspace, env=env, stdin=subprocess.PIPE, stdout=stream,
-                               stderr=subprocess.STDOUT, start_new_session=True)
-    try:
-        process.stdin.write(prompt.encode())
-        process.stdin.close()
-        exit_code = process.wait(timeout=args.tid)
-    except subprocess.TimeoutExpired:
-        outcome_kind = 'tidsgrans'
-        os.killpg(process.pid, signal.SIGTERM)
-        try:
-            exit_code = process.wait(timeout=30)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGKILL)
-            exit_code = process.wait(timeout=10)
-    finally:
-        stream.close()
+    with (run_directory / 'session.jsonl').open('wb') as stream:
+        exit_code, outcome_kind = common.run_session(argv_used, workspace, env, prompt, stream, args.tid)
     seconds = round(time.monotonic() - begun, 1)
     stop_holder(holder)
+    survivors = common.end_chrome(run_directory / '.chrome-profil')
     shutil.copytree(workspace, run_directory / 'arbetsyta', symlinks=True)
     shutil.rmtree(temporary, ignore_errors=True)
     rows = records(run_directory / 'session.jsonl')
@@ -421,14 +456,11 @@ def run(argv=None):
         '- Felklass om inte lyckat (produktfel / verktygsfel / åtkomstfel / ingen): …\n'
         '- Provarens rapport (slutrapport.txt) jämförd med spåret: …\n- Bedömare och tid: …\n')
     receipt = {'profile': 'provare', 'code': common.code_files(*CODE), **common.code_root_info(),
-               'started_at': started, 'parameters': {
-                   'start': args.start, 'allowed': args.allowed, 'view': args.vy, 'executor': args.utforare,
-                   'model': args.modell, 'max_actions': args.max_handlingar, 'seconds_limit': args.tid,
-                   'bindings': args.bindings, 'label': args.etikett,
-                   'exception': args.undantag_sort if secret_used else None},
+               'started_at': started, 'parameters': parameters,
                'task_sha256': common.sha256_bytes(args.task_text.encode()), 'prompt_sha256': common.sha256_bytes(prompt.encode()),
                'tools': tools, 'preflight': checked, 'holder_ready': ready, 'holder_stopped': stopped,
                'chrome_profile_removed': not (run_directory / '.chrome-profil').exists(),
+               'chrome_running_after_stop': survivors,
                'session': {'exit_code': exit_code, 'end': outcome_kind, 'seconds': seconds, **{
                    k: v for k, v in verdict.items() if k != 'final_text'}},
                'trace': traced, 'secret': {'used': secret_used, 'hits_removed': removed},
@@ -441,7 +473,11 @@ def run(argv=None):
 
 if __name__ == '__main__':
     try:
-        sys.exit(run())
+        with common.stop_signals():
+            sys.exit(run())
     except (ValueError, RuntimeError) as error:
         print(json.dumps({'outcome': 'vagrad', 'reason': str(error)}, ensure_ascii=False))
         sys.exit(2)
+    except common.Stopped as error:
+        print(json.dumps({'outcome': 'avbruten', 'reason': str(error)}, ensure_ascii=False))
+        sys.exit(3)

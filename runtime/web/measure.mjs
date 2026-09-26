@@ -41,6 +41,14 @@ const browser = await puppeteer.launch({
     '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings',
     '--remote-debugging-port=0'],
 });
+// Should the command that started this measurement die without ending it (SIGKILL), end with it: close Chrome and
+// exit (D035). Unreferenced, so it never keeps a finished measurement alive.
+let orphaned = false;
+setInterval(() => {
+  if (orphaned || process.ppid !== 1) return;
+  orphaned = true;
+  Promise.race([browser.close().catch(() => {}), wait(5000)]).finally(() => process.exit(3));
+}, 1000).unref();
 
 async function prime() {
   const page = await browser.newPage();

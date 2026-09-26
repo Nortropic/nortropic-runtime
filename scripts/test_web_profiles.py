@@ -1,4 +1,5 @@
-"""The web profiles (D034) without a browser or a model: grammar, guard, secret, underlag, schema, commands, receipts.
+"""The web profiles (D034, D035) without a browser or a model: grammar, guard, secret, underlag, schema, commands,
+receipts, the start rule and the ending of child processes.
 
 What needs a real Chrome, the pinned tools, the sandbox or a local site is the separate host check
 (scripts/hostcheck_web_profiles.py), not this suite: a skip here would be indistinguishable from a check that stopped.
@@ -12,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import stat
 import subprocess
 import sys
@@ -19,6 +21,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 import urllib.parse
 
 from runtime import web_common as common
@@ -526,6 +529,180 @@ class ParameterTests(unittest.TestCase):
                 web_visitor.parse(good)
         finally:
             shutil.rmtree(parent)
+
+
+class StartTests(unittest.TestCase):
+    ALLOWED = ['http://127.0.0.1:47321', 'https://exempel.se']
+
+    def test_a_model_may_start_only_on_a_start_page_that_opened_inside_the_allowlist(self):
+        good = {'ready': True, 'start': 'http://127.0.0.1:47321/', 'start_status': 200, 'start_error': None}
+        self.assertIsNone(web_visitor.start_problem(good, self.ALLOWED))
+        self.assertIsNone(web_visitor.start_problem({**good, 'start': 'https://exempel.se/om', 'start_status': 304},
+                                                    self.ALLOWED))
+        for change in ({'start_error': 'net::ERR_PROXY_CONNECTION_FAILED'}, {'start_status': None},
+                       {'start_status': 401}, {'start_status': 500}, {'start_status': True}, {'start_status': '200'},
+                       {'start_status': 99}, {'start': 'chrome-error://chromewebdata/'}, {'start': 'about:blank'},
+                       {'start': 'http://127.0.0.1:47322/'}, {'start': 'https://exempel.se.annan.se/'},
+                       {'start': 'http://localhost:47321/'}, {'start': None}):
+            self.assertIsInstance(web_visitor.start_problem({**good, **change}, self.ALLOWED), str, msg=change)
+
+    def test_no_model_starts_when_the_start_page_did_not_open(self):
+        parent = Path(tempfile.mkdtemp())
+        try:
+            task = parent / 'UPPGIFT.md'
+            task.write_text('Hitta kontaktsidan.')
+            run_directory = parent / 'korning'
+            run_directory.mkdir()
+            ready = {'ready': True, 'primed': None, 'start': 'chrome-error://chromewebdata/', 'start_status': None,
+                     'start_error': 'net::ERR_PROXY_CONNECTION_FAILED at http://127.0.0.1:47321/'}
+
+            def holder(run, workspace, *arguments):
+                (run / 'hallare-stopp.json').write_text('{"stopped": true}\n')
+                return 'hallare', ready
+
+            never = mock.Mock(side_effect=AssertionError('a model would start'))
+            with mock.patch.object(web_visitor, 'preflight', return_value={'stub': True}), \
+                    mock.patch.object(common, 'tool_identity', return_value={}), \
+                    mock.patch.object(common, 'new_run_directory', return_value=run_directory), \
+                    mock.patch.object(web_visitor, 'start_holder', side_effect=holder), \
+                    mock.patch.object(web_visitor, 'stop_holder') as stopped, \
+                    mock.patch.object(web_visitor, 'claude_command', never), \
+                    mock.patch.object(web_visitor, 'codex_command', never), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                code = web_visitor.run(['--start', 'http://127.0.0.1:47321/', '--tillatna', 'http://127.0.0.1:47321',
+                                        '--uppgift', str(task), '--vy', 'mobil', '--utforare', 'claude', '--modell',
+                                        'claude-opus-5', '--etikett', 'prov'])
+            self.assertEqual(code, 1)
+            never.assert_not_called()
+            stopped.assert_called_with('hallare')   # before the receipt, and again by run() on the way out
+            receipt = json.loads((run_directory / 'KVITTO.json').read_text())
+            self.assertEqual(receipt['outcome'], 'start_misslyckades')
+            self.assertIsNone(receipt['session'])
+            self.assertIn('ERR_PROXY_CONNECTION_FAILED', receipt['start_problem'])
+            self.assertEqual(receipt['holder_stopped'], {'stopped': True})
+            for absent in ('start.json', 'session.jsonl', 'slutrapport.txt', 'KONTROLL.md'):
+                self.assertFalse((run_directory / absent).exists(), absent)
+        finally:
+            shutil.rmtree(parent)
+
+
+# A stand-in model CLI: it starts a grandchild in its own process group, names both, reads its prompt and waits.
+FAKE_CLI = """
+import subprocess, sys, time
+child = subprocess.Popen(['/bin/sleep', '300'])
+open(sys.argv[1], 'w').write('%d %d' % (__import__('os').getpid(), child.pid))
+sys.stdin.read()
+time.sleep(float(sys.argv[2]))
+"""
+
+
+def alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def gone(pids, seconds=5):
+    deadline = time.monotonic() + seconds
+    while any(alive(p) for p in pids) and time.monotonic() < deadline:
+        time.sleep(0.1)
+    return not any(alive(p) for p in pids)
+
+
+class ChildProcessTests(unittest.TestCase):
+    def setUp(self):
+        self.parent = Path(tempfile.mkdtemp()).resolve()
+
+    def tearDown(self):
+        shutil.rmtree(self.parent)
+
+    def session(self, pause, limit, wait=None):
+        names = self.parent / 'pids'
+        argv = [sys.executable, '-c', FAKE_CLI, str(names), str(pause)]
+        with (self.parent / 'strom').open('wb') as stream:
+            if wait is None:
+                result = common.run_session(argv, self.parent, dict(os.environ), 'fråga', stream, limit)
+            else:
+                with mock.patch.object(subprocess.Popen, 'wait', wait):
+                    result = common.run_session(argv, self.parent, dict(os.environ), 'fråga', stream, limit)
+        return result, [int(p) for p in names.read_text().split()]
+
+    def test_a_session_that_ends_by_itself_reports_its_exit(self):
+        (code, end), pids = self.session(0, 60)
+        self.assertEqual((code, end), (0, 'exit'))
+        os.kill(pids[1], signal.SIGKILL)   # the stand-in's own grandchild, left behind on a normal exit
+
+    def test_a_session_over_its_time_limit_is_ended_with_its_whole_group(self):
+        (code, end), pids = self.session(300, 2)
+        self.assertEqual(end, 'tidsgrans')
+        self.assertTrue(gone(pids), pids)
+
+    def test_an_interrupt_while_a_session_runs_ends_its_whole_group_and_goes_on(self):
+        real_wait, calls = subprocess.Popen.wait, []
+
+        def wait(process, timeout=None):
+            calls.append(timeout)
+            if len(calls) == 1:
+                deadline = time.monotonic() + 10   # let the stand-in name its processes first
+                while not (self.parent / 'pids').exists() and time.monotonic() < deadline:
+                    time.sleep(0.05)
+                raise KeyboardInterrupt
+            return real_wait(process, timeout)
+        with self.assertRaises(KeyboardInterrupt):
+            self.session(300, 60, wait)
+        self.assertTrue(gone([int(p) for p in (self.parent / 'pids').read_text().split()]))
+
+    def test_the_first_stop_signal_raises_stopped_and_turns_all_three_off_until_the_command_ends(self):
+        self.assertEqual(common.STOP_SIGNALS, (signal.SIGINT, signal.SIGTERM, signal.SIGHUP))
+        before = {s: signal.getsignal(s) for s in common.STOP_SIGNALS}
+        for number in common.STOP_SIGNALS:
+            with common.stop_signals():
+                with self.assertRaises(common.Stopped):
+                    signal.getsignal(number)(number, None)
+                # A second signal during the cleanup is ignored rather than cutting it short.
+                self.assertEqual({signal.getsignal(s) for s in common.STOP_SIGNALS}, {signal.SIG_IGN})
+            self.assertEqual({s: signal.getsignal(s) for s in common.STOP_SIGNALS}, before)
+
+    def test_only_the_processes_of_the_named_chrome_profile_are_ended(self):
+        profile = self.parent / 'kör ning' / '.chrome-profil'
+        other = self.parent / 'kör ning' / '.chrome-profil-2'
+        started = [subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(300)', '--user-data-dir=' + str(p)],
+                                    start_new_session=True) for p in (profile, other)]
+        try:
+            self.assertEqual(common.chrome_processes(profile), [started[0].pid])
+            self.assertEqual(common.end_chrome(profile, grace=0.2), 1)
+            self.assertIsNotNone(started[0].wait(timeout=10))
+            self.assertIsNone(started[1].poll())
+            self.assertEqual(common.end_chrome(profile, grace=0.2), 0)
+        finally:
+            for process in started:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait()
+
+    def test_the_visitor_stops_its_holder_and_chrome_whatever_happens_after_the_start(self):
+        task = self.parent / 'UPPGIFT.md'
+        task.write_text('Hitta kontaktsidan.')
+        run_directory = self.parent / 'korning'
+        run_directory.mkdir()
+        ready = {'ready': True, 'primed': None, 'start': 'http://127.0.0.1:47321/', 'start_status': 200,
+                 'start_error': None}
+        with mock.patch.object(web_visitor, 'preflight', return_value={'stub': True}), \
+                mock.patch.object(common, 'tool_identity', return_value={}), \
+                mock.patch.object(common, 'new_run_directory', return_value=run_directory), \
+                mock.patch.object(web_visitor, 'start_holder', return_value=('hallare', ready)), \
+                mock.patch.object(web_visitor, 'stop_holder') as stopped, \
+                mock.patch.object(common, 'end_chrome', return_value=0) as ended, \
+                mock.patch('runtime.claude_profile.require_subscription', side_effect=ValueError('provfel')):
+            with self.assertRaises(ValueError):
+                web_visitor.run(['--start', 'http://127.0.0.1:47321/', '--tillatna', 'http://127.0.0.1:47321',
+                                 '--uppgift', str(task), '--vy', 'mobil', '--utforare', 'claude', '--modell',
+                                 'claude-opus-5', '--etikett', 'prov'])
+        stopped.assert_called_with('hallare')
+        ended.assert_called_with(run_directory / '.chrome-profil')
+        self.assertFalse((run_directory / 'KVITTO.json').exists())
 
 
 class ReceiptTests(unittest.TestCase):
