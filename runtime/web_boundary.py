@@ -276,6 +276,7 @@ def barrier_a_c(path_kind, run, secret_file, secret):
     finally:
         if holder is not None:
             stop_holder(holder)
+        chrome_left = common.end_chrome(sub / '.chrome-profil')
         site_a.stop()
         site_b.stop()
     shutil.copytree(workspace, sub / 'arbetsyta', symlinks=True)
@@ -296,6 +297,7 @@ def barrier_a_c(path_kind, run, secret_file, secret):
     blocked = read_log(sub / 'spar' / 'blockerade.jsonl')
     checks['the holder blocked requests outside the allowlist'] = len(blocked) > 0
     checks['the temporary profile is gone'] = not (sub / '.chrome-profil').exists()
+    checks['no Chrome process of the run outlived the holder'] = chrome_left == 0
     top = sorted(p.name for p in (sub / 'arbetsyta').iterdir())
     checks['the workspace holds only what the contract names'] = top == ['.ko', '.scratch', 'AGENTS.md', 'handling', 'spar', 'svar']
     hits = common.secret_hits(sub, secret)

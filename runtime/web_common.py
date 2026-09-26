@@ -1,9 +1,11 @@
-"""Shared ground for the three web profiles (D034): run directories, receipts, the secret, tools and the grammar.
+"""Shared ground for the three web profiles (D034): run directories, receipts, the secret, tools, the grammar and
+the child processes, none of which outlives its run (D035).
 
 The profiles are host commands, not engine workflows: their evidence is the run directory itself, created exclusively,
 never overwritten, and closed by a receipt that hashes every file in it. Nothing here writes into a repository.
 """
 import base64
+import contextlib
 import hashlib
 import json
 import os
@@ -11,8 +13,11 @@ from pathlib import Path
 import plistlib
 import re
 import secrets as token_source
+import signal
 import stat
 import subprocess
+import threading
+import time
 import urllib.parse
 from datetime import datetime, timezone
 
@@ -165,6 +170,106 @@ def filtered_environment(extra=None):
     keep.update(extra or {})
     return {k: v for k, v in keep.items()
             if not re.search(r'SECRET|TOKEN|KEY|PASSWORD|CREDENTIAL|BYPASS', k, re.I) or k in (extra or {})}
+
+
+class Stopped(BaseException):
+    """Ctrl-C, SIGTERM or SIGHUP to a profile command, raised so that the run's own cleanup ends every child it
+    started."""
+
+
+STOP_SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
+
+
+@contextlib.contextmanager
+def stop_signals():
+    """While a profile command runs, Ctrl-C, SIGTERM and SIGHUP raise Stopped instead of ending Python without cleanup.
+
+    Every child runs in a session of its own (so that it can be ended with its whole group), which also means a
+    signal to the command's process group - a terminal closing, a driver's tool timing out - never reaches it. The
+    first signal turns all three off until the command ends, so a second one cannot cut the cleanup short.
+    """
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def handler(number, frame):
+        for each in STOP_SIGNALS:
+            signal.signal(each, signal.SIG_IGN)
+        raise Stopped('signal %d' % number)
+    previous = {number: signal.signal(number, handler) for number in STOP_SIGNALS}
+    try:
+        yield
+    finally:
+        for number, old in previous.items():
+            signal.signal(number, old)
+
+
+def end_group(process, grace=30):
+    """End a child started in its own session together with its process group: SIGTERM, then SIGKILL."""
+    for number, wait in ((signal.SIGTERM, grace), (signal.SIGKILL, 10)):
+        if process.poll() is not None:
+            return process.returncode
+        try:
+            os.killpg(process.pid, number)
+        except ProcessLookupError:
+            pass
+        try:
+            return process.wait(timeout=wait)
+        except subprocess.TimeoutExpired:
+            pass
+    return process.poll()
+
+
+def run_session(argv, cwd, env, prompt, stream, seconds_limit):
+    """One model CLI in its own session with the prompt on stdin: (exit code, 'exit' or 'tidsgrans').
+
+    On any error or interrupt while it runs, its whole group is ended before the exception goes on, so no model
+    session outlives the run that started it.
+    """
+    process = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=stream,
+                               stderr=subprocess.STDOUT, start_new_session=True)
+    try:
+        process.stdin.write(prompt.encode())
+        process.stdin.close()
+        return process.wait(timeout=seconds_limit), 'exit'
+    except subprocess.TimeoutExpired:
+        return end_group(process), 'tidsgrans'
+    except BaseException:
+        end_group(process)
+        raise
+
+
+def chrome_processes(profile_directory):
+    """Processes started with this run's Chrome profile. Chrome runs in a process group of its own, so ending the
+    Node process that launched it does not end it; the profile path is unique to the run."""
+    marker = '--user-data-dir=' + str(profile_directory)
+    listing = subprocess.run(['/bin/ps', '-axww', '-o', 'pid=,command='], capture_output=True, text=True,
+                             timeout=20, check=True).stdout
+    found = []
+    for line in listing.splitlines():
+        pid, _, command = line.strip().partition(' ')
+        if command.endswith(marker) or (marker + ' ') in command:
+            found.append(int(pid))
+    return found
+
+
+def end_chrome(profile_directory, grace=3):
+    """End every process of this run's Chrome still running `grace` seconds after whatever launched it stopped:
+    SIGTERM, then SIGKILL. The count of processes that had to be ended (0 when Chrome closed as it should)."""
+    deadline = time.monotonic() + grace
+    while chrome_processes(profile_directory) and time.monotonic() < deadline:
+        time.sleep(0.2)
+    found = chrome_processes(profile_directory)
+    for number in (signal.SIGTERM, signal.SIGKILL):
+        for pid in chrome_processes(profile_directory):
+            try:
+                os.kill(pid, number)
+            except (ProcessLookupError, PermissionError):   # gone, or no longer the process that was listed
+                pass
+        deadline = time.monotonic() + 5
+        while chrome_processes(profile_directory) and time.monotonic() < deadline:
+            time.sleep(0.2)
+    return len(found)
 
 
 def load_grammar():

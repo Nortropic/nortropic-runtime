@@ -17,8 +17,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-import signal
-import subprocess
 import sys
 import tempfile
 import time
@@ -290,24 +288,9 @@ def run(argv=None):
     from .profile import environment
     (run_directory / 'start.json').write_text(json.dumps({'argv': argv_used, 'cwd': str(workspace)}, indent=1,
                                                          ensure_ascii=False) + '\n')
-    stream = (run_directory / 'strom.jsonl').open('wb')
-    begun, end = time.monotonic(), 'exit'
-    process = subprocess.Popen(argv_used, cwd=workspace, env=environment(), stdin=subprocess.PIPE, stdout=stream,
-                               stderr=subprocess.STDOUT, start_new_session=True)
-    try:
-        process.stdin.write(prompt.encode())
-        process.stdin.close()
-        exit_code = process.wait(timeout=args.tid)
-    except subprocess.TimeoutExpired:
-        end = 'tidsgrans'
-        os.killpg(process.pid, signal.SIGTERM)
-        try:
-            exit_code = process.wait(timeout=30)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGKILL)
-            exit_code = process.wait(timeout=10)
-    finally:
-        stream.close()
+    begun = time.monotonic()
+    with (run_directory / 'strom.jsonl').open('wb') as stream:
+        exit_code, end = common.run_session(argv_used, workspace, environment(), prompt, stream, args.tid)
     seconds = round(time.monotonic() - begun, 1)
     events = read_rows(run_directory / 'strom.jsonl')
     if args.utforare == 'claude':
@@ -365,7 +348,11 @@ def run(argv=None):
 
 if __name__ == '__main__':
     try:
-        sys.exit(run())
+        with common.stop_signals():
+            sys.exit(run())
     except (ValueError, OSError) as error:
         print(json.dumps({'outcome': 'vagrad', 'reason': str(error)}, ensure_ascii=False))
         sys.exit(2)
+    except common.Stopped as error:
+        print(json.dumps({'outcome': 'avbruten', 'reason': str(error)}, ensure_ascii=False))
+        sys.exit(3)

@@ -3,7 +3,7 @@
 // Holds one headless Chrome for one session behind four layers that apply to the WHOLE browser, not only to the
 // address a visitor names: (1) a local proxy that every request must pass, which lets through only the allowlist's
 // host:port and answers everything else with 403 without connecting; (2) host rules that resolve every other name to
-// "not found"; (3) request interception on the page, which aborts and logs anything outside the allowlist; (4) popup
+// "not found", except the proxy's own address; (3) request interception on the page, which aborts and logs anything outside the allowlist; (4) popup
 // windows and new tabs, closed as they appear. After every action the page's address is checked again.
 //
 // The visitor never reaches this process over a socket. It writes one request file into the workspace queue, which
@@ -27,11 +27,15 @@ import { compileGrammar, pageAllowed as pageRule, validateAction } from './gramm
 const secret = process.env.NR_UNDANTAG || null;
 delete process.env.NR_UNDANTAG;
 const config = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+// Until the full stop further down is armed (after Chrome and the start page): should the command that started this
+// holder die without stopping it (SIGKILL), end at once; puppeteer's own exit hook ends a Chrome it has launched (D035).
+const earlyOrphanCheck = setInterval(() => { if (process.ppid === 1) process.exit(3); }, 1000);
 const grammar = JSON.parse(readFileSync(config.grammar_path, 'utf8'));
 const PATTERNS = compileGrammar(grammar);
 const puppeteer = (await import(pathToFileURL(join(config.tools_dir, 'puppeteer-core/lib/puppeteer/puppeteer-core.js')).href)).default;
 
 const allowed = config.allowed_origins;
+const PROXY_HOST = '127.0.0.1';
 mkdirSync(config.trace_dir, { recursive: true });
 for (const dir of [config.answer_dir, config.shots_dir]) mkdirSync(dir, { recursive: true });
 const traceFile = join(config.trace_dir, 'trace.jsonl');
@@ -66,16 +70,17 @@ proxy.on('connect', (req, socket) => {
   const upstream = net.connect(Number(port), host, () => { socket.write('HTTP/1.1 200 Connection Established\r\n\r\n'); upstream.pipe(socket); socket.pipe(upstream); });
   upstream.on('error', () => socket.destroy()); socket.on('error', () => upstream.destroy());
 });
-await new Promise((r) => proxy.listen(0, '127.0.0.1', r));
+await new Promise((r) => proxy.listen(0, PROXY_HOST, r));
 
-// Layer 2: host rules.
-const hosts = [...new Set(allowed.map((o) => new URL(o).hostname))];
+// Layer 2: host rules. The proxy's own address stays resolvable: otherwise a target not named 127.0.0.1 leaves the
+// browser unable to reach its proxy at all (found by Digitala's deployment test on 2026-09-26; D035).
+const hosts = [...new Set([...allowed.map((o) => new URL(o).hostname), PROXY_HOST])];
 const resolverRules = ['MAP * ~NOTFOUND', ...hosts.map((h) => `EXCLUDE ${h}`)].join(', ');
 const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/SECRET|TOKEN|KEY|PASSWORD|CREDENTIAL|BYPASS|UNDANTAG/i.test(k)));
 const browser = await puppeteer.launch({
   executablePath: config.chrome_path, headless: true, protocolTimeout: 60000, userDataDir: config.profile_dir, defaultViewport: null, env,
   args: ['--no-first-run', '--no-default-browser-check', '--disable-extensions', '--lang=sv-SE',
-    `--proxy-server=127.0.0.1:${proxy.address().port}`, '--proxy-bypass-list=<-loopback>', `--host-resolver-rules=${resolverRules}`,
+    `--proxy-server=${PROXY_HOST}:${proxy.address().port}`, '--proxy-bypass-list=<-loopback>', `--host-resolver-rules=${resolverRules}`,
     '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--remote-debugging-port=0'],
 });
 
@@ -119,7 +124,9 @@ if (secret) {
   await page.goto('about:blank').catch(() => {});
 }
 const start = await page.goto(config.start_url, { waitUntil: 'networkidle2', timeout: 45000 }).catch((e) => ({ error: String(e.message) }));
-append(traceFile, { kind: 'start', url: page.url(), status: start && !start.error && start.status ? start.status() : null, primed });
+const startStatus = start && !start.error && start.status ? start.status() : null;
+const startError = start && start.error ? start.error.slice(0, 200) : null;
+append(traceFile, { kind: 'start', url: page.url(), status: startStatus, error: startError, primed });
 
 // The grammar, applied here as the authority: the visitor's own command and the Claude guard apply it too, but
 // only this process can act on the browser.
@@ -277,11 +284,17 @@ async function poll() {
   } finally { busy = false; }
 }
 
-writeFileSync(config.ready_file, JSON.stringify({ ready: true, primed, start: page.url(), proxy: `127.0.0.1:${proxy.address().port}`, resolver_rules: resolverRules }) + '\n');
+writeFileSync(config.ready_file, JSON.stringify({ ready: true, primed, start: page.url(), start_status: startStatus, start_error: startError,
+  proxy: `${PROXY_HOST}:${proxy.address().port}`, resolver_rules: resolverRules }) + '\n');
 const timer = setInterval(() => { poll().catch((e) => append(traceFile, { kind: 'holder-error', reason: String(e.message).slice(0, 200) })); }, 100);
 
+let stopping = false;
 async function shutdown() {
+  if (stopping) return;
+  stopping = true;
   clearInterval(timer);
+  clearInterval(orphanCheck);
+  clearInterval(earlyOrphanCheck);
   while (busy) await new Promise((r) => setTimeout(r, 50));
   try { await browser.close(); } catch {}
   rmSync(config.profile_dir, { recursive: true, force: true });
@@ -292,3 +305,6 @@ async function shutdown() {
 }
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
+// Should the command that started this holder die without stopping it (SIGKILL), stop with it (D035).
+const orphanCheck = setInterval(() => { if (process.ppid === 1) shutdown(); }, 1000);
+clearInterval(earlyOrphanCheck);

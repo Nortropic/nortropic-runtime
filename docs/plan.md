@@ -9,7 +9,7 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034) integrerade; release, startövning och övergång väntar på ägarens beslut
+# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034, rättad i D035) integrerade; release, startövning och övergång väntar på ägarens beslut
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
@@ -17,6 +17,14 @@ LÄGE 2026-09-26: ägaren beställde de profiler som Digitala saknar i motorn: m
 och utförarneutralt (kontorets RUNTIME-PROFILER-BEREDNING-20260926, RUNTIME-PROFILER-KONTRAKT-20260926 och
 RUNTIME-PROFILER-KANDIDAT-20260926). Beslutet här är D034. Kandidaten byggdes i en egen arbetsyta på `d5a44064` och
 integreras genom denna publicering, efter separat granskning. Integrationen aktiverar ingenting.
+
+LÄGE 2026-09-26 sent: D034 är integrerad (PR 64). Kontorets Digitala-fall fann därefter i sin egen hållare, som D034:s
+följer, att värdreglerna gjorde proxyns egen adress oupplösbar när målet inte heter 127.0.0.1. Samma fel uppmättes
+modellfritt i D034:s hållare. Under mutationsprovet av rättningen visade sig också att en körning som avbröts (fel,
+Ctrl-C, SIGTERM eller tidsgräns i mätningen) lämnade modellsession, hållare eller Chrome kvar. D035 rättar båda, låter
+ingen modell starta när startsidan inte öppnades och integreras genom en egen publicering efter separat granskning i
+två rundor.
+D034:s modellsessioner kördes inte om (D035 anger skälet).
 
 Prövat före integrationen (D034): hela sviten (585 prov), värdproven med eget kvitto (verktygen, spärrprov A, B och C
 för Claude-vägen och Codex-vägen, mätningen av en adress, en lokal fil och en skyddad adress), och med modell på exakt
@@ -28,7 +36,8 @@ modellvalet orörda. Profilerna finns bara i kandidatens och mains kod, inte i d
 
 Kvar före övergången, när ägaren beslutar om den:
  1. En release som stegas med exakt de nya filerna och samma modellval.
- 2. En egen isolerad startövning på en port- och rotförskjuten kopia.
+ 2. En egen isolerad startövning på en port- och rotförskjuten kopia, med spärrprov A och en provarkörning per
+    utförare mot ett lokalt provmål som inte heter 127.0.0.1 (D035).
  3. Ägarens övergång med ett komplett kommando (`LC_ALL=C`, färsk kontroll, bindningar, driftpåverkan och
     återhämtningsväg). Därefter körs profilerna som den aktiva releasens egen kopia.
 

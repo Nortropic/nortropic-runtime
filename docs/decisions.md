@@ -1526,3 +1526,65 @@ deployment check (it needs a Vercel login the engine does not have); running any
 Integration activates nothing. Not shown here, and left to the owner's decision on the transition: the release with its
 own isolated start rehearsal, and the transition itself. Until then the profiles run only from a checkout of this
 code, and each receipt says whether that was the active release.
+
+## D035 — 2026-09-26: the visitor reaches its own proxy for every target, no model starts on a start page that did not open, and a stopped run leaves none of its processes running
+
+Found after D034's integration. First by the Office's Digitala case, in its own holder, which D034's holder follows: the
+host-resolver rules mapped every name to "not found" except the allowlist's host names. The proxy's own address,
+127.0.0.1, stayed resolvable only because every local barrier test named its target 127.0.0.1; against a target with
+another name the browser could not reach its proxy at all (`net::ERR_PROXY_CONNECTION_FAILED`). Measured the same in
+D034's holder, model-free, with a local site named `localhost`: the site received no request, the holder still reported
+ready with the start page at `about:blank`, and a visitor session would have started on Chrome's error page. Then, while
+proving the fix by mutation: the model CLI, the holder and its Chrome, and the measurement's Node and its Chrome each
+run in a session of their own, so that they can be ended with their whole group, and nothing ended them when a run did
+not finish normally. An error after the holder started (a refused subscription check, say), Ctrl-C, or SIGTERM to the
+command (a terminal closing, a driver's tool timing out) left the model session running without its time limit, and the
+holder and a headless Chrome with the run's profile running indefinitely; a measurement over its time limit killed Node
+and left its Chrome running, since Chrome runs in a process group of its own.
+
+Decision:
+- The proxy's own address is always among the names the holder's host rules exclude. For a target named 127.0.0.1 the
+  rule set is byte for byte the one every barrier test and model session of D034 ran with; for any other target it is
+  that set plus the target's name. The proxy and the request interception decide what the browser reaches, as before.
+- The holder reports the start page's status and navigation error in its ready file and its trace. The visitor starts
+  no model unless the start page opened without an error, with a status below 400, inside the allowlist; otherwise the
+  run closes with its receipt as `start_misslyckades`, the holder stopped and the Chrome profile removed, and no model
+  command is built. That receipt has no assessment block and the run no `KONTROLL.md`, since no scenario ran.
+- A run that does not end normally leaves none of its processes running. The model CLI of the critique and the visitor
+  runs through one shared function that ends its whole group on the time limit and on any error or interrupt before the
+  exception goes on. The visitor stops its holder whatever happens after the start, and the measurement ends Node's
+  group on its time limit or an interrupt. After every holder and every measurement, any process still started with the
+  run's Chrome profile is ended (SIGTERM, then SIGKILL; the path is unique to the run); the count is in the receipt
+  (`chrome_running_after_stop`), recorded rather than an outcome, and only the barrier check requires it to be 0.
+- The three commands turn Ctrl-C, SIGTERM and SIGHUP into an exception, so this cleanup also runs when the command is
+  stopped; the first of them turns all three off until the command ends, so a second cannot cut the cleanup short. Such
+  a run ends `avbruten` (exit 3) without a receipt. Its directory and temporary workspace stay as they were, nothing in
+  them counts, and they are not searched for the protection value, which the holder and the measurement never write.
+- Should the command be killed outright (SIGKILL), which no cleanup of its own can survive, the holder ends itself
+  within seconds from its start on (before its full stop is armed it simply exits, and puppeteer's exit hook ends the
+  Chrome it launched), and the measurement from the moment its Chrome is up, about a second after its start. A model
+  CLI whose command was killed that way is not ended by anything here; it ends by itself.
+- Not covered: on the model CLI's own normal exit, what it may have left behind is not swept. A process the model
+  itself detaches inside the Codex sandbox keeps the sandbox's limits (no network; writes only to the queue, scratch
+  and `/tmp`).
+
+Tests: eight more in `scripts/test_web_profiles.py` (43): the start rule over error, status and origin cases; a run
+whose start page failed, with the holder and both model command builders stood in, which must end `start_misslyckades`
+without building a model command; a stand-in model CLI with a grandchild, which must be ended with its whole group on
+the time limit and on an interrupt, and report its exit otherwise; the stop signals, each of which must raise and turn
+all three off, and the handlers restored afterwards; the Chrome sweep, which must end exactly the processes of the named
+profile (a path with a space, beside a profile whose path extends it); and the visitor stopping its holder and Chrome
+after an error. Eight more host checks (13), with the real Chrome: the holder reaches a local site named `localhost`,
+whose log shows only that name; a real run against a closed local port stops before any model; a measurement over its
+time limit, a visitor failing after its holder started, and a measurement command stopped by SIGTERM leave no process
+of the run behind, the last checked the moment the command has exited; a killed measurement command, a killed holder's
+command, and a holder's command killed during its start navigation leave nothing behind within twenty seconds (the
+first and the last against a local address that never answers, so that nothing can finish by itself in the window).
+Each of the new checks fails without the part of this change it names, for that reason, measured by mutation: with
+D034's host rule the first ends in `net::ERR_PROXY_CONNECTION_FAILED`, exactly as in Digitala's case.
+
+Not rerun: D034's model sessions. The guard, the grammar, the action command, the workspace, the sandbox table and
+both executors' command lines are D034's, byte for byte or unchanged by syntax tree; what changed around the model is
+how its process is ended. Assessed, not measured with a model: the conclusions of D034's model sessions carry over,
+since their targets were named 127.0.0.1 and none of them ended other than normally. A visitor session against a
+target with another name, and barrier test A with such a target, are left to the release's start rehearsal.
