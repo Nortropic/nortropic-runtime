@@ -1434,3 +1434,95 @@ Shown after integration, 2026-09-25, after Aquarium's endurance test (Office RUN
 - Open, not attributed to D033: during this change's protected publication one unnamed test of the whole suite failed
   in 2 of 16 runs, both direct publisher dry runs; 13 runs whose output was kept, and the publication itself, were
   green (Office `evidence/granskningsbudget/local/runtime-publication-DIAGNOSTIC-NOTE.md`, private). Not diagnosed.
+
+## D034 — 2026-09-26: three web profiles in the engine - measurement, critique and visitor - one path for both executors
+
+Owner order of 2026-09-26 (Office RUNTIME-PROFILER-BEREDNING-20260926, RUNTIME-PROFILER-KONTRAKT-20260926 and
+RUNTIME-PROFILER-KANDIDAT-20260926): a management function is a shell of profiles in the engine. The Office's Digitala
+had only review and publication there; its screenshots, measurements, critique and AI browser tests ran outside the
+engine, with the chain driver's own scripts and only with Claude Code. This change gives it the missing profiles, built
+once, business-neutral and executor-neutral. The concept step and the build itself stay in today's flow.
+
+Measured before building (model-free, with Runtime's own `sandbox_command`): the sandbox denies every socket, loopback
+included (curl exit 7, Node EPERM), and every read under the home directory outside the granted workspace; `/tmp` and
+`/private/tmp` are always writable and `/etc` readable, and entries `none` or `read` in the filesystem table do not
+narrow them. `runtime/snapshot.read_regular` refuses inputs over 262,144 bytes. Closed engine executions disappear
+after the one-day retention (AP11-DAEMON-HISTORY).
+
+Decision:
+- The profiles are host commands, not engine workflows: `runtime.web_measure`, `runtime.web_critique` and
+  `runtime.web_visitor`, with shared ground in `runtime/web_common.py` and the browser halves under `runtime/web/`.
+  Each run gets its own directory under `.runtime/profiler/<profile>/`, created exclusively and closed by `KVITTO.json`
+  with the SHA256 of every file in it, the code bytes that ran and the tool identities; nothing depends on engine
+  history. The daemon, the worker, AP-10 and the model choice are unchanged.
+- Measurement, no model: one address or local file in two fixed views (390 at 2x, 1440), first view, sections (only
+  where the page extends) and the whole page, heading lines and the named action in view, axe, Lighthouse, and
+  Impeccable's detector on a self-contained snapshot per view (the rendered DOM without scripts, every stylesheet
+  inlined through the browser's CSS channel), run inside the sandbox with no network. A local file is served read-only
+  on 127.0.0.1 for the run.
+- Critique: a reader with fixed underlag that answers in a given JSON schema. The underlag is a manifest of absolute
+  sources, copied by the host (regular files, no link on the path, hashed while copying; 16 MiB a file, 128 MiB and 200
+  files a run) - not task input, so the 256 KiB bound does not apply and is not changed. Claude reads through the
+  restricted file-tool profile with `--json-schema` (tools exactly Read and StructuredOutput); Codex through a
+  read-only sandbox without network, `--output-schema`, and every image attached. The host validates the answer against
+  a closed dialect (every object closed, every property required).
+- Visitor: a real headless Chrome held by the host behind a proxy that passes only the allowlist, host-resolver rules,
+  request interception and closed popups. The model reaches it only through a file queue: `./handling <action>` writes
+  one request into `.ko/` and waits for the answer in `svar/`, which it cannot write; the holder checks every request
+  against the one grammar (`runtime/web/grammar.json` and `grammar.mjs`, the latter inlined into the command) and
+  traces it outside the workspace. That works inside the Codex sandbox, which allows no socket. Claude runs Read and
+  Bash behind a PreToolUse guard (Bash only exactly the action command, Read only inside the workspace, everything else
+  denied and logged); Codex runs in the sandbox with writes only to the queue and scratch. Workspaces lie outside every
+  repository, so neither CLI loads a project's instructions. Before any model starts, the model-free host check of the
+  barriers must have passed for exactly these bytes, this Chrome and this Node; otherwise it runs first.
+- The protection exception (today only the Vercel automation exception) comes only from a private file (exactly 0600,
+  owned, one line of at least 16 characters, never under `/tmp`, `/etc` or `/var/folders`, never in the run area), goes to one browser process through
+  its environment, is attached only to requests for the target origin while priming, then travels as the cookie in a
+  temporary profile that is removed. Every output file is searched for it (plain, URL-encoded, base64); a hit removes
+  the file and names the run `hemlighet_i_utdata`.
+- Tools: Runtime keeps its own copy of the already installed packages (puppeteer-core 25.12.0, axe-core 4.13.0,
+  Lighthouse 13.5.0, chrome-launcher 1.2.1 and their dependencies, 115 package directories, no install scripts) under
+  `.runtime/web-tools/`, bound tree by tree to `config/web-tools.lock.json` (`scripts/install_web_tools.py`), and of
+  Impeccable's engine 0.1.6 in `.runtime/bin`, bound by SHA256 - the D023 pattern. Nothing is downloaded. Chrome and
+  Node are recorded per run, not pinned.
+- The model is a parameter (`--utforare`, `--modell`); no fallback, no automatic retry, no executor switch; a provider
+  refusal is recorded in its own words.
+
+Properties to know, measured: in the Codex path `/etc` is readable, `/` listable, commands can be chained and `/tmp` is
+writable, since that path has no guard; none of it reaches the network or anything outside the workspace. Codex's
+`exec --json` stream does not report every call: `view_image` never appears, and in all four Codex barrier runs exactly
+the calls the sandbox or the patch tool denied were missing from the stream, while the model's report quoted those
+denials in the sandbox's and Codex's own words ("Operation not permitted", "patch rejected: writing outside of the
+project") and other failures (curl's exit 7, a failed interpreter) were reported. Every browser action is traced by the
+holder on both paths; the visitor's receipt keeps the stream's commands in `spar/kommandon.jsonl`, and for Codex's other
+calls the evidence is the sandbox's model-free decisions, never the model's report. That the Codex visitor looks at its
+screenshots is shown by a code that exists only in the rendered image. `select` picks the option by its visible text
+without Enter, which in a form submitted it. Codex re-executes itself inside the sandbox to load instructions, so it is
+named by its real path.
+
+Tests: `scripts/test_web_profiles.py` (35) without a browser or a model - one grammar corpus through the Python rule,
+the JavaScript module and the action command against a stand-in holder, the address rule, the guard's decisions and
+the guard as a hook, the secret rules and the search, the manifest and the bounded copy, the schema dialect and the
+validation, both executors' command lines, the terminal classifications, the receipts and the tool lock. The whole
+suite: 585 tests. Host checks, outside the discovered suite with their own receipt (`scripts/hostcheck_web_profiles.py`
+through `scripts/run_web_host_checks.py`, bound to the commit, the exercised bytes, the import map and the tool
+identities): the pinned tools; barriers A (browser boundary), B (tool and data boundary, model-free) and C (secret and
+isolation) for the Claude path and the Codex path against local sites; the measurement of an address, a local file and
+an address behind a fake protection with the value found nowhere.
+
+With models, on exactly these code bytes, against the same local sites, judged from the traces and the sites' own logs,
+not from the model's report: the thirteen-step barrier test B per executor (Claude: all thirteen steps in the guard's
+log, five allowed and eight denied, the foreign address refused by the holder; Codex: the network denied, the foreign
+address refused by the holder, the repository read and the workspace writes denied by the sandbox as its own words in
+the model's report show, and `/etc`, `/`, chaining and `/tmp` as measured; the foreign site received nothing from
+either); the visitor scenario per executor with the form posted as asked and the image-only code reported; the critique
+per executor with a schema-valid answer and every image opened (Claude, from the stream) or attached (Codex, read back
+from the command line). Six sessions on these bytes. Fifteen earlier ones are kept as history: seven on work-in-progress
+states (one never reached the provider) and eight on the first reviewed commit, whose separate review led to the
+receipts and hardening now in place. All within the existing subscriptions.
+
+Left outside: the concept step and the build; site-specific product tests (they stay in the site's repository); the
+deployment check (it needs a Vercel login the engine does not have); running anything against a real customer site.
+Integration activates nothing. Not shown here, and left to the owner's decision on the transition: the release with its
+own isolated start rehearsal, and the transition itself. Until then the profiles run only from a checkout of this
+code, and each receipt says whether that was the active release.

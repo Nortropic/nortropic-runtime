@@ -313,3 +313,40 @@ When the chosen model has no capacity, the run waits exactly as before and the h
 whether that model is still the chosen one; the record itself, under `.runtime/ap10/model-questions/`, holds the two
 choices with the exact commands and the models qualified for that executor. Waiting needs no action. Nothing is
 switched until the owner runs the tool, and buying credits or upgrades is never one of the choices.
+
+## The web profiles (D034)
+
+Three host commands for a management function's recurring steps: `runtime.web_measure` (no model),
+`runtime.web_critique` and `runtime.web_visitor` (model as a parameter). After the owner's transition they run only as
+the active release's own copy, with the host root named; before it only from a candidate checkout, and the receipt says
+which. Run from the code root:
+
+    NR_HOST_ROOT="<runtime>" "<runtime>/.runtime/temporal-venv/bin/python" -B -m runtime.web_measure \
+        --mal https://... | --fil /absolute/page.html  --etikett NAME [--sektioner 2] [--delar skarm,rubrik,axe,lighthouse,detektor] \
+        [--handling-text TEXT | --handling-selektor CSS] [--undantag-fil /private/file]
+    ... -m runtime.web_critique --underlag MANIFEST.json --fraga FRAGA.md --schema SCHEMA.json \
+        --utforare claude|codex --modell NAME --etikett NAME [--tid 1200]
+    ... -m runtime.web_visitor --start URL --tillatna ORIGIN[,ORIGIN] --uppgift UPPGIFT.md --vy mobil|desktop \
+        --utforare claude|codex --modell NAME --etikett NAME [--max-handlingar 40] [--tid 1200] [--undantag-fil FILE] \
+        [--bindning key=value ...]
+
+Each run writes `.runtime/profiler/<matning|kritik|provare>/<UTC time>-<label>/`, closed by `KVITTO.json` and
+`KVITTO.sha256`; read the receipt's `outcome` first. Nothing is written into a repository, published or deployed, and
+no run is retried automatically. A protection exception is only ever a private file (exactly 0600, one line of at least
+16 characters, outside `/tmp`, `/etc`, `/var/folders` and the run area); never pass the value on a command line.
+
+The visitor starts no model until the model-free host check of its barriers has passed for exactly the current bytes,
+Chrome and Node (`.runtime/profiler/vardprov/godkant-<identity>.json`); otherwise it runs that check first (about a
+minute). Whether a scenario succeeded is decided by a separate reading of `KONTROLL.md`, the trace and the site, never
+by the visitor's own report.
+
+Tools: the pinned copy is installed once from an existing npm install whose lock names the same versions, and is
+checked tree by tree against `config/web-tools.lock.json`; nothing is downloaded:
+
+    "<runtime>/.runtime/temporal-venv/bin/python" -B scripts/install_web_tools.py --source <existing node_modules>
+    "<runtime>/.runtime/temporal-venv/bin/python" -B scripts/install_web_tools.py --check
+
+The engine binary is `.runtime/bin/impeccable-0.1.6`, checked by SHA256 at every measurement. Host checks, outside
+the published suite, with their own receipt:
+
+    "<runtime>/.runtime/temporal-venv/bin/python" -B scripts/run_web_host_checks.py <new receipt path>

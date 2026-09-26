@@ -9,9 +9,35 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# GRANSKNINGSBUDGET — GÄLLANDE INGÅNG: genomfört och aktivt sedan övergång 16 (kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925)
+# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034) integrerade; release, startövning och övergång väntar på ägarens beslut
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE 2026-09-26: ägaren beställde de profiler som Digitala saknar i motorn: mätning, kritik och provare, byggda en gång
+och utförarneutralt (kontorets RUNTIME-PROFILER-BEREDNING-20260926, RUNTIME-PROFILER-KONTRAKT-20260926 och
+RUNTIME-PROFILER-KANDIDAT-20260926). Beslutet här är D034. Kandidaten byggdes i en egen arbetsyta på `d5a44064` och
+integreras genom denna publicering, efter separat granskning. Integrationen aktiverar ingenting.
+
+Prövat före integrationen (D034): hela sviten (585 prov), värdproven med eget kvitto (verktygen, spärrprov A, B och C
+för Claude-vägen och Codex-vägen, mätningen av en adress, en lokal fil och en skyddad adress), och med modell på exakt
+dessa byte mot lokala provsajter spärrprov B, besöksscenariot och kritiken för båda utförarna. Inget kördes mot en kunds
+sajt. Codex-strömmen redovisar inte varje anrop (D034); webbläsarens hållare spårar varje handling i båda vägarna.
+
+Drift nu: oförändrad. Aktiv konfiguration `e814c757` (runtime `a9a5eca1`, kontoret `df5ed5dc`), AP-10:s schema och
+modellvalet orörda. Profilerna finns bara i kandidatens och mains kod, inte i den aktiva releasen.
+
+Kvar före övergången, när ägaren beslutar om den:
+ 1. En release som stegas med exakt de nya filerna och samma modellval.
+ 2. En egen isolerad startövning på en port- och rotförskjuten kopia.
+ 3. Ägarens övergång med ett komplett kommando (`LC_ALL=C`, färsk kontroll, bindningar, driftpåverkan och
+    återhämtningsväg). Därefter körs profilerna som den aktiva releasens egen kopia.
+
+Verktygskopian under `.runtime/web-tools/` och motorn `.runtime/bin/impeccable-0.1.6` är installerade på värden och
+kontrollerade mot låset; de ändrar ingen drift.
+
+# GRANSKNINGSBUDGET — HISTORIK: genomfört och aktivt sedan övergång 16 (kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925)
+
+Historik sedan 2026-09-26; den gällande ingången står ovan.
 
 LÄGE 2026-09-25: ägaren accepterade byggbeslutet RUNTIME-GRANSKNINGSBUDGET-BEREDNING-20260925 (kontorets PR 55) med
 preciseringar (kontorets RUNTIME-GRANSKNINGSBUDGET-ACCEPT-20260925, PR 56). Beslutet här är D033: en uttrycklig
