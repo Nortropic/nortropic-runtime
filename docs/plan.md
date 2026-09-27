@@ -9,9 +9,31 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034, rättade i D035 och D036) aktiva sedan övergång 17; inget steg kvar
+# MÄTPROFILENS PARAMETRAR — GÄLLANDE INGÅNG: vyer och axe-taggar som förvaltningens parametrar (D037) integrerade; övergång 18 förbereds; aktiveringen är ägarens
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+
+LÄGE 2026-09-27: ägaren beställde ombyggnaden till målbilden (kontorets OMBYGGNAD-20260927, etapp 4): generisk
+mätmekanik skiljs från Digitalas professionella val. Beslutet här är D037: `runtime.web_measure` tar `--vyer` och
+`--axe-taggar` med D034:s värden som standard, bokför i kvittot vad som kördes och om standardvärdena användes, och
+anger `PARAMETRAR` så att en anropare kan läsa ur koden att den tar dem. Kandidaten byggdes i en egen arbetsyta på
+`b603d91` och integreras genom denna publicering, efter separat granskning. Integrationen aktiverar ingenting.
+
+Drift nu: oförändrad. Aktiv konfiguration `03e776bd` (runtime `3fdf7f21`, kontoret `df5ed5dc`), AP-10:s schema och
+modellvalet orörda. Parametrarna finns bara i mains kod, inte i den aktiva releasen; en anropare som läser den aktiva
+kodens `PARAMETRAR` ser det.
+
+Kvar före övergången, i ordning:
+ 1. En release som stegas med exakt de två ändrade filerna (`runtime/web_measure.py`, `scripts/test_web_profiles.py`)
+    och samma modellval (övergång 18, härledd ur 17).
+ 2. En egen isolerad startövning på en port- och rotförskjuten kopia, med en mätning med en tredje vy ur releasens egen
+    kopia mot en lokal fil, och kvittot läst.
+ 3. Ägarens övergång med ett komplett kommando (`LC_ALL=C`, färsk kontroll, bindningar, driftpåverkan och
+    återhämtningsväg), utanför AP-10:s fönster. Därefter körs profilen som den aktiva releasens egen kopia med parametrarna.
+
+# WEBBPROFILER — HISTORIK: mät-, kritik- och provarprofilerna (D034, rättade i D035 och D036) aktiva sedan övergång 17
+
+Historik sedan 2026-09-27; den gällande ingången står ovan.
 
 LÄGE 2026-09-26: ägaren beställde de profiler som Digitala saknar i motorn: mätning, kritik och provare, byggda en gång
 och utförarneutralt (kontorets RUNTIME-PROFILER-BEREDNING-20260926, RUNTIME-PROFILER-KONTRAKT-20260926 och

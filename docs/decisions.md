@@ -1641,3 +1641,38 @@ RUNTIME-PROFILER-OVERGANG-FORBEREDD-20260927):
   unpaused, next run 2026-09-28 07:00Z; the closed AP-11 commitment, AP-10's command and the web tools were read back
   without a problem. A measurement run from the active release's own copy against a local site ended `klar`, its receipt
   naming the active release as its code root.
+
+## D037 — 2026-09-27: the measurement profile's views and axe tags are the management function's parameters, with D034's values as defaults
+
+Owner order of 2026-09-27 (the Office's OMBYGGNAD-20260927: "Separera generisk mätmekanik från Digitalas professionella
+val av kriterier, mätprofiler och standardvärden. Gör nödvändiga professionella standardvärden konfigurerbara där det
+behövs för målbilden. Bevara pinnade verktygsidentiteter, reproducerbarhet och bindningen till en bestämd körning."):
+D034 froze two views (390 at 2x, 1440) and six axe tags in `runtime/web_measure.py`. They are Digitala's professional
+choice (WCAG 2.2 AA, the brief's reading conditions), not the engine's requirement; frozen in the engine, a new
+standard or a new device class would need a Runtime release for what is a management function's decision.
+
+Decision:
+- `runtime.web_measure` takes `--vyer NAME=WIDTHxHEIGHT@SCALEm|d,...` (1-4 unique lowercase names, 320-2560 by 320-2000,
+  scale 1-3, `m` mobile with touch or `d` desktop) and `--axe-taggar TAG,...` (1-12 unique axe tag names). Absent, the
+  profile runs exactly D034's values, so every existing caller and the host checks measure as before.
+- The module states `PARAMETRAR = ('vyer', 'axe-taggar')`, so a caller can read from the code it runs whether it takes
+  them; the Office's Digitala runner sends its `matning/PROFIL.json` values when it does and otherwise requires them to
+  equal the frozen ones.
+- The receipt records `viewports` and `axe_tags` as run, and under `parameters` the raw arguments and `standardvarden`
+  (whether each default was used). The summary and the detector follow the run's views, not the constants.
+- Nothing else in the profile changes: the browser half already takes views and tags from the configuration file;
+  the tool identities, the sandboxed detector, the snapshot, the secret rules and the receipt are unchanged.
+
+Tests: two more in `scripts/test_web_profiles.py` (49): the parse with the defaults, with both parameters, with the
+defaults spelled out, and with ten bad view forms and six bad tag forms refused before anything runs; the summary
+following the given views. Measured by mutation before review: dropping the repeated-name check, the size range or the
+tag character rule fails the first test for that reason; ignoring the given views in `summary` fails the second. The
+receipt's new fields and the configuration hand-over to the browser half were exercised before review by a real
+measurement from this candidate against a local file with three views (`mobil-390`, a third `platta-820` at 820x1180@2
+mobile, `desktop-1440`) and three tags (`wcag2a,wcag2aa,wcag22aa`), label `d037-tre-vyer`, 2026-09-27 08:42Z: outcome
+`klar`, nine screenshots (first view, one section and the whole page per view), h1 lines and the named action measured
+in every view, axe run with the given tags in every view, and the receipt recording the three views, the three tags
+and `standardvarden` false for both. The host checks (13) run with the defaults and are unchanged.
+
+Left outside: the visitor and critique profiles have no professional defaults to move; the sections count, parts and
+action are already parameters. The Office's KONTRAKT gets a version 5 naming the two parameters.
