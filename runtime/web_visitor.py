@@ -164,14 +164,20 @@ def start_holder(run, workspace, start, allowed, view, max_actions, secret_kind=
     process = subprocess.Popen([str(common.NODE), str(common.WEB / 'holder.mjs'), str(run / 'hallare-konfig.json')],
                                cwd=run, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     deadline = time.monotonic() + READY_SECONDS
-    while not (run / 'hallare-klar.json').exists():
-        if process.poll() is not None or time.monotonic() > deadline:
+    try:
+        while not (run / 'hallare-klar.json').exists():
+            if process.poll() is not None or time.monotonic() > deadline:
+                raise RuntimeError('The browser holder did not become ready (see hallare.log)')
+            time.sleep(0.2)
+    except BaseException:
+        # Also on an error or an interrupt while it starts: the holder, its Chrome and its profile end at once (D036).
+        with common.shielded():
             stop_holder(process)
             common.end_chrome(profile_directory)
-            log.close()
-            raise RuntimeError('The browser holder did not become ready (see hallare.log)')
-        time.sleep(0.2)
-    log.close()
+            shutil.rmtree(profile_directory, ignore_errors=True)
+        raise
+    finally:
+        log.close()
     return process, json.loads((run / 'hallare-klar.json').read_text())
 
 
@@ -370,9 +376,12 @@ def run(argv=None):
     try:
         return visit(args, started, tools, checked, secret, run_directory, temporary, workspace, holder, ready)
     finally:
-        # Also after an error or an interrupt: neither the holder nor its Chrome outlives the run (D035).
-        stop_holder(holder)
-        common.end_chrome(run_directory / '.chrome-profil')
+        # Also after an error or an interrupt: neither the holder nor its Chrome outlives the run (D035); no stop signal
+        # cuts this short, and the Chrome profile, which after priming holds the protected host's cookie, goes (D036).
+        with common.shielded():
+            stop_holder(holder)
+            common.end_chrome(run_directory / '.chrome-profil')
+            shutil.rmtree(run_directory / '.chrome-profil', ignore_errors=True)
 
 
 def visit(args, started, tools, checked, secret, run_directory, temporary, workspace, holder, ready):

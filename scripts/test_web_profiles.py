@@ -682,18 +682,68 @@ class ChildProcessTests(unittest.TestCase):
                     process.kill()
                     process.wait()
 
+    def test_cleanup_is_shielded_from_the_stop_signals_which_come_back_afterwards(self):
+        before = {s: signal.getsignal(s) for s in common.STOP_SIGNALS}
+        with common.stop_signals():
+            armed = {s: signal.getsignal(s) for s in common.STOP_SIGNALS}
+            with common.shielded():
+                self.assertEqual({signal.getsignal(s) for s in common.STOP_SIGNALS}, {signal.SIG_IGN})
+            self.assertEqual({s: signal.getsignal(s) for s in common.STOP_SIGNALS}, armed)
+        self.assertEqual({s: signal.getsignal(s) for s in common.STOP_SIGNALS}, before)
+
+    def test_the_chrome_sweep_never_raises_over_the_exception_a_cleanup_runs_under(self):
+        with mock.patch.object(common.subprocess, 'run', side_effect=OSError('ps saknas')):
+            self.assertIsNone(common.end_chrome(self.parent / '.chrome-profil', grace=0))
+        with mock.patch.object(common.subprocess, 'run', side_effect=subprocess.TimeoutExpired('ps', 20)):
+            self.assertIsNone(common.end_chrome(self.parent / '.chrome-profil', grace=0))
+
+    def test_a_holder_interrupted_while_it_starts_ends_at_once_with_its_profile(self):
+        # A stand-in holder that never becomes ready; the interrupt comes while start_holder waits for it.
+        stand_in = self.parent / 'web' / 'holder.mjs'
+        stand_in.parent.mkdir()
+        stand_in.write_text('import sys, time\ntime.sleep(300)\n')
+        run, workspace = self.parent / 'korning', self.parent / 'arbetsyta'
+        run.mkdir()
+        (workspace / '.ko').mkdir(parents=True)
+        real_sleep, calls, started = time.sleep, [], []
+        real_popen = subprocess.Popen
+
+        def popen(*arguments, **options):
+            process = real_popen(*arguments, **options)
+            started.append(process)
+            return process
+
+        def sleep(seconds):
+            calls.append(seconds)
+            if len(calls) == 3:
+                raise KeyboardInterrupt
+            real_sleep(seconds)
+        with mock.patch.object(common, 'NODE', Path(sys.executable)), mock.patch.object(common, 'WEB', stand_in.parent), \
+                mock.patch.object(web_visitor.subprocess, 'Popen', side_effect=popen), \
+                mock.patch.object(web_visitor.time, 'sleep', side_effect=sleep), \
+                mock.patch.object(common, 'end_chrome', return_value=0) as ended, self.assertRaises(KeyboardInterrupt):
+            web_visitor.start_holder(run, workspace, 'http://127.0.0.1:47321/', ['http://127.0.0.1:47321'], 'mobil', 10)
+        self.assertEqual(len(started), 1)
+        self.assertIsNotNone(started[0].poll(), 'the stand-in holder was left running')
+        ended.assert_called_once_with(run / '.chrome-profil')
+        self.assertFalse((run / '.chrome-profil').exists())
+
     def test_the_visitor_stops_its_holder_and_chrome_whatever_happens_after_the_start(self):
         task = self.parent / 'UPPGIFT.md'
         task.write_text('Hitta kontaktsidan.')
         run_directory = self.parent / 'korning'
         run_directory.mkdir()
+        (run_directory / '.chrome-profil').mkdir()
+        (run_directory / '.chrome-profil' / 'Cookies').write_text('kaka')   # as if priming had run
         ready = {'ready': True, 'primed': None, 'start': 'http://127.0.0.1:47321/', 'start_status': 200,
                  'start_error': None}
+        shielded = []
         with mock.patch.object(web_visitor, 'preflight', return_value={'stub': True}), \
                 mock.patch.object(common, 'tool_identity', return_value={}), \
                 mock.patch.object(common, 'new_run_directory', return_value=run_directory), \
                 mock.patch.object(web_visitor, 'start_holder', return_value=('hallare', ready)), \
-                mock.patch.object(web_visitor, 'stop_holder') as stopped, \
+                mock.patch.object(web_visitor, 'stop_holder',
+                                  side_effect=lambda h: shielded.append(signal.getsignal(signal.SIGTERM))) as stopped, \
                 mock.patch.object(common, 'end_chrome', return_value=0) as ended, \
                 mock.patch('runtime.claude_profile.require_subscription', side_effect=ValueError('provfel')):
             with self.assertRaises(ValueError):
@@ -702,6 +752,28 @@ class ChildProcessTests(unittest.TestCase):
                                  'claude-opus-5', '--etikett', 'prov'])
         stopped.assert_called_with('hallare')
         ended.assert_called_with(run_directory / '.chrome-profil')
+        self.assertFalse((run_directory / 'KVITTO.json').exists())
+        self.assertFalse((run_directory / '.chrome-profil').exists())
+        self.assertEqual(shielded, [signal.SIG_IGN], 'the final cleanup ran unshielded')
+
+    def test_the_measurement_cleans_up_shielded_and_removes_the_profile_even_when_node_never_started(self):
+        page = self.parent / 'sida' / 'index.html'
+        page.parent.mkdir()
+        page.write_text('<!doctype html><title>Prov</title><h1>Prov</h1>')
+        run_directory = self.parent / 'matning'
+        run_directory.mkdir()
+        shielded = []
+
+        def sweep(profile, *arguments):
+            shielded.append(signal.getsignal(signal.SIGTERM))
+            return 0
+        with mock.patch.object(common, 'tool_identity', return_value={}), \
+                mock.patch.object(common, 'new_run_directory', return_value=run_directory), \
+                mock.patch.object(web_measure.subprocess, 'Popen', side_effect=KeyboardInterrupt), \
+                mock.patch.object(common, 'end_chrome', side_effect=sweep), self.assertRaises(KeyboardInterrupt):
+            web_measure.run(['--fil', str(page), '--etikett', 'prov'])
+        self.assertEqual(shielded, [signal.SIG_IGN], 'the final cleanup ran unshielded')
+        self.assertFalse((run_directory / '.chrome-profil').exists())
         self.assertFalse((run_directory / 'KVITTO.json').exists())
 
 

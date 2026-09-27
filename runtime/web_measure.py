@@ -215,12 +215,14 @@ def run(argv=None):
             log.close()
         node_seconds = round(time.monotonic() - started_node, 1)
     finally:
-        if server is not None:
-            server.shutdown()
-            server.server_close()
-        # Also after an error or an interrupt: Chrome runs in a group of its own and must not outlive the run (D035).
-        survivors = common.end_chrome(run_directory / '.chrome-profil')
-    shutil.rmtree(run_directory / '.chrome-profil', ignore_errors=True)
+        # Also after an error or an interrupt: Chrome runs in a group of its own and must not outlive the run (D035); no
+        # stop signal cuts this short, and the Chrome profile, which may hold a protected host's cookie, goes (D036).
+        with common.shielded():
+            if server is not None:
+                server.shutdown()
+                server.server_close()
+            survivors = common.end_chrome(run_directory / '.chrome-profil')
+            shutil.rmtree(run_directory / '.chrome-profil', ignore_errors=True)
     result_file = run_directory / 'matning-resultat.json'
     result = json.loads(result_file.read_text()) if result_file.is_file() else {'fatal': 'inget resultat'}
     detectors = {}

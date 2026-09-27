@@ -209,7 +209,8 @@ def until(condition, seconds):
 
 
 class ChildChecks(unittest.TestCase):
-    """No child of a run outlives it (D035): not after a time limit, an error, SIGTERM, or a killed command."""
+    """A run that ends other than normally leaves none of its processes, and no Chrome profile, behind (D035, D036):
+    not after a time limit, an error, SIGTERM, or a killed command."""
 
     def setUp(self):
         self.parent = Path(tempfile.mkdtemp()).resolve()
@@ -249,6 +250,7 @@ class ChildChecks(unittest.TestCase):
         self.assertEqual(receipt['browser_half']['exit'], 'tidsgräns')
         self.assertEqual(common.chrome_processes(run / '.chrome-profil'), [])
         self.assertEqual(processes_naming(str(run / 'matning-konfig.json')), [])
+        self.assertFalse((run / '.chrome-profil').exists())
 
     def test_a_visitor_that_fails_after_its_holder_started_leaves_no_holder_and_no_chrome(self):
         task = self.parent / 'UPPGIFT.md'
@@ -264,6 +266,7 @@ class ChildChecks(unittest.TestCase):
         self.assertTrue((run / 'hallare-stopp.json').is_file())
         self.assertEqual(common.chrome_processes(run / '.chrome-profil'), [])
         self.assertEqual(processes_naming(str(run / 'hallare-konfig.json')), [])
+        self.assertFalse((run / '.chrome-profil').exists())
 
     def test_a_measurement_command_stopped_by_sigterm_ends_its_children_before_it_exits(self):
         process = self.command('-m', 'runtime.web_measure', '--mal', self.site.url('/'), '--etikett',
@@ -277,6 +280,7 @@ class ChildChecks(unittest.TestCase):
         self.assertEqual(process.returncode, 3, output)
         self.assertEqual(json.loads(output.strip().splitlines()[-1])['outcome'], 'avbruten')
         self.assertFalse((run / 'KVITTO.json').exists())
+        self.assertFalse((run / '.chrome-profil').exists())
 
     def test_a_measurement_whose_command_was_killed_ends_by_itself(self):
         # A local address that accepts and never answers, so the measurement cannot finish by itself in the window.
@@ -290,16 +294,17 @@ class ChildChecks(unittest.TestCase):
             process.wait()
             self.assertTrue(until(lambda: not common.chrome_processes(run / '.chrome-profil')
                                   and not processes_naming(str(run / 'matning-konfig.json')), 20))
+            self.assertTrue(until(lambda: not (run / '.chrome-profil').exists(), 5))
 
     def test_a_holder_whose_command_was_killed_stops_by_itself(self):
         run = self.parent / 'korning'
         (run / 'spar').mkdir(parents=True)
         origin = 'http://127.0.0.1:%d' % self.site.port
         script = ('import sys, tempfile, time; from pathlib import Path; from runtime import web_visitor as v; '
-                  'w = v.prepare_workspace(Path(tempfile.mkdtemp()), "claude", 10); '
+                  'w = v.prepare_workspace(Path(tempfile.mkdtemp(dir=sys.argv[3])), "claude", 10); '
                   'v.start_holder(Path(sys.argv[1]), w, sys.argv[2] + "/", [sys.argv[2]], "desktop", 10); '
                   'print("klar", flush=True); time.sleep(600)')
-        process = self.command('-c', script, str(run), origin)
+        process = self.command('-c', script, str(run), origin, str(self.parent))
         self.assertEqual(process.stdout.readline().strip(), 'klar')
         self.assertTrue(processes_naming(str(run / 'hallare-konfig.json')))
         process.kill()
@@ -307,6 +312,7 @@ class ChildChecks(unittest.TestCase):
         self.assertTrue(until(lambda: not common.chrome_processes(run / '.chrome-profil')
                               and not processes_naming(str(run / 'hallare-konfig.json')), 20))
         self.assertTrue((run / 'hallare-stopp.json').is_file())
+        self.assertFalse((run / '.chrome-profil').exists())
 
     def test_a_holder_whose_command_was_killed_during_its_start_ends_by_itself(self):
         # The start page never answers, so the holder is still in its start navigation, before its full stop is armed.
@@ -317,15 +323,17 @@ class ChildChecks(unittest.TestCase):
             silent.listen(16)
             origin = 'http://127.0.0.1:%d' % silent.getsockname()[1]
             script = ('import sys, tempfile; from pathlib import Path; from runtime import web_visitor as v; '
-                      'w = v.prepare_workspace(Path(tempfile.mkdtemp()), "claude", 10); '
+                      'w = v.prepare_workspace(Path(tempfile.mkdtemp(dir=sys.argv[3])), "claude", 10); '
                       'v.start_holder(Path(sys.argv[1]), w, sys.argv[2] + "/", [sys.argv[2]], "desktop", 10)')
-            process = self.command('-c', script, str(run), origin)
+            process = self.command('-c', script, str(run), origin, str(self.parent))
             self.assertTrue(until(lambda: common.chrome_processes(run / '.chrome-profil'), 60), 'Chrome never started')
             self.assertFalse((run / 'hallare-klar.json').exists())
             process.kill()
             process.wait()
             self.assertTrue(until(lambda: not common.chrome_processes(run / '.chrome-profil')
                                   and not processes_naming(str(run / 'hallare-konfig.json')), 20))
+            # Chrome had started (the check above waited for it), so the profile goes with the holder's exit (D036).
+            self.assertTrue(until(lambda: not (run / '.chrome-profil').exists(), 5))
 
 
 if __name__ == '__main__':
