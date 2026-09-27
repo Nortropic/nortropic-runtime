@@ -9,7 +9,7 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034, rättade i D035 och D036) integrerade; övergången förbereds på ägarens beslut, aktiveringen är ägarens
+# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034, rättade i D035 och D036) aktiva sedan övergång 17; inget steg kvar
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
@@ -18,9 +18,13 @@ och utförarneutralt (kontorets RUNTIME-PROFILER-BEREDNING-20260926, RUNTIME-PRO
 RUNTIME-PROFILER-KANDIDAT-20260926). Beslutet här är D034. Kandidaten byggdes i en egen arbetsyta på `d5a44064` och
 integreras genom denna publicering, efter separat granskning. Integrationen aktiverar ingenting.
 
-LÄGE 2026-09-27: ägaren beslutade att övergången förbereds nu (kontorets plan). D036 rättar städanmärkningarna från D035:s
-andra granskningsrunda och integreras genom en egen publicering efter separat granskning; därefter release och isolerad
-startövning enligt ordningen nedan. Aktiveringen gör ägaren.
+LÄGE 2026-09-27 07:16Z: allt i ordningen nedan är genomfört. Ägaren beslutade att övergången förbereddes (kontorets
+RUNTIME-PROFILER-OVERGANG-FORBEREDD-20260927); D036 rättade städanmärkningarna från D035:s andra granskningsrunda (PR 66).
+Drift nu: aktiv konfiguration `03e776bd` (runtime `3fdf7f21`, kontoret `df5ed5dc`, modellvalet oförändrat), aktiverad av
+ägaren med övergång 17 kl. 07:15Z och läst tillbaka. AP-10:s schema är bundet till den och opausat, med nästa ordinarie
+körning 2026-09-28 07:00Z. Profilerna körs som den aktiva releasens egen kopia (runbookavsnittet om webbprofilerna). Vad
+releasen, startövningen och aktiveringen visade står i D036. Nästa steg här: inget; ett nytt Runtime-bygge behöver ett
+eget accepterat uppdrag.
 
 LÄGE 2026-09-26 sent: D034 är integrerad (PR 64). Kontorets Digitala-fall fann därefter i sin egen hållare, som D034:s
 följer, att värdreglerna gjorde proxyns egen adress oupplösbar när målet inte heter 127.0.0.1. Samma fel uppmättes
@@ -35,15 +39,17 @@ för Claude-vägen och Codex-vägen, mätningen av en adress, en lokal fil och e
 dessa byte mot lokala provsajter spärrprov B, besöksscenariot och kritiken för båda utförarna. Inget kördes mot en kunds
 sajt. Codex-strömmen redovisar inte varje anrop (D034); webbläsarens hållare spårar varje handling i båda vägarna.
 
-Drift nu: oförändrad. Aktiv konfiguration `e814c757` (runtime `a9a5eca1`, kontoret `df5ed5dc`), AP-10:s schema och
-modellvalet orörda. Profilerna finns bara i kandidatens och mains kod, inte i den aktiva releasen.
-
-Kvar före övergången, när ägaren beslutar om den:
- 1. En release som stegas med exakt de nya filerna och samma modellval.
+Ordningen, genomförd 2026-09-27:
+ 1. En release som stegades med exakt de nya filerna och samma modellval. Genomfört: övergång 17, konfiguration
+    `03e776bd`, 16 nya filer.
  2. En egen isolerad startövning på en port- och rotförskjuten kopia, med spärrprov A och en provarkörning per
-    utförare mot ett lokalt provmål som inte heter 127.0.0.1 (D035).
+    utförare mot ett lokalt provmål som inte heter 127.0.0.1 (D035). Genomfört.
  3. Ägarens övergång med ett komplett kommando (`LC_ALL=C`, färsk kontroll, bindningar, driftpåverkan och
-    återhämtningsväg). Därefter körs profilerna som den aktiva releasens egen kopia.
+    återhämtningsväg). Genomfört av ägaren 07:15Z.
+
+Öppet, inte åtgärdat (D036:s granskning): på vägen där hållaren måste dödas med SIGKILL skrivs kvittot innan profilen tas
+bort, och om processlistan inte kan läsas tas profilen bort medan en olistad Chrome kan köra. Inget av det är uppmätt
+som fel i drift.
 
 Verktygskopian under `.runtime/web-tools/` och motorn `.runtime/bin/impeccable-0.1.6` är installerade på värden och
 kontrollerade mot låset; de ändrar ingen drift.
