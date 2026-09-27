@@ -8,6 +8,7 @@ import sys
 from temporalio.client import (Schedule, ScheduleActionStartWorkflow, ScheduleIntervalSpec,
     ScheduleSpec, SchedulePolicy, ScheduleOverlapPolicy, ScheduleState, ScheduleUpdate)
 from temporalio.common import RetryPolicy
+from temporalio.service import RPCError
 from .release import require_active_code, delegate
 from .shared import SharedService
 from .scheduled_operation import ScheduledOperation, operation
@@ -49,14 +50,21 @@ async def validate(client, described, config, identifier, prior=False):
 async def execution_status(client, described):
     recent = []
     for item in described.info.recent_actions:
-        handle = client.get_workflow_handle(item.action.workflow_id,
-            run_id=item.action.first_execution_run_id)
-        execution = await handle.describe()
-        row = {'workflow_id': execution.id, 'status': execution.status.name,
+        row = {'workflow_id': item.action.workflow_id, 'status': 'unavailable',
                'scheduled_at': item.scheduled_at.isoformat(), 'started_at': item.started_at.isoformat()}
-        if execution.status.name == 'COMPLETED':
-            outcome = await asyncio.wait_for(handle.result(), timeout=5)
-            row['business_completed'] = outcome.get('result', {}).get('completed') is True
+        try:
+            handle = client.get_workflow_handle(item.action.workflow_id,
+                run_id=item.action.first_execution_run_id)
+            execution = await asyncio.wait_for(handle.describe(), timeout=5)
+            row['status'] = execution.status.name
+            if execution.status.name == 'COMPLETED':
+                outcome = await asyncio.wait_for(handle.result(), timeout=5)
+                row['business_completed'] = outcome.get('result', {}).get('completed') is True
+        except (RPCError, asyncio.TimeoutError) as error:
+            # History can expire while a schedule remains paused. A failed history
+            # lookup is not a failed pause/stop/rebind and must not hide its receipt.
+            row['observation_error'] = type(error).__name__
+            row['business_completed'] = None
         recent.append(row)
     return recent
 

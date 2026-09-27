@@ -804,3 +804,6 @@ består över skrivarbytet; invänta inget nytt körbesked.
 
 Färska mottagare läser AGENTS.md, därefter denna plan, verifierar att tidigare
 skrivare stoppat och inspekterar bevarat läge före varje skrivning.
+
+
+ATGÄRDER VIKSKÄR 2026-09-28, r3: separat r2-granskning stängde de fyra äldre driftblockerarna men fann att utgången workflowhistorik kunde dölja ett faktiskt stopp. Status återläser nu per post med begränsad tid; otillgänglig historik är explicit unknown och hindrar inte bekräftad paus/stopp. Riktade fem prov passerar, inklusive utgången historik, resulttimeout och genomförd stoppmutation. Nästa steg: separat riktad r3-granskning, därefter befintlig skyddad integration och releaseberedning. Office58f938e är oförändrad. Ingen aktiv drift eller aktivering påstås.
