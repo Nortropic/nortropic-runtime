@@ -18,7 +18,7 @@ def definition(config, identifier):
     operation(config, request)
     every = config['scheduled_operations'][identifier]['interval_seconds']
     return Schedule(action=ScheduleActionStartWorkflow(ScheduledOperation.run, request,
-        id='operation-' + identifier, task_queue='development',
+        id='operation-' + identifier, task_queue='office-operations',
         execution_timeout=timedelta(seconds=240), retry_policy=RetryPolicy(maximum_attempts=1,
             maximum_interval=timedelta(seconds=100))),
         spec=ScheduleSpec(intervals=[ScheduleIntervalSpec(every=timedelta(seconds=every))]),
@@ -34,7 +34,7 @@ async def validate(client, described, config, identifier, prior=False):
             or args[0]['operation'] != identifier
             or (not prior and args[0]['config_sha256'] != config['config_sha256'])
             or current.action.workflow != 'ScheduledOperation'
-            or current.action.id != expected.action.id or current.action.task_queue != 'development'
+            or current.action.id != expected.action.id or current.action.task_queue != 'office-operations'
             or current.action.execution_timeout != expected.action.execution_timeout
             or current.action.retry_policy != expected.action.retry_policy
             or current.policy != expected.policy):
@@ -44,6 +44,21 @@ async def validate(client, described, config, identifier, prior=False):
             or spec.jitter or spec.time_zone_name
             or (not prior and spec.intervals != expected.spec.intervals)):
         raise ValueError('Native schedule scope differs')
+
+
+async def execution_status(client, described):
+    recent = []
+    for item in described.info.recent_actions:
+        handle = client.get_workflow_handle(item.action.workflow_id,
+            run_id=item.action.first_execution_run_id)
+        execution = await handle.describe()
+        row = {'workflow_id': execution.id, 'status': execution.status.name,
+               'scheduled_at': item.scheduled_at.isoformat(), 'started_at': item.started_at.isoformat()}
+        if execution.status.name == 'COMPLETED':
+            outcome = await asyncio.wait_for(handle.result(), timeout=5)
+            row['business_completed'] = outcome.get('result', {}).get('completed') is True
+        recent.append(row)
+    return recent
 
 
 async def operate(action, identifier):
@@ -57,13 +72,13 @@ async def operate(action, identifier):
         current = await handle.describe()
         await validate(client, current, config, identifier, prior=action == 'rebind')
         if action == 'resume':
-            if current.schedule.state.note.startswith('STOPPED'):
+            if (current.schedule.state.note or '').startswith('STOPPED'):
                 raise ValueError('Stopped operation requires reviewed rebind before resume')
             await handle.unpause(note='Explicit resume of release-bound operation')
         elif action in ('pause', 'stop'):
             # Stop pauses future runs; in-flight bounded operation completes and records
             # effects. It never force-terminates a process in another commitment.
-            note = 'STOPPED: future starts disabled' if action == 'stop' or current.schedule.state.note.startswith('STOPPED') else 'PAUSED: bounded run may finish'
+            note = 'STOPPED: future starts disabled' if action == 'stop' or (current.schedule.state.note or '').startswith('STOPPED') else 'PAUSED: bounded run may finish'
             await handle.pause(note=note)
         elif action == 'rebind':
             if not current.schedule.state.paused or current.info.running_actions:
@@ -78,12 +93,14 @@ async def operate(action, identifier):
             raise ValueError('Unknown action')
         after = await handle.describe()
         await validate(client, after, config, identifier)
+        recent = await execution_status(client, after)
         return {'operation': identifier, 'config_sha256': config['config_sha256'],
                 'paused': after.schedule.state.paused, 'note': after.schedule.state.note,
                 'actions': after.info.num_actions,
                 'missed_catchup': after.info.num_actions_missed_catchup_window,
                 'skipped_overlap': after.info.num_actions_skipped_overlap,
                 'running': len(after.info.running_actions),
+                'recent_executions': recent,
                 'next_times': [d.isoformat() for d in after.info.next_action_times],
                 'scope': 'Native schedule observation; inspect operation results for actual business outcome'}
 

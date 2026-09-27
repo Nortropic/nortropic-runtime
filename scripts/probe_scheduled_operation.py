@@ -14,13 +14,37 @@ from pathlib import Path
 import threading
 import uuid
 from unittest.mock import patch
+from temporalio import activity, workflow
 from temporalio.client import Client, ScheduleIntervalSpec, ScheduleSpec
 from temporalio.worker import Worker
 from runtime.scheduled_operation import ScheduledOperation, scheduled_operation
-from runtime.operation_schedule import definition, validate
+with workflow.unsafe.imports_passed_through():
+    # Host-only probe orchestration; never called by OccupiedQueue.run.
+    from runtime.operation_schedule import definition, validate, execution_status
+
+
+blocked_started = None
+blocked_release = None
+
+
+@activity.defn
+async def occupied_slot():
+    blocked_started.set()
+    await asyncio.wait_for(blocked_release.wait(), timeout=50)
+    return 'released'
+
+
+@workflow.defn
+class OccupiedQueue:
+    @workflow.run
+    async def run(self):
+        return await workflow.execute_activity(occupied_slot,
+            start_to_close_timeout=timedelta(seconds=55))
 
 
 async def probe(output, office):
+    global blocked_started, blocked_release
+    blocked_started, blocked_release = asyncio.Event(), asyncio.Event()
     output.mkdir(parents=True, exist_ok=False, mode=0o700)
     status = {'http': 200}
     class Handler(BaseHTTPRequestHandler):
@@ -46,7 +70,12 @@ async def probe(output, office):
     try:
         with patch('runtime.release.require_active_code', return_value=config):
             async with Worker(client, task_queue=name, workflows=[ScheduledOperation],
-                              activities=[scheduled_operation], max_concurrent_activities=1):
+                              activities=[scheduled_operation], max_concurrent_activities=1), Worker(
+                    client, task_queue=name+'-occupied', workflows=[OccupiedQueue],
+                    activities=[occupied_slot], max_concurrent_activities=1):
+                occupied = await client.start_workflow(OccupiedQueue.run, id=name+'-occupied',
+                    task_queue=name+'-occupied')
+                await asyncio.wait_for(blocked_started.wait(), timeout=10)
                 schedule = definition(config, name)
                 # Verify the ordinary paused definition survives real native
                 # serialization before using the accelerated isolated queue.
@@ -81,20 +110,28 @@ async def probe(output, office):
                         await asyncio.sleep(.1)
                 await handle.pause(note='Isolated qualification finished')
                 after = await handle.describe()
+                actual_status = await execution_status(client, after)
+                if not blocked_started.is_set() or blocked_release.is_set():
+                    raise RuntimeError('Other queue was not occupied throughout monitor runs')
+                blocked_release.set()
+                if await occupied.result() != 'released':
+                    raise RuntimeError('Occupied worker failed to finish')
                 if after.info.num_actions != 3 or after.schedule.state.remaining_actions != 0:
                     raise RuntimeError('Native schedule action budget differs')
         actual = [r['result']['result']['completed'] for r in runs]
         if actual != [True, False, True]:
             raise RuntimeError('Expected healthy, detected incident, verified recovery: '+str(actual))
         receipts = [json.loads(p.read_text()) for p in sorted((output/'private-state/inbox').glob('*.json'))]
-        if [r['event']['kind'] for r in receipts] != ['incident', 'recovered']:
+        if sorted(r['event']['kind'] for r in receipts) != ['incident', 'recovered']:
             raise RuntimeError('Actual recipient lacks incident/recovery')
-        summary = {'passed': True, 'schedule': name, 'runs': runs, 'recipient_receipts': receipts,
+        summary = {'passed': True, 'schedule': name, 'independent_activity_slot': True,
+            'native_status_readback': actual_status, 'runs': runs, 'recipient_receipts': receipts,
             'scope': 'Real existing Temporal engine, isolated queue, actual candidate Office monitor/receiver and loopback HTTP. Only active-release config loading injected; no production activation or external provider proof.',
             'host_availability': 'Local Mac must be awake and Runtime worker available; no claim of always-on monitoring'}
         (output/'RESULTAT.json').write_text(json.dumps(summary, indent=2)+'\n')
         print(json.dumps({'passed': True, 'output': str(output), 'scheduled_starts': 3, 'native_definition_readback': True}))
     finally:
+        blocked_release.set()
         if handle:
             await handle.pause(note='Qualification cleanup; no further starts')
             await handle.delete()

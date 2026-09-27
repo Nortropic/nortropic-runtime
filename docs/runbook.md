@@ -378,14 +378,22 @@ The release configuration must bind `scheduled_operations[OPERATION]` to
 `{"input":"operations/NAME.json","interval_seconds":300}` and include hashes for that input and
 `office/tools/driftoperation.py`. Only 60–86400 seconds are accepted. The Office input uses schema
 `office-drift/1`, a private `state` directory, and optional `intake` and `monitor` objects. Intake binds
-Digitala's frozen consumer bytes, customer directory, executor, HTTPS base URL and credential file;
+Digitala's frozen consumer bytes, an absolute resolved `python_path` and exact `python_sha256`,
+customer directory, executor, HTTPS base URL and credential file;
 monitor binds the exact HTTPS health address and 40-character candidate SHA. Secrets remain in private
 0600 files outside repositories. A bypass is internal monitor access, never customer authentication.
+
+The worker process runs a separate `office-operations` queue and activity slot; a model/AP-10 activity
+on `development` cannot occupy this slot. Both workers retain the same managed worker process identity.
+Status reads recent native execution states and completed business outcomes, plus missed/overlap counts.
 
 Runtime returns the actual Office result. `completed: false` is not a successful business check just
 because the workflow ended. Office persists per-run config bindings, intake output hashes and health
 observations. Incident/recovery delivery is acknowledged only after the private recipient record is read
-back. That is a local Office recipient, not a claim of email delivery. Native schedule status cannot
+back, independently for intake and monitor transitions. Pending events and stored states use closed
+validated shapes and UUID identities. Malformed state is preserved under an `.invalid-UUID` filename,
+reported as an explicit incident and can recover on the next run; resumed delivery is recorded.
+That is a local Office recipient, not a claim of email delivery. Native schedule status cannot
 substitute for these results. An offline host yields no checks; the hosted product remains independently available.
 
 For native input drift, `python -B -m scripts.inspect_native_config` checks release file hashes and reports

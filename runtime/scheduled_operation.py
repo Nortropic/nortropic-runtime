@@ -55,7 +55,20 @@ async def scheduled_operation(request: dict) -> dict:
             await asyncio.wait({task}, timeout=1)
         result = task.result()
     except asyncio.CancelledError:
-        await asyncio.shield(task)
+        # Repeated cancellation must not interrupt durable cleanup or replace
+        # cancellation with the handler's exception. The handler is itself bound
+        # to 120 s consumer + 17 s health I/O; keep this extra wait bounded too.
+        deadline = asyncio.get_running_loop().time() + 180
+        while not task.done() and asyncio.get_running_loop().time() < deadline:
+            try:
+                await asyncio.wait({task}, timeout=1)
+            except asyncio.CancelledError:
+                continue
+        if task.done() and not task.cancelled():
+            task.exception()
+        elif not task.done():
+            activity.logger.error('Office operation cleanup exceeded its bound')
+            task.add_done_callback(lambda done: None if done.cancelled() else done.exception())
         raise
     return {'operation': request['operation'], 'config_sha256': config['config_sha256'],
             'result': result}

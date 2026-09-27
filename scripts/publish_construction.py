@@ -29,6 +29,9 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
+# Direct script invocation must resolve this checkout before any runtime import.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 RUNTIME_REPO = 'Nortropic/nortropic-runtime'
 OFFICE_REPO = 'Nortropic/nortropic-projektkontor'
 # Fixed per exact candidate name. 'where' selects the worktree home and interpreter; 'discover'
@@ -174,7 +177,7 @@ else:
     try:
         from runtime.construction_registration import resolve_profile
         PROFILE = resolve_profile(name)
-    except (OSError, ValueError, KeyError) as error:
+    except (OSError, ValueError, KeyError, ImportError) as error:
         refuse('unregistered or invalid accepted construction task: ' + type(error).__name__)
 TARGET = PROFILE['target']
 
@@ -191,7 +194,10 @@ for variable in ('PYTHONOPTIMIZE', 'PYTHONPATH', 'PYTHONHOME'):
 
 
 def git(where, *args, raw=False):
-    out = subprocess.run(['git', '-C', str(where), *args], check=True, capture_output=True, timeout=60).stdout
+    try:
+        out = subprocess.run(['git', '-C', str(where), *args], check=True, capture_output=True, timeout=60).stdout
+    except subprocess.CalledProcessError:
+        refuse('required integrated Git object is unavailable; bootstrap is a separate reviewed holder transition')
     return out if raw else out.decode().rstrip('\n')
 
 

@@ -23,7 +23,7 @@ class ScheduledOperationTests(unittest.TestCase):
         self.assertEqual(operation(self.config, self.request)[0], self.home / 'operations/accepted-case.json')
         schedule = definition(self.config, 'accepted-case')
         self.assertTrue(schedule.state.paused)
-        self.assertEqual(schedule.action.task_queue, 'development')
+        self.assertEqual(schedule.action.task_queue, 'office-operations')
         self.assertEqual(schedule.action.retry_policy.maximum_attempts, 1)
         self.assertEqual(schedule.policy.catchup_window.total_seconds(), 60)
 

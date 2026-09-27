@@ -16,11 +16,12 @@ registrering utan fasta provnamn, diagnos och kvalificering av native-konfigurat
 avgränsad schemalagd intags-/driftoperation på befintlig Temporal-motor. Ingen ny motor eller
 Trust Kernel; andra åtaganden och modellval är oförändrade.
 
-Kandidaten ligger i den isolerade grenen `atgarder/vikskar-20260927`. Kod och fulla prov finns,
-men separat granskning, skyddad integration och releaseberedning återstår. Ett isolerat schema
-har faktiskt startat tre körningar: frisk, incident till privat kontorsmottagare och återhämtning.
-Det är inte aktiv kunddrift. Fulla Runtime-sviten har passerat 606 tester före senaste riktade
-kontroll av diagnosvägen. Kontorets motsvarande kandidat bär verksamhetshanteraren.
+Kandidaten ligger i den isolerade grenen `atgarder/vikskar-20260927`. Separat granskning r1 gav
+fyra blockerare; de rättas i r2: egen operationskö och aktivitetsslot, separat kvitterad intagslarmväg,
+validerad beständig händelsedata och bunden Python-tolk. Ett faktiskt isolerat prov har därefter
+startat tre körningar (frisk, incident, återhämtning) medan en annan kö är upptagen. Statusen läser
+verkliga workflow- och verksamhetsutfall. Det är inte aktiv kunddrift. Fullsviter och separat r2-review
+återstår efter de nya rättningarna. Kontorets motsvarande kandidat bär verksamhetshanteraren.
 
 Aktiv pekare är fortfarande `eb102e4e88e245e41ba7e932c068d26e2d839036f4b96f882ef423178caa6727`
 (Runtime `3bea86ef`, kontoret `df5ed5dc`). Native-konfigurationen avviker från dess frysta hash;
