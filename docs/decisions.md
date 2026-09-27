@@ -1623,3 +1623,21 @@ only an exit before that block (a close that outlasts the killed command's five 
 
 Not covered, unchanged from D035: what a model CLI leaves behind on its own normal exit, and a process the model itself
 detaches inside the Codex sandbox, which keeps the sandbox's limits.
+
+Shown after integration, 2026-09-27, on the owner's decision to prepare the transition (Office
+RUNTIME-PROFILER-OVERGANG-FORBEREDD-20260927):
+- The release of transition 17 (configuration `03e776bd`, runtime `3fdf7f21`, office `df5ed5dc`, the model choice
+  unchanged, exactly the sixteen new files of D034-D036) was staged and checked by a separately reviewed script derived
+  from transition 16's. The check also required the pinned web tools to verify under the staged release.
+- An isolated start rehearsal on a port- and root-shifted copy of the live database started the new daemon twice, about
+  a second each; all 11 idle `DevelopmentTask` executions answered a state query through the new worker with no event
+  added, and both SIGTERM stops were clean. From the rehearsal release's own copy, active in the rehearsal root, barrier
+  tests A and C passed for both paths with the allowed site named `localhost`, and one visitor session per executor
+  (Claude 44 s, Codex 38 s) ended `klar` against such a site: the form posted as asked, the image-only code reported,
+  the foreign site untouched, no secret in any output. Launchd, the owner's shell and the live schedule's rebind were
+  not part of the rehearsal.
+- The owner activated transition 17 on 2026-09-27 at 07:15Z, after that morning's AP-10 run. Read back: the service
+  runs `03e776bd` from the new release's directory with its three recorded processes; AP-10's schedule is bound to it,
+  unpaused, next run 2026-09-28 07:00Z; the closed AP-11 commitment, AP-10's command and the web tools were read back
+  without a problem. A measurement run from the active release's own copy against a local site ended `klar`, its receipt
+  naming the active release as its code root.
