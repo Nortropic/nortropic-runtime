@@ -506,6 +506,45 @@ class ParameterTests(unittest.TestCase):
             with self.assertRaises((ValueError, SystemExit), msg=bad), contextlib.redirect_stderr(io.StringIO()):
                 web_measure.parse(bad)
 
+    def test_the_views_and_the_axe_tags_are_parameters_with_the_professional_defaults(self):
+        """D037: D034's two views and six tags are defaults a management function may replace; the parse says which ran."""
+        good = ['--mal', 'https://exempel.se/', '--etikett', 'prov']
+        args = web_measure.parse(good)
+        self.assertEqual(args.viewports, web_measure.VIEWPORTS)
+        self.assertEqual(args.axe_tags, web_measure.AXE_TAGS)
+        self.assertEqual(args.standardvarden, {'vyer': True, 'axe_taggar': True})
+        self.assertEqual(web_measure.PARAMETRAR, ('vyer', 'axe-taggar'))
+        args = web_measure.parse(good + ['--vyer', 'platta=820x1180@2m,dator=1920x1080@1d', '--axe-taggar', 'wcag2a,wcag2aa,wcag22aa'])
+        self.assertEqual(list(args.viewports), ['platta', 'dator'])
+        self.assertEqual(args.viewports['platta'], {'width': 820, 'height': 1180, 'deviceScaleFactor': 2, 'isMobile': True, 'hasTouch': True})
+        self.assertEqual((args.viewports['dator']['isMobile'], args.viewports['dator']['hasTouch']), (False, False))
+        self.assertEqual(args.axe_tags, ['wcag2a', 'wcag2aa', 'wcag22aa'])
+        self.assertEqual(args.standardvarden, {'vyer': False, 'axe_taggar': False})
+        self.assertEqual(web_measure.parse(good + ['--vyer', 'mobil-390=390x844@2m,desktop-1440=1440x900@1d']).viewports, web_measure.VIEWPORTS)
+        for bad in ('', 'Mobil=390x844@2m', 'a=390x844@2m,a=390x844@2m', 'a=100x844@2m', 'a=390x2100@2m', 'a=390x844@4m',
+                    'a=390x844@2x', 'a=390x844', 'a=390x844@2m,', ','.join('v%d=390x844@2m' % i for i in range(5))):
+            with self.assertRaises(ValueError, msg=bad):
+                web_measure.parse(good + ['--vyer', bad])
+        for bad in ('', 'wcag2a,wcag2a', 'a', 'wcag2a,bad tag', 'wcag2a,', ','.join('tag%d' % i for i in range(13))):
+            with self.assertRaises(ValueError, msg=bad):
+                web_measure.parse(good + ['--axe-taggar', bad])
+
+    def test_the_summary_follows_the_run_views_not_the_constants(self):
+        parent = Path(tempfile.mkdtemp())
+        try:
+            (parent / 'matning').mkdir()
+            (parent / 'matning' / 'platta.json').write_text(json.dumps({
+                'h1': [{'text': 'x', 'lines': 1, 'font_size_px': 30, 'in_first_view': True}],
+                'action': {'found': True, 'match': 'text', 'text': 'Boka', 'fully_in_first_view': True}}))
+            views = {'platta': {'width': 820, 'height': 1180, 'deviceScaleFactor': 2, 'isMobile': True, 'hasTouch': True}}
+            result = {'views': {'platta': {'status': 200, 'sections_requested': 2, 'sections_taken': 1}}, 'lighthouse': None, 'primed': None}
+            out = web_measure.summary(parent, result, {}, views)
+            self.assertEqual(list(out['views']), ['platta'])
+            self.assertEqual(out['views']['platta']['h1'][0]['lines'], 1)
+            self.assertEqual(list(web_measure.summary(parent, {'views': {}}, {})['views']), list(web_measure.VIEWPORTS))
+        finally:
+            shutil.rmtree(parent)
+
     def test_visitor_parameters_are_checked_before_anything_runs(self):
         parent = Path(tempfile.mkdtemp())
         try:

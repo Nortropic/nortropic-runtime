@@ -323,14 +323,17 @@ which. Run from the code root:
 
     NR_HOST_ROOT="<runtime>" "<runtime>/.runtime/temporal-venv/bin/python" -B -m runtime.web_measure \
         --mal https://... | --fil /absolute/page.html  --etikett NAME [--sektioner 2] [--delar skarm,rubrik,axe,lighthouse,detektor] \
-        [--handling-text TEXT | --handling-selektor CSS] [--undantag-fil /private/file]
+        [--handling-text TEXT | --handling-selektor CSS] [--undantag-fil /private/file] \
+        [--vyer NAME=WIDTHxHEIGHT@SCALEm|d,...] [--axe-taggar TAG,...]
     ... -m runtime.web_critique --underlag MANIFEST.json --fraga FRAGA.md --schema SCHEMA.json \
         --utforare claude|codex --modell NAME --etikett NAME [--tid 1200]
     ... -m runtime.web_visitor --start URL --tillatna ORIGIN[,ORIGIN] --uppgift UPPGIFT.md --vy mobil|desktop \
         --utforare claude|codex --modell NAME --etikett NAME [--max-handlingar 40] [--tid 1200] [--undantag-fil FILE] \
         [--bindning key=value ...]
 
-Each run writes `.runtime/profiler/<matning|kritik|provare>/<UTC time>-<label>/`, closed by `KVITTO.json` and
+The measurement's views and axe tags are the management function's parameters with D034's values as defaults (D037);
+the receipt records which ran and whether the defaults were used, and the module's `PARAMETRAR` says the code takes
+them. Each run writes `.runtime/profiler/<matning|kritik|provare>/<UTC time>-<label>/`, closed by `KVITTO.json` and
 `KVITTO.sha256`; read the receipt's `outcome` first. Nothing is written into a repository, published or deployed, and
 no run is retried automatically. A protection exception is only ever a private file (exactly 0600, one line of at least
 16 characters, outside `/tmp`, `/etc`, `/var/folders` and the run area); never pass the value on a command line.

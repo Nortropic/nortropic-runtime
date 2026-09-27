@@ -1,8 +1,14 @@
-"""The measurement profile (D034): one page, two fixed views, no model.
+"""The measurement profile (D034): one page, its views, no model.
 
     <runtime venv python> -B -m runtime.web_measure (--mal URL | --fil PATH) --etikett NAME [--sektioner N]
         [--delar skarm,rubrik,axe,lighthouse,detektor] [--handling-text TEXT] [--handling-selektor CSS]
         [--undantag-fil PATH] [--undantag-sort vercel-automation-bypass]
+        [--vyer NAME=WIDTHxHEIGHT@SCALEm|d,...] [--axe-taggar TAG,...]
+
+The views and the axe tags are professional defaults (D034's values, chosen by Digitala), not the engine's own
+requirement (D037): a management function passes its own with --vyer and --axe-taggar, and the receipt records
+which views and tags ran and whether the defaults were used. The mechanics - the browser, the parts, the snapshot, the
+sandboxed detector, the receipt - are the engine's and do not change with them.
 
 A local file is served read-only from its own directory on 127.0.0.1 for the length of the run, so every part
 (including Lighthouse, which needs http) sees the same page. The host runs the detector afterwards on each view's
@@ -32,6 +38,11 @@ VIEWPORTS = {
     'desktop-1440': {'width': 1440, 'height': 900, 'deviceScaleFactor': 1, 'isMobile': False, 'hasTouch': False},
 }
 AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']
+# D037: the two names above are parameters; a caller that reads PARAMETRAR knows this code takes them.
+PARAMETRAR = ('vyer', 'axe-taggar')
+VY = re.compile(r'\A([a-z][a-z0-9-]{0,19})=([0-9]{3,4})x([0-9]{3,4})@([1-3])([md])\Z')
+AXE_TAG = re.compile(r'\A[A-Za-z0-9][A-Za-z0-9.-]{1,23}\Z')
+VY_MAX, TAG_MAX = 4, 12
 FULL_PAGE_MAX = 16384
 SELECTOR = re.compile(r'\A[A-Za-z0-9 .#:_\-\[\]="\'>+~*()^$|,]{1,200}\Z')
 CODE = ('runtime/web_measure.py', 'runtime/web_common.py', 'runtime/web/measure.mjs', 'config/web-tools.lock.json')
@@ -47,6 +58,31 @@ def target_url(value):
     if parts.username or parts.password:
         raise ValueError('An address may not carry credentials')
     return value
+
+
+def parse_viewports(text):
+    """NAME=WIDTHxHEIGHT@SCALE followed by m (mobile, touch) or d (desktop): 1-4 unique names within Chrome's range."""
+    views = {}
+    for item in (text or '').split(','):
+        match = VY.match(item)
+        if not match:
+            raise ValueError('--vyer is NAMN=BREDDxHOJD@SKALAm|d, comma-separated: ' + item[:40])
+        name, width, height, scale, kind = match.groups()
+        width, height = int(width), int(height)
+        if name in views or not 320 <= width <= 2560 or not 320 <= height <= 2000:
+            raise ValueError('--vyer: repeated name or size outside 320-2560 x 320-2000: ' + item[:40])
+        views[name] = {'width': width, 'height': height, 'deviceScaleFactor': int(scale), 'isMobile': kind == 'm',
+                       'hasTouch': kind == 'm'}
+    if not 1 <= len(views) <= VY_MAX:
+        raise ValueError('--vyer names 1-%d views' % VY_MAX)
+    return views
+
+
+def parse_axe_tags(text):
+    tags = (text or '').split(',')
+    if not 1 <= len(tags) <= TAG_MAX or len(tags) != len(set(tags)) or any(not AXE_TAG.match(t) for t in tags):
+        raise ValueError('--axe-taggar is 1-%d unique axe tag names' % TAG_MAX)
+    return tags
 
 
 def local_file(value):
@@ -83,8 +119,13 @@ def parse(argv):
     parser.add_argument('--handling-selektor')
     parser.add_argument('--undantag-fil')
     parser.add_argument('--undantag-sort', default='vercel-automation-bypass')
+    parser.add_argument('--vyer')
+    parser.add_argument('--axe-taggar')
     args = parser.parse_args(argv)
     common.label(args.etikett)
+    args.viewports = parse_viewports(args.vyer) if args.vyer is not None else dict(VIEWPORTS)
+    args.axe_tags = parse_axe_tags(args.axe_taggar) if args.axe_taggar is not None else list(AXE_TAGS)
+    args.standardvarden = {'vyer': args.vyer is None, 'axe_taggar': args.axe_taggar is None}
     if not 0 <= args.sektioner <= 4:
         raise ValueError('--sektioner is 0-4')
     parts = [p for p in args.delar.split(',') if p]
@@ -140,9 +181,9 @@ def detector(run, name):
     return record
 
 
-def summary(run, result, detectors):
+def summary(run, result, detectors, viewports=VIEWPORTS):
     views = {}
-    for name in VIEWPORTS:
+    for name in viewports:
         entry = {'status': (result.get('views') or {}).get(name, {}).get('status')}
         measured = run / 'matning' / (name + '.json')
         if measured.is_file():
@@ -187,7 +228,7 @@ def run(argv=None):
         profile_directory = run_directory / '.chrome-profil'
         profile_directory.mkdir()
         config = {'target_url': url, 'target_origin': '%s://%s' % urllib.parse.urlsplit(url)[:2],
-                  'parts': args.parts, 'sections': args.sektioner, 'viewports': VIEWPORTS, 'axe_tags': AXE_TAGS,
+                  'parts': args.parts, 'sections': args.sektioner, 'viewports': args.viewports, 'axe_tags': args.axe_tags,
                   'full_page_max': FULL_PAGE_MAX, 'action_text': args.handling_text,
                   'action_selector': args.handling_selektor, 'out_dir': str(run_directory),
                   'profile_dir': str(profile_directory), 'chrome_path': str(common.CHROME),
@@ -227,11 +268,11 @@ def run(argv=None):
     result = json.loads(result_file.read_text()) if result_file.is_file() else {'fatal': 'inget resultat'}
     detectors = {}
     if 'detektor' in args.parts and not result.get('fatal'):
-        for name in VIEWPORTS:
+        for name in args.viewports:
             detectors[name] = detector(run_directory, name)
     shutil.rmtree(run_directory / '.detektor-scratch', ignore_errors=True)
     (run_directory / 'SAMMANFATTNING.json').write_text(
-        json.dumps(summary(run_directory, result, detectors), indent=1, ensure_ascii=False) + '\n')
+        json.dumps(summary(run_directory, result, detectors, args.viewports), indent=1, ensure_ascii=False) + '\n')
     removed = []
     if secret:
         removed = common.remove_contaminated(run_directory, common.secret_hits(run_directory, secret))
@@ -253,8 +294,9 @@ def run(argv=None):
                'started_at': started, 'target': target, 'parameters': {
                    'sections': args.sektioner, 'parts': args.parts, 'action_text': args.handling_text,
                    'action_selector': args.handling_selektor, 'label': args.etikett,
-                   'exception': args.undantag_sort if secret else None},
-               'viewports': VIEWPORTS, 'tools': tools, 'browser_half': {'exit': node_exit, 'seconds': node_seconds,
+                   'exception': args.undantag_sort if secret else None,
+                   'vyer': args.vyer, 'axe_taggar': args.axe_taggar, 'standardvarden': args.standardvarden},
+               'viewports': args.viewports, 'axe_tags': args.axe_tags, 'tools': tools, 'browser_half': {'exit': node_exit, 'seconds': node_seconds,
                                                                        'result': result},
                'detector': detectors, 'chrome_profile_removed': not (run_directory / '.chrome-profil').exists(),
                'chrome_running_after_stop': survivors,
