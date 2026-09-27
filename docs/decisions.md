@@ -1676,3 +1676,24 @@ and `standardvarden` false for both. The host checks (13) run with the defaults 
 
 Left outside: the visitor and critique profiles have no professional defaults to move; the sections count, parts and
 action are already parameters. The Office's KONTRAKT gets a version 5 naming the two parameters.
+
+Shown after integration, 2026-09-27, within the owner's rebuild order (Office OMBYGGNAD-20260927, stage 4):
+- The release of transition 18 (configuration `eb102e4e`, runtime `3bea86ef`, office `df5ed5dc`, the model choice
+  unchanged, exactly the two changed files of D037) was staged and checked by a separately reviewed script derived from
+  transition 17's with four intended differences. The check again required the pinned web tools to verify under the
+  staged release.
+- An isolated start rehearsal on a port- and root-shifted copy of the live database ran the engine alone (the rebind
+  logic rebound, was idempotent and refused an old argument), then started the new daemon twice, about a second each;
+  all 11 idle `DevelopmentTask` executions answered a state query through the new worker with no event added, and both
+  SIGTERM stops were clean. From the rehearsal release's own copy, barrier tests A and C passed for both paths with the
+  allowed site named `localhost`, and a measurement against a local file with a third view (`platta-820`) and three tags
+  ended `klar` with the receipt naming the three views and `standardvarden` false. The harness's own check for the
+  three views was order-sensitive against a receipt written with sorted keys; it was corrected to a set comparison and
+  the measurement rerun, with the first record kept. No model session ran in the rehearsal.
+- The owner activated transition 18 on 2026-09-27 at 10:44Z, outside AP-10's window. Read back: the service runs
+  `eb102e4e` from the new release's directory with its three recorded processes; AP-10's schedule is bound to it,
+  unpaused, next run 2026-09-28 07:00Z; AP-10's command was measured unchanged and the closed AP-11 commitment untouched.
+  A measurement run from the active release's own copy against the customer's protected production site, with the
+  management function's two views and six axe tags given as `--vyer` and `--axe-taggar`, ended `klar`: the receipt names
+  the active release as its code root, records the views and tags that ran, `standardvarden` false for both, and the
+  exception value used without appearing in any output.
