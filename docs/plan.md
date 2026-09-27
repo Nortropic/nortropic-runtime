@@ -9,9 +9,35 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# MÄTPROFILENS PARAMETRAR — GÄLLANDE INGÅNG: vyer och axe-taggar som förvaltningens parametrar (D037) aktiva sedan övergång 18
+# Gällande arbete — D038, avgränsade åtgärder efter kundprovet
 
-Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+Kontorets DIGITALA-SAMLAT-ATGARDSMANDAT-20260927 är ett nytt accepterat bygguppdrag. Det omfattar
+registrering utan fasta provnamn, diagnos och kvalificering av native-konfigurationen samt en
+avgränsad schemalagd intags-/driftoperation på befintlig Temporal-motor. Ingen ny motor eller
+Trust Kernel; andra åtaganden och modellval är oförändrade.
+
+Kandidaten ligger i den isolerade grenen `atgarder/vikskar-20260927`. Kod och fulla prov finns,
+men separat granskning, skyddad integration och releaseberedning återstår. Ett isolerat schema
+har faktiskt startat tre körningar: frisk, incident till privat kontorsmottagare och återhämtning.
+Det är inte aktiv kunddrift. Fulla Runtime-sviten har passerat 606 tester före senaste riktade
+kontroll av diagnosvägen. Kontorets motsvarande kandidat bär verksamhetshanteraren.
+
+Aktiv pekare är fortfarande `eb102e4e88e245e41ba7e932c068d26e2d839036f4b96f882ef423178caa6727`
+(Runtime `3bea86ef`, kontoret `df5ed5dc`). Native-konfigurationen avviker från dess frysta hash;
+ordinarie körning vägrar fortsatt avvikelsen. Diagnos lämnar privat konfiguration och pekare
+orörda. Aktuell konfiguration har klarat isolerade fil-/nät-/credentialspärrprov och verktygsinventering,
+men detta ger inte rätt att aktivera en ny bindning. Äldre D037-lägesstycken nedan är historik.
+
+Nästa handling: separat granska denna kandidat och kontorets hanterare; förbered exakt skyddad
+integration och en granskad övergång med prövad återgång. Kedjedrivaren är ensam skrivare i
+Runtime-arbetsytan. Återupptagning sker från denna plan, kontorets gällande plan och det privata
+`evidence/nasta-uppdrag/local/atgarder-vikskar-20260927/` med hjälp-/provloggar.
+
+---
+
+# MÄTPROFILENS PARAMETRAR — HISTORIK: vyer och axe-taggar som förvaltningens parametrar (D037) aktiva sedan övergång 18
+
+Detta var ordinarie ingång före D038; avsnittet är nu historik.
 
 LÄGE 2026-09-27: ägaren beställde ombyggnaden till målbilden (kontorets OMBYGGNAD-20260927, etapp 4): generisk
 mätmekanik skiljs från Digitalas professionella val. Beslutet här är D037: `runtime.web_measure` tar `--vyer` och

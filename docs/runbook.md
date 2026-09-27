@@ -363,3 +363,32 @@ The engine binary is `.runtime/bin/impeccable-0.1.6`, checked by SHA256 at every
 the published suite, with their own receipt:
 
     "<runtime>/.runtime/temporal-venv/bin/python" -B scripts/run_web_host_checks.py <new receipt path>
+
+
+## Release-bound Office operations (D038)
+
+This candidate requires protected integration and an activated release before ordinary use.
+`python -B -m runtime.operation_schedule status OPERATION` reads only the release-bound operation.
+The same command takes `install`, `resume`, `pause`, `stop` and `rebind`. Installation refuses duplicates
+and starts paused. Resume requires explicit action; stop disables future starts and lets a bounded
+in-flight operation finish and record its effects. Rebind requires a paused, idle schedule and retains
+all scope checks. These commands never modify the AP-10 schedule.
+
+The release configuration must bind `scheduled_operations[OPERATION]` to
+`{"input":"operations/NAME.json","interval_seconds":300}` and include hashes for that input and
+`office/tools/driftoperation.py`. Only 60–86400 seconds are accepted. The Office input uses schema
+`office-drift/1`, a private `state` directory, and optional `intake` and `monitor` objects. Intake binds
+Digitala's frozen consumer bytes, customer directory, executor, HTTPS base URL and credential file;
+monitor binds the exact HTTPS health address and 40-character candidate SHA. Secrets remain in private
+0600 files outside repositories. A bypass is internal monitor access, never customer authentication.
+
+Runtime returns the actual Office result. `completed: false` is not a successful business check just
+because the workflow ended. Office persists per-run config bindings, intake output hashes and health
+observations. Incident/recovery delivery is acknowledged only after the private recipient record is read
+back. That is a local Office recipient, not a claim of email delivery. Native schedule status cannot
+substitute for these results. An offline host yields no checks; the hosted product remains independently available.
+
+For native input drift, `python -B -m scripts.inspect_native_config` checks release file hashes and reports
+only differences and safe version/feature metadata. It never selects code or rewrites private settings.
+Do not copy a new guard hash into the active config. Requalification and a reviewed release transition
+with verified rollback are required.

@@ -1697,3 +1697,31 @@ Shown after integration, 2026-09-27, within the owner's rebuild order (Office OM
   management function's two views and six axe tags given as `--vyer` and `--axe-taggar`, ended `klar`: the receipt names
   the active release as its code root, records the views and tags that ran, `standardvarden` false for both, and the
   exception value used without appearing in any output.
+
+
+## D038 — 2026-09-28: accepted scoped operations, task registration and native-config diagnosis
+
+Authority: the owner's DIGITALA-SAMLAT-ATGARDSMANDAT-20260927 in the Office. It expressly permits
+necessary Runtime/Office changes and preserves the protected activation path. Original source
+and SHA256 are held privately in the Office's action evidence; no candidate-written keyword is authority.
+
+The candidate adds a generic registration of a host-accepted construction task against an immutable
+source and explicit fixed target. The holder's acceptance record remains outside candidate write access;
+registration grants no publication. Exact candidate tests, independent review and server checks remain.
+The publication wrapper becomes reviewed repository code. Its initial integration requires a separately
+reviewed bootstrap of the existing holder path; historical task names must not be impersonated.
+
+A release may bind a named operation, frozen input, interval and Office handler. Runtime schedules and
+runs that handler on the existing engine. Office owns customer import, its idempotency and private
+incident receiver. Installation starts paused; stop affects this operation's future starts only.
+A local sleeping/offline Mac cannot monitor continuously; hosted customer submissions must work independently.
+The qualification schedule used an isolated queue and injected test configuration; it was removed.
+No active worker, AP-10 schedule or model choice was changed by those tests.
+
+`inspect_installation` reports guard differences only after validating pinned release bytes. `installed`
+and execution still reject them. The old native-config bytes were not recoverable from the inspected
+locations; no blind rollback or private settings edit is authorized. Current boundary/tool probes are
+qualification evidence, not a guard rebind or active release. New release/rollback and any operator action
+must be concretely prepared and separately reviewed before selecting the candidate.
+
+Status and next action belong only in docs/plan.md. This decision records scope, not completion.
