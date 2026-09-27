@@ -9,7 +9,7 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034, rättad i D035) integrerade; release, startövning och övergång väntar på ägarens beslut
+# WEBBPROFILER — GÄLLANDE INGÅNG: mät-, kritik- och provarprofilerna (D034, rättade i D035 och D036) integrerade; övergången förbereds på ägarens beslut, aktiveringen är ägarens
 
 Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
 
@@ -17,6 +17,10 @@ LÄGE 2026-09-26: ägaren beställde de profiler som Digitala saknar i motorn: m
 och utförarneutralt (kontorets RUNTIME-PROFILER-BEREDNING-20260926, RUNTIME-PROFILER-KONTRAKT-20260926 och
 RUNTIME-PROFILER-KANDIDAT-20260926). Beslutet här är D034. Kandidaten byggdes i en egen arbetsyta på `d5a44064` och
 integreras genom denna publicering, efter separat granskning. Integrationen aktiverar ingenting.
+
+LÄGE 2026-09-27: ägaren beslutade att övergången förbereds nu (kontorets plan). D036 rättar städanmärkningarna från D035:s
+andra granskningsrunda och integreras genom en egen publicering efter separat granskning; därefter release och isolerad
+startövning enligt ordningen nedan. Aktiveringen gör ägaren.
 
 LÄGE 2026-09-26 sent: D034 är integrerad (PR 64). Kontorets Digitala-fall fann därefter i sin egen hållare, som D034:s
 följer, att värdreglerna gjorde proxyns egen adress oupplösbar när målet inte heter 127.0.0.1. Samma fel uppmättes

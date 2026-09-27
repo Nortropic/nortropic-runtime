@@ -41,6 +41,9 @@ const browser = await puppeteer.launch({
     '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings',
     '--remote-debugging-port=0'],
 });
+// Registered after the launch, so it runs after puppeteer's own exit hook has ended Chrome: however this process ends,
+// the profile, which may hold a protected host's cookie, goes with it (D036).
+process.on('exit', () => { try { rmSync(config.profile_dir, { recursive: true, force: true }); } catch {} });
 // Should the command that started this measurement die without ending it (SIGKILL), end with it: close Chrome and
 // exit (D035). Unreferenced, so it never keeps a finished measurement alive.
 let orphaned = false;

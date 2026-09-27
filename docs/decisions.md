@@ -1588,3 +1588,38 @@ both executors' command lines are D034's, byte for byte or unchanged by syntax t
 how its process is ended. Assessed, not measured with a model: the conclusions of D034's model sessions carry over,
 since their targets were named 127.0.0.1 and none of them ended other than normally. A visitor session against a
 target with another name, and barrier test A with such a target, are left to the release's start rehearsal.
+
+## D036 — 2026-09-27: a stopped run's cleanup cannot itself be cut short, the holder's start is covered, and no Chrome profile is left behind
+
+After D035's second review round and before the release, on the owner's decision to prepare the transition (2026-09-27;
+the Office's plan): five of that round's residual notes concerned the cleanup. A stop while the holder started (up to
+90 seconds of waiting for its ready file) was ended by the holder's own check only after the command had exited. A first
+stop signal that arrived while a cleanup already ran could cut it short. An interrupted or killed run could leave the
+run's Chrome profile on disk, which after priming holds the protected host's cookie. The Chrome sweep's process listing
+could raise inside a cleanup and mask the exception the cleanup ran under. Two docstrings kept the broader wording.
+
+Decision:
+- `start_holder` ends the holder, its Chrome and its profile at once on any error or interrupt while it waits for the
+  holder to become ready.
+- The visitor's and the measurement's final cleanups run shielded: Ctrl-C, SIGTERM and SIGHUP are ignored while they
+  run, and the previous dispositions come back afterwards. A signal that arrives meanwhile is dropped; the run was
+  ending.
+- Those cleanups remove the run's Chrome profile, and the holder and the measurement's Node remove it on their own
+  exit, in a handler registered after the launch so that it runs after puppeteer's exit hook has ended Chrome - also
+  when the command was killed outright.
+- The Chrome sweep returns None instead of raising when the processes cannot be listed; the receipt's count is then
+  None.
+- The docstrings say what the code does.
+
+Tests: four more in `scripts/test_web_profiles.py` (47): the shielded cleanup and the dispositions it gives back; the
+sweep never raising; a stand-in holder interrupted while it starts, ended at once with its profile; the measurement's
+cleanup when its browser half never started, shielded and removing the profile. The visitor's test after an error now
+also requires a cookie-holding profile to be gone and its cleanup to have run shielded. The host checks (13) now also
+require the profile to be gone after a time limit, an error, SIGTERM, a killed measurement, a killed holder and a holder
+killed during its start, and the killed checks keep their workspaces inside the check's own directory. Each new
+requirement fails without the part of this change it names, for that reason, measured by mutation, with one exception:
+the measurement's own final block already removes its profile in every measured path, so its new exit handler covers
+only an exit before that block (a close that outlasts the killed command's five seconds), which no check provokes.
+
+Not covered, unchanged from D035: what a model CLI leaves behind on its own normal exit, and a process the model itself
+detaches inside the Codex sandbox, which keeps the sandbox's limits.

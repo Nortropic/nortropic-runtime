@@ -1,5 +1,5 @@
 """Shared ground for the three web profiles (D034): run directories, receipts, the secret, tools, the grammar and
-the child processes, none of which outlives its run (D035).
+the child processes, which a run that ends other than normally stops (D035, D036).
 
 The profiles are host commands, not engine workflows: their evidence is the run directory itself, created exclusively,
 never overwritten, and closed by a receipt that hashes every file in it. Nothing here writes into a repository.
@@ -204,6 +204,23 @@ def stop_signals():
             signal.signal(number, old)
 
 
+@contextlib.contextmanager
+def shielded():
+    """Cleanup that a stop signal must not cut short: while it runs, Ctrl-C, SIGTERM and SIGHUP are ignored, and the
+    previous dispositions come back afterwards (D036). A signal that arrives meanwhile is dropped; the run was ending."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    previous = {number: signal.getsignal(number) for number in STOP_SIGNALS}
+    for number in STOP_SIGNALS:
+        signal.signal(number, signal.SIG_IGN)
+    try:
+        yield
+    finally:
+        for number, old in previous.items():
+            signal.signal(number, old)
+
+
 def end_group(process, grace=30):
     """End a child started in its own session together with its process group: SIGTERM, then SIGKILL."""
     for number, wait in ((signal.SIGTERM, grace), (signal.SIGKILL, 10)):
@@ -223,8 +240,8 @@ def end_group(process, grace=30):
 def run_session(argv, cwd, env, prompt, stream, seconds_limit):
     """One model CLI in its own session with the prompt on stdin: (exit code, 'exit' or 'tidsgrans').
 
-    On any error or interrupt while it runs, its whole group is ended before the exception goes on, so no model
-    session outlives the run that started it.
+    On any error or interrupt while it runs, its whole group is ended before the exception goes on, so a run that ends
+    that way leaves no model session running. What the CLI leaves behind on its own normal exit is not swept.
     """
     process = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=stream,
                                stderr=subprocess.STDOUT, start_new_session=True)
@@ -255,21 +272,25 @@ def chrome_processes(profile_directory):
 
 def end_chrome(profile_directory, grace=3):
     """End every process of this run's Chrome still running `grace` seconds after whatever launched it stopped:
-    SIGTERM, then SIGKILL. The count of processes that had to be ended (0 when Chrome closed as it should)."""
-    deadline = time.monotonic() + grace
-    while chrome_processes(profile_directory) and time.monotonic() < deadline:
-        time.sleep(0.2)
-    found = chrome_processes(profile_directory)
-    for number in (signal.SIGTERM, signal.SIGKILL):
-        for pid in chrome_processes(profile_directory):
-            try:
-                os.kill(pid, number)
-            except (ProcessLookupError, PermissionError):   # gone, or no longer the process that was listed
-                pass
-        deadline = time.monotonic() + 5
+    SIGTERM, then SIGKILL. The count of processes that had to be ended (0 when Chrome closed as it should), or None when
+    the processes could not be listed: it runs inside cleanups and never raises over the exception they run under."""
+    try:
+        deadline = time.monotonic() + grace
         while chrome_processes(profile_directory) and time.monotonic() < deadline:
             time.sleep(0.2)
-    return len(found)
+        found = chrome_processes(profile_directory)
+        for number in (signal.SIGTERM, signal.SIGKILL):
+            for pid in chrome_processes(profile_directory):
+                try:
+                    os.kill(pid, number)
+                except (ProcessLookupError, PermissionError):   # gone, or no longer the process that was listed
+                    pass
+            deadline = time.monotonic() + 5
+            while chrome_processes(profile_directory) and time.monotonic() < deadline:
+                time.sleep(0.2)
+        return len(found)
+    except (OSError, subprocess.SubprocessError):
+        return None
 
 
 def load_grammar():

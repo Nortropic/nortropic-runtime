@@ -84,6 +84,10 @@ const browser = await puppeteer.launch({
     '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--remote-debugging-port=0'],
 });
 
+// Registered after the launch, so it runs after puppeteer's own exit hook has ended Chrome: however this process ends,
+// the profile, which after priming holds the protected host's cookie, goes with it (D036).
+process.on('exit', () => { try { rmSync(config.profile_dir, { recursive: true, force: true }); } catch {} });
+
 // Layer 4: popups and new tabs are not part of the scenario.
 let mainPage = null;
 browser.on('targetcreated', async (target) => {
