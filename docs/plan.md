@@ -34,6 +34,16 @@ integration och en granskad övergång med prövad återgång. Kedjedrivaren är
 Runtime-arbetsytan. Återupptagning sker från denna plan, kontorets gällande plan och det privata
 `evidence/nasta-uppdrag/local/atgarder-vikskar-20260927/` med hjälp-/provloggar.
 
+D039, separat fortsättning 2026-09-28: `atgarder/trusted-issuer-20260928` utgår från
+frysta ac5bcd9 utan att ändra intagsprovets kandidat. Den tar bort Publisherns egna
+PAT-success och kräver serverbundna App-utfärdare/exakta check-runs. Tolv riktade
+regressioner och fullsuite 614 tester passerar; separat granskning återstår. Null-bindningarna
+på servern förblir ett verkligt hinder. Ingen App är vald eller behörighet ändrad.
+Denna gren kvarstår lokalt för prövning och granskning; ingen aktiv/integrerad kod
+är ändrad. Nästa ansvar: utföraren färdigställer prov/granskning, kedjedrivaren
+samordnar senare adoption genom befintlig holder-väg. Ingen självbootstrap genom
+kandidatens egen Publisher och ingen skyddsförsvagning är tillåten.
+
 ---
 
 # MÄTPROFILENS PARAMETRAR — HISTORIK: vyer och axe-taggar som förvaltningens parametrar (D037) aktiva sedan övergång 18

@@ -110,9 +110,26 @@ Do not place business code in Runtime to bypass the present validator.
 Candidate and reviewer have no publication tools, no network, and no host evidence
 write access. Reviewer source is read-only. A host creates exact Git objects,
 executes frozen acceptance in the native sandbox and binds both real run identities
-before protected publication. Required branch statuses are exact-candidate checks;
-the current GitHub plan accepts status writers from any app, so host credential
-isolation remains essential.
+before protected publication. Required server checks must name explicit positive GitHub App IDs for both
+`runtime/tests` and `runtime/review`. The branch rule is the existing host-owned
+issuer authority; candidate input and installed-app discovery cannot choose it.
+Publisher refuses null/missing/any-app bindings before push or PR, never posts its
+own success statuses, and requires completed successful check-runs from those
+exact issuers on the exact candidate before merge. Missing, malformed, truncated
+or ambiguous readback, and an issuer change during publication, stop integration.
+It does not infer success from combined commit status, neutral or skipped runs.
+
+The current servers' null bindings therefore block this path. The historical
+`config/branch-protection.json` has any-app (-1) entries and is not a qualified
+configuration for this stricter path; this change does not apply or repair it. Selecting and
+qualifying a genuinely independent issuer, its protected execution/input boundary,
+and server configuration is still an external prerequisite. An arbitrary installed
+App or GitHub Actions identity alone does not qualify that boundary. Do not weaken
+protection or substitute a PAT status to get past the wait. This code grants no
+new credentials and does not retrofit the active or integrated holder; adopting a
+new Publisher still requires the existing separately reviewed holder transition.
+If a PR was already created before checks became available, preserve it and
+reconcile only after the diagnosed prerequisite is restored.
 
 No general hostile detached-process or arbitrary-host-compromise guarantee is
 claimed. Per-invocation deadlines and process-group cleanup are measured local

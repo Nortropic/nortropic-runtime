@@ -1725,3 +1725,34 @@ qualification evidence, not a guard rebind or active release. New release/rollba
 must be concretely prepared and separately reviewed before selecting the candidate.
 
 Status and next action belong only in docs/plan.md. This decision records scope, not completion.
+
+
+## D039 — 2026-09-28: fail closed without a server-bound publication issuer
+
+Within the accepted scoped action mandate, the Publisher must not treat check names
+as issuer authority or synthesize its own mandatory success with its publishing PAT.
+D006's old any-app limitation is now a blocker at this boundary. The existing
+server-owned branch protection remains the authority source; no new trust registry,
+App selection, account, permission or configuration mutation is introduced.
+
+Both mandatory checks require positive App IDs from that rule. The publisher reads
+GitHub check-runs for the exact candidate, verifies App IDs, completed/success and
+unambiguous complete readback, and rechecks unchanged issuer selection before merge.
+Local whole-task acceptance/review, scope, parent/tree, head/base and reconciliation
+checks remain. A merged-response recovery remains read-only reconciliation, never a
+new merge based on a self-issued status. Non-App statuses cannot authenticate an App.
+
+The full local suite passes 614 tests. Twelve integration regressions exercise real Git objects and counted remote
+fixtures. They include null/any-app, weak protection, wrong issuer/head, partial or
+ambiguous readback, stale/pending/neutral/skipped/failing results, issuer drift,
+positive exact-head checks, and lost merge response without another mutation.
+Positive App IDs are synthetic fixtures, not selected or configured real issuers.
+No live merge is claimed. Trusted issuer execution and server configuration remain
+external prerequisites; installing/selecting an arbitrary available App is not enough.
+
+Primary API references checked 2026-09-28: GitHub REST branch protection
+(https://docs.github.com/en/rest/branches/branch-protection) documents expected app_id;
+GitHub REST check-runs (https://docs.github.com/en/rest/checks/runs) supplies authenticated
+app/head/status fields and total_count. This conservative profile refuses incomplete
+or ambiguous latest-run results rather than selecting a favorable historical result.
+The active release and prior frozen candidate are unchanged. Status belongs in plan.md.
