@@ -51,7 +51,12 @@ def require_workspace_instructions(workspace):
     return config
 
 
-def installed():
+def inspect_installation():
+    """Read and verify installed bytes while reporting native guard drift.
+
+    This is diagnosis/staging input only. It never authorizes execution and does
+    not update the active pointer or private user configuration.
+    """
     if not ACTIVE.exists():
         return None
     pointer = json.loads(ACTIVE.read_text())
@@ -65,13 +70,23 @@ def installed():
         raise ValueError('Pinned canonical state/target mapping differs')
     if value['database'] != str(ROOT / '.runtime/runtime.sqlite'):
         raise ValueError('Only the existing canonical database is permitted')
-    if value.get('instruction_guards') != instruction_guards():
-        raise ValueError('Native instruction/configuration inputs changed; inspect before a new model call')
+    expected, actual = value.get('instruction_guards', {}), instruction_guards()
+    differences = {key: {'expected': expected.get(key), 'actual': actual.get(key)}
+                   for key in sorted(set(expected) | set(actual))
+                   if key not in expected or key not in actual or expected.get(key) != actual.get(key)}
     for name, expected in value['files'].items():
         path = config.parent / name
         if path.is_symlink() or not path.is_file() or sha(path) != expected:
             raise ValueError('Pinned active code changed: ' + name)
     value.update(config_path=str(config), config_sha256=pointer['sha256'], directory=str(config.parent))
+    value['guard_differences'] = differences
+    return value
+
+
+def installed():
+    value = inspect_installation()
+    if value is not None and value.pop('guard_differences'):
+        raise ValueError('Native instruction/configuration inputs changed; inspect before a new model call')
     return value
 
 

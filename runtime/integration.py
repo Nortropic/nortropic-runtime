@@ -120,16 +120,58 @@ class Publisher:
         return self.git('rev-parse', candidate + '^{tree}')
 
     def require_protection(self):
+        # Trust is selected by the host-controlled server rule, never by task,
+        # receipt, installed-app discovery or the candidate's check name.
         protection = self.api('branches/main/protection')
-        checks = protection.get('required_status_checks') or {}
-        required = {x['context'] for x in checks.get('checks', [])}
-        if (checks.get('strict') is not True or required != {'runtime/tests', 'runtime/review'}
-                or not protection.get('enforce_admins', {}).get('enabled')
-                or protection.get('allow_force_pushes', {}).get('enabled')
-                or protection.get('allow_deletions', {}).get('enabled')
-                or not protection.get('required_linear_history', {}).get('enabled')
-                or protection.get('required_pull_request_reviews') is None):
+        if not isinstance(protection, dict):
             raise GateClosed('Required server protection is not active')
+        checks = protection.get('required_status_checks')
+        if not isinstance(checks, dict):
+            raise GateClosed('Required server protection is not active')
+        entries = checks.get('checks')
+        if (not isinstance(entries, list) or len(entries) != 2
+                or not all(isinstance(x, dict) for x in entries)
+                or {x.get('context') for x in entries} != {'runtime/tests', 'runtime/review'}):
+            raise GateClosed('Exact mandatory server checks are missing or ambiguous')
+        issuers = {x['context']: x.get('app_id') for x in entries}
+        if any(type(app) is not int or app <= 0 for app in issuers.values()):
+            raise GateClosed('Mandatory checks lack an explicit trusted server App issuer')
+        def enabled(name):
+            value = protection.get(name)
+            return value.get('enabled') if isinstance(value, dict) else None
+        if (checks.get('strict') is not True
+                or enabled('enforce_admins') is not True
+                or enabled('allow_force_pushes') is not False
+                or enabled('allow_deletions') is not False
+                or enabled('required_linear_history') is not True
+                or not isinstance(protection.get('required_pull_request_reviews'), dict)):
+            raise GateClosed('Required server protection is not active')
+        return issuers
+
+    def require_checks(self, candidate, issuers):
+        # Commit statuses (including PAT-written success) do not prove an App
+        # identity. Only GitHub's authenticated check-run fields are accepted.
+        result = self.api('commits/' + candidate + '/check-runs?filter=latest&per_page=100')
+        runs = result.get('check_runs') if isinstance(result, dict) else None
+        if (not isinstance(runs, list) or type(result.get('total_count')) is not int
+                or result['total_count'] != len(runs)
+                or not all(isinstance(run, dict) for run in runs)):
+            raise GateClosed('Check-run readback is incomplete or malformed')
+        verified = {}
+        for name, issuer in issuers.items():
+            matches = [run for run in runs if run.get('name') == name]
+            # Do not choose an old green run among ambiguous/latest suites.
+            if len(matches) != 1:
+                raise GateClosed('Mandatory check-run missing or ambiguous: ' + name)
+            run = matches[0]
+            app = run.get('app')
+            if (not isinstance(app, dict) or type(app.get('id')) is not int
+                    or app['id'] != issuer or run.get('head_sha') != candidate
+                    or run.get('status') != 'completed' or run.get('conclusion') != 'success'
+                    or type(run.get('id')) is not int or run['id'] <= 0):
+                raise GateClosed('Mandatory check lacks trusted exact-head success: ' + name)
+            verified[name] = {'app_id': issuer, 'check_run_id': run['id'], 'head_sha': candidate}
+        return verified
 
     def require_base(self, base):
         self.git('fetch', 'origin', 'main')
@@ -167,7 +209,7 @@ class Publisher:
     def _publish(self, task, subject, tests, review):
         require_gate(task, subject, tests, review)  # MUST precede every publication caller.
         tree = self.inspect_candidate(task, subject)
-        self.require_protection()
+        issuers = self.require_protection()
         candidate = subject['candidate']
         branch = 'runtime/' + candidate
         matches = self.api('pulls?state=all&head=Nortropic:' + branch)
@@ -190,20 +232,14 @@ class Publisher:
                         'Acceptance SHA256: ' + subject['acceptance_sha256'] + '\n' +
                         'Independent reviewer run: ' + review['reviewer_run']})
         number = pr['number']
-        for context, description in (('runtime/tests', 'Whole-task external acceptance passed'),
-                                     ('runtime/review', 'Independent exact-candidate review approved')):
-            self.api('statuses/' + candidate, 'POST', {'state': 'success', 'context': context,
-                                                     'description': description})
         # Re-read server identities immediately before the expected-head merge.
         pr = self.api('pulls/' + str(number))
         if pr.get('head', {}).get('sha') != candidate or pr.get('base', {}).get('ref') != 'main':
             raise GateClosed('PR identity changed')
         self.require_base(subject['base'])
-        self.require_protection()
-        status = self.api('commits/' + candidate + '/status')
-        required = {x['context']: x['state'] for x in reversed(status.get('statuses', []))}
-        if status.get('state') != 'success' or any(required.get(x) != 'success' for x in ('runtime/tests', 'runtime/review')):
-            raise GateClosed('Required current-SHA statuses are not successful')
+        if self.require_protection() != issuers:
+            raise GateClosed('Mandatory server issuers changed during publication')
+        self.require_checks(candidate, issuers)
         merged = self.api('pulls/' + str(number) + '/merge', 'PUT', {'sha': candidate, 'merge_method': 'squash'})
         if merged.get('merged') is not True:
             raise GateClosed('Server did not confirm merge; reconcile before any retry')

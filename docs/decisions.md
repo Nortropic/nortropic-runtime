@@ -1697,3 +1697,62 @@ Shown after integration, 2026-09-27, within the owner's rebuild order (Office OM
   management function's two views and six axe tags given as `--vyer` and `--axe-taggar`, ended `klar`: the receipt names
   the active release as its code root, records the views and tags that ran, `standardvarden` false for both, and the
   exception value used without appearing in any output.
+
+
+## D038 — 2026-09-28: accepted scoped operations, task registration and native-config diagnosis
+
+Authority: the owner's DIGITALA-SAMLAT-ATGARDSMANDAT-20260927 in the Office. It expressly permits
+necessary Runtime/Office changes and preserves the protected activation path. Original source
+and SHA256 are held privately in the Office's action evidence; no candidate-written keyword is authority.
+
+The candidate adds a generic registration of a host-accepted construction task against an immutable
+source and explicit fixed target. The holder's acceptance record remains outside candidate write access;
+registration grants no publication. Exact candidate tests, independent review and server checks remain.
+The publication wrapper becomes reviewed repository code. Its initial integration requires a separately
+reviewed bootstrap of the existing holder path; historical task names must not be impersonated.
+
+A release may bind a named operation, frozen input, interval and Office handler. Runtime schedules and
+runs that handler on the existing engine. Office owns customer import, its idempotency and private
+incident receiver. Installation starts paused; stop affects this operation's future starts only.
+A local sleeping/offline Mac cannot monitor continuously; hosted customer submissions must work independently.
+The qualification schedule used an isolated queue and injected test configuration; it was removed.
+No active worker, AP-10 schedule or model choice was changed by those tests.
+
+`inspect_installation` reports guard differences only after validating pinned release bytes. `installed`
+and execution still reject them. The old native-config bytes were not recoverable from the inspected
+locations; no blind rollback or private settings edit is authorized. Current boundary/tool probes are
+qualification evidence, not a guard rebind or active release. New release/rollback and any operator action
+must be concretely prepared and separately reviewed before selecting the candidate.
+
+Status and next action belong only in docs/plan.md. This decision records scope, not completion.
+
+
+## D039 — 2026-09-28: fail closed without a server-bound publication issuer
+
+Within the accepted scoped action mandate, the Publisher must not treat check names
+as issuer authority or synthesize its own mandatory success with its publishing PAT.
+D006's old any-app limitation is now a blocker at this boundary. The existing
+server-owned branch protection remains the authority source; no new trust registry,
+App selection, account, permission or configuration mutation is introduced.
+
+Both mandatory checks require positive App IDs from that rule. The publisher reads
+GitHub check-runs for the exact candidate, verifies App IDs, completed/success and
+unambiguous complete readback, and rechecks unchanged issuer selection before merge.
+Local whole-task acceptance/review, scope, parent/tree, head/base and reconciliation
+checks remain. A merged-response recovery remains read-only reconciliation, never a
+new merge based on a self-issued status. Non-App statuses cannot authenticate an App.
+
+The full local suite passes 614 tests. Twelve integration regressions exercise real Git objects and counted remote
+fixtures. They include null/any-app, weak protection, wrong issuer/head, partial or
+ambiguous readback, stale/pending/neutral/skipped/failing results, issuer drift,
+positive exact-head checks, and lost merge response without another mutation.
+Positive App IDs are synthetic fixtures, not selected or configured real issuers.
+No live merge is claimed. Trusted issuer execution and server configuration remain
+external prerequisites; installing/selecting an arbitrary available App is not enough.
+
+Primary API references checked 2026-09-28: GitHub REST branch protection
+(https://docs.github.com/en/rest/branches/branch-protection) documents expected app_id;
+GitHub REST check-runs (https://docs.github.com/en/rest/checks/runs) supplies authenticated
+app/head/status fields and total_count. This conservative profile refuses incomplete
+or ambiguous latest-run results rather than selecting a favorable historical result.
+The active release and prior frozen candidate are unchanged. Status belongs in plan.md.

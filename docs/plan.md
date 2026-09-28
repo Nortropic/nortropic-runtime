@@ -9,9 +9,75 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# MÄTPROFILENS PARAMETRAR — GÄLLANDE INGÅNG: vyer och axe-taggar som förvaltningens parametrar (D037) aktiva sedan övergång 18
+# Gällande arbete — D038, avgränsade åtgärder efter kundprovet
 
-Detta är planens ordinarie ingång. Avsnitten under den är historik och anger inte nästa steg.
+Senare dokumentkontinuitet 2026-09-28 efter r4; frysta granskningsunderlag ändras inte.
+
+Kontorets DIGITALA-SAMLAT-ATGARDSMANDAT-20260927 är ett nytt accepterat bygguppdrag. Det omfattar
+registrering utan fasta provnamn, diagnos och kvalificering av native-konfigurationen samt en
+avgränsad schemalagd intags-/driftoperation på befintlig Temporal-motor. Ingen ny motor eller
+Trust Kernel; andra åtaganden och modellval är oförändrade.
+
+Kandidat `atgarder/vikskar-20260927` är fryst vid `ac5bcd9`; kontorets hanterare vid
+`58f938e`. De tidigare fyra blockerarna är rättade och separat omgranskade. Isolerade
+frisk-/incident-/återhämtningsprov och fullsuite är bevarade; detta är inte aktiv kunddrift.
+
+Den faktiska kedjan med Digitala `d61141d` och legitim Kundstart-alias kvalificerades på nytt
+2026-09-28 06:20/06:21 UTC: två verkliga 60-sekunders schemastarter, båda completed+healthy,
+redan kvitterad revision 46 gav inget nytt båda gångerna. Kundhashar var oförändrade. Skyddad
+slutprodukt-r11 `0de4ffd` gav health HTTP200/exakt candidate/storageavailable. Endast
+aktivkodsladdaren ersattes i den isolerade kandidatworkern. Unikt testschema är raderat med
+NOT_FOUND-återläsning; aktiv pekare, service och AP10/AP11-definitioner var oförändrade.
+Den lokala tillfälliga kandidaten är varken aktiv release eller permanent kunddrift.
+
+D039-kandidaten `4384329` på `atgarder/trusted-issuer-20260928` utgår separat från ac5.
+Publisher skriver inte längre PAT-success och vägrar null/any-app; obligatoriska check-runs
+måste bära serverns bundna App och exakt head. Tolv riktade prov och fullsuite 614 passerar.
+Separat Runtime/Claude-läsning issuer-r1 slutade approved för exakt `4384329` kl. 06:14:28Z, inga
+blockerare och inget livegodkännande. Fem kommentarer kvarstår, bland annat utfärdarens
+uppgifts-/acceptansbindning och bättre kvitto-/provspårning. Den koden ingick inte i intags-r2.
+
+Verklig betrodd utfärdare och dess skyddade underlag/körmiljö samt serverbindning är kvarstående
+externa förutsättningar. Båda obligatoriska checks har fortfarande app_id=null. Ingen App,
+behörighet eller serverkonfiguration ändras här. Adoption av den nya Publishern följer den
+befintliga separat granskade holder-vägen; kandidatens egen kod får inte självbootstrapas.
+
+Den gamla driftpekaren var oförändrad även vid läsande förkontroll 2026-09-28 07:08 UTC;
+kontrollen passerade utan aktivering. Dess guardavvikelse har ett separat approved
+guard-only-paket r3 med samma 203 gamla kodfiler och verkligt repeterad stopped-state-
+återhämtning. Ägarterminalsteget väntar återkoppling; ingen utföraraktivering har skett och
+paketet inför inte denna nya kod. Ny faktisk driftavläsning krävs efter eventuell ägarövergång.
+
+Nästa genomförandesteg: kedjedrivaren kvalificerar tillåten issuer-/serverkoppling före skyddad
+integration/release. Produktens olösta boknings-/betalningskontrakt och tillåtna kvalificerade
+teståtkomst hanteras enligt kontorets plan. R4 har två separata approved: rapporten och
+produktens enradsdelta `2cf`→`f25`, inte helleverans, driftsättning eller ägaraccept. Produktens
+ankarrättning och källpubliceringsaudit är genomförda. Överlämning och disposition av r4:s
+öppna observationer är dokumentationsaktiviteter, inte återupptagningsmålet.
+Ägaren har det färdigberedda guard-terminalsteget. Runtime-utföraren har lämnat de exakta
+prov- och granskningskvittona; intagsprovet ska inte upprepas för en produktankarrättning.
+
+Den föregående dokumentkandidaten `477b20a5` publicerades på draft-PR 70 och återlästes.
+Den är ett daterat utfall, inte denna senare dokumentnots nya head. Main-integration och
+aktivering är inte genomförda och förblir egna kvalificerade steg.
+
+Grenarna ac5 och issuer438 kvarstår lokalt som frysta prov-/domsbaslinjer. Den nya grenen
+`atgarder/dokumentkontinuitet-20260928` är publicerad och ändrar endast planfakta; dess head
+är inte issuerdomens SHA, medan övriga bytes är verifierat identiska med `4384329`. Ingen gren är
+integrerad eller aktiv. Återuppta från denna plan, kontorets aktuella plan och privata
+`drift/intake-schema-r2/LAS-MIG.md`, `drift/issuer-bindning-r1/LAS-MIG.md`,
+`drift/releaseberedning/OPERATORSSTEG.md`, `slutleverans/LAS-MIG.md` och
+`slutleverans/PUBLICERING-EFTERKONTROLL.md` i kontorets åtgärdsyta för 20260927. Denna senare
+dokumentnots exakta heads och nätåterläsning binds i
+`drift/plan-kontinuitet-efter-r4/PUBLICERING-EFTER-R4.json` när publiceringen är gjord. Äldre
+HOLD-/beredningstext är historik; inga nya intagsticks ska startas för en produktändring.
+Leveransbeskedet är daterade fakta; planen äger fortsatt nästa handling.
+
+---
+
+# MÄTPROFILENS PARAMETRAR — HISTORIK: vyer och axe-taggar som förvaltningens parametrar (D037) aktiva sedan övergång 18
+
+Detta var ordinarie ingång före D038; avsnittet är nu historik.
 
 LÄGE 2026-09-27: ägaren beställde ombyggnaden till målbilden (kontorets OMBYGGNAD-20260927, etapp 4): generisk
 mätmekanik skiljs från Digitalas professionella val. Beslutet här är D037: `runtime.web_measure` tar `--vyer` och
@@ -777,3 +843,6 @@ består över skrivarbytet; invänta inget nytt körbesked.
 
 Färska mottagare läser AGENTS.md, därefter denna plan, verifierar att tidigare
 skrivare stoppat och inspekterar bevarat läge före varje skrivning.
+
+
+ATGÄRDER VIKSKÄR 2026-09-28, r3: separat r2-granskning stängde de fyra äldre driftblockerarna men fann att utgången workflowhistorik kunde dölja ett faktiskt stopp. Status återläser nu per post med begränsad tid; otillgänglig historik är explicit unknown och hindrar inte bekräftad paus/stopp. Riktade fem prov passerar, inklusive utgången historik, resulttimeout och genomförd stoppmutation. Nästa steg: separat riktad r3-granskning, därefter befintlig skyddad integration och releaseberedning. Office58f938e är oförändrad. Ingen aktiv drift eller aktivering påstås.
