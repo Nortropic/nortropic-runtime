@@ -9,7 +9,31 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# Gällande arbete — D038, avgränsade åtgärder efter kundprovet
+# Gällande arbete — ordinarie publiceringsingång efter införandet
+
+2026-09-28: Runtime PR 72, Office PR 114 och Digitala PR 14 är skyddat integrerade.
+App 5110369 är bunden till båda obligatoriska kontrollerna på de tre valda repona.
+Faktisk servervägran av PAT-grönt, positiva Appkontroller, exakt merge-träd och
+återkörning utan dubbel publicering finns i kontorets
+`evidence/digitala/local/yrkesformaga-20260928/inforande/INTEGRATION-ACTUAL-FINAL-r1.json`.
+Detta aktiverade ingen Runtime-kodrelease eller AP11-applikation.
+
+Den återlästa införandekopplingen krävde en liten rättning: primär/aktiv Publisher
+får inte försöka använda sin egen kodrot som issuer när bara den separata privata
+kopian `10c1563` är adopterad. `docs/check-issuer.md` beskriver den slutna hostlaunchern
+och Digitalas gemensamma `--task`-ingång. Fryst launcher kräver en egen separat
+granskad adoption; källintegration ger ingen sådan auktoritet. Saknas den vägras
+publicering, utan lokal issuerfallback. Kandidattester körs credentialisolerat.
+
+Nästa tillåtna steg vid införandet är exakt bytegranskning och hostadoption av
+launchern, ny uppgiftsbunden skyddad integration samt separat kvalificering och
+aktivering av den slutliga Runtime-releasen. Den befintliga issuerauktoriteten,
+Appnyckeln och äldre adoptionskvitton behålls. En aktiv kodrelease ersätter inte
+den credentialfria helsvit och relevanta förseglade acceptans som varje ny kandidat
+fortfarande behöver. Positiv faktisk native formåterhämtning är ännu inte visad;
+det senaste avgränsade brukprovet vägrade efter timeout.
+
+## Tidigare kontinuitet — D038, avgränsade åtgärder efter kundprovet
 
 Senare dokumentkontinuitet 2026-09-28 efter r4; frysta granskningsunderlag ändras inte.
 

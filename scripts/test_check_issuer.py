@@ -128,14 +128,16 @@ class IssuerTest(unittest.TestCase):
                     self.issue()
                 self.assertFalse(self.client.authenticated); self.assertEqual(self.client.posts,[])
 
-    def test_ordinary_publisher_issues_for_real_integration_worktree(self):
+    def test_issuer_accepts_real_integration_worktree(self):
         worktree=self.host/'.runtime/ap11/integrations/fixture'
         self.git('worktree','add','--detach',str(worktree),self.subject['candidate'])
         with patch.object(c,'HostIssuer',return_value=self.issuer), \
              patch.object(c,'AppTransport',return_value=self.client), \
              patch.object(c,'current_main',return_value=self.subject['base']), \
              patch.object(c,'run_isolated',self.local_runner):
-            receipt=Publisher(worktree,self.task['target']).issue_checks(self.task,self.subject,self.review)
+            # Ordinary Publisher delegation has its own actual-process tests in
+            # test_host_publication; this checks the issuer's Git common-dir gate.
+            receipt=self.issuer.issue(worktree,self.task,self.subject,self.review)
         self.assertEqual(receipt['candidate'],self.subject['candidate'])
         self.assertEqual(len(self.client.posts),2)
 
