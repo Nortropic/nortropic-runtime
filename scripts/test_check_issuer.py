@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from runtime import check_issuer as c
-from runtime.integration import digest, GateClosed
+from runtime.integration import digest, GateClosed, Publisher
 
 
 class FakeApp:
@@ -57,13 +57,18 @@ class IssuerTest(unittest.TestCase):
         self.review.update(scope='whole_task', terminal_status='completed', verdict='approved',
                            blocking_findings=[], reviewer_run='separate-review')
         self.directory = self.issuer.home / 'requests/fixture'
-        program = b'import pathlib,sys\nassert (pathlib.Path(sys.argv[1])/"value.py").read_text()=="VALUE=2\\n"\nprint("host acceptance ran")\n'
-        private(self.directory/'acceptance.py', program)
+        program = b'import json,sys\nsys.path.insert(0,sys.argv[1])\nimport value\ncase=json.load(sys.stdin)\nprint(json.dumps({"value":value.VALUE + case["add"]}))\n'
+        contract = {'schema':'nortropic-behavior-acceptance/1', 'cases':[
+            {'id':'add-positive','input':{'add':3},'expected':{'value':5},'timeout_seconds':10},
+            {'id':'add-negative','input':{'add':-7},'expected':{'value':-5},'timeout_seconds':10}]}
+        private(self.directory/'acceptance.json', contract)
+        private(self.directory/'probe.py', program)
         private(self.directory/'review.json', self.review)
         now = datetime.now(timezone.utc)
         self.record = {'schema':'nortropic-issuer-request/1', 'task':self.task, 'subject':self.subject,
                        'review':self.review, 'review_sha256':c.sha((self.directory/'review.json').read_bytes()),
-                       'acceptance_program_sha256':c.sha(program), 'accepted_at':now.isoformat(),
+                       'probe_program_sha256':c.sha(program),
+                       'acceptance_contract_sha256':c.sha((self.directory/'acceptance.json').read_bytes()), 'accepted_at':now.isoformat(),
                        'expires_at':(now+timedelta(hours=1)).isoformat()}
         private(self.directory/'request.json', self.record)
         code_root=Path(c.__file__).resolve().parents[1]
@@ -79,11 +84,11 @@ class IssuerTest(unittest.TestCase):
     def issue(self): return self.issuer.issue(self.host,self.task,self.subject,self.review,self.client)
 
     @staticmethod
-    def local_runner(workspace, program):
+    def local_runner(workspace, program, input_data=b'', timeout=120):
         # Real program/process and Git bytes; this test adapter does NOT claim sandbox qualification.
         run=subprocess.run(['/opt/homebrew/bin/python3.12','-I','-B',str(program),str(workspace/'source')],
-                           capture_output=True)
-        return {'returncode':run.returncode,'timed_out':False,'output':run.stdout,'output_sha256':c.sha(run.stdout)}
+                           capture_output=True, input=input_data, timeout=timeout)
+        return {'returncode':run.returncode,'timed_out':False,'output':run.stdout,'output_sha256':c.sha(run.stdout), 'stderr':run.stderr, 'stderr_sha256':c.sha(run.stderr)}
 
     def test_real_acceptance_issues_bound_checks_and_reconciles_without_duplicate(self):
         with patch.object(c,'run_isolated',self.local_runner):
@@ -95,14 +100,66 @@ class IssuerTest(unittest.TestCase):
 
     def test_failed_actual_acceptance_never_authenticates_or_issues(self):
         program=b'raise SystemExit(3)\n'
-        private(self.directory/'acceptance.py',program)
-        self.record['acceptance_program_sha256']=c.sha(program);private(self.directory/'request.json',self.record)
+        private(self.directory/'probe.py',program)
+        self.record['probe_program_sha256']=c.sha(program);private(self.directory/'request.json',self.record)
         with patch.object(c,'run_isolated',self.local_runner), self.assertRaisesRegex(GateClosed,'acceptance failed'):
             self.issue()
         self.assertFalse(self.client.authenticated);self.assertEqual(self.client.posts,[])
 
+    def replace_candidate(self, source):
+        (self.host/'value.py').write_text(source)
+        self.git('commit','-qam','replacement','--amend')
+        self.subject['candidate']=self.git('rev-parse','HEAD')
+        self.review['candidate']=self.subject['candidate']
+        self.client.head=self.subject['candidate']
+        self.record.update(subject=self.subject,review=self.review)
+        private(self.directory/'review.json', self.review)
+        self.record['review_sha256']=c.sha((self.directory/'review.json').read_bytes())
+        private(self.directory/'request.json',self.record)
+
+    def test_candidate_exit_zero_and_arbitrary_success_cannot_end_host_assertions(self):
+        for source in ('import os; os._exit(0)\nVALUE=999\n',
+                       'import os; print("true",flush=True); os._exit(0)\nVALUE=999\n',
+                       'VALUE=999\n'):
+            with self.subTest(source=source):
+                self.replace_candidate(source)
+                with patch.object(c,'run_isolated',self.local_runner), self.assertRaisesRegex(GateClosed,'behavior differs'):
+                    self.issue()
+                self.assertFalse(self.client.authenticated); self.assertEqual(self.client.posts,[])
+
+    def test_ordinary_publisher_issues_for_real_integration_worktree(self):
+        worktree=self.host/'.runtime/ap11/integrations/fixture'
+        self.git('worktree','add','--detach',str(worktree),self.subject['candidate'])
+        with patch.object(c,'HostIssuer',return_value=self.issuer), \
+             patch.object(c,'AppTransport',return_value=self.client), \
+             patch.object(c,'current_main',return_value=self.subject['base']), \
+             patch.object(c,'run_isolated',self.local_runner):
+            receipt=Publisher(worktree,self.task['target']).issue_checks(self.task,self.subject,self.review)
+        self.assertEqual(receipt['candidate'],self.subject['candidate'])
+        self.assertEqual(len(self.client.posts),2)
+
+    def test_unrelated_clone_with_same_origin_cannot_replace_host_repository(self):
+        clone=self.host.parent/'unrelated'
+        self.git('clone','-q',str(self.host),str(clone))
+        c.git(clone,'remote','set-url','origin','https://github.com/'+self.task['target']+'.git')
+        with patch.object(c,'run_isolated') as execute, self.assertRaisesRegex(GateClosed,'fixed host mapping'):
+            self.issuer.issue(clone,self.task,self.subject,self.review,self.client)
+        execute.assert_not_called(); self.assertFalse(self.client.authenticated)
+
+    def test_private_expectation_is_not_copied_to_candidate_workspace_or_input(self):
+        def observed(workspace,program,input_data,timeout):
+            self.assertEqual(sorted(p.name for p in workspace.iterdir()),['.scratch','probe.py','source'])
+            self.assertNotIn(b'expected',input_data)
+            return self.local_runner(workspace,program,input_data,timeout)
+        with patch.object(c,'run_isolated',observed): self.issue()
+
+    def test_changed_private_expectation_refuses_before_execution(self):
+        private(self.directory/'acceptance.json', {'passed':True})
+        with patch.object(c,'run_isolated') as run, self.assertRaisesRegex(GateClosed,'changed'): self.issue()
+        run.assert_not_called(); self.assertFalse(self.client.authenticated)
+
     def test_arbitrary_success_cannot_replace_missing_acceptance(self):
-        (self.directory/'acceptance.py').unlink()
+        (self.directory/'probe.py').unlink()
         self.record['passed']=True;private(self.directory/'request.json',self.record)
         with self.assertRaises(OSError): self.issue()
         self.assertFalse(self.client.authenticated)
@@ -125,7 +182,7 @@ class IssuerTest(unittest.TestCase):
         self.record['review_sha256']=c.sha((self.directory/'review.json').read_bytes())
         private(self.directory/'request.json',self.record)
         with self.assertRaisesRegex(GateClosed,'Independent'): self.issue()
-        private(self.directory/'acceptance.py',b'print("forged")')
+        private(self.directory/'probe.py',b'print("forged")')
         with self.assertRaisesRegex(GateClosed,'changed'):self.issue()
         private(self.issuer.home/'authority.json',{})
         with self.assertRaisesRegex(GateClosed,'adopted'):self.issue()

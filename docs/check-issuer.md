@@ -63,21 +63,50 @@ That operating prerequisite must be resolved before claiming unattended future
 host-fixture qualification. The current native acceptance does run each time.
 
 For each accepted task the holder seals `requests/ID/request.json`, `review.json`
-and `acceptance.py` as owner files (0400/0600), outside candidate write access.
+and `probe.py` plus `acceptance.json` as owner files (0400/0600), outside candidate access.
 The request contains `schema: nortropic-issuer-request/1`, exact `task`, `subject`
 and normalized independent `review`, SHA256 of the actual `review.json` and
-`acceptance.py` bytes, and UTC `accepted_at`/`expires_at` (at most 24 hours apart).
-The task's existing acceptance digest remains bound too; `acceptance.py` is its
-separately frozen executable acceptance, not a program supplied by a candidate.
+`probe.py` bytes (`probe_program_sha256`) and `acceptance.json` bytes
+(`acceptance_contract_sha256`), and UTC `accepted_at`/`expires_at` (at most 24 hours apart).
+The task's existing acceptance digest remains bound too. `probe.py` is a separately
+reviewed observation adapter: it may import candidate code only inside the native
+sandbox and emits actual domain output as JSON. It cannot decide acceptance.
+Its first argument is the immutable source directory, and stdin carries one case's
+actual input. The host's fixed evaluator parses stdout as strict JSON and compares
+it with the private expected data. stderr is recorded separately. Process exit 0
+alone, an arbitrary `true` or a candidate-supplied success object cannot substitute
+for the exact expected domain behavior. No candidate code enters the host evaluator.
+
+`acceptance.json` has this bounded form (up to 32 cases, each up to 120 seconds):
+
+```json
+{"schema":"nortropic-behavior-acceptance/1","cases":[
+  {"id":"add-positive","input":{"add":3},"expected":{"value":5},"timeout_seconds":10},
+  {"id":"add-negative","input":{"add":-7},"expected":{"value":-5},"timeout_seconds":10}
+]}
+```
+
+This small numeric example is a test fixture, not acceptance for a real task. The
+holder must freeze observations relevant to the accepted task and separately review
+the adapter and expectation. Expected data stays outside the entire candidate-readable
+workspace, argv, stdin and environment. The candidate receives only actual input and
+the adapter. An import-time `os._exit(0)` cannot stop the host comparison and fails
+because the required behavior is missing. Semantic coverage still depends on relevant
+frozen acceptance plus independent review; there is no mathematical guarantee against
+a deliberately test-adapted implementation. A generic success flag is not a qualifying
+acceptance contract, even if its JSON shape would parse.
 A task/acceptance change requires the holder to inspect the actual new source and
 seal a new request. Acceptance and review are not inferred from keywords.
 
 The issuer checks target, exact base/current remote main, one candidate commit,
 allowed paths, complete independent review, request freshness, immutable blobs,
-and the actual isolated acceptance exit. Failure writes private observations but
+and the host comparison of actual isolated behavior. Failure writes private observations but
 never authenticates the App or creates green checks. It rereads authority/request
 and main after acceptance. Credentials are read only after its process group has
 ended. Native descendants remain subject to the no-network/filesystem boundary.
+The primary repository and its real Git worktrees are accepted only when their
+resolved Git common directory equals the fixed host mapping and origin matches.
+An unrelated clone with the same origin is refused.
 
 The four explicit issuer targets are Runtime, Office, Digitala and Kundstart. This
 does not widen Runtime's ordinary task/Publisher target mapping: that remains
@@ -128,6 +157,9 @@ Targeted regressions use real Git objects and an actual acceptance subprocess,
 with an explicitly fake App transport. They cover positive issuance, wrong App,
 wrong candidate/task/acceptance/review, missing acceptance, actual failure,
 expired requests, changed main, symlink/public authority and replayed bindings.
+They also exercise ordinary `Publisher.issue_checks` through a real integration
+worktree, reject an unrelated clone, and reject candidate import-time exit 0,
+arbitrary success output and incorrect domain behavior before App authentication.
 The real native-boundary probe uses a synthetic canary; it proves denied source
 writes, denied external reads/writes/network and permitted scratch output. Neither
 proves that GitHub accepts this App or rejects forged checks on a real protected

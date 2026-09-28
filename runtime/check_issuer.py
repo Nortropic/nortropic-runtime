@@ -1,8 +1,8 @@
 """Host-owned execution of frozen acceptance and App check issuance.
 
-No candidate-supplied result is accepted. A separately adopted holder seals a
-request outside candidate access; this module measures its program in the native
-no-network sandbox, then reads the App credential. It cannot adopt itself.
+A separately adopted holder seals relevant input/expected-output cases outside
+candidate access. Candidate behavior runs in the native sandbox; this host
+process compares its data with the private expectation, then reads the App key.
 """
 from datetime import datetime, timezone
 import base64
@@ -100,11 +100,11 @@ def frozen_snapshot(repo, candidate, destination):
     return files
 
 
-def run_isolated(workspace, program, timeout=1200):
+def run_isolated(workspace, program, input_data=b'', timeout=120):
     """Execute no candidate code in the credential-bearing host process."""
     from .profile import sandbox_command
     home = workspace / '.scratch' / 'home'
-    (home / '.codex').mkdir(parents=True)
+    (home / '.codex').mkdir(parents=True, exist_ok=True)
     (home / '.codex/config.toml').write_text('')
     env = {'PATH': '/opt/homebrew/bin:/usr/bin:/bin', 'HOME': str(home),
            'TMPDIR': str(workspace / '.scratch'), 'LANG': 'C',
@@ -119,25 +119,37 @@ def run_isolated(workspace, program, timeout=1200):
              str(ROOT / '.runtime/bin/codex-0.155.1'): 'read'}
     command[index] = command[index][:-1] + ',' + ','.join(json.dumps(k)+'='+json.dumps(v)
                                                         for k,v in extra.items()) + '}'
-    process = subprocess.Popen(command, cwd=workspace, env=env, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, start_new_session=True)
+    process = subprocess.Popen(command, cwd=workspace, env=env, stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
     timed_out, overflow = False, False
-    output = bytearray()
+    streams = {'output': bytearray(), 'stderr': bytearray()}
     deadline = time.monotonic() + timeout
     reader = selectors.DefaultSelector()
-    reader.register(process.stdout, selectors.EVENT_READ)
+    reader.register(process.stdout, selectors.EVENT_READ, 'output')
+    reader.register(process.stderr, selectors.EVENT_READ, 'stderr')
+    reader.register(process.stdin, selectors.EVENT_WRITE, 'input')
+    pending = memoryview(input_data)
     try:
         while reader.get_map():
             if time.monotonic() >= deadline:
                 timed_out = True
                 break
             for key, _ in reader.select(min(0.2, max(0, deadline-time.monotonic()))):
+                if key.data == 'input':
+                    try:
+                        pending = pending[os.write(key.fileobj.fileno(), pending[:4096]):] if pending else pending
+                    except BrokenPipeError:
+                        pending = memoryview(b'')
+                    if not pending:
+                        reader.unregister(key.fileobj)
+                        key.fileobj.close()
+                    continue
                 chunk = os.read(key.fileobj.fileno(), 65536)
                 if not chunk:
                     reader.unregister(key.fileobj)
                     continue
-                output.extend(chunk)
-                if len(output) > 8 * 1024 * 1024:
+                streams[key.data].extend(chunk)
+                if sum(map(len, streams.values())) > 8 * 1024 * 1024:
                     overflow = True
                     break
             if overflow:
@@ -156,33 +168,56 @@ def run_isolated(workspace, program, timeout=1200):
         process.wait(timeout=10)
         reader.close()
         process.stdout.close()
-    output = bytes(output)
+        process.stderr.close()
+        process.stdin.close()
+    output, stderr = bytes(streams['output']), bytes(streams['stderr'])
     return {'returncode': process.returncode, 'timed_out': timed_out,
-            'output_limit_exceeded': overflow, 'output_sha256': sha(output), 'output': output}
+            'output_limit_exceeded': overflow, 'output_sha256': sha(output), 'output': output,
+            'stderr_sha256': sha(stderr), 'stderr': stderr}
 
 
-def isolated_suite(repository, candidate, discover):
-    """Construction's whole suite uses the same credential-denying boundary."""
-    if discover not in ('scripts', 'tools'):
-        raise GateClosed('Unknown construction test profile')
-    work = ROOT / '.runtime/ap11/issuer-suite-workspaces'
-    work.mkdir(mode=0o700, exist_ok=True)
-    if any(p.is_symlink() for p in (work, *work.parents)):
-        raise GateClosed('Suite workspace must not use symlinks')
-    with tempfile.TemporaryDirectory(prefix='suite-', dir=work) as temporary:
-        workspace = Path(temporary).resolve()
-        (workspace / 'source').mkdir(); (workspace / '.scratch').mkdir()
-        frozen_snapshot(repository, candidate, workspace / 'source')
-        program = workspace / 'acceptance.py'
-        program.write_text('import os,sys,unittest\n'
-                           'os.chdir(sys.argv[1]);sys.path.insert(0,sys.argv[1])\n'
-                           'suite=unittest.defaultTestLoader.discover(' + repr(discover) + ")\n"
-                           'result=unittest.TextTestRunner(verbosity=2).run(suite)\n'
-                           'raise SystemExit(not result.wasSuccessful())\n')
-        program.chmod(0o400)
-        result = run_isolated(workspace, program)
-        return subprocess.CompletedProcess(['native-sandbox', 'unittest', discover],
-                                           result['returncode'], result['output'])
+def acceptance_contract(directory):
+    """Only data is evaluated here; no candidate module is imported by the host."""
+    raw = private_bytes(directory / 'acceptance.json')
+    if len(raw) > 1024 * 1024:
+        raise GateClosed('Frozen acceptance is too large')
+    contract = json.loads(raw)
+    if (not isinstance(contract, dict) or set(contract) != {'schema', 'cases'}
+            or contract['schema'] != 'nortropic-behavior-acceptance/1'
+            or not isinstance(contract['cases'], list) or not 1 <= len(contract['cases']) <= 32):
+        raise GateClosed('Frozen acceptance needs bounded behavior cases')
+    identifiers = set()
+    for case in contract['cases']:
+        if (not isinstance(case, dict) or set(case) != {'id', 'input', 'expected', 'timeout_seconds'}
+                or not isinstance(case['id'], str) or not re.fullmatch('[a-z0-9-]{1,60}', case['id'])
+                or case['id'] in identifiers or type(case['timeout_seconds']) is not int
+                or not 1 <= case['timeout_seconds'] <= 120
+                or len(json.dumps(case['input']).encode()) > 65536):
+            raise GateClosed('Malformed frozen behavior case')
+        identifiers.add(case['id'])
+    return contract
+
+
+def assert_behavior(measured, expected):
+    """A successful process exit is necessary, never the acceptance decision."""
+    if measured['returncode'] != 0 or measured['timed_out'] or measured.get('output_limit_exceeded'):
+        raise GateClosed('Frozen acceptance failed or timed out; no successful check issued')
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Duplicate JSON key')
+            value[key] = item
+        return value
+    try:
+        actual = json.loads(measured['output'], object_pairs_hook=unique,
+                            parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+        # Canonical serialization keeps booleans distinct from numeric values.
+        equal = json.dumps(actual, sort_keys=True, allow_nan=False) == json.dumps(expected, sort_keys=True, allow_nan=False)
+    except (ValueError, TypeError, UnicodeError):
+        equal = False
+    if not equal:
+        raise GateClosed('Frozen acceptance behavior differs; no successful check issued')
 
 
 def sealed_construction_suite(repository, candidate, discover, identifier, expected_count):
@@ -316,7 +351,8 @@ class HostIssuer:
             raise GateClosed('Issuer request absent, stale or not bound to this task/candidate/review')
         source = private_bytes(directory / 'review.json')
         if (sha(source) != record.get('review_sha256') or json.loads(source) != review
-                or record.get('acceptance_program_sha256') != sha(private_bytes(directory / 'acceptance.py'))):
+                or record.get('probe_program_sha256') != sha(private_bytes(directory / 'probe.py'))
+                or record.get('acceptance_contract_sha256') != sha(private_bytes(directory / 'acceptance.json'))):
             raise GateClosed('Frozen independent review or acceptance program changed')
         # Validate the existing whole-task gate; its target allowlist is not widened
         # for ordinary Runtime callers. This holder has four explicit repositories.
@@ -331,7 +367,10 @@ class HostIssuer:
         # Fixed repository mapping comes from the host, never from request paths.
         expected = self.host if task['target'] == TARGETS[0] else self.host.parent / task['target'].split('/')[1]
         repository = Path(repository).resolve()
-        if repository != expected.resolve():
+        common = Path(git(repository, 'rev-parse', '--git-common-dir').decode().strip())
+        expected_common = Path(git(expected, 'rev-parse', '--git-common-dir').decode().strip())
+        if ((repository / common).resolve() != (expected / expected_common).resolve()
+                or git(repository, 'rev-parse', '--show-toplevel').decode().strip() != str(repository)):
             raise GateClosed('Issuer candidate repository is not the fixed host mapping')
         head, base = subject['candidate'], subject['base']
         if git(repository, 'remote', 'get-url', 'origin').decode().strip() != 'https://github.com/' + task['target'] + '.git':
@@ -346,6 +385,7 @@ class HostIssuer:
         remote = current_main(task['target']) if transport is None else client.api(task['target'], 'commits/main').get('sha')
         if remote != base:
             raise GateClosed('Issuer base is no longer current main')
+        contract = acceptance_contract(directory)
         work = self.home / 'workspaces'
         work.mkdir(mode=0o700, exist_ok=True)
         if any(p.is_symlink() for p in (work, *work.parents)):
@@ -354,22 +394,30 @@ class HostIssuer:
             workspace = Path(temporary).resolve()
             (workspace / 'source').mkdir(); (workspace / '.scratch').mkdir()
             files = frozen_snapshot(repository, head, workspace / 'source')
-            program = workspace / 'acceptance.py'
-            program.write_bytes(private_bytes(directory / 'acceptance.py')); program.chmod(0o400)
-            measured = run_isolated(workspace, program)
+            program = workspace / 'probe.py'
+            program.write_bytes(private_bytes(directory / 'probe.py')); program.chmod(0o400)
             observations = self.home / 'observations'
             observations.mkdir(mode=0o700, exist_ok=True)
             attempt = observations / uuid.uuid4().hex
             attempt.mkdir(mode=0o700)
-            (attempt / 'acceptance.log').write_bytes(measured['output'])
-            (attempt / 'acceptance.log').chmod(0o600)
-            record = {'task_sha256': digest(task), 'candidate': head,
-                      'acceptance_program_sha256': request['acceptance_program_sha256'],
-                      **{k:v for k,v in measured.items() if k != 'output'}}
-            (attempt / 'measurement.json').write_text(json.dumps(record, indent=2)+'\n')
-            (attempt / 'measurement.json').chmod(0o600)
-            if measured['returncode'] != 0 or measured['timed_out'] or measured.get('output_limit_exceeded'):
-                raise GateClosed('Frozen acceptance failed or timed out; no successful check issued')
+            measurements = []
+            for case in contract['cases']:
+                # The private expectation NEVER enters the readable workspace,
+                # argv, input, environment or candidate process. Only actual
+                # task input and the reviewed observation adapter cross over.
+                measured = run_isolated(workspace, program, json.dumps(case['input']).encode(),
+                                        timeout=case['timeout_seconds'])
+                for stream in ('output', 'stderr'):
+                    log = attempt / (case['id'] + '.' + stream + '.log')
+                    log.write_bytes(measured.get(stream, b'')); log.chmod(0o600)
+                record = {'id': case['id'], 'task_sha256': digest(task), 'candidate': head,
+                          'probe_program_sha256': request['probe_program_sha256'],
+                          'acceptance_contract_sha256': request['acceptance_contract_sha256'],
+                          **{k:v for k,v in measured.items() if k not in ('output', 'stderr')}}
+                measurements.append(record)
+                observation = attempt / 'measurement.json'
+                observation.write_text(json.dumps(measurements, indent=2)+'\n'); observation.chmod(0o600)
+                assert_behavior(measured, case['expected'])
             if any(sha((workspace / 'source' / p).read_bytes()) != value for p, value in files.items()):
                 raise GateClosed('Candidate snapshot changed during acceptance')
         # Authority and request are re-read after candidate execution, before credentials.
@@ -382,8 +430,11 @@ class HostIssuer:
         opaque = binding(task, subject, review)
         receipt = {'schema': 'nortropic-issued-checks/1', 'binding': opaque, 'candidate': head,
                    'task_sha256': digest(task), 'acceptance_sha256': task['acceptance_sha256'],
-                   'acceptance_program_sha256': request['acceptance_program_sha256'],
-                   'review_sha256': request['review_sha256'], 'measured_output_sha256': measured['output_sha256'],
+                   'probe_program_sha256': request['probe_program_sha256'],
+                   'acceptance_contract_sha256': request['acceptance_contract_sha256'],
+                   'review_sha256': request['review_sha256'],
+                   'measured_behavior_sha256': digest([{k:v for k,v in item.items() if k != 'stderr_sha256'}
+                                                      for item in measurements]),
                    'app_id': config['app_id'], 'checks': {}}
         runs = client.api(task['target'], 'commits/' + head + '/check-runs?filter=latest&per_page=100')
         if (not isinstance(runs, dict) or not isinstance(runs.get('check_runs'), list)
