@@ -158,6 +158,80 @@ class IssuerTest(unittest.TestCase):
         with patch.object(c,'run_isolated') as run, self.assertRaisesRegex(GateClosed,'changed'): self.issue()
         run.assert_not_called(); self.assertFalse(self.client.authenticated)
 
+    def digitala_fixture(self, bad_pins=False):
+        repository=self.host.parent/'nortropic-digitala'
+        self.git('clone','-q',str(self.host),str(repository))
+        def git(*args):return c.git(repository,*args).decode().strip()
+        git('config','user.name','Fixture');git('config','user.email','fixture@invalid.test')
+        git('remote','set-url','origin','https://github.com/Nortropic/nortropic-digitala.git')
+        (repository/'steg').mkdir()
+        (repository/'steg/steg.json').write_text(json.dumps({'steg':{'example':{'underlag':[
+            {'klass':'profession','fil':'value.py'}]}}}))
+        pin='0'*64 if bad_pins else c.sha((repository/'value.py').read_bytes())
+        (repository/'steg/PINNAR.sha256').write_text(pin+'  value.py\n')
+        git('add','steg');git('commit','--amend','-qm','Digitala candidate')
+        self.task.update(target='Nortropic/nortropic-digitala',allowed_paths=['value.py','steg/steg.json','steg/PINNAR.sha256'])
+        self.subject.update(candidate=git('rev-parse','HEAD'),task_sha256=digest(self.task))
+        self.review.update(candidate=self.subject['candidate'],task_sha256=digest(self.task))
+        private(self.directory/'review.json',self.review)
+        self.record.update(task=self.task,subject=self.subject,review=self.review,
+                           review_sha256=c.sha((self.directory/'review.json').read_bytes()))
+        log=b'Ran 2 tests in 0.1s\n\nOK\n'
+        suite={'schema':'nortropic-measured-suite/1','candidate':self.subject['candidate'],
+            'tree':git('rev-parse','HEAD^{tree}'),
+            'command':['python','-B','-m','unittest','discover','-s','verktyg','-p','test_*.py'],
+            'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True}
+        private(self.directory/'suite.json',suite);private(self.directory/'suite.log',log)
+        self.record['suite_sha256']=c.sha((self.directory/'suite.json').read_bytes())
+        private(self.directory/'request.json',self.record)
+        self.client.head=self.subject['candidate']
+        return c.DigitalaPublisher(self.issuer)
+
+    def test_digitala_sealed_entry_runs_protected_flow_without_candidate_host_suite(self):
+        from scripts.test_integration import protection_fixture
+        publisher=self.digitala_fixture(); mutations=[]; pr={}
+        protection=protection_fixture()
+        for check in protection['required_status_checks']['checks']:check['app_id']=17
+        def api(path,method='GET',body=None):
+            if method!='GET':mutations.append((method,path))
+            if path=='branches/main/protection':return protection
+            if path.startswith('pulls?'):return []
+            if path=='pulls' and method=='POST':
+                pr.update(number=1,head={'sha':self.subject['candidate']},base={'ref':'main'},state='open')
+                return pr
+            if path=='pulls/1':return pr
+            if path=='pulls/1/merge':pr['merged']=True;return {'merged':True}
+            if '/check-runs?' in path:return {'total_count':len(self.client.runs),'check_runs':self.client.runs}
+            raise AssertionError(path)
+        real_git=publisher.git
+        def git(*args):
+            if args[0]=='push':mutations.append(('git','push'));return ''
+            return real_git(*args)
+        actual_run=subprocess.run
+        def guarded_run(argv,*args,**kwargs):
+            self.assertFalse(any(part in ('unittest','verktyg/pinna.py','verktyg/publicera.py') for part in argv))
+            return actual_run(argv,*args,**kwargs)
+        with patch.object(publisher,'api',api), patch.object(publisher,'git',git), \
+             patch.object(publisher,'require_base'), \
+             patch.object(publisher,'reconcile',return_value={'merged':True,'candidate':self.subject['candidate']}), \
+             patch.object(c,'AppTransport',return_value=self.client), \
+             patch.object(c,'current_main',return_value=self.subject['base']), \
+             patch.object(c,'run_isolated',self.local_runner), patch.object(subprocess,'run',guarded_run):
+            receipt=publisher.publish_sealed('fixture')
+        self.assertTrue(receipt['merged']);self.assertEqual(len(self.client.posts),2)
+        self.assertIn(('PUT','pulls/1/merge'),mutations)
+        self.assertEqual(receipt['suite_sha256'],self.record['suite_sha256'])
+
+    def test_digitala_pin_mismatch_and_unsealed_suite_refuse_before_publication(self):
+        publisher=self.digitala_fixture(bad_pins=True)
+        with patch.object(publisher,'api') as api, self.assertRaisesRegex(GateClosed,'pins differ'):
+            publisher.publish_sealed('fixture')
+        api.assert_not_called();self.assertFalse(self.client.authenticated)
+        private(self.directory/'suite.log',b'candidate claims passed')
+        with patch.object(publisher,'api') as api, self.assertRaisesRegex(GateClosed,'Sealed suite'):
+            publisher.publish_sealed('fixture')
+        api.assert_not_called();self.assertFalse(self.client.authenticated)
+
     def test_arbitrary_success_cannot_replace_missing_acceptance(self):
         (self.directory/'probe.py').unlink()
         self.record['passed']=True;private(self.directory/'request.json',self.record)

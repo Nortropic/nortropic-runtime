@@ -75,6 +75,7 @@ def require_gate(task, subject, tests, review, *, allowed_targets=TARGETS):
 class Publisher:
     REPOSITORY = 'Nortropic/nortropic-runtime'
     ORIGIN = 'https://github.com/Nortropic/nortropic-runtime.git'
+    ALLOWED_TARGETS = TARGETS
 
     def __init__(self, repository, target=RUNTIME):
         self.ORIGIN = origin(target)
@@ -218,7 +219,7 @@ class Publisher:
         return receipt
 
     def _publish(self, task, subject, tests, review):
-        require_gate(task, subject, tests, review)  # MUST precede every publication caller.
+        require_gate(task, subject, tests, review, allowed_targets=self.ALLOWED_TARGETS)  # MUST precede effects.
         tree = self.inspect_candidate(task, subject)
         issuers = self.require_protection()
         candidate = subject['candidate']

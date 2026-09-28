@@ -21,13 +21,14 @@ import uuid
 import urllib.error
 import urllib.request
 
-from .integration import GateClosed, digest, require_gate, check_binding
+from .integration import GateClosed, Publisher, digest, require_gate, check_binding
 from .release import ROOT
 
 NAMES = ('runtime/tests', 'runtime/review')
 CODE = ('runtime/__init__.py', 'runtime/check_issuer.py', 'runtime/integration.py',
         'runtime/profile.py', 'runtime/release.py', 'runtime/targets.py',
-        'runtime/claude_profile.py', 'scripts/probe_bridge.py', 'scripts/publish_construction.py')
+        'runtime/claude_profile.py', 'scripts/probe_bridge.py', 'scripts/publish_construction.py',
+        'scripts/publish_digitala.py')
 TARGETS = ('Nortropic/nortropic-runtime', 'Nortropic/nortropic-projektkontor',
            'Nortropic/nortropic-digitala', 'Nortropic/nortropic-kundstart')
 
@@ -220,7 +221,7 @@ def assert_behavior(measured, expected):
         raise GateClosed('Frozen acceptance behavior differs; no successful check issued')
 
 
-def sealed_construction_suite(repository, candidate, discover, identifier, expected_count):
+def sealed_construction_suite(repository, candidate, discover, identifier, expected_count, issuer=None):
     """Consume an actual whole-suite measurement sealed by the existing holder.
 
 Historical host-fixture tests cannot run in the model filesystem profile. They
@@ -228,9 +229,10 @@ are measured in a credential-free environment and sealed only after inspection,
 never run as candidate code in this credential-bearing process. The issuer's
 separate frozen acceptance ALWAYS executes in the native sandbox afterwards.
 """
-    if not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', identifier) or discover not in ('scripts', 'tools'):
+    if (not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', identifier) or discover not in ('scripts', 'tools', 'verktyg')
+            or type(expected_count) is not int or expected_count <= 0):
         raise GateClosed('Invalid sealed-suite task/profile')
-    issuer = HostIssuer()
+    issuer = issuer or HostIssuer()
     issuer.authority()
     directory = issuer.home / 'requests' / identifier
     request = read_object(directory / 'request.json')
@@ -243,7 +245,7 @@ separate frozen acceptance ALWAYS executes in the native sandbox afterwards.
             or record.get('candidate') != candidate
             or request.get('subject', {}).get('candidate') != candidate
             or record.get('tree') != git(repository, 'rev-parse', candidate+'^{tree}').decode().strip()
-            or record.get('command') != expected_command
+            or record.get('command') not in (expected_command, expected_command[:-1])
             or record.get('log_sha256') != sha(log) or record.get('returncode') != 0
             or record.get('test_count') != expected_count
             or record.get('credential_free_execution') is not True):
@@ -254,6 +256,69 @@ separate frozen acceptance ALWAYS executes in the native sandbox afterwards.
     if counts != [str(expected_count)] or not lines or lines[-1] != 'OK':
         raise GateClosed('Sealed suite log does not show every expected test passing without skips')
     return subprocess.CompletedProcess(expected_command, record['returncode'], log)
+
+
+class DigitalaPublisher(Publisher):
+    """Fixed host entry, using the shared protected PR boundary; never publicera.py."""
+    ALLOWED_TARGETS = ('Nortropic/nortropic-digitala',)
+
+    def __init__(self, issuer):
+        self.issuer = issuer
+        self.REPOSITORY = self.ALLOWED_TARGETS[0]
+        self.ORIGIN = 'https://github.com/' + self.REPOSITORY + '.git'
+        self.repository = issuer.host.parent / 'nortropic-digitala'
+        self.effect_guard = None
+
+    def issue_checks(self, task, subject, review):
+        return self.issuer.issue(self.repository, task, subject, review)
+
+    def pins(self, candidate):
+        """Verify profession coverage and hashes from Git data without candidate code."""
+        def blob(path):
+            if (not isinstance(path, str) or Path(path).is_absolute() or '..' in Path(path).parts
+                    or not path or path.startswith('.git/')):
+                raise GateClosed('Invalid Digitala profession path')
+            return git(self.repository, 'show', candidate + ':' + path)
+        steps = json.loads(blob('steg/steg.json'))
+        paths = {entry['fil'] for step in steps['steg'].values() for entry in step['underlag']
+                 if entry['klass'] == 'profession'}
+        actual = {path: sha(blob(path)) for path in paths}
+        pins = {}
+        for line in blob('steg/PINNAR.sha256').decode().splitlines():
+            if not line.strip() or line.startswith('#'):
+                continue
+            value, path = line.split('  ', 1)
+            if path in pins or not re.fullmatch('[0-9a-f]{64}', value):
+                raise GateClosed('Malformed or duplicate Digitala pin')
+            pins[path] = value
+        if not paths or pins != actual:
+            raise GateClosed('Digitala profession pins differ from candidate Git bytes')
+        return digest(pins)
+
+    def publish_sealed(self, identifier):
+        self.issuer.authority()
+        if not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', identifier):
+            raise GateClosed('Invalid sealed Digitala task')
+        directory = self.issuer.home / 'requests' / identifier
+        record = read_object(directory / 'request.json')
+        task, subject, review = (record.get(key) for key in ('task', 'subject', 'review'))
+        if not isinstance(task, dict) or task.get('target') != self.REPOSITORY or task.get('development'):
+            raise GateClosed('Sealed task is not the fixed Digitala publication scope')
+        self.issuer.request(identifier, task, subject, review)
+        suite = read_object(directory / 'suite.json')
+        sealed_construction_suite(self.repository, subject['candidate'], 'verktyg', identifier,
+                                  suite.get('test_count'), issuer=self.issuer)
+        pin_digest = self.pins(subject['candidate'])
+        tests = {key: subject[key] for key in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256')}
+        # This gate input is derived only AFTER real holder-sealed measurement and
+        # exact pin verification. No caller-supplied success can select this path.
+        tests.update(scope='whole_task', terminal_status='completed', passed=True)
+        receipt = self._publish(task, subject, tests, review)
+        receipt.update(suite_sha256=record['suite_sha256'], pins_sha256=pin_digest)
+        destination = self.issuer.home / 'observations' / ('digitala-publication-' + uuid.uuid4().hex + '.json')
+        destination.parent.mkdir(mode=0o700, exist_ok=True)
+        destination.write_text(json.dumps(receipt, indent=2)+'\n'); destination.chmod(0o600)
+        return receipt
 
 
 class AppTransport:

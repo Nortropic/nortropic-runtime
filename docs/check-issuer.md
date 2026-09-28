@@ -110,9 +110,34 @@ An unrelated clone with the same origin is refused.
 
 The four explicit issuer targets are Runtime, Office, Digitala and Kundstart. This
 does not widen Runtime's ordinary task/Publisher target mapping: that remains
-Runtime/Office. Digitala needs its existing legitimate protected publication
-holder to call the same issuer with a sealed task; Kundstart additionally has the
-verified private-plan protection blocker.
+Runtime/Office. Digitala has a fixed adopted-host command:
+
+```sh
+NR_HOST_ROOT='/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime' \
+  '/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime/.runtime/temporal-venv/bin/python' \
+  -I -B ADOPTED_CODE_ROOT/scripts/publish_digitala.py --task ACCEPTED_TASK_ID
+```
+
+The code-root placeholder must be the independently adopted, hash-pinned holder
+copy, never the candidate checkout. This command accepts only a task identifier;
+the existing holder must already have sealed its request, exact independent review,
+behavior adapter/contract and actual Digitala suite measurement (`discover -s verktyg`,
+with or without `-v`). It cannot create an authority or request. The candidate must
+be exactly one commit on the accepted current main in the fixed primary Digitala
+object database (real worktrees share it). No title/body/review/success provided by
+the candidate is trusted. Before any remote mutation, the command verifies the
+sealed suite, parses `steg/steg.json` and checks the exact complete profession pin
+set against Git blob hashes, without executing `pinna.py`. It then uses the shared
+protected Publisher path to push, create/reconcile the PR, run the native behavior
+issuer, verify both App-bound checks and expected head, squash-merge and read back
+the exact integrated tree. The receipt remains in the private issuer observations.
+
+Do not run Digitala's old `verktyg/publicera.py` after placing the App key: that
+candidate-controlled program reruns its suite and pin script on the host. The
+adopted command replaces that caller at the holder boundary; no new general Runtime
+task target or self-grant is introduced. Its end-to-end regression uses real Git
+bytes and behavior subprocesses but fake GitHub responses; real server qualification
+remains required. Kundstart additionally has the verified private-plan blocker.
 
 ## App and server configuration
 
