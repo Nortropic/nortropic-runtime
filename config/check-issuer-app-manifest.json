@@ -1,0 +1,9 @@
+{
+  "name": "Nortropic host checks",
+  "url": "https://github.com/Nortropic/nortropic-runtime",
+  "description": "Issues checks only after adopted host acceptance and independent review of a bound candidate.",
+  "public": false,
+  "default_permissions": {"checks": "write", "metadata": "read"},
+  "default_events": [],
+  "request_oauth_on_install": false
+}

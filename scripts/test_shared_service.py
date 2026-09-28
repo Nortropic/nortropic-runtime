@@ -36,6 +36,11 @@ class SharedTests(unittest.TestCase):
                 (root/'mod.py').write_text('working branch change')
                 self.assertEqual(release.installed()['files'],value['files'])
                 (root/'AGENTS.md').write_text('New branch instruction')
+                diagnosed = release.inspect_installation()
+                self.assertEqual(diagnosed['guard_differences'], {str(root/'AGENTS.md'): {
+                    'expected': None, 'actual': release.sha(root/'AGENTS.md')}})
+                # Diagnosis never rebinds the active config or permits execution.
+                self.assertEqual(json.loads(conf.read_text())['instruction_guards'], value['instruction_guards'])
                 with self.assertRaisesRegex(ValueError,'instruction/configuration inputs changed'):release.installed()
                 (root/'AGENTS.md').unlink()
                 code.write_text('tamper')
