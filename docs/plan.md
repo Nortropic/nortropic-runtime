@@ -11,6 +11,8 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 # Gällande arbete — D038, avgränsade åtgärder efter kundprovet
 
+Senare dokumentkontinuitet 2026-09-28 efter r4; frysta granskningsunderlag ändras inte.
+
 Kontorets DIGITALA-SAMLAT-ATGARDSMANDAT-20260927 är ett nytt accepterat bygguppdrag. Det omfattar
 registrering utan fasta provnamn, diagnos och kvalificering av native-konfigurationen samt en
 avgränsad schemalagd intags-/driftoperation på befintlig Temporal-motor. Ingen ny motor eller
@@ -40,26 +42,34 @@ externa förutsättningar. Båda obligatoriska checks har fortfarande app_id=nul
 behörighet eller serverkonfiguration ändras här. Adoption av den nya Publishern följer den
 befintliga separat granskade holder-vägen; kandidatens egen kod får inte självbootstrapas.
 
-Den gamla driftpekaren är senast oförändrad vid r2. Dess guardavvikelse har ett separat approved
+Den gamla driftpekaren var oförändrad även vid läsande förkontroll 2026-09-28 07:08 UTC;
+kontrollen passerade utan aktivering. Dess guardavvikelse har ett separat approved
 guard-only-paket r3 med samma 203 gamla kodfiler och verkligt repeterad stopped-state-
 återhämtning. Ägarterminalsteget väntar återkoppling; ingen utföraraktivering har skett och
 paketet inför inte denna nya kod. Ny faktisk driftavläsning krävs efter eventuell ägarövergång.
 
-Nästa ansvar: kedjedrivaren sluter produktens lilla ankardelta/kritik och publiceringsaudit,
-förankrar faktisk issuer-/serverkoppling och samordnar senare skyddad integration/release.
+Nästa ansvar: kedjedrivaren slutför daterad överlämning och disponerar r4:s öppna observationer.
+R4 har två separata approved: rapporten och produktens enradsdelta `2cf`→`f25`, inte helleverans,
+driftsättning eller ägaraccept. Produktens ankarrättning och källpubliceringsaudit är genomförda.
+Verklig issuer-/serverkoppling och senare skyddad integration/release återstår.
 Ägaren har det färdigberedda guard-terminalsteget. Runtime-utföraren har lämnat de exakta
 prov- och granskningskvittona; intagsprovet ska inte upprepas för en produktankarrättning.
 
-Den frysta dokumentkandidaten lämnas för draft-PR/källpublicering. Faktisk gren-/PR-kvittens
-binds separat i publiceringsunderlaget; main-integration och aktivering är egna kvalificerade steg.
+Den föregående dokumentkandidaten `477b20a5` publicerades på draft-PR 70 och återlästes.
+Den är ett daterat utfall, inte denna senare dokumentnots nya head. Main-integration och
+aktivering är inte genomförda och förblir egna kvalificerade steg.
 
 Grenarna ac5 och issuer438 kvarstår lokalt som frysta prov-/domsbaslinjer. Den nya grenen
-`atgarder/dokumentkontinuitet-20260928` ändrar endast planfakta inför publicering; dess head
-är inte issuerdomens SHA, medan icke-dokumentbytes ska vara identiska med `4384329`. Ingen gren är
+`atgarder/dokumentkontinuitet-20260928` är publicerad och ändrar endast planfakta; dess head
+är inte issuerdomens SHA, medan övriga bytes är verifierat identiska med `4384329`. Ingen gren är
 integrerad eller aktiv. Återuppta från denna plan, kontorets aktuella plan och privata
 `drift/intake-schema-r2/LAS-MIG.md`, `drift/issuer-bindning-r1/LAS-MIG.md`,
-`drift/releaseberedning/OPERATORSSTEG.md` och `slutleverans/PR-BEREDNING-r2.md` i kontorets
-åtgärdsyta för 20260927.
+`drift/releaseberedning/OPERATORSSTEG.md`, `slutleverans/LAS-MIG.md` och
+`slutleverans/PUBLICERING-EFTERKONTROLL.md` i kontorets åtgärdsyta för 20260927. Denna senare
+dokumentnots exakta heads och nätåterläsning binds i
+`drift/plan-kontinuitet-efter-r4/PUBLICERING-EFTER-R4.json` när publiceringen är gjord. Äldre
+HOLD-/beredningstext är historik; inga nya intagsticks ska startas för en produktändring.
+Leveransbeskedet är daterade fakta; planen äger fortsatt nästa handling.
 
 ---
 
