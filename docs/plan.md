@@ -48,10 +48,12 @@ guard-only-paket r3 med samma 203 gamla kodfiler och verkligt repeterad stopped-
 återhämtning. Ägarterminalsteget väntar återkoppling; ingen utföraraktivering har skett och
 paketet inför inte denna nya kod. Ny faktisk driftavläsning krävs efter eventuell ägarövergång.
 
-Nästa ansvar: kedjedrivaren slutför daterad överlämning och disponerar r4:s öppna observationer.
-R4 har två separata approved: rapporten och produktens enradsdelta `2cf`→`f25`, inte helleverans,
-driftsättning eller ägaraccept. Produktens ankarrättning och källpubliceringsaudit är genomförda.
-Verklig issuer-/serverkoppling och senare skyddad integration/release återstår.
+Nästa genomförandesteg: kedjedrivaren kvalificerar tillåten issuer-/serverkoppling före skyddad
+integration/release. Produktens olösta boknings-/betalningskontrakt och tillåtna kvalificerade
+teståtkomst hanteras enligt kontorets plan. R4 har två separata approved: rapporten och
+produktens enradsdelta `2cf`→`f25`, inte helleverans, driftsättning eller ägaraccept. Produktens
+ankarrättning och källpubliceringsaudit är genomförda. Överlämning och disposition av r4:s
+öppna observationer är dokumentationsaktiviteter, inte återupptagningsmålet.
 Ägaren har det färdigberedda guard-terminalsteget. Runtime-utföraren har lämnat de exakta
 prov- och granskningskvittona; intagsprovet ska inte upprepas för en produktankarrättning.
 
