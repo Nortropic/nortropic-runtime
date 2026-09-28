@@ -27,6 +27,9 @@ cannot write or approve this record; a source checkout is not an installed launc
 
 The launcher accepts only `digitala --task ID` or
 `issue --task ID --candidate EXACT_COMMIT --binding EXACT_OPAQUE_BINDING`.
+The `issue` operation serves only Runtime/Office. Digitala must pass through
+`digitala`, including its sealed whole-suite and profession-pin gates. Kundstart
+is not exposed by either launcher operation.
 It derives the host from its installed private path, ignores caller environments,
 and verifies its own adoption plus every one of the existing issuer's 14 code files
 before importing that issuer in an isolated Python process. Candidate, binding
@@ -170,7 +173,9 @@ An unrelated clone with the same origin is refused.
 
 The four explicit issuer targets are Runtime, Office, Digitala and Kundstart. This
 does not widen Runtime's ordinary task/Publisher target mapping: that remains
-Runtime/Office. Digitala has a fixed adopted-host command:
+Runtime/Office. Digitala's ordinary entry is its integrated primary
+`verktyg/publicera.py --task ID`. The holder's direct diagnostic/reconciliation
+entry to the same `publish_sealed` gates remains:
 
 ```sh
 NR_HOST_ROOT='/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime' \

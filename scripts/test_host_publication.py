@@ -113,6 +113,19 @@ class HostPublicationTest(unittest.TestCase):
         result=self.invoke('issue','--task','fixture','--candidate','b'*40,'--binding','nortropic-check/1:'+'f'*64)
         self.assertEqual(result.returncode,2);self.assertFalse((self.home/'invoked').exists())
 
+    def test_issue_is_only_runtime_office_and_cannot_skip_digitala_gates(self):
+        path=self.home/'requests/fixture/request.json'
+        record=json.loads(path.read_bytes())
+        for target in ('Nortropic/nortropic-digitala','Nortropic/nortropic-kundstart','other/project'):
+            record['task']['target']=target;private(path,record)
+            result=self.invoke('issue','--task','fixture','--candidate','b'*40,'--binding',self.expected)
+            with self.subTest(target=target):
+                self.assertEqual(result.returncode,2);self.assertFalse((self.home/'invoked').exists())
+        record['task']['target']='Nortropic/nortropic-projektkontor';private(path,record)
+        result=self.invoke('issue','--task','fixture','--candidate','b'*40,'--binding',self.expected)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual((self.home/'invoked').read_text(),str(self.host.parent/'nortropic-projektkontor'))
+
     def test_changed_closure_refuses_before_import(self):
         private(self.root/'runtime/check_issuer.py',b'raise RuntimeError("UNTRUSTED IMPORT")\n')
         result=self.invoke('digitala','--task','fixture')

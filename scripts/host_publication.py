@@ -106,11 +106,14 @@ def execute(arguments):
         return DigitalaPublisher(issuer).publish_sealed(args.task)
     record = read_object(issuer.home / 'requests' / args.task / 'request.json')
     task, subject, review = (record[key] for key in ('task', 'subject', 'review'))
+    targets = {'Nortropic/nortropic-runtime': host,
+               'Nortropic/nortropic-projektkontor': host.parent / 'nortropic-projektkontor'}
+    if task.get('target') not in targets:
+        raise ValueError('Issue serves only the ordinary Runtime/Office publisher')
     issuer.request(args.task, task, subject, review)
     if subject['candidate'] != args.candidate or binding(task, subject, review) != args.binding:
         raise ValueError('Caller differs from sealed task')
-    repository = host if task['target'] == 'Nortropic/nortropic-runtime' else host.parent / task['target'].split('/')[1]
-    return issuer.issue(repository, task, subject, review)
+    return issuer.issue(targets[task['target']], task, subject, review)
 
 
 def main(arguments=None):
