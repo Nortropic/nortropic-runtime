@@ -7,9 +7,9 @@ is refused. Nothing is taken from an argument or a file name alone:
   * target repository, worktree location and suite command come from historical profiles
     or an immutable host-issued accepted-task registration; no candidate argument selects a target;
   * the candidate is the manifest's exact commit, re-checked against live Git objects;
-  * the whole suite is RUN HERE on exactly that commit (HEAD and clean tree verified
-    before and after); the result is the measured return code and unittest summary,
-    EXPECTED_TEST_COUNT is only a cross-check;
+  * the whole suite's credential-free measurement is sealed by the independent
+    holder for exactly that commit/tree and re-read here; raw log/return code/count
+    are bound. This credential-bearing wrapper executes no candidate host tests;
   * the review receipt must approve exactly this commit and exactly these blob hashes;
   * for runtime candidates, the host-check receipt must record a complete green run of the separate host
     checks on exactly this commit, these bytes and code imported from this candidate, against this host's
@@ -17,7 +17,7 @@ is refused. Nothing is taken from an argument or a file name alone:
   * the EXISTING Publisher is imported from the primary checkout, which must be
     byte-identical to integrated main; its gates, branch-protection readback, exact-head
     squash merge and remote reconciliation are used unchanged.
---dry-run performs every check and the suite, and stops before the Publisher. A real run
+--dry-run validates the sealed suite and every local check, stopping before Publisher. A real run
 refuses unless the newest dry run of the same name previewed identical hashes and count.
 """
 import hashlib
@@ -285,17 +285,16 @@ for field in ('limitations', 'actual_reviewer'):
 def note_body(test_count):
     return (MARK + ' Review limitation, exactly as recorded in the review receipt for this candidate: '
             + reviewed['limitations'] + ' Reviewer as recorded there: ' + reviewed['actual_reviewer']
-            + ' The whole suite (%s tests) was run by the publication wrapper on the exact candidate '
-              'immediately before publication. This integration activates nothing.' % test_count)
+            + ' A credential-free whole-suite measurement (%s tests) is sealed for this exact candidate. '
+              'The issuer executes its frozen acceptance before publication. This integration activates nothing.' % test_count)
 
-# MEASURE the whole suite on exactly this commit; a named log or a number proves nothing.
+# Read the holder's exact measured suite. A candidate-selected log or count proves nothing.
 environment = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'USER', 'LOGNAME', 'LANG', 'TMPDIR')}
 environment['PYTHONDONTWRITEBYTECODE'] = '1'
 interpreter = (str(root / '.runtime/temporal-venv/bin/python') if PROFILE['where'] == 'runtime'
                else '/opt/homebrew/bin/python3.12')
-suite = subprocess.run([interpreter, '-B', '-m', 'unittest', 'discover',
-                        '-s', PROFILE['discover'], '-p', 'test_*.py', '-v'], cwd=path, env=environment,
-                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=1200)
+from runtime.check_issuer import sealed_construction_suite
+suite = sealed_construction_suite(path, head, PROFILE['discover'], name, expected)
 log = suite.stdout.decode(errors='replace')
 exact_candidate('after the suite')
 if PROFILE['where'] == 'office' and (not scratch.is_dir() or scratch.is_symlink() or any(scratch.iterdir())):
@@ -376,7 +375,7 @@ bound = {k: subject[k] for k in ('task_id', 'task_sha256', 'candidate', 'accepta
 bound.update(scope='whole_task', terminal_status='completed')
 tests = {**bound, 'passed': True, 'test_count': int(ran[0]), 'returncode': suite.returncode,
          'log_sha256': sha(log.encode()), 'log': log_path.name,
-         'measured_by': 'publication wrapper, whole suite run on the exact candidate immediately before publication'}
+              'measured_by': 'credential-free whole suite; exact sealed host measurement read by publication wrapper'}
 review = {**bound, 'verdict': 'approved', 'blocking_findings': [], 'reviewer_run': reviewed['reviewer_run'],
           'actual_reviewer': reviewed['actual_reviewer'], 'source_sha256': reviewed['source_sha256'],
           'limitations': reviewed['limitations']}

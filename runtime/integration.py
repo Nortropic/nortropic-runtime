@@ -20,10 +20,15 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def require_gate(task, subject, tests, review):
+def check_binding(task, subject, review):
+    return 'nortropic-check/1:' + digest({'target': task['target'], 'task': digest(task),
+                                        'subject': subject, 'review': digest(review)})
+
+
+def require_gate(task, subject, tests, review, *, allowed_targets=TARGETS):
     if not all(isinstance(x, dict) for x in (task, subject, tests, review)):
         raise GateClosed('Missing or non-object mandatory evidence')
-    if task.get('target') not in TARGETS:
+    if task.get('target') not in allowed_targets:
         raise GateClosed('Target is outside the authorized project')
     if not isinstance(task.get('id'), str) or not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', task['id']):
         raise GateClosed('Accepted task ID missing or invalid')
@@ -148,7 +153,7 @@ class Publisher:
             raise GateClosed('Required server protection is not active')
         return issuers
 
-    def require_checks(self, candidate, issuers):
+    def require_checks(self, candidate, issuers, expected_binding):
         # Commit statuses (including PAT-written success) do not prove an App
         # identity. Only GitHub's authenticated check-run fields are accepted.
         result = self.api('commits/' + candidate + '/check-runs?filter=latest&per_page=100')
@@ -168,10 +173,16 @@ class Publisher:
             if (not isinstance(app, dict) or type(app.get('id')) is not int
                     or app['id'] != issuer or run.get('head_sha') != candidate
                     or run.get('status') != 'completed' or run.get('conclusion') != 'success'
+                    or run.get('external_id') != expected_binding
                     or type(run.get('id')) is not int or run['id'] <= 0):
                 raise GateClosed('Mandatory check lacks trusted exact-head success: ' + name)
-            verified[name] = {'app_id': issuer, 'check_run_id': run['id'], 'head_sha': candidate}
+            verified[name] = {'app_id': issuer, 'check_run_id': run['id'], 'head_sha': candidate,
+                              'binding': expected_binding}
         return verified
+
+    def issue_checks(self, task, subject, review):
+        from .check_issuer import HostIssuer
+        return HostIssuer().issue(self.repository, task, subject, review)
 
     def require_base(self, base):
         self.git('fetch', 'origin', 'main')
@@ -218,7 +229,8 @@ class Publisher:
         pr = self.api('pulls/' + str(matches[0]['number'])) if matches else None
         if pr and pr.get('merged'):
             # A lost response never causes a second publication.
-            return self.reconcile(pr, subject, tree)
+            checks = self.require_checks(candidate, issuers, check_binding(task, subject, review))
+            return {**self.reconcile(pr, subject, tree), 'checks': checks}
         if pr and (pr.get('state') != 'open' or pr.get('head', {}).get('sha') != candidate):
             raise GateClosed('Existing PR is closed or has changed head')
         self.require_base(subject['base'])
@@ -239,8 +251,13 @@ class Publisher:
         self.require_base(subject['base'])
         if self.require_protection() != issuers:
             raise GateClosed('Mandatory server issuers changed during publication')
-        self.require_checks(candidate, issuers)
+        self.issue_checks(task, subject, review)
+        # Issuance may take time. Re-read source and server trust after it too.
+        self.require_base(subject['base'])
+        if self.require_protection() != issuers:
+            raise GateClosed('Mandatory server issuers changed during issuance')
+        checks = self.require_checks(candidate, issuers, check_binding(task, subject, review))
         merged = self.api('pulls/' + str(number) + '/merge', 'PUT', {'sha': candidate, 'merge_method': 'squash'})
         if merged.get('merged') is not True:
             raise GateClosed('Server did not confirm merge; reconcile before any retry')
-        return self.reconcile(self.api('pulls/' + str(number)), subject, tree)
+        return {**self.reconcile(self.api('pulls/' + str(number)), subject, tree), 'checks': checks}

@@ -12,7 +12,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from runtime.integration import GateClosed, Publisher, digest, require_gate
+from runtime.integration import GateClosed, Publisher, digest, require_gate, check_binding
 
 
 def fixture():
@@ -41,7 +41,8 @@ def protection_fixture():
 def checks_fixture():
     return {'total_count': 2, 'check_runs': [
         {'id': i, 'name': name, 'app': {'id': app}, 'head_sha': 'b'*40,
-         'status': 'completed', 'conclusion': 'success'}
+         'status': 'completed', 'conclusion': 'success',
+         'external_id': check_binding(fixture()[0], fixture()[1], fixture()[3])}
         for i, name, app in ((1, 'runtime/tests', 101), (2, 'runtime/review', 202))]}
 
 
@@ -53,6 +54,7 @@ class CountedPublisher(Publisher):
         self.protection_reads = 0; self.change_issuer_at = None
         self.changed_base_at=None;self.lost_head=False;self.merged=False;self.lose_merge_response=False
     def inspect_candidate(self,task,subject): return 'tree'
+    def issue_checks(self,task,subject,review): return {'fixture_only': True}
     def require_base(self,base):
         self.base_checks+=1
         if self.base_checks==self.changed_base_at: raise GateClosed('changed base')
@@ -198,9 +200,16 @@ class IntegrationTest(unittest.TestCase):
         p = CountedPublisher()
         result = p.publish(*fixture())
         self.assertTrue(result['merged'])
-        self.assertEqual(p.protection_reads, 2)
+        self.assertEqual(p.protection_reads, 3)
+        self.assertEqual(result['checks']['runtime/tests']['check_run_id'], 1)
         self.assertEqual(p.mutations, [('git', ('push', 'origin', 'b'*40+':refs/heads/runtime/'+'b'*40)),
                                       ('POST', 'pulls'), ('PUT', 'pulls/1/merge')])
+
+    def test_same_head_with_wrong_task_acceptance_or_review_binding_is_refused(self):
+        for value in (None, 'success', 'nortropic-check/1:' + '0'*64):
+            p = CountedPublisher(); p.checks['check_runs'][0]['external_id'] = value
+            with self.assertRaises(GateClosed): p.publish(*fixture())
+            self.assertFalse(p.merged)
 
     def test_real_git_candidate_scope_and_immutable_identity(self):
         with tempfile.TemporaryDirectory() as directory:
