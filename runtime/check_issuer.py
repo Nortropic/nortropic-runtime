@@ -26,6 +26,7 @@ from .release import ROOT
 
 NAMES = ('runtime/tests', 'runtime/review')
 CODE = ('runtime/__init__.py', 'runtime/check_issuer.py', 'runtime/integration.py',
+        'runtime/host_publication.py',
         'runtime/profile.py', 'runtime/release.py', 'runtime/targets.py',
         'runtime/construction_registration.py', 'runtime/development_binding.py',
         'runtime/development_scope.py', 'runtime/snapshot.py',

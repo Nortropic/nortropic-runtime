@@ -182,8 +182,8 @@ class Publisher:
         return verified
 
     def issue_checks(self, task, subject, review):
-        from .check_issuer import HostIssuer
-        return HostIssuer().issue(self.repository, task, subject, review)
+        from .host_publication import issue
+        return issue(task, subject, review)
 
     def require_base(self, base):
         self.git('fetch', 'origin', 'main')
