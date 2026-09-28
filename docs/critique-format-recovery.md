@@ -57,3 +57,20 @@ bokför de två nya kommandona; gamla kommandot och själva schemaavvisningen li
 under format_recovery. Digitalas nya körpost behåller aktuell konsument-/releasebindning
 och redovisar originalets bindning separat. Kvalitetsbilden visar uttryckligen källa,
 originalets saknade terminal, formfält, bildräkning och innebördskontrollens modellkaraktär.
+
+R2:s godkända, avgränsade kodgranskning följdes av små proveniensrättningar före
+bredare bruk: start/SESSION och kvittots tools-objekt anger den faktiskt valda
+utförarbinären med hash. parameters.seconds_limit gäller en textsession och
+parameters.sessions är två; toppnivåns seconds_limit är deras sammanlagda gräns.
+Källans oförändrade parameters ligger under format_recovery.source_parameters.
+FORM anges absolut i frågan; även en relativ Read-väg tolkas mot arbetsytan.
+Det frysta R2-brukprovets tidigare kod och kvitton ändras inte av rättningarna.
+
+Det första verkliga R2-brukprovet läste hela formunderlaget och båda objekten, men
+vägrade efter separat innebördskontroll: kortningen tappade bland annat skillnaden
+mellan sammanfattningar i filer och hela filer. Ingen sakdom publicerades. Därför
+preciseras formrättarens generella instruktion: kvalificerande fraser om läsomfång,
+vem som gjort/observerat något, osäkerhet och källstatus bevaras ordagrant; korta
+annan prosa/repetition först. Gränserna och den oberoende innebördskontrollen är
+oförändrade. Ett enda nytt avgränsat prov efter denna diagnos är ett motiverat omprov,
+inte en automatisk eller obegränsad retry. Ytterligare vägran är ett redovisat resultat.

@@ -146,6 +146,11 @@ class FormatRecovery(unittest.TestCase):
             receipt = json.loads((run / 'KVITTO.json').read_text())
             self.assertFalse(receipt['session']['valid_terminal'])
             self.assertEqual(receipt['format_recovery']['images_reopened'], 0)
+            self.assertEqual(receipt['format_recovery']['source_parameters'], json.loads((source / 'KVITTO.json').read_text())['parameters'])
+            self.assertEqual(receipt['parameters']['seconds_limit'], args.formtid)
+            self.assertEqual(receipt['parameters']['sessions'], 2)
+            self.assertEqual(receipt['seconds_limit'], args.formtid * 2)
+            self.assertIsInstance(receipt['tools'], dict)
             self.assertEqual((run / 'svar.json').exists(), preserved)
             self.assertEqual(json.loads((run / 'original-svar.json').read_text()), self.original)
 
@@ -175,23 +180,28 @@ class FormatRecovery(unittest.TestCase):
         args = types.SimpleNamespace(modell=MODEL, formtid=180)
         answer = {'summary': 'short'}
         schema = form.object_schema({'summary': {'type': 'string', 'maxLength': 60}})
-        for mode in ('success', 'image', 'failed_read'):
+        binary = self.root / 'synthetic-native'; binary.write_bytes(b'synthetic binary bytes, never executed')
+        for mode in ('success', 'relative_read', 'image', 'failed_read'):
             def execute(cmd, workspace, env, prompt, stream, seconds):
                 self.assertEqual(workspace, workspace.resolve())
+                self.assertIn(str(workspace / 'FORM.json'), prompt)
                 events = [self.events[0],
                     {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'id': 'r', 'name': 'Read',
-                        'input': {'file_path': str(workspace / 'FORM.json')}}]}},
+                        'input': {'file_path': 'FORM.json' if mode == 'relative_read' else str(workspace / 'FORM.json')}}]}},
                     {'type': 'user', 'message': {'content': [{'type': 'tool_result', 'tool_use_id': 'r',
                         'is_error': mode == 'failed_read', 'content': [{'type': 'image'}] if mode == 'image' else 'bound form'}]}},
                     {'type': 'result', 'subtype': 'success', 'terminal_reason': 'completed', 'session_id': 'source-session',
                      'is_error': False, 'structured_output': answer, 'result': json.dumps(answer)}]
                 stream.write(('\n'.join(json.dumps(e) for e in events) + '\n').encode())
                 return 0, 'exited'
-            with patch.object(critique, 'claude_command', return_value=['synthetic-native']), patch.object(common, 'run_session', side_effect=execute):
+            with patch.object(critique, 'claude_command', return_value=[str(binary)]), patch.object(common, 'run_session', side_effect=execute):
                 directory = alias / mode
-                if mode == 'success':
+                if mode in ('success', 'relative_read'):
                     value, receipt = form.native_text(directory, args, {}, schema, 'format only')
                     self.assertEqual(value, answer); self.assertEqual(receipt['images'], 0)
+                    self.assertEqual(receipt['opened'], ['FORM.json'])
+                    self.assertEqual(receipt['executor_binary']['sha256'], common.sha256_file(binary))
+                    self.assertEqual(receipt['executor_binary'], json.loads((directory / 'start.json').read_text())['executor_binary'])
                 else:
                     with self.assertRaises(ValueError): form.native_text(directory, args, {}, schema, 'format only')
                     receipt = json.loads((directory / 'SESSION.json').read_text())
