@@ -24,7 +24,7 @@ import time
 from . import web_common as common
 from .profile import ROOT
 
-CODE = ('runtime/web_critique.py', 'runtime/web_common.py')
+CODE = ('runtime/web_critique.py', 'runtime/web_common.py', 'runtime/critique_format.py')
 PLACE = re.compile(r'\A[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*\Z')
 IMAGE_SUFFIXES = ('.png', '.jpg', '.jpeg', '.webp', '.gif')
 FILE_LIMIT = 16 * 1024 * 1024
@@ -55,6 +55,17 @@ def check_schema(node, where='$', root=True):
         raise ValueError('The schema root must be an object')
     if kind not in TYPES:
         raise ValueError('Schema at %s needs a type among %s' % (where, sorted(TYPES)))
+    applicable = {'maxLength': 'string', 'minItems': 'array', 'maxItems': 'array'}
+    for key, expected in applicable.items():
+        if key in node and (kind != expected or type(node[key]) is not int or node[key] < 0):
+            raise ValueError('Invalid %s constraint at %s' % (key, where))
+    if node.get('minItems', 0) > node.get('maxItems', node.get('minItems', 0)):
+        raise ValueError('Reversed array bounds at ' + where)
+    for key in ('minimum', 'maximum'):
+        if key in node and (kind not in ('integer', 'number') or type(node[key]) not in (int, float)):
+            raise ValueError('Invalid %s constraint at %s' % (key, where))
+    if 'minimum' in node and 'maximum' in node and node['minimum'] > node['maximum']:
+        raise ValueError('Reversed numeric bounds at ' + where)
     if 'enum' in node and (not isinstance(node['enum'], list) or not node['enum']
                            or not all(isinstance(v, (str, int, float, bool)) for v in node['enum'])):
         raise ValueError('Schema at %s has an invalid enum' % where)
@@ -136,6 +147,12 @@ def build_workspace(files, executor, parent):
     rows, total = [], 0
     for item in files:
         source_digest, copy_digest, size = common.copy_regular(item['kalla'], workspace / item['plats'], FILE_LIMIT)
+        if item['plats'].lower().endswith(IMAGE_SUFFIXES):
+            magic = (workspace / item['plats']).read_bytes()[:16]
+            if not (magic.startswith(b'\x89PNG\r\n\x1a\n') or magic.startswith(b'\xff\xd8\xff')
+                    or magic.startswith((b'GIF87a', b'GIF89a'))
+                    or (magic.startswith(b'RIFF') and magic[8:12] == b'WEBP')):
+                raise ValueError('Image bytes do not match a supported image format: ' + item['plats'])
         total += size
         if total > TOTAL_LIMIT:
             raise ValueError('The underlag exceeds %d bytes' % TOTAL_LIMIT)
@@ -246,10 +263,15 @@ def parse(argv):
     parser.add_argument('--modell', required=True)
     parser.add_argument('--etikett', required=True)
     parser.add_argument('--tid', type=int, default=1200)
+    parser.add_argument('--aterhamta', help='Immutable failed critique run to recover; no new image review')
+    parser.add_argument('--formfalt', action='append', default=[], help='Explicit top-level prose field eligible for shortening')
+    parser.add_argument('--formtid', type=int, default=180, help='Seconds for each of the two bounded text-only calls')
     args = parser.parse_args(argv)
     common.label(args.etikett)
     if not 60 <= args.tid <= 2700:
         raise ValueError('--tid is 60-2700 seconds')
+    if not 60 <= args.formtid <= 900 or bool(args.aterhamta) != bool(args.formfalt):
+        raise ValueError('Recovery needs --aterhamta and --formfalt together; --formtid is 60-900 seconds')
     for name in ('fraga', 'schema'):
         path = Path(getattr(args, name))
         if path.is_symlink() or not path.is_file() or path.stat().st_size > TEXT_LIMIT:
@@ -266,6 +288,9 @@ def parse(argv):
 
 def run(argv=None):
     args = parse(sys.argv[1:] if argv is None else argv)
+    if args.aterhamta:
+        from .critique_format import recover
+        return recover(args)
     started = common.now()
     temporary = Path(tempfile.mkdtemp(prefix='nr-kritik-hem-'))
     try:
@@ -274,7 +299,9 @@ def run(argv=None):
         shutil.rmtree(temporary, ignore_errors=True)
         raise
     run_directory = common.new_run_directory('kritik', args.etikett)
+    from .critique_format import limits
     prompt = PREAMBLE.format(question=args.question.strip())
+    prompt += '\nAlla svarsgränser (tecken, inte byte). Validera samtliga fält före svar:\n' + '\n'.join(limits(args.schema_value)) + '\n'
     (run_directory / 'fraga.txt').write_text(prompt)
     (run_directory / 'schema.json').write_text(json.dumps(args.schema_value, indent=1, ensure_ascii=False) + '\n')
     images = [r['place'] for r in rows if r['place'].lower().endswith(IMAGE_SUFFIXES)]
@@ -298,6 +325,10 @@ def run(argv=None):
         raw = json.dumps(answer, ensure_ascii=False) if answer is not None else next(
             (r.get('result') for r in events if r.get('type') == 'result' and isinstance(r.get('result'), str)), '')
         delivered = sorted(opened & set(images))
+        # Preserve complete rejected tool inputs as raw attempts, never as answers.
+        from .critique_format import blocks
+        attempts = [b for b in blocks(events) if b.get('type') == 'tool_use' and b.get('name') == 'StructuredOutput']
+        (run_directory / 'svar-forsok.json').write_text(json.dumps(attempts, indent=1, ensure_ascii=False) + '\n')
     else:
         answer, parsed, words, raw = codex_answer(events, last_path)
         delivered = attached_images(argv_used, workspace, images)
