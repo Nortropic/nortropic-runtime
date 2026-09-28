@@ -27,6 +27,8 @@ from .release import ROOT
 NAMES = ('runtime/tests', 'runtime/review')
 CODE = ('runtime/__init__.py', 'runtime/check_issuer.py', 'runtime/integration.py',
         'runtime/profile.py', 'runtime/release.py', 'runtime/targets.py',
+        'runtime/construction_registration.py', 'runtime/development_binding.py',
+        'runtime/development_scope.py', 'runtime/snapshot.py',
         'runtime/claude_profile.py', 'scripts/probe_bridge.py', 'scripts/publish_construction.py',
         'scripts/publish_digitala.py')
 TARGETS = ('Nortropic/nortropic-runtime', 'Nortropic/nortropic-projektkontor',
@@ -75,6 +77,25 @@ def current_main(repository):
     if not re.fullmatch('[0-9a-f]{40}', value):
         raise GateClosed('Current main readback is malformed')
     return value
+
+
+def construction_import_root(wrapper, host=ROOT):
+    """Only integrated main or the existing holder's separately adopted copy.
+
+    This selects code, not a candidate and not a permission to publish. All suite,
+    preserved-host, dry-run, exact-source and server gates still run in the wrapper.
+    """
+    host, wrapper = Path(host).resolve(), Path(wrapper).resolve()
+    if wrapper == host / 'scripts/publish_construction.py':
+        return host, False
+    issuer = HostIssuer(host)
+    config = issuer.authority()
+    adopted = Path(config['adopted_code_root'])
+    if (adopted.parent != issuer.home / 'adopted'
+            or not re.fullmatch('[0-9a-f]{40}', adopted.name)
+            or wrapper != adopted / 'scripts/publish_construction.py'):
+        raise GateClosed('Construction bootstrap must use the separately adopted private holder copy')
+    return adopted, True
 
 
 def frozen_snapshot(repo, candidate, destination):
@@ -305,9 +326,13 @@ class DigitalaPublisher(Publisher):
         if not isinstance(task, dict) or task.get('target') != self.REPOSITORY or task.get('development'):
             raise GateClosed('Sealed task is not the fixed Digitala publication scope')
         self.issuer.request(identifier, task, subject, review)
-        suite = read_object(directory / 'suite.json')
+        # The shared Publisher places this label in public PR text. Keep the
+        # construction holder's existing restriction; raw private review paths
+        # and prose remain in the sealed record and must never be emitted there.
+        if not re.fullmatch('[a-z0-9][a-z0-9-]{0,119}', review['reviewer_run']):
+            raise GateClosed('Digitala reviewer identity is not a safe public run label')
         sealed_construction_suite(self.repository, subject['candidate'], 'verktyg', identifier,
-                                  suite.get('test_count'), issuer=self.issuer)
+                                  task.get('expected_test_count'), issuer=self.issuer)
         pin_digest = self.pins(subject['candidate'])
         tests = {key: subject[key] for key in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256')}
         # This gate input is derived only AFTER real holder-sealed measurement and
@@ -399,7 +424,8 @@ class HostIssuer:
         return config
 
     def request(self, identifier, task, subject, review):
-        if not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', identifier):
+        if (not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', identifier)
+                or not isinstance(task, dict) or task.get('id') != identifier):
             raise GateClosed('Invalid issuer task identity')
         directory = self.home / 'requests' / identifier
         record = read_object(directory / 'request.json')

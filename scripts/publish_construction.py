@@ -14,8 +14,8 @@ is refused. Nothing is taken from an argument or a file name alone:
   * for runtime candidates, the host-check receipt must record a complete green run of the separate host
     checks on exactly this commit, these bytes and code imported from this candidate, against this host's
     own preserved scope at its current journal head; it is pinned in the preview and the invocation record;
-  * the EXISTING Publisher is imported from the primary checkout, which must be
-    byte-identical to integrated main; its gates, branch-protection readback, exact-head
+  * the EXISTING Publisher is imported from integrated main or the separately
+    reviewed private holder adoption, pinned before publication; its gates, branch-protection readback, exact-head
     squash merge and remote reconciliation are used unchanged.
 --dry-run validates the sealed suite and every local check, stopping before Publisher. A real run
 refuses unless the newest dry run of the same name previewed identical hashes and count.
@@ -163,6 +163,12 @@ def refuse(message):
 
 if sys.flags.optimize:
     refuse('optimized interpreter mode is not accepted')
+from runtime.release import ROOT as root
+from runtime.check_issuer import construction_import_root
+try:
+    import_root, adopted_holder = construction_import_root(Path(__file__), root)
+except (OSError, ValueError, KeyError) as error:
+    refuse('publication holder has not been independently adopted: ' + type(error).__name__)
 arguments = [a for a in sys.argv[1:] if a != '--dry-run']
 dry_run = '--dry-run' in sys.argv[1:]
 if len(arguments) != 2 or sys.argv[1:].count('--dry-run') > 1 or not re.fullmatch('[a-z0-9][a-z0-9-]{0,79}', arguments[0]) \
@@ -181,14 +187,11 @@ else:
         refuse('unregistered or invalid accepted construction task: ' + type(error).__name__)
 TARGET = PROFILE['target']
 
-from runtime.release import ROOT as root
 build = root / '.runtime/ap11/build'
-# This tracked wrapper is invoked from an integrated checkout; candidate-local
-# copies may only dry-run. Publication still imports the primary Publisher.
+# The host's separate adoption can qualify the frozen holder before integration.
+# A candidate copy cannot select that authority, including in dry-run mode.
 wrapper = Path(__file__).resolve()
-if not dry_run and wrapper != root / 'scripts/publish_construction.py':
-    refuse('publication wrapper must be the primary integrated copy')
-os.chdir(root); sys.path.insert(0, str(root))
+os.chdir(root); sys.path.insert(0, str(import_root))
 for variable in ('PYTHONOPTIMIZE', 'PYTHONPATH', 'PYTHONHOME'):
     os.environ.pop(variable, None)
 
@@ -205,15 +208,15 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-# The existing Publisher, pinned to the bytes integrated on main.
+# The existing Publisher, pinned to integrated main or separate holder adoption.
 import runtime.integration as integration  # noqa: E402
 module = Path(integration.__file__).resolve()
-if module != root / 'runtime/integration.py':
-    refuse('Publisher was not imported from the primary checkout: ' + str(module))
+if module != import_root / 'runtime/integration.py':
+    refuse('Publisher was not imported from the qualified holder copy')
 publisher_sha = sha(module.read_bytes())
-if publisher_sha != sha(git(root, 'show', 'refs/remotes/origin/main:runtime/integration.py', raw=True)):
+if not adopted_holder and publisher_sha != sha(git(root, 'show', 'refs/remotes/origin/main:runtime/integration.py', raw=True)):
     refuse('primary checkout Publisher differs from integrated main')
-if not dry_run:
+if not dry_run and not adopted_holder:
     for rel in ('scripts/publish_construction.py', 'runtime/construction_registration.py'):
         if sha((root / rel).read_bytes()) != sha(git(root, 'show', 'refs/remotes/origin/main:' + rel, raw=True)):
             refuse('publication holder differs from integrated main: ' + rel)

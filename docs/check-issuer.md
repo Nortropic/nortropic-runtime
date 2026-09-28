@@ -40,6 +40,31 @@ Before adopting a credential, also adopt the new construction wrapper: the old
 private wrapper executed a candidate suite without the native sandbox. Merely
 installing an App key while continuing that old caller is not qualified.
 
+The construction bootstrap is the existing holder's separately reviewed transition,
+not a candidate override of the main pin. Freeze every file in `CODE` under
+`.runtime/ap11/check-issuer/adopted/EXACT_40_HEX_SOURCE_COMMIT/`, preserving the
+original review, source commit/tree, file hashes and prior holder attestation.
+`CODE` includes construction registration and the dynamic development/snapshot
+import closure. The reviewed adoption record must name this exact code root and
+the actual distinct review/implementation runs. Neither wrapper nor issuer creates
+an adoption record. Run this private wrapper with `NR_HOST_ROOT` set to the real
+host, first `NAME COUNT --dry-run`, then the same invocation without `--dry-run`.
+`construction_import_root` permits the non-integrated location only after the
+existing private authority authenticates its exact bytes and separate review, and
+only at the fixed adopted directory. An arbitrary candidate copy, including a
+candidate dry run, is refused. The primary path retains the existing integrated-main
+checks. All preserved-host checks, exact candidate/review/suite gates, latest-preview
+comparison, App-bound protection and merge reconciliation remain in both paths.
+
+Before placing any App key, measure the final one-commit candidates' complete suites
+and Runtime preserved-host checks. A same-tree squash must preserve original commits,
+reviews and the exact tree comparison; the holder binds the new exact subject only
+after inspecting that evidence. This changes commit ancestry, not reviewed code bytes.
+The implementation's bootstrap fixture is synthetic and credential-free: it proves
+the copied wrapper reaches a real dry run, while candidate-local invocation, changed
+closure, self-review, failed host checks and absent previews refuse. It does not adopt
+the real host or qualify a live App.
+
 The attempted whole-suite sandbox run is preserved as a failed qualification:
 623 tests ran with 1 failure and 75 errors because historical host-fixture tests
 need the live preserved state, process inspection and host temporary directories.
@@ -122,7 +147,11 @@ The code-root placeholder must be the independently adopted, hash-pinned holder
 copy, never the candidate checkout. This command accepts only a task identifier;
 the existing holder must already have sealed its request, exact independent review,
 behavior adapter/contract and actual Digitala suite measurement (`discover -s verktyg`,
-with or without `-v`). It cannot create an authority or request. The candidate must
+with or without `-v`). The accepted task includes a positive `expected_test_count`;
+the measured suite/log count must equal that independent expectation. Request
+directory and task ID must match. `reviewer_run` is a plain public label (lowercase
+letters, digits and hyphens); raw private review paths remain only in host evidence.
+It cannot create an authority or request. The candidate must
 be exactly one commit on the accepted current main in the fixed primary Digitala
 object database (real worktrees share it). No title/body/review/success provided by
 the candidate is trusted. Before any remote mutation, the command verifies the

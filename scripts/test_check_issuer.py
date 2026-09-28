@@ -4,6 +4,7 @@ import copy
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -39,7 +40,7 @@ def private(path, value):
 class IssuerTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.host = Path(self.temp.name) / 'runtime'; self.host.mkdir()
+        self.host = Path(self.temp.name).resolve() / 'runtime'; self.host.mkdir()
         self.issuer = c.HostIssuer(self.host)
         def git(*args): return c.git(self.host, *args).decode().strip()
         self.git = git
@@ -158,6 +159,90 @@ class IssuerTest(unittest.TestCase):
         with patch.object(c,'run_isolated') as run, self.assertRaisesRegex(GateClosed,'changed'): self.issue()
         run.assert_not_called(); self.assertFalse(self.client.authenticated)
 
+    def adopted_copy(self):
+        adopted=self.issuer.home/'adopted'/('d'*40)
+        code=Path(c.__file__).resolve().parents[1]
+        for relative in c.CODE:
+            path=adopted/relative;path.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copyfile(code/relative,path);path.chmod(0o400)
+        authority=c.read_object(self.issuer.home/'authority.json')
+        authority['adopted_code_root']=str(adopted)
+        private(self.issuer.home/'authority.json',authority)
+        return adopted
+
+    def test_bootstrap_uses_separate_private_adoption_and_refuses_candidate_or_changed_closure(self):
+        with self.assertRaisesRegex(GateClosed,'separately adopted'):
+            c.construction_import_root(Path(c.__file__).resolve().parents[1]/'scripts/publish_construction.py',self.host)
+        adopted=self.adopted_copy()
+        command=['/opt/homebrew/bin/python3.12','-I','-B','-c',
+            'import sys;sys.path.insert(0,sys.argv[1]);from runtime.check_issuer import construction_import_root;'
+            'root,adopted=construction_import_root(sys.argv[1]+"/scripts/publish_construction.py");'
+            'assert adopted;print(root)',str(adopted)]
+        env={'PATH':'/opt/homebrew/bin:/usr/bin:/bin','HOME':str(self.host/'.empty-home'),
+             'NR_HOST_ROOT':str(self.host)}
+        def run():return subprocess.run(command,capture_output=True,env=env)
+        result=run();self.assertEqual(result.returncode,0,result.stderr.decode())
+        self.assertEqual(result.stdout.decode().strip(),str(adopted))
+        review=c.read_object(self.issuer.home/'adoption-review.json')
+        review['reviewer_run']=review['implementation_run']
+        private(self.issuer.home/'adoption-review.json',review)
+        self.assertNotEqual(run().returncode,0)
+        review['reviewer_run']='review-adoption';private(self.issuer.home/'adoption-review.json',review)
+        (adopted/'runtime/development_binding.py').chmod(0o600)
+        (adopted/'runtime/development_binding.py').write_text('raise RuntimeError("changed closure")\n')
+        result=run();self.assertNotEqual(result.returncode,0)
+        self.assertIn(b'not been adopted',result.stderr)
+        self.assertFalse(self.client.authenticated)
+
+    def test_adopted_runtime_wrapper_dry_run_retains_hostcheck_and_preview_gates(self):
+        name='ap11-contract';build=self.host/'.runtime/ap11/build';build.mkdir(parents=True)
+        bound=('scripts/hostcheck_preserved_state.py','scripts/test_final_evidence.py')
+        for relative in bound:
+            path=self.host/relative;path.parent.mkdir(exist_ok=True);path.write_text('# synthetic hostcheck fixture\n')
+        self.git('add','scripts');self.git('commit','--amend','-qm','with hostcheck fixtures')
+        candidate=self.git('rev-parse','HEAD');base=self.subject['base']
+        worktree=self.host/'.runtime/ap11/integrations/bootstrap-fixture'
+        self.git('worktree','add','--detach',str(worktree),candidate)
+        files={p:c.sha(c.git(worktree,'show',candidate+':'+p)) for p in ('value.py',*bound)}
+        manifest={'path':str(worktree),'candidate':candidate,'base':base,'files':files,'implementation_run':'author-fixture'}
+        reviewed={'candidate':candidate,'source_sha256':files,'verdict':'approved','blocking_findings':[],
+                  'reviewer_run':'separate-fixture','actual_reviewer':'Synthetic separate fixture',
+                  'limitations':'Test fixture only; no live authority or adoption'}
+        private(build/(name+'-candidate.json'),manifest);private(build/(name+'-reviewer.json'),reviewed)
+        private(build/(name+'-acceptance.txt'),b'Frozen fixture task')
+        scope=self.host/'.runtime/ap11/application';scope.mkdir(parents=True)
+        private(scope/'head.json',{'head':'fixture'})
+        hostcheck={'module':'scripts.hostcheck_preserved_state','candidate':candidate,'clean_tree':True,
+            'successful':True,'run':1,'skipped':0,'failures':0,'errors':0,
+            'source_sha256':{p:files[p] for p in bound},
+            'imported':{p[:-3].replace('/','.'):str(worktree/p) for p in bound},
+            'scope':str(scope),'host_root':str(self.host),'journal_head':{'head':'fixture'}}
+        private(build/(name+'-hostcheck.json'),hostcheck)
+        directory=self.issuer.home/'requests'/name;log=b'Ran 2 tests in 0.1s\n\nOK\n'
+        suite={'schema':'nortropic-measured-suite/1','candidate':candidate,
+            'tree':c.git(worktree,'rev-parse',candidate+'^{tree}').decode().strip(),
+            'command':['python','-B','-m','unittest','discover','-s','scripts','-p','test_*.py','-v'],
+            'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True}
+        private(directory/'suite.json',suite);private(directory/'suite.log',log)
+        private(directory/'request.json',{'suite_sha256':c.sha((directory/'suite.json').read_bytes()),'subject':{'candidate':candidate}})
+        adopted=self.adopted_copy()
+        command=['/opt/homebrew/bin/python3.12','-I','-B',str(adopted/'scripts/publish_construction.py'),name,'2','--dry-run']
+        env={'PATH':'/opt/homebrew/bin:/usr/bin:/bin','HOME':str(self.host/'.empty-home'),
+             'NR_HOST_ROOT':str(self.host)}
+        result=subprocess.run(command,capture_output=True,env=env)
+        self.assertEqual(result.returncode,0,result.stderr.decode())
+        self.assertIn(b'Publisher NOT called; no remote access',result.stdout)
+        previews=list(build.glob(name+'-publication-invocation-*-dryrun.json'))
+        self.assertEqual(len(previews),1)
+        hostcheck['successful']=False;private(build/(name+'-hostcheck.json'),hostcheck)
+        result=subprocess.run(command,capture_output=True,env=env)
+        self.assertNotEqual(result.returncode,0);self.assertIn(b'complete green run',result.stderr)
+        hostcheck['successful']=True;private(build/(name+'-hostcheck.json'),hostcheck)
+        previews[0].unlink()
+        result=subprocess.run(command[:-1],capture_output=True,env=env)
+        self.assertNotEqual(result.returncode,0);self.assertIn(b'no dry-run preview',result.stderr)
+        self.assertFalse((self.issuer.home/'app.pem').exists())
+
     def digitala_fixture(self, bad_pins=False):
         repository=self.host.parent/'nortropic-digitala'
         self.git('clone','-q',str(self.host),str(repository))
@@ -170,7 +255,7 @@ class IssuerTest(unittest.TestCase):
         pin='0'*64 if bad_pins else c.sha((repository/'value.py').read_bytes())
         (repository/'steg/PINNAR.sha256').write_text(pin+'  value.py\n')
         git('add','steg');git('commit','--amend','-qm','Digitala candidate')
-        self.task.update(target='Nortropic/nortropic-digitala',allowed_paths=['value.py','steg/steg.json','steg/PINNAR.sha256'])
+        self.task.update(target='Nortropic/nortropic-digitala',expected_test_count=2,allowed_paths=['value.py','steg/steg.json','steg/PINNAR.sha256'])
         self.subject.update(candidate=git('rev-parse','HEAD'),task_sha256=digest(self.task))
         self.review.update(candidate=self.subject['candidate'],task_sha256=digest(self.task))
         private(self.directory/'review.json',self.review)
@@ -228,6 +313,33 @@ class IssuerTest(unittest.TestCase):
             publisher.publish_sealed('fixture')
         api.assert_not_called();self.assertFalse(self.client.authenticated)
         private(self.directory/'suite.log',b'candidate claims passed')
+        with patch.object(publisher,'api') as api, self.assertRaisesRegex(GateClosed,'Sealed suite'):
+            publisher.publish_sealed('fixture')
+        api.assert_not_called();self.assertFalse(self.client.authenticated)
+
+    def test_digitala_private_reviewer_path_never_enters_public_pr(self):
+        publisher=self.digitala_fixture()
+        self.review['reviewer_run']='/private/customer/review.json'
+        private(self.directory/'review.json',self.review)
+        self.record['review_sha256']=c.sha((self.directory/'review.json').read_bytes())
+        self.record['review']=self.review;private(self.directory/'request.json',self.record)
+        with patch.object(publisher,'api') as api, self.assertRaisesRegex(GateClosed,'safe public'):
+            publisher.publish_sealed('fixture')
+        api.assert_not_called();self.assertFalse(self.client.authenticated)
+
+    def test_sealed_request_directory_and_task_count_cannot_select_different_evidence(self):
+        publisher=self.digitala_fixture()
+        alias=self.issuer.home/'requests/alias'
+        shutil.copytree(self.directory,alias)
+        with patch.object(publisher,'api') as api, self.assertRaisesRegex(GateClosed,'task identity'):
+            publisher.publish_sealed('alias')
+        api.assert_not_called()
+        self.task['expected_test_count']=5
+        self.subject['task_sha256']=digest(self.task);self.review['task_sha256']=digest(self.task)
+        self.record.update(task=self.task,subject=self.subject,review=self.review)
+        private(self.directory/'review.json',self.review)
+        self.record['review_sha256']=c.sha((self.directory/'review.json').read_bytes())
+        private(self.directory/'request.json',self.record)
         with patch.object(publisher,'api') as api, self.assertRaisesRegex(GateClosed,'Sealed suite'):
             publisher.publish_sealed('fixture')
         api.assert_not_called();self.assertFalse(self.client.authenticated)
