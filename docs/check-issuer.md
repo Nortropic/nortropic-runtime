@@ -1,9 +1,11 @@
 # Bound host check issuer
 
-This is a candidate implementation, not an adopted authority or a live GitHub
-integration. Its App has not been registered, installed or given a credential.
-The previously reviewed D039 consumer now calls `HostIssuer` in the ordinary
-Publisher path after pushing the exact candidate. The construction wrapper reads
+The 2026-09-28 integration qualified App 5110369, installation 165844923, on the
+three selected Runtime/Office/Digitala repositories. The sole credential-bearing
+issuer remains the separately reviewed private adoption of source `10c1563`.
+Integration or release activation does not adopt another issuer root. The
+ordinary Publisher delegates an exact sealed task to that separate host process.
+The construction wrapper reads
 the holder's sealed credential-free suite measurement before the issuer runs the frozen host acceptance.
 No caller-provided `passed` field substitutes for that execution.
 
@@ -12,6 +14,42 @@ reviewer profiles must be measured unable to read or write that directory outsid
 their one acceptance workspace. Owner file permissions supplement the sandbox;
 they do not claim separation from arbitrary hostile code already running as the
 owner. No broad host-compromise guarantee is added.
+
+## Ordinary publication entry
+
+The existing holder installs the separately reviewed `scripts/host_publication.py`
+as `.runtime/ap11/check-issuer/launch.py` (owner 0400), with an independently issued
+private `launcher-adoption.json`. Its schema `nortropic-launcher-adoption/1` binds
+`launcher_sha256`, `issuer_authority_sha256`, actual distinct `reviewer_run` and
+`implementation_run`, `verdict: approved` and `blocking_findings: []`. Preserve
+the raw separate review, source revision and old adoption receipts. The program
+cannot write or approve this record; a source checkout is not an installed launcher.
+
+The launcher accepts only `digitala --task ID` or
+`issue --task ID --candidate EXACT_COMMIT --binding EXACT_OPAQUE_BINDING`.
+The `issue` operation serves only Runtime/Office. Digitala must pass through
+`digitala`, including its sealed whole-suite and profession-pin gates. Kundstart
+is not exposed by either launcher operation.
+It derives the host from its installed private path, ignores caller environments,
+and verifies its own adoption plus every one of the existing issuer's 14 code files
+before importing that issuer in an isolated Python process. Candidate, binding
+and task arguments are comparisons with a private sealed request, never replacement
+authority. Changed authority, bytecode, closure, launcher or request refuses.
+
+Runtime's primary/active `Publisher.issue_checks` uses this installed entry and
+checks the returned exact candidate, task, acceptance and opaque binding. It does
+not import a local credential-bearing issuer or fall back to one. This keeps the
+same issuer usable across reviewed Runtime code releases without silently rebinding
+authority to a new root. The construction bootstrap continues to use the frozen
+adopted wrapper and all its suite, review and preserved-host gates. A future issuer
+code change remains a separate adoption; this launcher supports the existing
+14-file adoption, not arbitrary new roots or closures.
+
+Digitala's integrated primary `verktyg/publicera.py --task ID` is a thin caller of
+the installed launcher. A candidate copy, caller-chosen root, old branch/review/body
+arguments and local test/pin/merge execution are refused. Its private holder must
+already have sealed the actual relevant suite, review and behavior acceptance.
+No invocation, launcher, or JSON success flag creates that evidence.
 
 ## Adoption and request
 
@@ -135,7 +173,9 @@ An unrelated clone with the same origin is refused.
 
 The four explicit issuer targets are Runtime, Office, Digitala and Kundstart. This
 does not widen Runtime's ordinary task/Publisher target mapping: that remains
-Runtime/Office. Digitala has a fixed adopted-host command:
+Runtime/Office. Digitala's ordinary entry is its integrated primary
+`verktyg/publicera.py --task ID`. The holder's direct diagnostic/reconciliation
+entry to the same `publish_sealed` gates remains:
 
 ```sh
 NR_HOST_ROOT='/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime' \
@@ -161,12 +201,13 @@ protected Publisher path to push, create/reconcile the PR, run the native behavi
 issuer, verify both App-bound checks and expected head, squash-merge and read back
 the exact integrated tree. The receipt remains in the private issuer observations.
 
-Do not run Digitala's old `verktyg/publicera.py` after placing the App key: that
-candidate-controlled program reruns its suite and pin script on the host. The
-adopted command replaces that caller at the holder boundary; no new general Runtime
+Do not run the old Digitala branch/review/body form after placing the App key: it
+reruns its suite and pin script on the host. The corrected integrated entry above
+delegates to the same adopted holder; no new general Runtime
 task target or self-grant is introduced. Its end-to-end regression uses real Git
 bytes and behavior subprocesses but fake GitHub responses; real server qualification
-remains required. Kundstart additionally has the verified private-plan blocker.
+was measured on the original integration. A subsequent candidate still requires
+fresh actual checks and exact merge readback. Kundstart additionally has the verified private-plan blocker.
 
 ## App and server configuration
 
