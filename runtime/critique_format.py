@@ -118,7 +118,7 @@ def original_answer(events, model, workspace, images, schema, allowed):
 
 def verified_source(source, args):
     """Rebind immutable raw evidence, all copied bytes, question and exact schema."""
-    from .web_critique import strict, PREAMBLE
+    from .web_critique import strict, PREAMBLE, file_listing, IMAGE_SUFFIXES
     source = Path(source).resolve()
     receipt_path = source / 'KVITTO.json'
     receipt = json.loads(receipt_path.read_text(), object_pairs_hook=strict)
@@ -155,7 +155,7 @@ def verified_source(source, args):
     if common.sha256_file(source / 'fraga.txt') != receipt.get('prompt_sha256'):
         raise ValueError('Original prompt hash differs')
     expected = {r['place']: r for r in receipt.get('underlag', [])}
-    if len(expected) != len(receipt.get('underlag', [])) or set(expected) != {r['plats'] for r in args.files}:
+    if len(expected) != len(receipt.get('underlag', [])) or list(expected) != [r['plats'] for r in args.files]:
         raise ValueError('Underlag places changed')
     for item in args.files:
         row = expected[item['plats']]
@@ -163,11 +163,17 @@ def verified_source(source, args):
                 or row.get('source_sha256') != row.get('copy_sha256')
                 or common.sha256_file(source / 'arbetsyta' / item['plats']) != row['copy_sha256']):
             raise ValueError('Underlag bytes changed; new substantive review is required')
+    listing = [{'place': item['plats'], 'sha256': expected[item['plats']]['copy_sha256'],
+                'bytes': expected[item['plats']]['bytes'], 'what': item['vad']} for item in args.files]
+    if file_listing(listing) != (source / 'arbetsyta/FILES.md').read_text():
+        raise ValueError('Underlag descriptions or order changed')
     events = [json.loads(line, object_pairs_hook=strict) for line in (source / 'strom.jsonl').read_text().splitlines() if line.strip()]
     if any(not isinstance(e, dict) for e in events):
         raise ValueError('Malformed original stream')
     start = json.loads((source / 'start.json').read_text(), object_pairs_hook=strict)
     images = receipt.get('images', {}).get('listed', [])
+    if images != [r['place'] for r in listing if r['place'].lower().endswith(IMAGE_SUFFIXES)]:
+        raise ValueError('Image inventory differs from the actual original package')
     original, fields, opened = original_answer(events, args.modell, Path(start['cwd']), images,
                                                 args.schema_value, args.formfalt)
     return source, receipt, digest, original, fields, opened

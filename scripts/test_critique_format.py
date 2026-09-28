@@ -90,7 +90,8 @@ class FormatRecovery(unittest.TestCase):
         image = workspace / 'VYER/a.png'
         image.write_bytes(b'\x89PNG\r\n\x1a\noriginal image')
         (workspace / 'AGENTS.md').write_text('original reader')
-        (workspace / 'FILES.md').write_text('original manifest')
+        (workspace / 'FILES.md').write_text(critique.file_listing([{'place': 'VYER/a.png',
+            'sha256': common.sha256_file(image), 'bytes': image.stat().st_size, 'what': 'original image'}]))
         question = 'Fixed scope and criteria'
         schema_text = json.dumps(self.schema)
         (source / 'schema.json').write_text(schema_text)
@@ -104,13 +105,13 @@ class FormatRecovery(unittest.TestCase):
                    'prompt_sha256': common.sha256_file(source / 'fraga.txt'),
                    'schema_sha256': common.sha256_bytes(schema_text.encode()),
                    'underlag': [{'place': 'VYER/a.png', 'source_sha256': common.sha256_file(image),
-                                'copy_sha256': common.sha256_file(image)}],
+                                'copy_sha256': common.sha256_file(image), 'bytes': image.stat().st_size}],
                    'images': {'listed': ['VYER/a.png'], 'delivered_or_opened': ['VYER/a.png'],
                               'complete': True, 'how': 'opened with Read (from the stream)'}}
         common.write_receipt(source, receipt)
         return types.SimpleNamespace(aterhamta=str(source), modell=MODEL, utforare='claude', question=question,
                                      schema_text=schema_text, schema_value=self.schema, formfalt=['summary'],
-                                     etikett='new', files=[{'plats': 'VYER/a.png', 'kalla': str(image)}])
+                                     etikett='new', files=[{'plats': 'VYER/a.png', 'kalla': str(image), 'vad': 'original image'}])
 
     def test_source_hash_question_schema_and_current_underlag_are_bound(self):
         args = self.source()
@@ -119,6 +120,10 @@ class FormatRecovery(unittest.TestCase):
             changed = copy.copy(args)
             setattr(changed, attribute, replacement)
             with self.subTest(attribute=attribute), self.assertRaises(ValueError): form.verified_source(args.aterhamta, changed)
+        changed = copy.deepcopy(args)
+        changed.files[0]['vad'] = 'a different declared source meaning'
+        with self.assertRaisesRegex(ValueError, 'descriptions'):
+            form.verified_source(args.aterhamta, changed)
         (Path(args.aterhamta) / 'strom.jsonl').write_text('{}\n')
         with self.assertRaises(ValueError): form.verified_source(args.aterhamta, args)
 

@@ -159,13 +159,16 @@ def build_workspace(files, executor, parent):
         rows.append({'place': item['plats'], 'sha256': copy_digest, 'source_sha256': source_digest,
                      'copy_sha256': copy_digest, 'bytes': size, 'what': item['vad'], 'source': item['kalla']})
     (workspace / 'AGENTS.md').write_text(AGENTS.format(bilder=IMAGE_NOTE[executor]))
-    table = '\n'.join('| `%s` | `%s` | %d | %s |' % (r['place'], r['sha256'], r['bytes'],
-                                                     r['what'].replace('|', '/').replace('\n', ' ')) for r in rows)
-    (workspace / 'FILES.md').write_text('# Filer i arbetsytan\n\nFullständig lista; du kan inte lista kataloger. '
-                                        'Öppna varje bild.\n\n| plats | sha256 | byte | vad |\n|---|---|---|---|\n'
-                                        + table + '\n')
+    (workspace / 'FILES.md').write_text(file_listing(rows))
     (workspace / '.scratch').mkdir()
     return workspace, rows
+
+
+def file_listing(rows):
+    table = '\n'.join('| `%s` | `%s` | %d | %s |' % (r['place'], r['sha256'], r['bytes'],
+                                                     r['what'].replace('|', '/').replace('\n', ' ')) for r in rows)
+    return ('# Filer i arbetsytan\n\nFullständig lista; du kan inte lista kataloger. '
+            'Öppna varje bild.\n\n| plats | sha256 | byte | vad |\n|---|---|---|---|\n' + table + '\n')
 
 
 def claude_command(workspace, model, schema_text):
