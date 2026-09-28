@@ -127,10 +127,13 @@ token is narrowed to one repository and Checks write for each invocation.
 This is a manifest payload for registration, not an automatically completed
 manifest handshake. Registration requires GitHub's owner browser flow and a
 protected callback/code conversion, or equivalent manual owner registration.
-No browser is available to this session. Existing API reads show Jonkebronk is an
-active Nortropic org-admin and repository admin, so an additional org membership
-is not the blocker. App registration/install and key provisioning remain real
-unperformed actions. No new credential may be provisioned before adoption review.
+The browser inventory was empty, but root verified that native Chrome control
+can reach the existing signed-in GitHub session. Existing API reads show Jonkebronk
+is an active Nortropic org-admin and repository admin; extra membership or a manual
+owner workaround is not required. Codex can prepare the concrete form. The UI
+policy requires confirmation immediately before materially new App access is
+created. App registration/install and key provisioning remain real unperformed
+actions. No new credential may be provisioned before adoption review.
 
 After qualification, the existing repository-admin credential can bind both
 mandatory check contexts to the actual positive App ID, with strict current-base
