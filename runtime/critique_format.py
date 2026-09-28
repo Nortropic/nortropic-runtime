@@ -99,9 +99,11 @@ def original_answer(events, model, workspace, images, schema, allowed):
             or 'Output does not match required schema:' not in errors[0]['content']):
         raise ValueError('The complete output lacks its observed schema rejection')
     fields = fields_for(candidate['input'], schema, allowed)
-    calls = {b.get('id'): b for b in body if b.get('type') == 'tool_use' and b.get('name') == 'Read'}
+    # Evidence arriving after the draft cannot support that draft's judgement.
+    prior = body[:body.index(candidate)]
+    calls = {b.get('id'): b for b in prior if b.get('type') == 'tool_use' and b.get('name') == 'Read'}
     seen = set()
-    for b in body:
+    for b in prior:
         call = calls.get(b.get('tool_use_id')) if b.get('type') == 'tool_result' else None
         content = b.get('content')
         if (call and not b.get('is_error') and isinstance(content, list)
@@ -188,7 +190,7 @@ def native_text(directory, args, payload, schema, instruction):
     from . import web_critique as critique
     from .profile import environment
     directory.mkdir()
-    workspace = directory / 'arbetsyta'
+    workspace = (directory / 'arbetsyta').resolve()
     workspace.mkdir()
     (workspace / '.scratch').mkdir()
     (workspace / 'AGENTS.md').write_text('Du är en avskärmad läsare av en formrättning. Bara Read. '
@@ -203,11 +205,21 @@ def native_text(directory, args, payload, schema, instruction):
     began = time.monotonic()
     with (directory / 'strom.jsonl').open('wb') as stream:
         exit_code, end = common.run_session(command, workspace, environment(), prompt, stream, args.formtid)
-    answer, parsed, words, opened = critique.claude_answer(critique.read_rows(directory / 'strom.jsonl'), args.modell, workspace)
+    events = critique.read_rows(directory / 'strom.jsonl')
+    answer, parsed, words, opened = critique.claude_answer(events, args.modell, workspace)
+    image_results = sum(1 for b in blocks(events) if b.get('type') == 'tool_result'
+                        and isinstance(b.get('content'), list)
+                        for c in b['content'] if isinstance(c, dict) and c.get('type') == 'image')
+    body = list(blocks(events))
+    reads = {b.get('id'): b for b in body if b.get('type') == 'tool_use' and b.get('name') == 'Read'}
+    form_read = any(b.get('type') == 'tool_result' and not b.get('is_error')
+                    and b.get('tool_use_id') in reads and
+                    Path((reads[b['tool_use_id']].get('input') or {}).get('file_path', '')).resolve() == workspace / 'FORM.json'
+                    for b in body)
     receipt = {'end': end, 'exit_code': exit_code, 'seconds': round(time.monotonic() - began, 1), **parsed,
-               'provider_words': words, 'opened': sorted(opened), 'images': 0}
+               'provider_words': words, 'opened': sorted(opened), 'images': image_results}
     (directory / 'SESSION.json').write_text(json.dumps(receipt, ensure_ascii=False, indent=1) + '\n')
-    if end == 'tidsgrans' or exit_code != 0 or answer is None or 'FORM.json' not in opened:
+    if end == 'tidsgrans' or exit_code != 0 or answer is None or not form_read or image_results:
         raise ValueError('Format-only native session did not finish with a qualified answer and source read')
     critique.validate(answer, schema)
     (directory / 'svar.json').write_text(json.dumps(answer, ensure_ascii=False, indent=1) + '\n')
@@ -226,7 +238,11 @@ def recover(args):
     provenance = {'source_run': str(source), 'source_receipt_sha256': digest,
                   'source_stream_sha256': common.sha256_file(source / 'strom.jsonl'),
                   'changed_fields': fields, 'source_outcome': old['outcome'], 'source_session': old['session'],
-                  'images_reopened': 0, 'semantic_check_is_model_judgement': True}
+                  'images_reopened': 0, 'semantic_check_is_model_judgement': True,
+                  'source_argv': old.get('argv'), 'source_tools': old.get('tools'),
+                  'source_schema_rejection': [b['content'] for b in blocks(critique.read_rows(source / 'strom.jsonl'))
+                      if b.get('type') == 'tool_result' and b.get('is_error') and isinstance(b.get('content'), str)
+                      and 'Output does not match required schema:' in b['content']]}
     answer = None
     error = None
     sessions = []
@@ -237,8 +253,8 @@ def recover(args):
             object_schema(properties),
             'Korta bara de utpekade prosafälten utan ny sakbedömning. Bevara samtliga påståenden, invändningar, '
             'risker, osäkerheter, läsbegränsningar, proveniens och bevisräckvidd. Övriga fält är låsta. '
-            'Du har inga bilder och får inte påstå ny bildläsning. Om innebörden inte ryms, svara med originaltexten; '
-            'ett uteblivet giltigt svar vägrar återhämtningen.')
+            'Du har inga bilder och får inte påstå ny bildläsning. Om innebörden inte ryms, avstå från '
+            'StructuredOutput och förklara varför i klartext; ett uteblivet giltigt svar vägrar återhämtningen.')
         sessions.append(session)
         candidate = apply_patch(original, patch, args.schema_value, fields)
         audit_schema = object_schema({'preserved': {'type': 'boolean'},
@@ -273,6 +289,9 @@ def recover(args):
     receipt = {key: copy.deepcopy(value) for key, value in old.items()
                if key not in ('outputs', 'closed_at', 'code', 'code_root', 'host_root', 'active_release', 'commit', 'clean')}
     receipt.update({'code': common.code_files(*critique.CODE), **common.code_root_info(), 'started_at': started,
+                    'argv': [json.loads(p.read_text())['argv'] for p in
+                             (directory / 'formrattning/start.json', directory / 'innebordskontroll/start.json') if p.exists()],
+                    'tools': ['Read', 'StructuredOutput'], 'seconds_limit': args.formtid * 2,
                     'outcome': outcome, 'schema_error': error, 'format_recovery': provenance,
                     'session': {'valid_terminal': False, 'end': 'source_preserved', 'source': old['session'],
                                 'format_sessions': sessions},

@@ -18,7 +18,7 @@ objekt krävs från en kvalificerad Claude-start med en observerad schemaavvisni
 Samtliga fält valideras; bara maxLength-fel i de uttryckligt valda överlånga
 strängarna tillåts. Fel enum, typ, listlängd, bindning enligt schemat eller saknad
 egenskap vägras. Originalets lyckade bildresultat kopplas till dess Read-anrop;
-enbart anrop eller en deklarerad seen_files-lista räcker inte. Konsumenten prövar
+bildresultaten måste ha kommit före sakutkastet. Enbart anrop eller en deklarerad seen_files-lista räcker inte. Konsumenten prövar
 fortfarande faktisk dom, aktuell kandidat, kriterier, räckvidd och bildmanifest.
 
 Första nya native-sessionen får hela råobjektet, fältgränser och enbart de ändringsbara
@@ -50,3 +50,10 @@ prövar förmedlingen utan kostnad; ett separat verkligt native-prov behövs fö
 observerade modellvägen. Rapportera nya textsessioners resursfält separat från
 gamla 600,6 sekunder/okänd kostnad och tidigare 45-bildersomtag. Det visar inte
 total besparing eller bättre produktomdöme.
+
+Efter separat kodgranskning krävs lyckad faktisk FORM-läsning i båda textsessionerna,
+med upplösta arbetsvägar. Nya bildresultat räknas ur råströmmen och vägras. Nytt kvitto
+bokför de två nya kommandona; gamla kommandot och själva schemaavvisningen ligger
+under format_recovery. Digitalas nya körpost behåller aktuell konsument-/releasebindning
+och redovisar originalets bindning separat. Kvalitetsbilden visar uttryckligen källa,
+originalets saknade terminal, formfält, bildräkning och innebördskontrollens modellkaraktär.

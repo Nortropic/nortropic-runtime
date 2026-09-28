@@ -62,12 +62,13 @@ class FormatRecovery(unittest.TestCase):
             self.extract(original=original)
 
     def test_incomplete_ambiguous_or_unqualified_output_and_missing_images_refuse(self):
-        for mutation in ('missing_output', 'duplicate', 'image_error', 'no_image_result', 'no_schema_error', 'wrong_model', 'terminal'):
+        for mutation in ('missing_output', 'duplicate', 'image_error', 'no_image_result', 'late_image_result', 'no_schema_error', 'wrong_model', 'terminal'):
             events = copy.deepcopy(self.events)
             if mutation == 'missing_output': events.pop(3)
             elif mutation == 'duplicate': events.append(copy.deepcopy(events[3]))
             elif mutation == 'image_error': events[2]['message']['content'][0]['is_error'] = True
             elif mutation == 'no_image_result': events[2]['message']['content'][0]['content'] = 'not an image'
+            elif mutation == 'late_image_result': events.append(events.pop(2))
             elif mutation == 'no_schema_error': events[-1]['message']['content'][0]['is_error'] = False
             elif mutation == 'wrong_model': events[0]['model'] = 'unselected-model'
             else: events.append({'type': 'result', 'is_error': True})
@@ -111,7 +112,7 @@ class FormatRecovery(unittest.TestCase):
         common.write_receipt(source, receipt)
         return types.SimpleNamespace(aterhamta=str(source), modell=MODEL, utforare='claude', question=question,
                                      schema_text=schema_text, schema_value=self.schema, formfalt=['summary'],
-                                     etikett='new', files=[{'plats': 'VYER/a.png', 'kalla': str(image), 'vad': 'original image'}])
+                                     etikett='new', formtid=180, files=[{'plats': 'VYER/a.png', 'kalla': str(image), 'vad': 'original image'}])
 
     def test_source_hash_question_schema_and_current_underlag_are_bound(self):
         args = self.source()
@@ -167,6 +168,34 @@ class FormatRecovery(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Image bytes'):
             critique.build_workspace([{'kalla': str(source), 'plats': 'VYER/a.png', 'vad': 'required image'}],
                                      'claude', self.root)
+
+    def test_native_text_resolves_workspace_and_measures_actual_read_results(self):
+        alias = self.root / 'alias'
+        real = self.root / 'real'; real.mkdir(); alias.symlink_to(real)
+        args = types.SimpleNamespace(modell=MODEL, formtid=180)
+        answer = {'summary': 'short'}
+        schema = form.object_schema({'summary': {'type': 'string', 'maxLength': 60}})
+        for mode in ('success', 'image', 'failed_read'):
+            def execute(cmd, workspace, env, prompt, stream, seconds):
+                self.assertEqual(workspace, workspace.resolve())
+                events = [self.events[0],
+                    {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'id': 'r', 'name': 'Read',
+                        'input': {'file_path': str(workspace / 'FORM.json')}}]}},
+                    {'type': 'user', 'message': {'content': [{'type': 'tool_result', 'tool_use_id': 'r',
+                        'is_error': mode == 'failed_read', 'content': [{'type': 'image'}] if mode == 'image' else 'bound form'}]}},
+                    {'type': 'result', 'subtype': 'success', 'terminal_reason': 'completed', 'session_id': 'source-session',
+                     'is_error': False, 'structured_output': answer, 'result': json.dumps(answer)}]
+                stream.write(('\n'.join(json.dumps(e) for e in events) + '\n').encode())
+                return 0, 'exited'
+            with patch.object(critique, 'claude_command', return_value=['synthetic-native']), patch.object(common, 'run_session', side_effect=execute):
+                directory = alias / mode
+                if mode == 'success':
+                    value, receipt = form.native_text(directory, args, {}, schema, 'format only')
+                    self.assertEqual(value, answer); self.assertEqual(receipt['images'], 0)
+                else:
+                    with self.assertRaises(ValueError): form.native_text(directory, args, {}, schema, 'format only')
+                    receipt = json.loads((directory / 'SESSION.json').read_text())
+                    self.assertEqual(receipt['images'], 1 if mode == 'image' else 0)
 
 
 if __name__ == '__main__':
