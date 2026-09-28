@@ -12,7 +12,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from runtime.integration import GateClosed, Publisher, digest, require_gate
+from runtime.integration import GateClosed, Publisher, digest, require_gate, check_binding
 
 
 def fixture():
@@ -28,12 +28,33 @@ def fixture():
     return task,subject,tests,review
 
 
+def protection_fixture():
+    # Synthetic server authority only; no real App is selected or configured.
+    return {'required_status_checks': {'strict': True, 'checks': [
+        {'context': 'runtime/tests', 'app_id': 101},
+        {'context': 'runtime/review', 'app_id': 202}]},
+        'enforce_admins': {'enabled': True}, 'allow_force_pushes': {'enabled': False},
+        'allow_deletions': {'enabled': False}, 'required_linear_history': {'enabled': True},
+        'required_pull_request_reviews': {}}
+
+
+def checks_fixture():
+    return {'total_count': 2, 'check_runs': [
+        {'id': i, 'name': name, 'app': {'id': app}, 'head_sha': 'b'*40,
+         'status': 'completed', 'conclusion': 'success',
+         'external_id': check_binding(fixture()[0], fixture()[1], fixture()[3])}
+        for i, name, app in ((1, 'runtime/tests', 101), (2, 'runtime/review', 202))]}
+
+
 class CountedPublisher(Publisher):
     def __init__(self):
         self.mutations=[];self.pr=None;self.base_checks=0
+        self.protection = protection_fixture()
+        self.checks = checks_fixture()
+        self.protection_reads = 0; self.change_issuer_at = None
         self.changed_base_at=None;self.lost_head=False;self.merged=False;self.lose_merge_response=False
     def inspect_candidate(self,task,subject): return 'tree'
-    def require_protection(self): pass
+    def issue_checks(self,task,subject,review): return {'fixture_only': True}
     def require_base(self,base):
         self.base_checks+=1
         if self.base_checks==self.changed_base_at: raise GateClosed('changed base')
@@ -44,6 +65,12 @@ class CountedPublisher(Publisher):
         self.mutations.append(('git',args));return ''
     def api(self,path,method='GET',body=None):
         if method!='GET': self.mutations.append((method,path))
+        if path == 'branches/main/protection':
+            self.protection_reads += 1
+            if self.protection_reads == self.change_issuer_at:
+                self.protection['required_status_checks']['checks'][0]['app_id'] = 303
+            return self.protection
+        if path.endswith('/check-runs?filter=latest&per_page=100'): return self.checks
         if path.startswith('pulls?'): return [self.pr] if self.pr else []
         if path=='pulls' and method=='POST':
             self.pr={'number':1,'head':{'sha':'b'*40},'base':{'ref':'main'},'state':'open'}
@@ -57,9 +84,6 @@ class CountedPublisher(Publisher):
         if path=='pulls/1':
             if self.lost_head: return {**self.pr,'head':{'sha':'c'*40}}
             return self.pr
-        if path.startswith('statuses/'): return {}
-        if path.startswith('commits/'):
-            return {'state':'success','statuses':[{'context':c,'state':'success'} for c in ('runtime/tests','runtime/review')]}
         raise AssertionError(path)
 
 
@@ -110,6 +134,82 @@ class IntegrationTest(unittest.TestCase):
         before=list(publisher.mutations)
         self.assertTrue(publisher.publish(*fixture())['merged'])
         self.assertEqual(publisher.mutations,before,'recovery published twice')
+
+    def test_server_must_bind_both_issuers_before_any_mutation(self):
+        for value in (None, -1, 0, True, '101'):
+            for index in (0, 1):
+                with self.subTest(value=value, index=index):
+                    p = CountedPublisher()
+                    p.protection['required_status_checks']['checks'][index]['app_id'] = value
+                    with self.assertRaisesRegex(GateClosed, 'issuer'):
+                        p.publish(*fixture())
+                    self.assertEqual(p.mutations, [])
+        for entries in (None, [], [{'context': 'runtime/tests', 'app_id': 101}]*2,
+                        protection_fixture()['required_status_checks']['checks']*2):
+            p = CountedPublisher(); p.protection['required_status_checks']['checks'] = entries
+            with self.assertRaises(GateClosed): p.publish(*fixture())
+            self.assertEqual(p.mutations, [])
+
+    def test_weaker_or_malformed_protection_blocks_before_mutation(self):
+        changes = [lambda p: p.update(required_status_checks=None),
+                   lambda p: p['required_status_checks'].update(strict=False),
+                   lambda p: p.update(enforce_admins={'enabled': False}),
+                   lambda p: p.update(allow_force_pushes={'enabled': True}),
+                   lambda p: p.update(allow_deletions={'enabled': True}),
+                   lambda p: p.pop('allow_deletions'),
+                   lambda p: p.update(required_linear_history={'enabled': False}),
+                   lambda p: p.update(required_pull_request_reviews=None)]
+        for change in changes:
+            p = CountedPublisher(); change(p.protection)
+            with self.assertRaises(GateClosed): p.publish(*fixture())
+            self.assertEqual(p.mutations, [])
+
+    def test_wrong_issuer_head_and_non_successful_checks_never_merge(self):
+        changes = [('app', {'id': 999}), ('app', {'id': True}), ('app', None),
+                   ('head_sha', 'c'*40), ('head_sha', None), ('status', 'in_progress'),
+                   ('conclusion', 'neutral'), ('conclusion', 'skipped'),
+                   ('conclusion', 'failure'), ('conclusion', None), ('id', 0)]
+        for key, value in changes:
+            for index in (0, 1):
+                with self.subTest(key=key, value=value, index=index):
+                    p = CountedPublisher(); p.checks['check_runs'][index][key] = value
+                    with self.assertRaises(GateClosed): p.publish(*fixture())
+                    self.assertFalse(p.merged)
+                    self.assertFalse(any(m[0] == 'POST' and m[1].startswith('statuses/') for m in p.mutations))
+
+    def test_missing_ambiguous_truncated_or_status_only_readback_never_merges(self):
+        good = checks_fixture()['check_runs']
+        cases = [None, {}, {'state': 'success', 'statuses': [
+            {'context': name, 'state': 'success'} for name in ('runtime/tests', 'runtime/review')]},
+            {'total_count': 1, 'check_runs': good[:1]},
+            {'total_count': 3, 'check_runs': good},
+            {'total_count': 3, 'check_runs': good + [good[0]]},
+            {'total_count': 1, 'check_runs': [None]},
+            {'total_count': True, 'check_runs': good[:1]}]
+        for response in cases:
+            p = CountedPublisher(); p.checks = response
+            with self.assertRaises(GateClosed): p.publish(*fixture())
+            self.assertFalse(p.merged)
+
+    def test_server_issuer_change_before_merge_is_not_silently_adopted(self):
+        p = CountedPublisher(); p.change_issuer_at = 2
+        with self.assertRaisesRegex(GateClosed, 'issuers changed'): p.publish(*fixture())
+        self.assertFalse(p.merged)
+
+    def test_exact_server_bound_checks_allow_merge_without_self_issued_status(self):
+        p = CountedPublisher()
+        result = p.publish(*fixture())
+        self.assertTrue(result['merged'])
+        self.assertEqual(p.protection_reads, 3)
+        self.assertEqual(result['checks']['runtime/tests']['check_run_id'], 1)
+        self.assertEqual(p.mutations, [('git', ('push', 'origin', 'b'*40+':refs/heads/runtime/'+'b'*40)),
+                                      ('POST', 'pulls'), ('PUT', 'pulls/1/merge')])
+
+    def test_same_head_with_wrong_task_acceptance_or_review_binding_is_refused(self):
+        for value in (None, 'success', 'nortropic-check/1:' + '0'*64):
+            p = CountedPublisher(); p.checks['check_runs'][0]['external_id'] = value
+            with self.assertRaises(GateClosed): p.publish(*fixture())
+            self.assertFalse(p.merged)
 
     def test_real_git_candidate_scope_and_immutable_identity(self):
         with tempfile.TemporaryDirectory() as directory:

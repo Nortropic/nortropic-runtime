@@ -342,7 +342,7 @@ class SecretTests(unittest.TestCase):
 class UnderlagTests(unittest.TestCase):
     def setUp(self):
         self.parent = Path(tempfile.mkdtemp()).resolve()
-        (self.parent / 'a.png').write_bytes(b'\x89PNG bild')
+        (self.parent / 'a.png').write_bytes(b'\x89PNG\r\n\x1a\nfixture image')
         (self.parent / 'b.md').write_text('text')
 
     def tearDown(self):

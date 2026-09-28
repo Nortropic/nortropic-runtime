@@ -110,9 +110,26 @@ Do not place business code in Runtime to bypass the present validator.
 Candidate and reviewer have no publication tools, no network, and no host evidence
 write access. Reviewer source is read-only. A host creates exact Git objects,
 executes frozen acceptance in the native sandbox and binds both real run identities
-before protected publication. Required branch statuses are exact-candidate checks;
-the current GitHub plan accepts status writers from any app, so host credential
-isolation remains essential.
+before protected publication. Required server checks must name explicit positive GitHub App IDs for both
+`runtime/tests` and `runtime/review`. The branch rule is the existing host-owned
+issuer authority; candidate input and installed-app discovery cannot choose it.
+Publisher refuses null/missing/any-app bindings before push or PR, never posts its
+own success statuses, and requires completed successful check-runs from those
+exact issuers on the exact candidate before merge. Missing, malformed, truncated
+or ambiguous readback, and an issuer change during publication, stop integration.
+It does not infer success from combined commit status, neutral or skipped runs.
+
+The current servers' null bindings therefore block this path. The historical
+`config/branch-protection.json` has any-app (-1) entries and is not a qualified
+configuration for this stricter path; this change does not apply or repair it. Selecting and
+qualifying a genuinely independent issuer, its protected execution/input boundary,
+and server configuration is still an external prerequisite. An arbitrary installed
+App or GitHub Actions identity alone does not qualify that boundary. Do not weaken
+protection or substitute a PAT status to get past the wait. This code grants no
+new credentials and does not retrofit the active or integrated holder; adopting a
+new Publisher still requires the existing separately reviewed holder transition.
+If a PR was already created before checks became available, preserve it and
+reconcile only after the diagnosed prerequisite is restored.
 
 No general hostile detached-process or arbitrary-host-compromise guarantee is
 claimed. Per-invocation deadlines and process-group cleanup are measured local
@@ -363,3 +380,40 @@ The engine binary is `.runtime/bin/impeccable-0.1.6`, checked by SHA256 at every
 the published suite, with their own receipt:
 
     "<runtime>/.runtime/temporal-venv/bin/python" -B scripts/run_web_host_checks.py <new receipt path>
+
+
+## Release-bound Office operations (D038)
+
+This candidate requires protected integration and an activated release before ordinary use.
+`python -B -m runtime.operation_schedule status OPERATION` reads only the release-bound operation.
+The same command takes `install`, `resume`, `pause`, `stop` and `rebind`. Installation refuses duplicates
+and starts paused. Resume requires explicit action; stop disables future starts and lets a bounded
+in-flight operation finish and record its effects. Rebind requires a paused, idle schedule and retains
+all scope checks. These commands never modify the AP-10 schedule.
+
+The release configuration must bind `scheduled_operations[OPERATION]` to
+`{"input":"operations/NAME.json","interval_seconds":300}` and include hashes for that input and
+`office/tools/driftoperation.py`. Only 60–86400 seconds are accepted. The Office input uses schema
+`office-drift/1`, a private `state` directory, and optional `intake` and `monitor` objects. Intake binds
+Digitala's frozen consumer bytes, an absolute resolved `python_path` and exact `python_sha256`,
+customer directory, executor, HTTPS base URL and credential file;
+monitor binds the exact HTTPS health address and 40-character candidate SHA. Secrets remain in private
+0600 files outside repositories. A bypass is internal monitor access, never customer authentication.
+
+The worker process runs a separate `office-operations` queue and activity slot; a model/AP-10 activity
+on `development` cannot occupy this slot. Both workers retain the same managed worker process identity.
+Status reads recent native execution states and completed business outcomes, plus missed/overlap counts.
+
+Runtime returns the actual Office result. `completed: false` is not a successful business check just
+because the workflow ended. Office persists per-run config bindings, intake output hashes and health
+observations. Incident/recovery delivery is acknowledged only after the private recipient record is read
+back, independently for intake and monitor transitions. Pending events and stored states use closed
+validated shapes and UUID identities. Malformed state is preserved under an `.invalid-UUID` filename,
+reported as an explicit incident and can recover on the next run; resumed delivery is recorded.
+That is a local Office recipient, not a claim of email delivery. Native schedule status cannot
+substitute for these results. An offline host yields no checks; the hosted product remains independently available.
+
+For native input drift, `python -B -m scripts.inspect_native_config` checks release file hashes and reports
+only differences and safe version/feature metadata. It never selects code or rewrites private settings.
+Do not copy a new guard hash into the active config. Requalification and a reviewed release transition
+with verified rollback are required.
