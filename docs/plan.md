@@ -16,33 +16,50 @@ registrering utan fasta provnamn, diagnos och kvalificering av native-konfigurat
 avgränsad schemalagd intags-/driftoperation på befintlig Temporal-motor. Ingen ny motor eller
 Trust Kernel; andra åtaganden och modellval är oförändrade.
 
-Kandidaten ligger i den isolerade grenen `atgarder/vikskar-20260927`. Separat granskning r1 gav
-fyra blockerare; de rättas i r2: egen operationskö och aktivitetsslot, separat kvitterad intagslarmväg,
-validerad beständig händelsedata och bunden Python-tolk. Ett faktiskt isolerat prov har därefter
-startat tre körningar (frisk, incident, återhämtning) medan en annan kö är upptagen. Statusen läser
-verkliga workflow- och verksamhetsutfall. Det är inte aktiv kunddrift. Fullsviter och separat r2-review
-återstår efter de nya rättningarna. Kontorets motsvarande kandidat bär verksamhetshanteraren.
+Kandidat `atgarder/vikskar-20260927` är fryst vid `ac5bcd9`; kontorets hanterare vid
+`58f938e`. De tidigare fyra blockerarna är rättade och separat omgranskade. Isolerade
+frisk-/incident-/återhämtningsprov och fullsuite är bevarade; detta är inte aktiv kunddrift.
 
-Aktiv pekare är fortfarande `eb102e4e88e245e41ba7e932c068d26e2d839036f4b96f882ef423178caa6727`
-(Runtime `3bea86ef`, kontoret `df5ed5dc`). Native-konfigurationen avviker från dess frysta hash;
-ordinarie körning vägrar fortsatt avvikelsen. Diagnos lämnar privat konfiguration och pekare
-orörda. Aktuell konfiguration har klarat isolerade fil-/nät-/credentialspärrprov och verktygsinventering,
-men detta ger inte rätt att aktivera en ny bindning. Äldre D037-lägesstycken nedan är historik.
+Den faktiska kedjan med Digitala `d61141d` och legitim Kundstart-alias kvalificerades på nytt
+2026-09-28 06:20/06:21 UTC: två verkliga 60-sekunders schemastarter, båda completed+healthy,
+redan kvitterad revision 46 gav inget nytt båda gångerna. Kundhashar var oförändrade. Skyddad
+slutprodukt-r11 `0de4ffd` gav health HTTP200/exakt candidate/storageavailable. Endast
+aktivkodsladdaren ersattes i den isolerade kandidatworkern. Unikt testschema är raderat med
+NOT_FOUND-återläsning; aktiv pekare, service och AP10/AP11-definitioner var oförändrade.
+Den lokala tillfälliga kandidaten är varken aktiv release eller permanent kunddrift.
 
-Nästa handling: separat granska denna kandidat och kontorets hanterare; förbered exakt skyddad
-integration och en granskad övergång med prövad återgång. Kedjedrivaren är ensam skrivare i
-Runtime-arbetsytan. Återupptagning sker från denna plan, kontorets gällande plan och det privata
-`evidence/nasta-uppdrag/local/atgarder-vikskar-20260927/` med hjälp-/provloggar.
+D039-kandidaten `4384329` på `atgarder/trusted-issuer-20260928` utgår separat från ac5.
+Publisher skriver inte längre PAT-success och vägrar null/any-app; obligatoriska check-runs
+måste bära serverns bundna App och exakt head. Tolv riktade prov och fullsuite 614 passerar.
+Separat Runtime/Claude-läsning issuer-r1 slutade approved för exakt `4384329` kl. 06:14:28Z, inga
+blockerare och inget livegodkännande. Fem kommentarer kvarstår, bland annat utfärdarens
+uppgifts-/acceptansbindning och bättre kvitto-/provspårning. Den koden ingick inte i intags-r2.
 
-D039, separat fortsättning 2026-09-28: `atgarder/trusted-issuer-20260928` utgår från
-frysta ac5bcd9 utan att ändra intagsprovets kandidat. Den tar bort Publisherns egna
-PAT-success och kräver serverbundna App-utfärdare/exakta check-runs. Tolv riktade
-regressioner och fullsuite 614 tester passerar; separat granskning återstår. Null-bindningarna
-på servern förblir ett verkligt hinder. Ingen App är vald eller behörighet ändrad.
-Denna gren kvarstår lokalt för prövning och granskning; ingen aktiv/integrerad kod
-är ändrad. Nästa ansvar: utföraren färdigställer prov/granskning, kedjedrivaren
-samordnar senare adoption genom befintlig holder-väg. Ingen självbootstrap genom
-kandidatens egen Publisher och ingen skyddsförsvagning är tillåten.
+Verklig betrodd utfärdare och dess skyddade underlag/körmiljö samt serverbindning är kvarstående
+externa förutsättningar. Båda obligatoriska checks har fortfarande app_id=null. Ingen App,
+behörighet eller serverkonfiguration ändras här. Adoption av den nya Publishern följer den
+befintliga separat granskade holder-vägen; kandidatens egen kod får inte självbootstrapas.
+
+Den gamla driftpekaren är senast oförändrad vid r2. Dess guardavvikelse har ett separat approved
+guard-only-paket r3 med samma 203 gamla kodfiler och verkligt repeterad stopped-state-
+återhämtning. Ägarterminalsteget väntar återkoppling; ingen utföraraktivering har skett och
+paketet inför inte denna nya kod. Ny faktisk driftavläsning krävs efter eventuell ägarövergång.
+
+Nästa ansvar: kedjedrivaren sluter produktens lilla ankardelta/kritik och publiceringsaudit,
+förankrar faktisk issuer-/serverkoppling och samordnar senare skyddad integration/release.
+Ägaren har det färdigberedda guard-terminalsteget. Runtime-utföraren har lämnat de exakta
+prov- och granskningskvittona; intagsprovet ska inte upprepas för en produktankarrättning.
+
+Den frysta dokumentkandidaten lämnas för draft-PR/källpublicering. Faktisk gren-/PR-kvittens
+binds separat i publiceringsunderlaget; main-integration och aktivering är egna kvalificerade steg.
+
+Grenarna ac5 och issuer438 kvarstår lokalt som frysta prov-/domsbaslinjer. Den nya grenen
+`atgarder/dokumentkontinuitet-20260928` ändrar endast planfakta inför publicering; dess head
+är inte issuerdomens SHA, medan icke-dokumentbytes ska vara identiska med `4384329`. Ingen gren är
+integrerad eller aktiv. Återuppta från denna plan, kontorets aktuella plan och privata
+`drift/intake-schema-r2/LAS-MIG.md`, `drift/issuer-bindning-r1/LAS-MIG.md`,
+`drift/releaseberedning/OPERATORSSTEG.md` och `slutleverans/PR-BEREDNING-r2.md` i kontorets
+åtgärdsyta för 20260927.
 
 ---
 
