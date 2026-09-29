@@ -23,6 +23,9 @@ from temporalio.common import RetryPolicy
 # not drift apart. Every value must exceed Office's own BOUND_SECONDS, which sums its
 # intake, drift and monitor ceilings; scripts/probe_veckodrift.py asserts that against
 # the release's actual handler bytes rather than against a number repeated here.
+# Office's ceilings are wall clock: each frozen tool runs as a process group that is
+# killed at its bound, and the monitor carries its own deadline because a urlopen
+# timeout bounds one socket operation, not a whole attempt.
 ACTIVITY_BOUND = 300
 SCHEDULE_TO_CLOSE_BOUND = ACTIVITY_BOUND + 30
 EXECUTION_BOUND = SCHEDULE_TO_CLOSE_BOUND + 30

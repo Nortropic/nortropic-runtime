@@ -407,7 +407,10 @@ Digitala's frozen consumer bytes, an absolute resolved `python_path` and exact `
 customer directory, executor, HTTPS base URL and credential file;
 monitor binds the exact HTTPS health address and 40-character candidate SHA. Secrets remain in private
 0600 files outside repositories. A bypass is internal monitor access, never customer authentication.
-Drift binds the same frozen Digitala bytes plus `verktyg/drift_kontroll.py`, the exact `plan`/`plan_sha256`
+Intake is not purely reading: on an actual new signal Digitala's consumer POSTs its own
+acknowledgement to `/api/intern/arenden/{id}/kvittens`, the path KUNDSTART-KONTRAKT.md names, which is
+its idempotent record of what it consumed. Nothing on a customer's site is written and no export
+revision changes. Drift binds the same frozen Digitala bytes plus `verktyg/drift_kontroll.py`, the exact `plan`/`plan_sha256`
 of that customer's `DRIFT.json` and `receipts`, the existing customer directory the `DRIFT-<time>.json`
 receipt is written into. That receipt is what Digitala's `underhall.py besked` reads, so this is the
 ordinary path onward and not a separate report. `isolated_test` permits a loopback HTTP address and

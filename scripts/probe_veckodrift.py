@@ -27,7 +27,8 @@ from unittest.mock import patch
 from temporalio.client import Client, ScheduleIntervalSpec, ScheduleSpec
 from temporalio.worker import Worker
 from runtime.scheduled_operation import (ScheduledOperation, scheduled_operation,
-                                         ACTIVITY_BOUND, EXECUTION_BOUND)
+                                         ACTIVITY_BOUND, SCHEDULE_TO_CLOSE_BOUND,
+                                         EXECUTION_BOUND)
 from runtime.operation_schedule import definition, validate, execution_status
 
 WAKEUP_SECONDS = 3600      # the ordinary hourly wakeup that the release would bind
@@ -159,12 +160,16 @@ def build(output, office_handler, digitala, interpreter, fixtures):
 
 
 def rewind(state, seconds):
-    """Stand in for a host that slept past the due time: move the record backwards."""
+    """Stand in for a host that slept past the due time: move the record backwards.
+
+    Everything except the timestamp is preserved, including the closing run's id, so
+    the record stays a valid one and the wakeup answers period_elapsed rather than
+    quarantining malformed state.
+    """
     path = state / 'period.json'
     value = json.loads(path.read_text())
     stamp = datetime.fromisoformat(value['completed_at']) - timedelta(seconds=seconds)
-    path.write_text(json.dumps({'completed_at': stamp.isoformat(),
-                                'sequence': value['sequence']}, indent=2) + '\n')
+    path.write_text(json.dumps({**value, 'completed_at': stamp.isoformat()}, indent=2) + '\n')
     return stamp.isoformat()
 
 
@@ -188,10 +193,12 @@ async def probe(output, office_handler, digitala, interpreter):
     fixtures = Fixtures()
     name, config, state, customer, plan = build(output, office_handler, digitala,
                                                 interpreter, fixtures)
+    # The only place the two repositories' bounds are compared, against the exact
+    # handler bytes under test rather than a number copied into a Runtime test.
     bound = handler_bound(office_handler)
-    if not bound < ACTIVITY_BOUND < EXECUTION_BOUND:
-        raise RuntimeError('Office bound %s does not fit inside Runtime %s/%s'
-                           % (bound, ACTIVITY_BOUND, EXECUTION_BOUND))
+    if not bound < ACTIVITY_BOUND < SCHEDULE_TO_CLOSE_BOUND < EXECUTION_BOUND:
+        raise RuntimeError('Office bound %s does not fit inside Runtime %s/%s/%s'
+                           % (bound, ACTIVITY_BOUND, SCHEDULE_TO_CLOSE_BOUND, EXECUTION_BOUND))
     client = await Client.connect('127.0.0.1:7339', namespace='nortropic-runtime')
     handle, runs, seen = None, [], set()
     try:
@@ -231,7 +238,8 @@ async def probe(output, office_handler, digitala, interpreter):
                         and first['drift']['ran'] and first['drift']['healthy']
                         and first['drift']['incidents'] == 0
                         and first['intake']['completed']
-                        and first['period_recorded']['sequence'] == 1):
+                        and first['period_recorded']['sequence'] == 1
+                        and first['period_recorded']['run_id'] == first['run_id']):
                     raise RuntimeError('First due wakeup did not perform a clean check: ' + json.dumps(first))
                 if fixtures.site_calls <= site_before or fixtures.signal_calls - signal_before < 2:
                     raise RuntimeError('The frozen tools did not actually reach the fixtures')
@@ -281,6 +289,7 @@ async def probe(output, office_handler, digitala, interpreter):
         summary = {
             'passed': True, 'schedule': name,
             'office_bound_seconds': bound, 'runtime_activity_bound': ACTIVITY_BOUND,
+            'runtime_schedule_to_close_bound': SCHEDULE_TO_CLOSE_BOUND,
             'runtime_execution_bound': EXECUTION_BOUND,
             'ordinary_wakeup_seconds': WAKEUP_SECONDS, 'period_seconds': PERIOD_SECONDS,
             'accelerated_tick_seconds': TICK_SECONDS,

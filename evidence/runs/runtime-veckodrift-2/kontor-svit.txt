@@ -1,0 +1,29 @@
+# Kontorets helsvit, kandidatgrenen veckodrift/kontor-20260929
+# kommando: python3.12 -B -m unittest discover -s . -p test_*.py (i tools/)
+# kört: 2026-09-29T15:53:50Z
+....................................................................................................................................................................................../opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py:589: ResourceWarning: unclosed <socket.socket fd=14, family=2, type=1, proto=6, laddr=('127.0.0.1', 50807), raddr=('127.0.0.1', 50802)>
+  if method() is not None:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+............/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py:669: ResourceWarning: unclosed <socket.socket fd=50, family=2, type=1, proto=0, laddr=('127.0.0.1', 50947)>
+  function, args, kwargs = self._cleanups.pop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/case.py:669: ResourceWarning: unclosed <socket.socket fd=55, family=2, type=1, proto=0, laddr=('127.0.0.1', 50956)>
+  function, args, kwargs = self._cleanups.pop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=53, family=2, type=1, proto=0, laddr=('127.0.0.1', 50953)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/elinhaggstrom/nortropic-repos/nortropic-kontor-veckodrift-20260929/tools/partnern/kallor.py:172: ResourceWarning: unclosed <socket.socket fd=54, family=2, type=1, proto=0, laddr=('127.0.0.1', 50955)>
+  db.execute('insert into sok values(?,?,?,?,?,?)',
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=56, family=2, type=1, proto=0, laddr=('127.0.0.1', 50961)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=59, family=2, type=1, proto=0, laddr=('127.0.0.1', 50966)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................................................................................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 534 tests in 150.406s
+
+OK

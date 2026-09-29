@@ -24,6 +24,15 @@ konsumenten av `GET /api/intern/signaler` med eget beständigt importläge och l
 ärende. Båda startas ur byte som releasen hashbinder. Kundstarts eget verktyg, dess
 interna API och dess repo är oförändrade.
 
+Om "läsande": driftkontrollen är renodlat läsande, och ingenting skrivs på en kunds sajt. Men
+signalhämtningen är inte renodlat läsande, och det ordet var för brett. Vid en verklig ny signal
+sparar Digitalas konsument exportbyten och gör sedan sin egen `POST
+/api/intern/arenden/{id}/kvittens` — den väg KUNDSTART-KONTRAKT.md namnger, och just det som
+beställningens "beständigt importläge och lås per ärende" vilar på. Skrivningen är konsumentens egen
+idempotenta bokföring av vad den konsumerat; en identisk kvittens får upprepas efter ett tappat svar
+och den ändrar aldrig en exportrevision. Den rör inte kundens sajt, material eller svar. Kandidaten
+inför den inte och ändrar inte en byte i konsumenten: det frysta verktyget startas som det är.
+
 Väckningen är inte perioden. `interval_seconds` väcker operationen (3600 i den beredda
 bindningen); kontorets hanterare avgör ur sitt eget beständiga `period.json` om veckan
 (`period_seconds` 604800) har gått. En period som missats för att Macen sov står därför
@@ -41,15 +50,25 @@ och incident/återhämtning per kanal levereras en gång till kontorets privata 
 `scripts/install_ap10.py --operations` är ny och krävdes: utan den kunde operationen inte
 nå någon ordinarie release alls, bara D038:s injicerade provkonfiguration. Aktivitets- och
 schemagränserna är namngivna konstanter (300/330/360) eftersom tre kanaler inte rymdes i
-D038:s 180 s; kontorets `BOUND_SECONDS` är 239 och kvalificeringen mäter den mot de
-hanterarbyte som prövas.
+D038:s 180 s; kontorets `BOUND_SECONDS` är 255 och kvalificeringen mäter den mot de
+hanterarbyte som prövas, i stället för att kopiera talet in i ett Runtime-prov.
 
-Kvitto: `evidence/runs/runtime-veckodrift-1/` ur `scripts/probe_veckodrift.py` — tre
+Granskningsrunda 1 underkände kandidaten på fem blockerare, och alla fem är besvarade:
+monitorns gräns var ingen väggklocka, ett periodkvitto från framtiden tystade arbetet (och
+år 9999 gav obehandlad OverflowError), en återupptagen körning stängde samma period två
+gånger, ordet "läsande" var för brett, och svitantalen saknade kvitto. Domen ordagrant:
+`evidence/runs/runtime-veckodrift-2/GRANSKNING-r1-DOM.md`.
+
+Kvitto: `evidence/runs/runtime-veckodrift-2/` ur `scripts/probe_veckodrift.py` — tre
 verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
 kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
 ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
 period (`overdue_seconds` 3620) som utfördes som incident med kundkvitto och en privat
-kvittens. Full Runtime-svit 663 prov; kontorets hanterarsvit 30 prov.
+kvittens. Runda 1:s kvitto är bevarat och märkt ersatt.
+
+Svitkvitton, mätta: Runtime 663 prov med ett fel, och exakt samma fel på oförändrad main
+`af78312` vid 656 prov — det är alltså inte kandidatens, utan en maskinberoende kontroll av
+Chrome-processer. Kontoret 534 prov OK mot 509 OK på oförändrad main `34bcedd`.
 
 Inte visat och inte gjort: sajten och signalytan är loopback-provdata, inte en kundadress
 och inte Kundstarts produktion eller dess lokala provtjänst. Den verkliga veckoperioden och

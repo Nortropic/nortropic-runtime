@@ -111,9 +111,10 @@ class WeeklyBoundTests(unittest.TestCase):
         self.assertLess(HEARTBEAT_BOUND, ACTIVITY_BOUND)
         self.assertLess(ACTIVITY_BOUND, SCHEDULE_TO_CLOSE_BOUND)
         self.assertLess(SCHEDULE_TO_CLOSE_BOUND, EXECUTION_BOUND)
-        # Office's handler sums its own channel ceilings to 245 s; the innermost
-        # Runtime bound must exceed that, or a whole channel could never finish.
-        self.assertGreater(ACTIVITY_BOUND, 245)
+        # Office's own BOUND_SECONDS is deliberately NOT copied here. A second copy of
+        # that number would drift, and this suite cannot see the Office repository.
+        # probe_veckodrift.py reads BOUND_SECONDS out of the handler bytes actually
+        # under test and refuses the qualification when the relation does not hold.
         home = Path(tempfile.mkdtemp()); self.addCleanup(shutil.rmtree, home)
         config = {'directory': str(home), 'config_sha256': 'a' * 64, 'files': {},
                   'scheduled_operations': {'weekly-case': {'input': 'operations/weekly-case.json',

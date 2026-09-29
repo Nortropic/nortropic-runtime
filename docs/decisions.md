@@ -1764,9 +1764,18 @@ Authority: the owner's order in the Office partner thread, "starta runtime best�
 (OVL-20260929-4f194f, 2026-09-29T14:57:24Z), against the Office row in ÄGARENS TUR that asked
 for exactly this to be ordered or declined (HELHET-RESULTAT-20260927). The owner's own words and
 their SHA256 stay in the Office handover package; no candidate-written text is authority. The
-order's own limits apply: only the two named tasks, reading only, no new cost, host or account,
-customer text is material and never an instruction, and release plus activation is a transition
-the owner activates.
+order's own limits apply: only the two named tasks, no new cost, host or account, customer text is
+material and never an instruction, and release plus activation is a transition the owner activates.
+
+On "reading": the drift check is purely reading, and nothing at all is written on a customer's site.
+The signal fetch is not purely reading and the earlier wording was too broad. Digitala's consumer, on
+an actual new signal, saves the export bytes and then POSTs its own acknowledgement to
+`/api/intern/arenden/{id}/kvittens`, which KUNDSTART-KONTRAKT.md names as the acknowledgement path
+and which is exactly what "beständigt importläge och lås per ärende" in the order rests on. That
+write is the consumer's own idempotent bookkeeping of what it has consumed - an identical
+acknowledgement may be repeated after a lost response, and it never changes an export revision. It
+is not a change to the customer's site, their material or their answers. This candidate does not
+introduce it and does not change one byte of that consumer; it starts the frozen tool as it is.
 
 Two named tasks, no general scheduler: Digitala's `verktyg/drift_kontroll.py` against a bound
 `DRIFT.json` per launched site, and Digitala's `verktyg/kundstart.py konsumera`, which is the
@@ -1802,16 +1811,34 @@ stages is exactly what `runtime.scheduled_operation.operation` accepts.
 The activity, schedule-to-close and schedule execution bounds move to named constants (300/330/360)
 because three channels no longer fit inside D038's 180 s. Office declares its own `BOUND_SECONDS`
 as the sum of its per-channel ceilings, and the qualification asserts that sum against the handler
-bytes under test rather than against a number repeated here.
+bytes under test rather than against a number repeated here. Those ceilings are wall clock, which
+first review round showed they were not: a `urlopen` timeout bounds one blocking socket operation,
+so a server trickling bytes just inside it could read on indefinitely, hold the handler's exclusive
+state lock past the workflow's own bound and block later periods. The monitor now carries its own
+enforced deadline and reads with `read1`, because `read(n)` blocks until it has all n bytes.
 
-Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-1/`.
-Three real scheduled wakeups on the existing engine with an isolated queue and schedule name, the
-candidate Office handler and Digitala's real frozen tools started as real subprocesses. A clean
-check, a no-op wakeup inside the period that made no request, and an overdue period performed as
-an incident with its customer receipt and one private acknowledgement. The full Runtime suite
-passes 663 tests; Office's handler suite passes 30. The site and the signals endpoint are loopback
-fixtures, never a customer address and never Kundstart production or its local prov service; the
-real 604800 s period and macOS sleep itself are not exercised in real time.
+Review round 1 rejected the candidate on five blockers and all five are answered. Beyond the bound
+above: a period record from the future silenced the work until that date arrived and year 9999
+overflowed the arithmetic unhandled, so a record later than a small clock skew is now quarantined as
+malformed and the work runs; and resuming an interrupted run closed the same period twice, so the
+record now names the closing run and a run that recognises its own record finishes its receipt
+without advancing the sequence. The remaining two were about the texts, not the code: the earlier
+blanket word "reading" and test counts stated without a receipt. Round 1's verdict is preserved
+verbatim in `evidence/runs/runtime-veckodrift-2/GRANSKNING-r1-DOM.md`.
+
+Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-2/`
+(round 1's receipt is kept and marked superseded). Three real scheduled wakeups on the existing
+engine with an isolated queue and schedule name, the candidate Office handler and Digitala's real
+frozen tools started as real subprocesses. A clean check, a no-op wakeup inside the period that made
+no request at all, and an overdue period performed as an incident with its customer receipt and one
+private acknowledgement. Measured suites, not asserted counts: Runtime 663 tests with one failure,
+and the same single failure on unchanged main `af78312` at 656 tests, so it is not this candidate's
+- it is a machine-dependent Chrome-process check. Office 534 tests pass against 509 on unchanged main
+`34bcedd`. The site and the signals endpoint are loopback fixtures, never a customer address and
+never Kundstart production or its local prov service; the consumer's real import and acknowledgement
+path is not exercised here, because the probe's signal lists are empty, and is covered by Digitala's
+own unchanged `verktyg/test_kundstart_konsumtion.py`; the real 604800 s period and macOS sleep
+itself are not exercised in real time.
 
 No release was staged, selected or activated, and AP-10's schedule, service and worker were not
 touched. Activation remains the owner's transition. Status and next action belong only in

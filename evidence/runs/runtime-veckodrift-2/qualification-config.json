@@ -1,0 +1,14 @@
+{
+  "directory": "/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime/.runtime/ap11/integrations/veckodrift/.scratch/veckodrift-r3/release",
+  "config_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "files": {
+    "office/tools/driftoperation.py": "6c2256685a544ec0f7dc0e40080a3e0a1445da2602a663771d0c218ac461e2fe",
+    "operations/veckodrift-probe-05a7fcdf18654df0990802f8c69352d4.json": "a6b8c9e2bf490ab03f2f5e5901d6f6ffa2550bb68ea1e3d9d10546c985c6c226"
+  },
+  "scheduled_operations": {
+    "veckodrift-probe-05a7fcdf18654df0990802f8c69352d4": {
+      "input": "operations/veckodrift-probe-05a7fcdf18654df0990802f8c69352d4.json",
+      "interval_seconds": 3600
+    }
+  }
+}
