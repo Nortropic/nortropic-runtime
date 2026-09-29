@@ -1,0 +1,60 @@
+# Runtimes helsvit, kandidatgrenen veckodrift/digitala-20260929, korning 2
+# kommando: .runtime/temporal-venv/bin/python -B -m unittest discover -s scripts -p test_*.py
+# kort: 2026-09-29T16:51:07Z
+...........................usage: development_control [-h] [--reason REASON]
+                           {interactive-start,interactive-retry,assess,status,pause,resume,stop,wake,continue}
+development_control: error: argument action: invalid choice: 'assess-typo' (choose from interactive-start, interactive-retry, assess, status, pause, resume, stop, wake, continue)
+..................usage: development_control [-h] [--reason REASON]
+                           {interactive-start,interactive-retry,assess,status,pause,resume,stop,wake,continue}
+development_control: error: argument action: invalid choice: 'assess-typo' (choose from interactive-start, interactive-retry, assess, status, pause, resume, stop, wake, continue)
+...................................................................................................................................................../opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py:2217: ResourceWarning: unclosed file <_io.FileIO name=8 mode='wb' closefd=True>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+../opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py:2217: ResourceWarning: unclosed file <_io.BufferedWriter name=8>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py:2217: ResourceWarning: unclosed file <_io.FileIO name=9 mode='wb' closefd=True>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.............................................................................................................................................................................................................................................................................................................................................Executing <Task pending name='Task-520' coro=<ParentReplayTest.test_recorded_wait_cycles_replay_in_the_sandboxed_production_form() running at /Users/elinhaggstrom/nortropic-repos/Nortropic Runtime/.runtime/ap11/integrations/veckodrift/scripts/test_parent_replay.py:27> wait_for=<Future pending cb=[<builtins.PyDoneCallback object at 0x10b4a7630>(), Task.task_wakeup()] created at /opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py:181] created at /opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py:100> took 0.488 seconds
+.[2m2026-09-29T16:51:44.611754Z[0m [33m WARN[0m [2mtemporalio_sdk_core::worker::workflow[0m[2m:[0m Failing workflow task [3mrun_id[0m[2m=[0m01a0c52d-fee9-7f03-b6c1-33162bd2201e [3mfailure[0m[2m=[0mFailure { failure: Some(Failure { message: "[TMPRL1100] Nondeterminism error: Activity machine does not handle this event: HistoryEvent(id: 11, TimerStarted)", source: "", stack_trace: "", encoded_attributes: None, cause: None, failure_info: Some(ApplicationFailureInfo(ApplicationFailureInfo { r#type: "", non_retryable: false, details: None, next_retry_delay: None, category: Unspecified })) }), force_cause: NonDeterministicError }
+................/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name=3 encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.../opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py:84: ResourceWarning: unclosed file <_io.TextIOWrapper name=3 encoding='utf-8'>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/suite.py:84: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.............../opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py:2217: ResourceWarning: unclosed file <_io.FileIO name=12 mode='wb' closefd=True>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/mock.py:2217: ResourceWarning: unclosed file <_io.FileIO name=13 mode='wb' closefd=True>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.............................................................F...........................................
+======================================================================
+FAIL: test_only_the_processes_of_the_named_chrome_profile_are_ended (test_web_profiles.ChildProcessTests.test_only_the_processes_of_the_named_chrome_profile_are_ended)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime/.runtime/ap11/integrations/veckodrift/scripts/test_web_profiles.py", line 713, in test_only_the_processes_of_the_named_chrome_profile_are_ended
+    self.assertEqual(common.chrome_processes(profile), [started[0].pid])
+AssertionError: Lists differ: [] != [68423]
+
+Second list contains 1 additional elements.
+First extra element 0:
+68423
+
+- []
++ [68423]
+
+----------------------------------------------------------------------
+Ran 669 tests in 63.495s
+
+FAILED (failures=1)
+{"run": "/private/var/folders/_v/t4cy04w95gz3m782_3p5qs9h0000gn/T/tmpzx8ifqc_/success", "outcome": "svar_giltigt", "images_complete": true, "format_recovery": true, "images_reopened": 0}
+{"run": "/private/var/folders/_v/t4cy04w95gz3m782_3p5qs9h0000gn/T/tmpzx8ifqc_/refused", "outcome": "formaterhamtning_vagrad", "images_complete": true, "format_recovery": true, "images_reopened": 0}

@@ -1792,6 +1792,15 @@ a wakeup inside the current period reads nothing, writes nothing and leaves no r
 Overlap stays SKIP, because the handler holds an exclusive lock on its state directory and a
 second concurrent wakeup would fail and read as an incident.
 
+The period is per channel, which is what makes both halves of the order hold at once. A channel
+that keeps failing is retried at every wakeup, and a channel that already did its week stays closed
+for the whole week regardless - so a broken consumer cannot turn the weekly drift check into an
+hourly one. A period is only ever closed by the run that did that channel's work, stamped with that
+run's own start, so work done in an old period can never close a new one. A run interrupted after
+closing its own channel recognises its own record, reads nothing again, advances no sequence and
+finishes its receipt; that state is reported as `already_performed`, not as a period that merely had
+not elapsed.
+
 `performed` and `completed` are separated. An incident found by a check that ran is performed but
 not completed, and only `performed` closes the period; a broken binding or timeout leaves the
 period due for the next wakeup. Exit code 1 from the drift tool is a check that ran, not a broken
@@ -1808,6 +1817,14 @@ into the release, hashes it, and refuses a name, interval, shape, relative path,
 schema or relative private state directory. A test asserts the round trip: what the installer
 stages is exactly what `runtime.scheduled_operation.operation` accepts.
 
+Staging also refuses what the handler would refuse at run time, so a release cannot be staged,
+reviewed and activated carrying an operation that can only ever fail and would surface as a weekly
+incident: no channel at all, a period outside its range, a wakeup slower than the period it is meant
+to keep, a monitor that is not an explicit HTTPS endpoint with an exact candidate, and any
+`isolated_test` flag, which belongs to a probe and never to a release. Rebinding a name in place is
+refused rather than silently replacing reviewed bytes. The qualification refuses when staging and the
+handler disagree on the accepted period range, so neither copy of that bound is trusted alone.
+
 The activity, schedule-to-close and schedule execution bounds move to named constants (300/330/360)
 because three channels no longer fit inside D038's 180 s. Office declares its own `BOUND_SECONDS`
 as the sum of its per-channel ceilings, and the qualification asserts that sum against the handler
@@ -1817,45 +1834,55 @@ so a server trickling bytes just inside it could read on indefinitely, hold the 
 state lock past the workflow's own bound and block later periods. The monitor now carries its own
 enforced deadline and reads with `read1`, because `read(n)` blocks until it has all n bytes.
 
-Two review rounds rejected this candidate; both verdicts are preserved verbatim in
-`evidence/runs/runtime-veckodrift-3/`. Round 1's five blockers beyond the bound above: a period
-record from the future silenced the work until that date arrived and year 9999 overflowed the
-arithmetic unhandled, so a record later than a small clock skew is now quarantined as malformed and
-the work runs; resuming an interrupted run closed the same period twice; the blanket word "reading";
-and test counts stated without a receipt.
+Three review rounds rejected this candidate; all three verdicts are preserved verbatim in
+`evidence/runs/runtime-veckodrift-4/`. Round 1: a period record from the future silenced the work
+until that date arrived and year 9999 overflowed the arithmetic unhandled, so a record later than a
+small clock skew is now quarantined as malformed and the work runs; resuming an interrupted run closed
+the same period twice; the blanket word "reading"; test counts stated without a receipt.
 
-Round 2 then showed that two of those repairs were not enough. Bounding the body read still left the
-status line and headers uncovered - nothing inside the request bounds those at all - and a server
-trickling header bytes just inside the socket timeout ran 757 s against a declared 33. So the attempts
-now run in their own daemon thread and the channel returns when the join times out: that IS the
-ceiling. The binding is validated before the thread, because a wrong endpoint must still be refused
-loudly rather than reported as a bound that ran out - that regression was caught by D038's own test.
-And naming the closing run stopped the second sequence step but not the double work, so each channel's
-result is now durable the moment it is known: a resumed run finishes its receipt from work already
-done, reads neither the site nor Kundstart again, and cannot overwrite a same-second customer receipt.
+Round 2 showed two of those repairs were not enough. Bounding the body read left the status line and
+headers uncovered - nothing inside the request bounds those at all - and a server trickling header
+bytes just inside the socket timeout ran 757 s against a declared 33. The attempts therefore run in
+their own daemon thread and the channel returns when the join times out: that IS the ceiling. The
+binding is validated before the thread, because a wrong endpoint must still be refused loudly rather
+than reported as a bound that ran out - that regression was caught by D038's own test.
 
-Round 2's third blocker was that a candidate cannot widen its own mandate: the acknowledgement write
-contradicted the order's limit however truthfully described. That was right, and it was not mine to
-decide. The owner decided it on 2026-09-29 before 16:07Z; his words and the exact question they
-answered are in the Office's DIGITALA-VECKODRIFT-20260929. Staging, activation and the schedule are
-not covered by that and remain his row in ÄGARENS TUR.
+Round 3 then showed that round 2's other repair was worse than the fault it fixed. Making each
+channel's result durable per run let a result from one period close a later one with the later run's
+clock - hiding exactly the missed week the order forbids - while being unusable by the next wakeup,
+so a persistently failing consumer made the weekly check hourly. That cache is withdrawn. The period
+per channel described above replaces it and answers both halves at once. Round 3 also showed the
+monitor's join bounds the channel but not the socket: abandoned network work could pile up in the
+long-lived worker and a late-freed transport could start a second attempt after the channel had
+already answered. Abandoned threads are now told to stop and are capped at two, beyond which the
+channel refuses at once.
 
-Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-3/`
-(rounds 1 and 2 are kept and marked superseded). Three real scheduled wakeups on the existing engine
+Round 2's remaining blocker was that a candidate cannot widen its own mandate: the acknowledgement
+write contradicted the order's limit however truthfully described. That was right, and it was not
+mine to decide. The owner decided it on 2026-09-29 before 16:07Z; his words and the exact question
+they answered are in the Office's DIGITALA-VECKODRIFT-20260929. Staging, activation and the schedule
+are not covered by that and remain his row in ÄGARENS TUR.
+
+Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-4/`
+(rounds 1 to 3 are kept and marked superseded). Three real scheduled wakeups on the existing engine
 with an isolated queue and schedule name, the candidate Office handler and Digitala's real frozen
 tools started as real subprocesses. A clean check, a no-op wakeup inside the period that made no
 request at all, and an overdue period performed as an incident with its customer receipt and one
-private acknowledgement. The probe also refuses when staging and the handler disagree on the accepted
-period range, so neither copy of that bound is trusted alone.
+private acknowledgement. In that third wakeup only the drift channel's record was moved back, so the
+intake channel stayed inside its own period and made no request at all - the periods are shown to be
+independent, not asserted to be.
 
-Measured suites, three consecutive runs of each because two process tests proved unsteady under load:
-Runtime 666 tests, Office 537, against 656 and 509 on unchanged main `af78312`/`34bcedd` on the same
-machine with the same interpreter. One `test_web_profiles` Chrome-process check fails in every run,
-candidate and baseline alike. Three different `test_bounded` process-group tests failed in three of
-six runs, in candidate and baseline without pattern. Neither has any code path to what this candidate
+Measured suites, three consecutive runs of each, all twelve preserved rather than summarised:
+Runtime 669 tests and Office 541, against 656 and 509 on unchanged main `af78312`/`34bcedd` on the
+same machine with the same interpreter, so the candidate adds 13 and 32 tests; the handler's own file
+goes from 10 to 42. Office is green in all six runs. Two Runtime tests fail and neither is this
+candidate's: the `test_web_profiles` Chrome-process check fails in every run, candidate and baseline
+alike, its `/bin/ps` listing not finding the process the test started; and the `test_bounded`
+process-group tests fail unsteadily, ending in `PermissionError` from `os.killpg`, in two candidate
+and two baseline runs of six each without pattern. Neither has any code path to what this candidate
 changes: `scripts/bounded.py` and its tests import neither changed module, and the Office handler is
-in another repository. Office's suites are green throughout. The receipts are all six runs, not a
-summary of them.
+in another repository. What causes them is NOT established - `/bin/ps` and `os.killpg` both succeed
+when run alone in the same shell - so nothing beyond "present in both revisions" is claimed.
 
 The site and the signals endpoint are loopback fixtures, never a customer address and never Kundstart
 production or its local prov service; the consumer's real import and acknowledgement path is not

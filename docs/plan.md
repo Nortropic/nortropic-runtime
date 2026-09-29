@@ -34,7 +34,7 @@ och den ändrar aldrig en exportrevision. Den rör inte kundens sajt, material e
 inför den inte och ändrar inte en byte i konsumenten: det frysta verktyget startas som det är.
 
 Väckningen är inte perioden. `interval_seconds` väcker operationen (3600 i den beredda
-bindningen); kontorets hanterare avgör ur sitt eget beständiga `period.json` om veckan
+bindningen); kontorets hanterare avgör ur sitt eget beständiga periodkvitto om veckan
 (`period_seconds` 604800) har gått. En period som missats för att Macen sov står därför
 kvar som förfallen och utförs av den första väckning som blir möjlig, i stället för att
 hoppas över. Det är kontorets beständiga kvitto som bär den garantin, inte Temporals
@@ -42,6 +42,13 @@ catch-up-fönster, som med avsikt förblir litet. En väckning inne i perioden l
 ingenting, skriver ingenting och lämnar inget körkvitto. Läs `performed`, inte bara
 `completed`: en incident som en körd kontroll fann är `performed` men inte `completed`,
 och bara `performed` stänger perioden.
+
+Perioden är per kanal, och det är det som gör att beställningens båda halvor håller
+samtidigt. En kanal som fortsätter misslyckas görs om vid varje väckning, medan en kanal
+som redan gjort sin vecka står stängd hela veckan — ett trasigt intag kan alltså inte
+göra den veckovisa driftkontrollen timvis. En period stängs bara av den körning som
+gjorde just den kanalens arbete, med den körningens egen starttid, så arbete i en gammal
+period kan aldrig stänga en ny.
 
 Resultatet går den ordinarie vägen: driftkontrollens `DRIFT-<tid>.json` skrivs i kundens
 mapp, alltså precis den fil Digitalas `underhall.py besked` läser för ägarens veckobesked,
@@ -53,34 +60,43 @@ schemagränserna är namngivna konstanter (300/330/360) eftersom tre kanaler int
 D038:s 180 s; kontorets `BOUND_SECONDS` är 255 och kvalificeringen mäter den mot de
 hanterarbyte som prövas, i stället för att kopiera talet in i ett Runtime-prov.
 
-Två granskningsrundor underkände kandidaten. Runda 1 fällde fem blockerare; runda 2 visade
-att två av rättningarna inte räckte. Att binda kroppsläsningen lämnade statusrad och headers
-obundna — inget i anropet binder dem alls — och en server som droppade headerbyte strax inom
+Tre granskningsrundor underkände kandidaten; alla tre domarna ligger ordagrant i
+`evidence/runs/runtime-veckodrift-4/`. Runda 1 fällde fem blockerare. Runda 2 visade att två
+av rättningarna inte räckte: att binda kroppsläsningen lämnade statusrad och headers obundna —
+inget i anropet binder dem alls — och en server som droppade headerbyte strax inom
 socket-timeouten körde 757 s mot deklarerade 33. Försöken går nu i egen daemontråd och kanalen
-återvänder när join:en löper ut; det ÄR taket. Och att namnge den stängande körningen stoppade
-den andra sekvensökningen men inte dubbelarbetet, så varje kanals resultat är nu beständigt i
-samma stund det är känt: en återupptagen körning skriver klart sitt kvitto ur redan gjort arbete
-och läser varken sajten eller Kundstart igen. Båda domarna ordagrant i
-`evidence/runs/runtime-veckodrift-3/`.
+återvänder när join:en löper ut; det ÄR taket.
 
-Runda 2:s tredje blockerare var att en kandidat inte kan vidga sitt eget mandat: kvittensen
+Runda 3 visade att runda 2:s andra rättning var sämre än felet den löste. Att göra varje kanals
+resultat beständigt per körning lät ett resultat ur en period stänga en senare med den senare
+körningens klocka — alltså dölja precis den missade vecka beställningen förbjuder — samtidigt
+som nästa väckning inte kunde använda det, så ett bestående intagsfel gjorde den veckovisa
+kontrollen timvis. Den cachen är tillbakadragen, och perioden per kanal ovan ersätter den och
+svarar på båda halvorna. Runda 3 fällde också monitorns kvarvarande trådar: join:en binder
+kanalen men inte uttaget. Övergivna trådar får nu en stoppflagga och är högst två.
+
+Runda 2:s återstående blockerare var att en kandidat inte kan vidga sitt eget mandat: kvittensen
 stred mot beställningens gräns hur sant den än beskrevs. Det var rätt, och det var inte mitt
 att avgöra. Ägaren avgjorde det före 16:07Z; hans ord står i kontorets
 DIGITALA-VECKODRIFT-20260929. Staging, aktivering och schemat täcks inte av beskedet.
 
-Kvitto: `evidence/runs/runtime-veckodrift-3/` ur `scripts/probe_veckodrift.py` — tre
+Kvitto: `evidence/runs/runtime-veckodrift-4/` ur `scripts/probe_veckodrift.py` — tre
 verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
 kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
 ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
 period (`overdue_seconds` 3620) som utfördes som incident med kundkvitto och en privat
-kvittens. Provet vägrar också om installeraren och hanteraren är oense om periodintervallet.
-Runda 1:s och 2:s kvitton är bevarade och märkta ersatta.
+kvittens. I den tredje väckningen flyttades bara driftkanalens kvitto bakåt, så intaget stod
+kvar inne i sin egen period och gjorde inte ett enda anrop: perioderna per kanal är visade,
+inte påstådda. Provet vägrar också om installeraren och hanteraren är oense om
+periodintervallet. Rundorna 1–3:s kvitton är bevarade och märkta ersatta.
 
-Svitkvitton, tre körningar av varje eftersom två processprov visade sig ostadiga under last:
-Runtime 666 prov och kontoret 537, mot 656 och 509 på oförändrad main `af78312`/`34bcedd` på
-samma maskin med samma tolk. Ett Chrome-processprov faller i varje körning, kandidat som
-baslinje; tre olika `test_bounded`-prov föll i tre av sex körningar, i båda utan mönster.
-Ingetdera har någon kodväg till det kandidaten ändrar. Alla sex körningarna ligger som kvitto.
+Svitkvitton, tre körningar av varje, alla tolv bevarade: Runtime 669 prov och kontoret 541, mot
+656 och 509 på oförändrad main `af78312`/`34bcedd` på samma maskin med samma tolk. Kontoret är
+grönt i alla sex körningarna. Två Runtime-prov faller och ingetdera är kandidatens: ett
+Chrome-processprov i varje körning, kandidat som baslinje, och `test_bounded`-provens
+processgruppfel ostadigt i två kandidat- och två baslinjekörningar av sex vardera. Ingetdera har
+någon kodväg till det kandidaten ändrar. Vad som orsakar dem är inte utrett, och inget utöver
+"finns i båda revisionerna" påstås.
 
 Inte visat och inte gjort: sajten och signalytan är loopback-provdata, inte en kundadress
 och inte Kundstarts produktion eller dess lokala provtjänst. Den verkliga veckoperioden och

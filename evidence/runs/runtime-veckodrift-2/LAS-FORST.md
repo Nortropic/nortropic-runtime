@@ -61,3 +61,8 @@ injicerade releasekonfigurationen. Båda namnger absoluta sökvägar i provets e
 
 **ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-3/`.** Granskningsrunda 2 underkände kandidaten
 efter denna runda. Kvittot bevaras som spår; läs r3 för det läge som gäller.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-4/`.** Granskningsrunda 3 underkände kandidaten
+efter denna runda. Kvittot bevaras som spår; läs r4 för det läge som gäller.

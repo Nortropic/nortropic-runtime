@@ -160,14 +160,15 @@ def build(output, office_handler, digitala, interpreter, fixtures):
     return name, config, state, customer, plan
 
 
-def rewind(state, seconds):
-    """Stand in for a host that slept past the due time: move the record backwards.
+def rewind(state, channel, seconds):
+    """Stand in for a host that slept past one channel's due time.
 
     Everything except the timestamp is preserved, including the closing run's id, so
     the record stays a valid one and the wakeup answers period_elapsed rather than
-    quarantining malformed state.
+    quarantining malformed state. Only this channel is moved, which is what shows that
+    the periods really are independent.
     """
-    path = state / 'period.json'
+    path = state / ('period-' + channel + '.json')
     value = json.loads(path.read_text())
     stamp = datetime.fromisoformat(value['completed_at']) - timedelta(seconds=seconds)
     path.write_text(json.dumps({**value, 'completed_at': stamp.isoformat()}, indent=2) + '\n')
@@ -240,12 +241,16 @@ async def probe(output, office_handler, digitala, interpreter):
                 workflow_id, first = await next_result(client, handle, seen)
                 runs.append({'wakeup': 1, 'workflow_id': workflow_id, 'result': first})
                 if not (first['performed'] and first['completed']
-                        and first['period']['reason'] == 'no_period_recorded'
+                        and first['performed_channels'] == ['drift', 'intake']
+                        and first['skipped_channels'] == []
+                        and all(first['periods'][c]['reason'] == 'no_period_recorded'
+                                for c in ('drift', 'intake'))
                         and first['drift']['ran'] and first['drift']['healthy']
                         and first['drift']['incidents'] == 0
                         and first['intake']['completed']
-                        and first['period_recorded']['sequence'] == 1
-                        and first['period_recorded']['run_id'] == first['run_id']):
+                        and all(first['periods_recorded'][c]['sequence'] == 1
+                                and first['periods_recorded'][c]['run_id'] == first['run_id']
+                                for c in ('drift', 'intake'))):
                     raise RuntimeError('First due wakeup did not perform a clean check: ' + json.dumps(first))
                 if fixtures.site_calls <= site_before or fixtures.signal_calls - signal_before < 2:
                     raise RuntimeError('The frozen tools did not actually reach the fixtures')
@@ -256,27 +261,37 @@ async def probe(output, office_handler, digitala, interpreter):
                 runs.append({'wakeup': 2, 'workflow_id': workflow_id, 'result': inside})
                 if not (inside.get('skipped') == 'not_due' and inside['performed'] is False
                         and inside['completed'] is True
-                        and inside['period']['reason'] == 'not_due'):
+                        and inside['skipped_channels'] == ['drift', 'intake']
+                        and all(inside['periods'][c]['reason'] == 'not_due'
+                                for c in ('drift', 'intake'))):
                     raise RuntimeError('Wakeup inside the period was not a no-op: ' + json.dumps(inside))
                 if (fixtures.site_calls, fixtures.signal_calls) != (site_before, signal_before):
                     raise RuntimeError('A wakeup inside the period made a request')
                 if (state / inside['run_id']).exists():
                     raise RuntimeError('A wakeup that read nothing wrote a run record')
 
-                # 3. The host slept past the due time and the site went down: the
-                #    overdue period is performed by the next possible wakeup.
-                rewound = rewind(state, 2 * PERIOD_SECONDS)
+                # 3. The host slept past the drift channel's due time and the site went
+                #    down. Only that channel's period is moved, so the overdue check is
+                #    performed while intake, still inside its own period, stays quiet.
+                signal_before = fixtures.signal_calls
+                rewound = rewind(state, 'drift', 2 * PERIOD_SECONDS)
                 fixtures.site_status = 503
                 workflow_id, late = await next_result(client, handle, seen)
                 runs.append({'wakeup': 3, 'workflow_id': workflow_id, 'result': late})
                 if not (late['performed'] and not late['completed']
-                        and late['period']['reason'] == 'period_elapsed'
-                        and late['period']['overdue_seconds'] >= PERIOD_SECONDS
+                        and late['performed_channels'] == ['drift']
+                        and late['skipped_channels'] == ['intake']
+                        and late['periods']['drift']['reason'] == 'period_elapsed'
+                        and late['periods']['drift']['overdue_seconds'] >= PERIOD_SECONDS
+                        and late['periods']['intake']['reason'] == 'not_due'
                         and late['drift']['ran'] and late['drift']['healthy'] is False
                         and late['drift']['incidents'] == 1
                         and late['drift']['reason'] == 'site_incident'
-                        and late['period_recorded']['sequence'] == 2):
+                        and late['periods_recorded']['drift']['sequence'] == 2
+                        and 'intake' not in late['periods_recorded']):
                     raise RuntimeError('Overdue period was not performed as an incident: ' + json.dumps(late))
+                if fixtures.signal_calls != signal_before:
+                    raise RuntimeError('A channel inside its own period still made a request')
                 if late['deliveries']['drift']['receipts'][0]['recipient'] != 'kontorets-privata-driftyta':
                     raise RuntimeError('Incident was not acknowledged by the private recipient')
 
@@ -302,14 +317,15 @@ async def probe(output, office_handler, digitala, interpreter):
             'runtime_execution_bound': EXECUTION_BOUND,
             'ordinary_wakeup_seconds': WAKEUP_SECONDS, 'period_seconds': PERIOD_SECONDS,
             'accelerated_tick_seconds': TICK_SECONDS,
-            'rewound_period_to': rewound,
+            'rewound_drift_period_to': rewound,
+            'period_state': {path.name: json.loads(path.read_text())
+                             for path in sorted(state.glob('period-*.json'))},
             'site_requests': fixtures.site_calls, 'signal_requests': fixtures.signal_calls,
             'runs': runs, 'native_status_readback': native_status,
             'customer_receipts': [{'name': p.name, 'sha256': sha256(p.read_bytes()).hexdigest(),
                                    'incidenter': json.loads(p.read_text(encoding='utf-8'))['incidenter']}
                                   for p in receipts],
             'recipient_receipts': inbox,
-            'period_state': json.loads((state / 'period.json').read_text()),
             'plan_sha256': sha256(plan.read_bytes()).hexdigest(),
             'scope': ('Real existing Temporal engine, isolated queue and schedule, the candidate '
                       'Office handler and Digitala\'s real frozen drift_kontroll.py and kundstart.py '

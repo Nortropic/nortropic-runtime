@@ -7,6 +7,7 @@ from pathlib import Path
 import plistlib
 import re
 import subprocess
+import urllib.parse
 
 from runtime.release import ROOT, sha, instruction_guards
 
@@ -83,6 +84,22 @@ def bind_operations(directory, files, manifest):
         # can only ever fail, and the refusal would surface as a weekly incident.
         if not any(value.get(channel) for channel in ('intake', 'drift', 'monitor')):
             raise ValueError('Operation binds no intake, drift or monitor channel: ' + name)
+        monitor = value.get('monitor') or {}
+        if monitor:
+            # The handler accepts plain HTTP only for an isolated loopback probe. A
+            # staged release is not one, so refuse it here rather than at the first
+            # weekly wakeup - and never bind a probe flag into a release at all.
+            if monitor.get('isolated_test') is not None:
+                raise ValueError('isolated_test belongs to a probe, not a release: ' + name)
+            address = urllib.parse.urlsplit(monitor.get('url') or '')
+            if (address.scheme != 'https' or not address.hostname or address.username
+                    or address.password or address.fragment):
+                raise ValueError('Monitor requires an explicit HTTPS endpoint: ' + name)
+            if not re.fullmatch('[0-9a-f]{40}', str(monitor.get('candidate'))):
+                raise ValueError('Monitor requires an exact candidate: ' + name)
+        for channel in ('intake', 'drift'):
+            if value.get(channel) and value[channel].get('isolated_test') is not None:
+                raise ValueError('isolated_test belongs to a probe, not a release: ' + name)
         if 'period_seconds' in value:
             period = value['period_seconds']
             if type(period) is not int or not PERIOD_FLOOR <= period <= PERIOD_CEILING:
@@ -92,6 +109,10 @@ def bind_operations(directory, files, manifest):
         relative = 'operations/' + name + '.json'
         target = directory / relative
         target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists() or relative in files:
+            # A staged release is built once into a fresh directory. Rebinding a name
+            # in place would silently replace reviewed bytes, so it is refused.
+            raise ValueError('Operation input is already bound in this release: ' + name)
         target.write_bytes(raw); target.chmod(0o444)
         files[relative] = sha(target)
         operations[name] = {'input': relative, 'interval_seconds': interval}

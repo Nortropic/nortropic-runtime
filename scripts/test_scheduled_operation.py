@@ -153,7 +153,18 @@ class ReleaseOperationBindingTests(unittest.TestCase):
         self.manifest.write_text(json.dumps(value))
 
     def bind(self):
+        # A release is staged once into a fresh directory; each call gets its own.
+        self.release = self.home / ('release-' + str(len(list(self.home.glob('release*')))))
+        handler = self.release / 'office/tools/driftoperation.py'
+        handler.parent.mkdir(parents=True)
+        handler.write_text('# reviewed handler\n')
+        self.files = {'office/tools/driftoperation.py': sha256(handler.read_bytes()).hexdigest()}
         return install_ap10.bind_operations(self.release, self.files, self.manifest)
+
+    def test_rebinding_a_name_in_place_is_refused(self):
+        self.bind()
+        with self.assertRaises(ValueError):
+            install_ap10.bind_operations(self.release, self.files, self.manifest)
 
     def test_bound_operation_is_accepted_by_the_runtime_validator(self):
         bound = self.bind()
@@ -210,8 +221,9 @@ class ReleaseOperationBindingTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.bind()
 
     def test_operations_require_the_reviewed_office_handler_in_the_release(self):
-        self.files = {}
-        with self.assertRaises(ValueError): self.bind()
+        release = self.home / 'utan-hanterare'; release.mkdir()
+        with self.assertRaises(ValueError):
+            install_ap10.bind_operations(release, {}, self.manifest)
 
     def test_staging_without_operations_leaves_the_key_absent(self):
         with patch.object(install_ap10, 'copy_code', return_value={'AGENTS.md': 'a' * 64}), \
@@ -248,3 +260,30 @@ class ReleaseOperationBindingTests(unittest.TestCase):
         # against the handler bytes under test. This only pins what staging enforces.
         self.assertEqual((install_ap10.PERIOD_FLOOR, install_ap10.PERIOD_CEILING),
                          (3600, 2678400))
+
+    def test_a_probe_only_monitor_binding_cannot_reach_a_release(self):
+        # Plain HTTP and isolated_test belong to a loopback probe. A staged release is
+        # never one, so it is refused here rather than at the first weekly wakeup.
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        good = {'url': 'https://kund.example/api/health', 'candidate': 'a' * 40}
+        for monitor in ({**good, 'url': 'http://kund.example/api/health'},
+                        {**good, 'url': 'http://127.0.0.1:3131/api/health'},
+                        {**good, 'isolated_test': True},
+                        {**good, 'isolated_test': False},
+                        {**good, 'url': 'https://u:p@kund.example/h'},
+                        {**good, 'url': 'https://kund.example/h#frag'},
+                        {**good, 'url': 'https:///h'},
+                        {**good, 'candidate': 'A' * 40},
+                        {**good, 'candidate': None}):
+            self.write_input({**base, 'monitor': monitor})
+            with self.assertRaises(ValueError): self.bind()
+        self.write_input({**base, 'monitor': good})
+        self.assertEqual(self.bind()['digitala-vecka']['interval_seconds'], 3600)
+
+    def test_a_probe_flag_on_any_channel_is_refused(self):
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        for channel in ('intake', 'drift'):
+            self.write_input({**base, channel: {'isolated_test': True}})
+            with self.assertRaises(ValueError): self.bind()
+            self.write_input({**base, channel: {'plan': '/abs/DRIFT.json'}})
+            self.assertIn('digitala-vecka', self.bind())
