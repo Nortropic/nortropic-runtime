@@ -25,8 +25,13 @@ Fyra blockerare, alla mina:
 Dessutom, ur rundans anmärkningar: installeraren godtog en kandidat som inte var en sträng (`str()`
 tvättade ett heltal förbi kontrollen) och ett ofullständigt kanalobjekt utan `python_path`; båda vägras
 nu, med krav på varje nyckel hanteraren behöver och att sökvägarna är absoluta. Runbookens rad om
-`period.json` pekar nu på `period-<kanal>.json`. Och provklasserna är delade så att en delad fixtur inte
-längre gör att samma prov räknas två gånger.
+`period.json` pekar nu på `period-<kanal>.json`.
+
+**Rättelse.** Här stod att provklassernas delning tog bort dubbelräkningen. Det var fel, kontrollerat
+2026-09-29: tolv `test_`-metoder ligger kvar i `DriftFixture` och ärvs av två testklasser, så
+insamlingen ger 61 körningar men 49 olika metodnamn. Granskningsrunda 5 fann det, och det är inte
+åtgärdat — se `GRANSKNING-r5-DOM-OATGARDAD.md`. Talet 560 i tabellen nedan är antalet körningar, inte
+antalet olika prov.
 
 ## Svitkvitton: tre körningar av varje, alla tolv bevarade, allt ur DENNA runda
 
@@ -96,3 +101,12 @@ läser, alltså den ordinarie vägen vidare.
   binder när kanalen återvänder, inte livstiden på ett uttag som operativsystemet ännu håller; det som
   är bundet om övergivet arbete är att det inte kan göra ett nytt försök och att högst två får leva.
 - Ingen release stagades, valdes eller aktiverades, och AP-10:s schema, tjänst och arbetare rördes inte.
+
+
+---
+
+**GRANSKNINGSRUNDA 5 UNDERKÄNDE denna kandidat, och rättningen är inte gjord.** Ägaren beslutade
+2026-09-29 ca 18:08Z att uppdraget pausas till veckokvoten nollställs 2026-10-04 07:00Z. Fyra
+blockerare står öppna i `GRANSKNING-r5-DOM-OATGARDAD.md` plus anmärkningen om `digitala_files` vid
+staging. Kvittona i den här katalogen gäller kandidaterna Runtime `d910694` och kontoret `ff98676`
+som de står — de är kvalificerade i den mening kvittona beskriver, men inte godkända.

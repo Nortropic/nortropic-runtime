@@ -118,14 +118,44 @@ macOS-sömn är inte utövade i verklig tid. Ingen release är stagad, vald elle
 AP-10:s schema, tjänst och arbetare är orörda. Schemat installeras pausat och kräver
 uttryckligt `resume`.
 
-Nästa handling: separat granskning av båda kandidaterna, sedan uppgiftsbunden skyddad
-integration i Runtime och kontoret. Införandespåret nedan är inte startat av detta arbete
-och dess egna steg står oförändrade; detta arbete rör ingen launcher, issuer eller
-formåterhämtning. Därefter är kvar för ägaren, och bara för honom:
-staga och kvalificera releasen med `--operations`, aktivera övergången, och först då
-`operation_schedule install` + `resume`. Operationen binds för en sajt först när en
-riktig kunds sajt är lanserad med lanseringsmandat; fram till dess finns ingen skarp
-bindning, bara mallen `config/veckodrift-operation.example.json`.
+## PAUSAT PÅ ÄGARENS BESLUT 2026-09-29 ca 18:08Z — ej integrerat, ej levererat
+
+Ägaren beslutade att uppdraget pausas för veckokvotens skull. Frågan han svarade på och hans
+svar ordagrant står i kontorets DIGITALA-VECKODRIFT-20260929. Beskedet var: låt runda 5 gå
+och leverera om den godkänns, annars stanna till efter söndag. **Runda 5 underkände**, så
+arbetet stannar här. Kvoten nollställs 2026-10-04 07:00Z.
+
+Ingen integration är gjord och överlämningen OVL-20260929-4f194f står kvar som startad, inte
+levererad. Kandidaterna är frysta och oförändrade:
+
+- Runtime `veckodrift/digitala-20260929` vid `d910694` (worktree
+  `.runtime/ap11/integrations/veckodrift`, plus baslinjeworktree `…/veckodrift-baslinje` vid
+  `af78312` som bara användes för mätning och kan tas bort).
+- Kontoret `veckodrift/kontor-20260929` vid `ff98676` (worktree
+  `~/nortropic-repos/nortropic-kontor-veckodrift-20260929`, plus
+  `~/nortropic-repos/nortropic-kontor-baslinje-20260929` vid `34bcedd` för mätning).
+
+Nästa session gör, i denna ordning:
+1. Läs `evidence/runs/runtime-veckodrift-5/GRANSKNING-r5-DOM-OATGARDAD.md`. Där står fyra
+   öppna blockerare ordagrant: en monitorperiod som stängs av två transportfel utan att något
+   hälsosvar lästes; en återupptagning som blir grön när någon kanal var `not_due` i stället
+   för `own_period_record`; en attestering som godtar saknat, feltypat och gammalt hälsoläge;
+   och ett avbrott före periodskrivningen som ger dubbel driftkontroll inom samma period.
+   Plus anmärkningen att staging inte kontrollerar att rätt verktyg står i `digitala_files`.
+2. Rätta dem, med ett prov per rättning som faller utan den. Läs rundorna 1–4:s domar först:
+   två av mina tidigare rättningar var sämre än felen de löste.
+3. Kör om båda helsviterna tre gånger var mot baslinjen, och `scripts/probe_veckodrift.py`.
+   Skriv kvittona i en ny `evidence/runs/runtime-veckodrift-6/` och märk r5 ersatt.
+4. Ny oberoende granskning. Först vid godkänd dom: skyddad integration i båda repona, och
+   kvittera överlämningen levererad.
+
+Aktiveringen är och förblir ägarens: staga och kvalificera releasen med `--operations`,
+aktivera övergången, och först då `operation_schedule install` + `resume`. Operationen binds
+för en sajt först när en riktig kunds sajt är lanserad med lanseringsmandat; fram till dess
+finns ingen skarp bindning, bara mallen `config/veckodrift-operation.example.json`.
+
+Införandespåret nedan är inte startat av detta arbete och dess egna steg står oförändrade;
+detta arbete rör ingen launcher, issuer eller formåterhämtning.
 
 ---
 
