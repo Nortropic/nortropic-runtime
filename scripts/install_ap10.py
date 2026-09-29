@@ -36,6 +36,10 @@ def copy_code(repo, revision, dest):
 
 
 OPERATION_NAME = re.compile('[a-z0-9][a-z0-9-]{0,79}')
+# Office's own accepted period range (tools/driftoperation.py). Kept here so staging
+# refuses what the handler would refuse; the qualification checks both against the
+# handler bytes under test rather than trusting either copy alone.
+PERIOD_FLOOR, PERIOD_CEILING = 3600, 2678400
 
 
 def bind_operations(directory, files, manifest):
@@ -74,6 +78,17 @@ def bind_operations(directory, files, manifest):
             raise ValueError('Operation input is not an accepted Office operation')
         if not Path(value.get('state', '')).is_absolute():
             raise ValueError('Operation state must be an absolute private directory')
+        # Staging must refuse what the handler would refuse at run time. Otherwise a
+        # release could be staged, reviewed and activated carrying an operation that
+        # can only ever fail, and the refusal would surface as a weekly incident.
+        if not any(value.get(channel) for channel in ('intake', 'drift', 'monitor')):
+            raise ValueError('Operation binds no intake, drift or monitor channel: ' + name)
+        if 'period_seconds' in value:
+            period = value['period_seconds']
+            if type(period) is not int or not PERIOD_FLOOR <= period <= PERIOD_CEILING:
+                raise ValueError('Operation period outside its accepted bounds: ' + name)
+            if period < interval:
+                raise ValueError('A wakeup slower than the period cannot keep it: ' + name)
         relative = 'operations/' + name + '.json'
         target = directory / relative
         target.parent.mkdir(parents=True, exist_ok=True)

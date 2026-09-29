@@ -37,3 +37,8 @@ prövade. Den verkliga veckoperioden 604800 sekunder är inte utövad i verklig 
 kandidat detta kvitto gäller (Runtime `9429c8b`, kontoret `89e54a5`) på fem blockerare. Kvittot
 bevaras som spår av den rundan; läs r2 för det läge som gäller. Talet `office_bound_seconds` 239 i
 `RESULTAT.json` här hörde till den gamla monitorgränsen, som inte var en väggklocka.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-3/`.** Granskningsrunda 2 underkände kandidaten
+efter denna runda. Kvittot bevaras som spår; läs r3 för det läge som gäller.

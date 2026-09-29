@@ -1817,28 +1817,52 @@ so a server trickling bytes just inside it could read on indefinitely, hold the 
 state lock past the workflow's own bound and block later periods. The monitor now carries its own
 enforced deadline and reads with `read1`, because `read(n)` blocks until it has all n bytes.
 
-Review round 1 rejected the candidate on five blockers and all five are answered. Beyond the bound
-above: a period record from the future silenced the work until that date arrived and year 9999
-overflowed the arithmetic unhandled, so a record later than a small clock skew is now quarantined as
-malformed and the work runs; and resuming an interrupted run closed the same period twice, so the
-record now names the closing run and a run that recognises its own record finishes its receipt
-without advancing the sequence. The remaining two were about the texts, not the code: the earlier
-blanket word "reading" and test counts stated without a receipt. Round 1's verdict is preserved
-verbatim in `evidence/runs/runtime-veckodrift-2/GRANSKNING-r1-DOM.md`.
+Two review rounds rejected this candidate; both verdicts are preserved verbatim in
+`evidence/runs/runtime-veckodrift-3/`. Round 1's five blockers beyond the bound above: a period
+record from the future silenced the work until that date arrived and year 9999 overflowed the
+arithmetic unhandled, so a record later than a small clock skew is now quarantined as malformed and
+the work runs; resuming an interrupted run closed the same period twice; the blanket word "reading";
+and test counts stated without a receipt.
 
-Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-2/`
-(round 1's receipt is kept and marked superseded). Three real scheduled wakeups on the existing
-engine with an isolated queue and schedule name, the candidate Office handler and Digitala's real
-frozen tools started as real subprocesses. A clean check, a no-op wakeup inside the period that made
-no request at all, and an overdue period performed as an incident with its customer receipt and one
-private acknowledgement. Measured suites, not asserted counts: Runtime 663 tests with one failure,
-and the same single failure on unchanged main `af78312` at 656 tests, so it is not this candidate's
-- it is a machine-dependent Chrome-process check. Office 534 tests pass against 509 on unchanged main
-`34bcedd`. The site and the signals endpoint are loopback fixtures, never a customer address and
-never Kundstart production or its local prov service; the consumer's real import and acknowledgement
-path is not exercised here, because the probe's signal lists are empty, and is covered by Digitala's
-own unchanged `verktyg/test_kundstart_konsumtion.py`; the real 604800 s period and macOS sleep
-itself are not exercised in real time.
+Round 2 then showed that two of those repairs were not enough. Bounding the body read still left the
+status line and headers uncovered - nothing inside the request bounds those at all - and a server
+trickling header bytes just inside the socket timeout ran 757 s against a declared 33. So the attempts
+now run in their own daemon thread and the channel returns when the join times out: that IS the
+ceiling. The binding is validated before the thread, because a wrong endpoint must still be refused
+loudly rather than reported as a bound that ran out - that regression was caught by D038's own test.
+And naming the closing run stopped the second sequence step but not the double work, so each channel's
+result is now durable the moment it is known: a resumed run finishes its receipt from work already
+done, reads neither the site nor Kundstart again, and cannot overwrite a same-second customer receipt.
+
+Round 2's third blocker was that a candidate cannot widen its own mandate: the acknowledgement write
+contradicted the order's limit however truthfully described. That was right, and it was not mine to
+decide. The owner decided it on 2026-09-29 before 16:07Z; his words and the exact question they
+answered are in the Office's DIGITALA-VECKODRIFT-20260929. Staging, activation and the schedule are
+not covered by that and remain his row in ÄGARENS TUR.
+
+Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-3/`
+(rounds 1 and 2 are kept and marked superseded). Three real scheduled wakeups on the existing engine
+with an isolated queue and schedule name, the candidate Office handler and Digitala's real frozen
+tools started as real subprocesses. A clean check, a no-op wakeup inside the period that made no
+request at all, and an overdue period performed as an incident with its customer receipt and one
+private acknowledgement. The probe also refuses when staging and the handler disagree on the accepted
+period range, so neither copy of that bound is trusted alone.
+
+Measured suites, three consecutive runs of each because two process tests proved unsteady under load:
+Runtime 666 tests, Office 537, against 656 and 509 on unchanged main `af78312`/`34bcedd` on the same
+machine with the same interpreter. One `test_web_profiles` Chrome-process check fails in every run,
+candidate and baseline alike. Three different `test_bounded` process-group tests failed in three of
+six runs, in candidate and baseline without pattern. Neither has any code path to what this candidate
+changes: `scripts/bounded.py` and its tests import neither changed module, and the Office handler is
+in another repository. Office's suites are green throughout. The receipts are all six runs, not a
+summary of them.
+
+The site and the signals endpoint are loopback fixtures, never a customer address and never Kundstart
+production or its local prov service; the consumer's real import and acknowledgement path is not
+exercised here, because the probe's signal lists are empty, and is covered by Digitala's own unchanged
+`verktyg/test_kundstart_konsumtion.py`; the monitor's wall clock is proven in Office's tests against a
+trickling server, in body and in headers, not in the engine probe; the real 604800 s period and macOS
+sleep itself are not exercised in real time.
 
 No release was staged, selected or activated, and AP-10's schedule, service and worker were not
 touched. Activation remains the owner's transition. Status and next action belong only in

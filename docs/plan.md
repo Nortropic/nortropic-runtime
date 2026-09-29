@@ -53,22 +53,34 @@ schemagränserna är namngivna konstanter (300/330/360) eftersom tre kanaler int
 D038:s 180 s; kontorets `BOUND_SECONDS` är 255 och kvalificeringen mäter den mot de
 hanterarbyte som prövas, i stället för att kopiera talet in i ett Runtime-prov.
 
-Granskningsrunda 1 underkände kandidaten på fem blockerare, och alla fem är besvarade:
-monitorns gräns var ingen väggklocka, ett periodkvitto från framtiden tystade arbetet (och
-år 9999 gav obehandlad OverflowError), en återupptagen körning stängde samma period två
-gånger, ordet "läsande" var för brett, och svitantalen saknade kvitto. Domen ordagrant:
-`evidence/runs/runtime-veckodrift-2/GRANSKNING-r1-DOM.md`.
+Två granskningsrundor underkände kandidaten. Runda 1 fällde fem blockerare; runda 2 visade
+att två av rättningarna inte räckte. Att binda kroppsläsningen lämnade statusrad och headers
+obundna — inget i anropet binder dem alls — och en server som droppade headerbyte strax inom
+socket-timeouten körde 757 s mot deklarerade 33. Försöken går nu i egen daemontråd och kanalen
+återvänder när join:en löper ut; det ÄR taket. Och att namnge den stängande körningen stoppade
+den andra sekvensökningen men inte dubbelarbetet, så varje kanals resultat är nu beständigt i
+samma stund det är känt: en återupptagen körning skriver klart sitt kvitto ur redan gjort arbete
+och läser varken sajten eller Kundstart igen. Båda domarna ordagrant i
+`evidence/runs/runtime-veckodrift-3/`.
 
-Kvitto: `evidence/runs/runtime-veckodrift-2/` ur `scripts/probe_veckodrift.py` — tre
+Runda 2:s tredje blockerare var att en kandidat inte kan vidga sitt eget mandat: kvittensen
+stred mot beställningens gräns hur sant den än beskrevs. Det var rätt, och det var inte mitt
+att avgöra. Ägaren avgjorde det före 16:07Z; hans ord står i kontorets
+DIGITALA-VECKODRIFT-20260929. Staging, aktivering och schemat täcks inte av beskedet.
+
+Kvitto: `evidence/runs/runtime-veckodrift-3/` ur `scripts/probe_veckodrift.py` — tre
 verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
 kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
 ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
 period (`overdue_seconds` 3620) som utfördes som incident med kundkvitto och en privat
-kvittens. Runda 1:s kvitto är bevarat och märkt ersatt.
+kvittens. Provet vägrar också om installeraren och hanteraren är oense om periodintervallet.
+Runda 1:s och 2:s kvitton är bevarade och märkta ersatta.
 
-Svitkvitton, mätta: Runtime 663 prov med ett fel, och exakt samma fel på oförändrad main
-`af78312` vid 656 prov — det är alltså inte kandidatens, utan en maskinberoende kontroll av
-Chrome-processer. Kontoret 534 prov OK mot 509 OK på oförändrad main `34bcedd`.
+Svitkvitton, tre körningar av varje eftersom två processprov visade sig ostadiga under last:
+Runtime 666 prov och kontoret 537, mot 656 och 509 på oförändrad main `af78312`/`34bcedd` på
+samma maskin med samma tolk. Ett Chrome-processprov faller i varje körning, kandidat som
+baslinje; tre olika `test_bounded`-prov föll i tre av sex körningar, i båda utan mönster.
+Ingetdera har någon kodväg till det kandidaten ändrar. Alla sex körningarna ligger som kvitto.
 
 Inte visat och inte gjort: sajten och signalytan är loopback-provdata, inte en kundadress
 och inte Kundstarts produktion eller dess lokala provtjänst. Den verkliga veckoperioden och

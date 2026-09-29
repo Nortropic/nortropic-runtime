@@ -1,0 +1,244 @@
+{
+  "passed": true,
+  "schedule": "veckodrift-probe-c7336bf50c2047b1a65c34ac28926380",
+  "office_bound_seconds": 255,
+  "office_period_range": [
+    3600,
+    2678400
+  ],
+  "staging_period_range": [
+    3600,
+    2678400
+  ],
+  "runtime_activity_bound": 300,
+  "runtime_schedule_to_close_bound": 330,
+  "runtime_execution_bound": 360,
+  "ordinary_wakeup_seconds": 3600,
+  "period_seconds": 3600,
+  "accelerated_tick_seconds": 10,
+  "rewound_period_to": "2026-09-29T14:15:50.171366+00:00",
+  "site_requests": 4,
+  "signal_requests": 4,
+  "runs": [
+    {
+      "wakeup": 1,
+      "workflow_id": "operation-veckodrift-probe-c7336bf50c2047b1a65c34ac28926380-2026-09-29T16:15:50Z",
+      "result": {
+        "completed": true,
+        "config_sha256": "37398074de2758740d53859d3313a155d35f53cd31fab8f591cb4870380d39bf",
+        "deliveries": {
+          "drift": {
+            "receipts": [],
+            "state_error": null
+          },
+          "intake": {
+            "receipts": [],
+            "state_error": null
+          }
+        },
+        "drift": {
+          "findings": [],
+          "healthy": true,
+          "incidents": 0,
+          "plan_sha256": "967917302ecccd448bc61ca3a457d0060d699d03a0778e70da0d7c604a16ef60",
+          "ran": true,
+          "reason": "verified",
+          "receipt": "DRIFT-20260929T161550Z.json",
+          "receipt_sha256": "30ea3b297d4146c297021ecb7ab26a402774e836c2bdbf46de9b7942d9f22610",
+          "returncode": 0,
+          "sites": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "cd1a3424b4647b70bd7073736f8dac3ba33a44b788887183f8202e6da238a402"
+        },
+        "finished_at": "2026-09-29T16:15:50.507810+00:00",
+        "intake": {
+          "completed": true,
+          "python_sha256": "94be2db6796807c796419e7adbc45cbff3e71966c107c2adcbf931cf70393941",
+          "returncode": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "e6c138aaabf4ec6cec920692899b3f03aa6dd6b95bbec0f855c2fe17510dbb70"
+        },
+        "performed": true,
+        "period": {
+          "completed_at": null,
+          "due": true,
+          "due_at": "2026-09-29T16:15:50.170913+00:00",
+          "overdue_seconds": 0,
+          "period_seconds": 3600,
+          "reason": "no_period_recorded",
+          "sequence": 0
+        },
+        "period_recorded": {
+          "completed_at": "2026-09-29T16:15:50.171366+00:00",
+          "run_id": "01a0edf3-7321-7b2f-8191-95b8bfc91bfe",
+          "sequence": 1
+        },
+        "resumed_channels": [],
+        "run_id": "01a0edf3-7321-7b2f-8191-95b8bfc91bfe",
+        "started_at": "2026-09-29T16:15:50.171366+00:00"
+      }
+    },
+    {
+      "wakeup": 2,
+      "workflow_id": "operation-veckodrift-probe-c7336bf50c2047b1a65c34ac28926380-2026-09-29T16:16:00Z",
+      "result": {
+        "completed": true,
+        "config_sha256": "37398074de2758740d53859d3313a155d35f53cd31fab8f591cb4870380d39bf",
+        "finished_at": "2026-09-29T16:16:00.335083+00:00",
+        "performed": false,
+        "period": {
+          "completed_at": "2026-09-29T16:15:50.171366+00:00",
+          "due": false,
+          "due_at": "2026-09-29T17:15:50.171366+00:00",
+          "overdue_seconds": 0,
+          "period_seconds": 3600,
+          "reason": "not_due",
+          "sequence": 1
+        },
+        "run_id": "01a0edf3-9adf-7776-8c17-c049f6106b02",
+        "skipped": "not_due",
+        "started_at": "2026-09-29T16:16:00.335083+00:00"
+      }
+    },
+    {
+      "wakeup": 3,
+      "workflow_id": "operation-veckodrift-probe-c7336bf50c2047b1a65c34ac28926380-2026-09-29T16:16:10Z",
+      "result": {
+        "completed": false,
+        "config_sha256": "37398074de2758740d53859d3313a155d35f53cd31fab8f591cb4870380d39bf",
+        "deliveries": {
+          "drift": {
+            "receipts": [
+              {
+                "event_id": "drift-65f13f06ee8145f29edc4d8395e7e208",
+                "received_at": "2026-09-29T16:16:10.456848+00:00",
+                "recipient": "kontorets-privata-driftyta",
+                "resumed": false
+              }
+            ],
+            "state_error": null
+          },
+          "intake": {
+            "receipts": [],
+            "state_error": null
+          }
+        },
+        "drift": {
+          "findings": [
+            {
+              "adress": "http://127.0.0.1:61259/",
+              "fynd": [
+                "svarar 503"
+              ]
+            }
+          ],
+          "healthy": false,
+          "incidents": 1,
+          "plan_sha256": "967917302ecccd448bc61ca3a457d0060d699d03a0778e70da0d7c604a16ef60",
+          "ran": true,
+          "reason": "site_incident",
+          "receipt": "DRIFT-20260929T161610Z.json",
+          "receipt_sha256": "1d67d001771f905e45ff8aa929efc47f9176b3c743d94acd6c705cc5a9d0bc4a",
+          "returncode": 1,
+          "sites": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "fc2049592279165f9ca2213672f5285227b74473326a929dd334a9d92bf02b92"
+        },
+        "finished_at": "2026-09-29T16:16:10.458132+00:00",
+        "intake": {
+          "completed": true,
+          "python_sha256": "94be2db6796807c796419e7adbc45cbff3e71966c107c2adcbf931cf70393941",
+          "returncode": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "e6c138aaabf4ec6cec920692899b3f03aa6dd6b95bbec0f855c2fe17510dbb70"
+        },
+        "performed": true,
+        "period": {
+          "completed_at": "2026-09-29T14:15:50.171366+00:00",
+          "due": true,
+          "due_at": "2026-09-29T15:15:50.171366+00:00",
+          "overdue_seconds": 3620,
+          "period_seconds": 3600,
+          "reason": "period_elapsed",
+          "sequence": 1
+        },
+        "period_recorded": {
+          "completed_at": "2026-09-29T16:16:10.177547+00:00",
+          "run_id": "01a0edf3-c144-7386-aa96-b60cab05b380",
+          "sequence": 2
+        },
+        "resumed_channels": [],
+        "run_id": "01a0edf3-c144-7386-aa96-b60cab05b380",
+        "started_at": "2026-09-29T16:16:10.177547+00:00"
+      }
+    }
+  ],
+  "native_status_readback": [
+    {
+      "workflow_id": "operation-veckodrift-probe-c7336bf50c2047b1a65c34ac28926380-2026-09-29T16:15:50Z",
+      "status": "COMPLETED",
+      "scheduled_at": "2026-09-29T16:15:50+00:00",
+      "started_at": "2026-09-29T16:15:50.060096+00:00",
+      "business_completed": true
+    },
+    {
+      "workflow_id": "operation-veckodrift-probe-c7336bf50c2047b1a65c34ac28926380-2026-09-29T16:16:00Z",
+      "status": "COMPLETED",
+      "scheduled_at": "2026-09-29T16:16:00+00:00",
+      "started_at": "2026-09-29T16:16:00.233234+00:00",
+      "business_completed": true
+    },
+    {
+      "workflow_id": "operation-veckodrift-probe-c7336bf50c2047b1a65c34ac28926380-2026-09-29T16:16:10Z",
+      "status": "COMPLETED",
+      "scheduled_at": "2026-09-29T16:16:10+00:00",
+      "started_at": "2026-09-29T16:16:10.060200+00:00",
+      "business_completed": false
+    }
+  ],
+  "customer_receipts": [
+    {
+      "name": "DRIFT-20260929T161550Z.json",
+      "sha256": "30ea3b297d4146c297021ecb7ab26a402774e836c2bdbf46de9b7942d9f22610",
+      "incidenter": 0
+    },
+    {
+      "name": "DRIFT-20260929T161610Z.json",
+      "sha256": "1d67d001771f905e45ff8aa929efc47f9176b3c743d94acd6c705cc5a9d0bc4a",
+      "incidenter": 1
+    }
+  ],
+  "recipient_receipts": [
+    {
+      "event": {
+        "channel": "drift",
+        "id": "drift-65f13f06ee8145f29edc4d8395e7e208",
+        "kind": "incident",
+        "observation": {
+          "detail_sha256": "c300e04364b42437dcd19a5ed5a7695b7ce271fe578e76cbdeef21450c4d0906",
+          "healthy": false,
+          "observed_at": "2026-09-29T16:16:10.456082+00:00",
+          "reason": "site_incident"
+        },
+        "state": {
+          "healthy": false,
+          "observed_at": "2026-09-29T16:16:10.456082+00:00",
+          "sequence": 1
+        }
+      },
+      "receipt": {
+        "event_id": "drift-65f13f06ee8145f29edc4d8395e7e208",
+        "received_at": "2026-09-29T16:16:10.456848+00:00",
+        "recipient": "kontorets-privata-driftyta"
+      }
+    }
+  ],
+  "period_state": {
+    "completed_at": "2026-09-29T16:16:10.177547+00:00",
+    "run_id": "01a0edf3-c144-7386-aa96-b60cab05b380",
+    "sequence": 2
+  },
+  "plan_sha256": "967917302ecccd448bc61ca3a457d0060d699d03a0778e70da0d7c604a16ef60",
+  "scope": "Real existing Temporal engine, isolated queue and schedule, the candidate Office handler and Digitala's real frozen drift_kontroll.py and kundstart.py started as real subprocesses over loopback HTTP. Only active-release config loading is injected.",
+  "not_shown": "The site and the signals endpoint are loopback fixtures, not a customer address and not Kundstart production or its local prov service. The overdue period was produced by rewinding Office's own durable record, which is the mechanism dueness uses; macOS sleep itself is not exercised. No release was staged, selected or activated."
+}

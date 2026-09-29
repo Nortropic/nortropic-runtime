@@ -220,3 +220,31 @@ class ReleaseOperationBindingTests(unittest.TestCase):
             (self.home / 'host/.runtime/ap10').mkdir(parents=True)
             path = install_ap10.stage('a' * 40, 'b' * 40)
             self.assertNotIn('scheduled_operations', json.loads(Path(path).read_text()))
+
+    def test_staging_refuses_an_operation_the_handler_could_only_refuse(self):
+        # Otherwise a release could be staged, reviewed and activated carrying an
+        # operation that can only ever fail, surfacing as a weekly incident instead.
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        for value in (base,                                            # no channel
+                      {**base, 'monitor': {}},                          # empty channel
+                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': 60},
+                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': 2678401},
+                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': True},
+                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': '604800'}):
+            self.write_input(value)
+            with self.assertRaises(ValueError): self.bind()
+
+    def test_a_wakeup_slower_than_the_period_is_refused(self):
+        # A period can only be kept by a wakeup that comes at least as often as it.
+        self.write_input({'schema': 'office-drift/1', 'state': str(self.home / 'private'),
+                          'drift': {'plan': '/abs'}, 'period_seconds': 3600})
+        self.write_manifest({'ok': {'input': str(self.input), 'interval_seconds': 3601}})
+        with self.assertRaises(ValueError): self.bind()
+        self.write_manifest({'ok': {'input': str(self.input), 'interval_seconds': 3600}})
+        self.assertEqual(self.bind()['ok']['interval_seconds'], 3600)
+
+    def test_the_period_bounds_here_match_the_handler_the_release_binds(self):
+        # Two copies of a bound is a drift risk; the qualification measures both
+        # against the handler bytes under test. This only pins what staging enforces.
+        self.assertEqual((install_ap10.PERIOD_FLOOR, install_ap10.PERIOD_CEILING),
+                         (3600, 2678400))

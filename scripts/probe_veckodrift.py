@@ -30,18 +30,19 @@ from runtime.scheduled_operation import (ScheduledOperation, scheduled_operation
                                          ACTIVITY_BOUND, SCHEDULE_TO_CLOSE_BOUND,
                                          EXECUTION_BOUND)
 from runtime.operation_schedule import definition, validate, execution_status
+from scripts import install_ap10
 
 WAKEUP_SECONDS = 3600      # the ordinary hourly wakeup that the release would bind
 PERIOD_SECONDS = 3600      # the accepted floor, standing in for the weekly period
 TICK_SECONDS = 10          # only the isolated accelerated schedule uses this
 
 
-def handler_bound(handler):
-    """Read Office's own declared ceiling from the exact handler bytes under test."""
+def handler_constants(handler):
+    """Read Office's own declared bounds from the exact handler bytes under test."""
     spec = importlib.util.spec_from_file_location('probe_office_handler', handler)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.BOUND_SECONDS
+    return module.BOUND_SECONDS, module.PERIOD_FLOOR, module.PERIOD_CEILING
 
 
 class Fixtures:
@@ -195,10 +196,15 @@ async def probe(output, office_handler, digitala, interpreter):
                                                 interpreter, fixtures)
     # The only place the two repositories' bounds are compared, against the exact
     # handler bytes under test rather than a number copied into a Runtime test.
-    bound = handler_bound(office_handler)
+    bound, floor, ceiling = handler_constants(office_handler)
     if not bound < ACTIVITY_BOUND < SCHEDULE_TO_CLOSE_BOUND < EXECUTION_BOUND:
         raise RuntimeError('Office bound %s does not fit inside Runtime %s/%s/%s'
                            % (bound, ACTIVITY_BOUND, SCHEDULE_TO_CLOSE_BOUND, EXECUTION_BOUND))
+    if (floor, ceiling) != (install_ap10.PERIOD_FLOOR, install_ap10.PERIOD_CEILING):
+        raise RuntimeError('Staging and the handler disagree on the accepted period range: %s vs %s'
+                           % ((floor, ceiling), (install_ap10.PERIOD_FLOOR, install_ap10.PERIOD_CEILING)))
+    if not floor <= PERIOD_SECONDS <= ceiling:
+        raise RuntimeError('The probed period is outside the handler range')
     client = await Client.connect('127.0.0.1:7339', namespace='nortropic-runtime')
     handle, runs, seen = None, [], set()
     try:
@@ -288,7 +294,10 @@ async def probe(output, office_handler, digitala, interpreter):
             raise RuntimeError('No DRIFT receipt reached the customer path')
         summary = {
             'passed': True, 'schedule': name,
-            'office_bound_seconds': bound, 'runtime_activity_bound': ACTIVITY_BOUND,
+            'office_bound_seconds': bound,
+            'office_period_range': [floor, ceiling],
+            'staging_period_range': [install_ap10.PERIOD_FLOOR, install_ap10.PERIOD_CEILING],
+            'runtime_activity_bound': ACTIVITY_BOUND,
             'runtime_schedule_to_close_bound': SCHEDULE_TO_CLOSE_BOUND,
             'runtime_execution_bound': EXECUTION_BOUND,
             'ordinary_wakeup_seconds': WAKEUP_SECONDS, 'period_seconds': PERIOD_SECONDS,

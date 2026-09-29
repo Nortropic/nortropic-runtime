@@ -426,7 +426,8 @@ first wakeup that becomes possible — that guarantee is Office's durable record
 window, which stays deliberately small. Read `performed`, not only `completed`: an incident found by a
 check that ran is `performed: true, completed: false`, and only `performed` closes the period. A broken
 binding or a timeout leaves the period due for the next wakeup. Without `period_seconds` every wakeup is
-due, which is D038's unchanged behaviour. Qualification receipt: `evidence/runs/runtime-veckodrift-1/`.
+due, which is D038's unchanged behaviour. Qualification receipt: `evidence/runs/runtime-veckodrift-3/`
+(earlier rounds are kept and marked superseded).
 
 The worker process runs a separate `office-operations` queue and activity slot; a model/AP-10 activity
 on `development` cannot occupy this slot. Both workers retain the same managed worker process identity.

@@ -15,8 +15,8 @@ underkände. `GRANSKNING-r1-DOM.md` bär granskarens dom ordagrant.
 Det enda felet är samma i kandidaten och i baslinjen:
 `test_web_profiles.ChildProcessTests.test_only_the_processes_of_the_named_chrome_profile_are_ended`.
 Det faller på oförändrad main på samma maskin med samma tolk, och kommer alltså inte av den här
-kandidaten; det är en maskinberoende kontroll av Chrome-processer, och samma svit gick 663/663 tidigare
-i dag på samma kod. Kandidaten lägger till 7 Runtime-prov och 25 kontorsprov och inför inget nytt fel.
+kandidaten; det är en maskinberoende kontroll av Chrome-processer. Kandidaten inför inget nytt fel: samma
+enda fel, i kandidat och baslinje, mätt på samma maskin med samma tolk i anslutning till varandra.
 
 ## Kvalificeringen mot den verkliga motorn
 
@@ -56,3 +56,8 @@ injicerade releasekonfigurationen. Båda namnger absoluta sökvägar i provets e
 - macOS-sömn är inte utövad. Det är kontorets beständiga periodkvitto som bär igentagningen, och det är
   den mekanismen provet prövade. Den verkliga veckoperioden 604800 sekunder är inte utövad i verklig tid.
 - Ingen release stagades, valdes eller aktiverades, och AP-10:s schema, tjänst och arbetare rördes inte.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-3/`.** Granskningsrunda 2 underkände kandidaten
+efter denna runda. Kvittot bevaras som spår; läs r3 för det läge som gäller.
