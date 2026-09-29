@@ -1795,7 +1795,14 @@ second concurrent wakeup would fail and read as an incident.
 The period is per channel, which is what makes both halves of the order hold at once. A channel
 that keeps failing is retried at every wakeup, and a channel that already did its week stays closed
 for the whole week regardless - so a broken consumer cannot turn the weekly drift check into an
-hourly one. A period is only ever closed by the run that did that channel's work, stamped with that
+hourly one. Each channel delivers and closes its own period the moment its own work finishes, not at
+the end of the run, because the monitor's binding error is raised on purpose and would otherwise stop
+a check that already ran from closing its week - a standing monitor fault would then make the weekly
+drift check hourly. A channel counts as performed only when its own reading actually happened: a
+health probe that never reached the endpoint at all leaves its period open, because nothing was
+checked. And a run that lost its receipt after closing a period cannot re-observe the outcome, so it
+reads the channels' own durable health back rather than claiming success; an interrupted incident run
+stays `completed: false`. A period is only ever closed by the run that did that channel's work, stamped with that
 run's own start, so work done in an old period can never close a new one. A run interrupted after
 closing its own channel recognises its own record, reads nothing again, advances no sequence and
 finishes its receipt; that state is reported as `already_performed`, not as a period that merely had
@@ -1820,7 +1827,9 @@ stages is exactly what `runtime.scheduled_operation.operation` accepts.
 Staging also refuses what the handler would refuse at run time, so a release cannot be staged,
 reviewed and activated carrying an operation that can only ever fail and would surface as a weekly
 incident: no channel at all, a period outside its range, a wakeup slower than the period it is meant
-to keep, a monitor that is not an explicit HTTPS endpoint with an exact candidate, and any
+to keep, a monitor that is not an explicit HTTPS endpoint with a candidate that is an exact
+40-character string (not an integer laundered through `str()`), a channel missing any key the handler
+needs to start a frozen tool, a relative path where the handler requires an absolute one, and any
 `isolated_test` flag, which belongs to a probe and never to a release. Rebinding a name in place is
 refused rather than silently replacing reviewed bytes. The qualification refuses when staging and the
 handler disagree on the accepted period range, so neither copy of that bound is trusted alone.
@@ -1834,8 +1843,8 @@ so a server trickling bytes just inside it could read on indefinitely, hold the 
 state lock past the workflow's own bound and block later periods. The monitor now carries its own
 enforced deadline and reads with `read1`, because `read(n)` blocks until it has all n bytes.
 
-Three review rounds rejected this candidate; all three verdicts are preserved verbatim in
-`evidence/runs/runtime-veckodrift-4/`. Round 1: a period record from the future silenced the work
+Four review rounds rejected this candidate; all four verdicts are preserved verbatim in
+`evidence/runs/runtime-veckodrift-5/`. Round 1: a period record from the future silenced the work
 until that date arrived and year 9999 overflowed the arithmetic unhandled, so a record later than a
 small clock skew is now quarantined as malformed and the work runs; resuming an interrupted run closed
 the same period twice; the blanket word "reading"; test counts stated without a receipt.
@@ -1847,7 +1856,15 @@ their own daemon thread and the channel returns when the join times out: that IS
 binding is validated before the thread, because a wrong endpoint must still be refused loudly rather
 than reported as a bound that ran out - that regression was caught by D038's own test.
 
-Round 3 then showed that round 2's other repair was worse than the fault it fixed. Making each
+Round 4 found four more, all of them mine. The stranded-thread cap did not hold at all: Runtime
+loads the handler afresh for every activity, so a registry in module state reset each wakeup while
+earlier threads were alive; it is anchored on the interpreter instead, and a test reloads the module
+three times exactly as Runtime does. A standing monitor fault could still make the weekly check
+hourly, and a monitor that never reached the endpoint still closed its period - both fixed by the
+per-channel settlement described above. And the resume path answered `completed: true`
+unconditionally, which could report an interrupted incident run as a green business result.
+
+Round 3 showed that round 2's other repair was worse than the fault it fixed. Making each
 channel's result durable per run let a result from one period close a later one with the later run's
 clock - hiding exactly the missed week the order forbids - while being unusable by the next wakeup,
 so a persistently failing consumer made the weekly check hourly. That cache is withdrawn. The period
@@ -1863,8 +1880,8 @@ mine to decide. The owner decided it on 2026-09-29 before 16:07Z; his words and 
 they answered are in the Office's DIGITALA-VECKODRIFT-20260929. Staging, activation and the schedule
 are not covered by that and remain his row in ÄGARENS TUR.
 
-Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-4/`
-(rounds 1 to 3 are kept and marked superseded). Three real scheduled wakeups on the existing engine
+Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-5/`
+(rounds 1 to 4 are kept and marked superseded). Three real scheduled wakeups on the existing engine
 with an isolated queue and schedule name, the candidate Office handler and Digitala's real frozen
 tools started as real subprocesses. A clean check, a no-op wakeup inside the period that made no
 request at all, and an overdue period performed as an incident with its customer receipt and one
@@ -1872,14 +1889,14 @@ private acknowledgement. In that third wakeup only the drift channel's record wa
 intake channel stayed inside its own period and made no request at all - the periods are shown to be
 independent, not asserted to be.
 
-Measured suites, three consecutive runs of each, all twelve preserved rather than summarised:
-Runtime 669 tests and Office 541, against 656 and 509 on unchanged main `af78312`/`34bcedd` on the
-same machine with the same interpreter, so the candidate adds 13 and 32 tests; the handler's own file
-goes from 10 to 42. Office is green in all six runs. Two Runtime tests fail and neither is this
-candidate's: the `test_web_profiles` Chrome-process check fails in every run, candidate and baseline
-alike, its `/bin/ps` listing not finding the process the test started; and the `test_bounded`
-process-group tests fail unsteadily, ending in `PermissionError` from `os.killpg`, in two candidate
-and two baseline runs of six each without pattern. Neither has any code path to what this candidate
+Measured suites, three consecutive runs of each, all twelve preserved rather than summarised, and
+all from this round's revisions alone: Runtime 671 tests and Office 560, against 656 and 509 on
+unchanged main `af78312`/`34bcedd` on the same machine with the same interpreter, so the candidate
+adds 15 and 51 tests; the handler's own file goes from 10 to 61. Office is green in all six runs. Two
+Runtime tests fail and neither is this candidate's: the `test_web_profiles` Chrome-process check fails
+in every run, candidate and baseline alike, its `/bin/ps` listing not finding the process the test
+started; and the `test_bounded` process-group tests fail unsteadily, ending in `PermissionError` from
+`os.killpg`, in one candidate and one baseline run of three each. Neither has any code path to what this candidate
 changes: `scripts/bounded.py` and its tests import neither changed module, and the Office handler is
 in another repository. What causes them is NOT established - `/bin/ps` and `os.killpg` both succeed
 when run alone in the same shell - so nothing beyond "present in both revisions" is claimed.

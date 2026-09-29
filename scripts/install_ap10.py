@@ -95,11 +95,29 @@ def bind_operations(directory, files, manifest):
             if (address.scheme != 'https' or not address.hostname or address.username
                     or address.password or address.fragment):
                 raise ValueError('Monitor requires an explicit HTTPS endpoint: ' + name)
-            if not re.fullmatch('[0-9a-f]{40}', str(monitor.get('candidate'))):
+            candidate = monitor.get('candidate')
+            # str() would launder an integer past this check and leave the handler to
+            # raise TypeError at the first wakeup instead.
+            if not isinstance(candidate, str) or not re.fullmatch('[0-9a-f]{40}', candidate):
                 raise ValueError('Monitor requires an exact candidate: ' + name)
         for channel in ('intake', 'drift'):
-            if value.get(channel) and value[channel].get('isolated_test') is not None:
+            given = value.get(channel)
+            if not given:
+                continue
+            if given.get('isolated_test') is not None:
                 raise ValueError('isolated_test belongs to a probe, not a release: ' + name)
+            # The handler needs every one of these to start a frozen tool at all. A
+            # release that omits one can only fail, so it never reaches a wakeup.
+            required = {'digitala_root', 'digitala_files', 'python_path', 'python_sha256'}
+            required |= ({'plan', 'plan_sha256', 'receipts'} if channel == 'drift'
+                         else {'base_url', 'key_file', 'customer', 'executor'})
+            missing = sorted(key for key in required if not given.get(key))
+            if missing:
+                raise ValueError('Channel %s lacks %s in %s' % (channel, ', '.join(missing), name))
+            for key in ('digitala_root', 'python_path') + (
+                    ('plan', 'receipts') if channel == 'drift' else ('key_file', 'customer')):
+                if not Path(str(given[key])).is_absolute():
+                    raise ValueError('%s.%s must be an absolute path in %s' % (channel, key, name))
         if 'period_seconds' in value:
             period = value['period_seconds']
             if type(period) is not int or not PERIOD_FLOOR <= period <= PERIOD_CEILING:

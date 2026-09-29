@@ -93,3 +93,8 @@ läser, alltså den ordinarie vägen vidare.
 - Monitorns väggklocka och dess bundna kvarvarande trådar är bevisade i kontorets prov mot en droppande
   server och en frusen transport, inte i motorprovet.
 - Ingen release stagades, valdes eller aktiverades, och AP-10:s schema, tjänst och arbetare rördes inte.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-5/`.** Granskningsrunda 4 underkände kandidaten
+efter denna runda. Kvittot bevaras som spår; läs r5 för det läge som gäller.

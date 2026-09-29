@@ -419,9 +419,13 @@ belongs only to a probe.
 ### The wakeup is not the period (D040)
 
 `interval_seconds` is how often Runtime wakes the operation. With `period_seconds` in the input, Office's
-handler decides from its own durable `period.json` whether the period has elapsed; weekly is 604800, and
+handler decides from its own durable `period-<channel>.json` whether that channel's period has elapsed; weekly is 604800, and
 3600–2678400 is accepted. A wakeup inside the current period reads nothing, writes nothing and leaves no
-run record, so it is not a check. A period missed because the Mac slept stays due and is performed by the
+run record, so it is not a check. A channel is `performed` only when its own reading actually happened: a
+health probe that never reached the endpoint at all (`monitor_bound_exceeded`, `monitor_stranded_limit`)
+leaves its period open, because nothing was checked. Each channel closes its own period as its own work
+finishes, so a later channel's failure cannot stop a check that already ran from closing its week. A
+period missed because the Mac slept stays due and is performed by the
 first wakeup that becomes possible — that guarantee is Office's durable record, not Temporal's catch-up
 window, which stays deliberately small. Read `performed`, not only `completed`: an incident found by a
 check that ran is `performed: true, completed: false`, and only `performed` closes the period. A broken
@@ -430,7 +434,7 @@ due, which is D038's unchanged behaviour. The period is per channel: a channel t
 retried every wakeup while one that already did its week stays closed, so a broken consumer cannot turn
 the weekly drift check into an hourly one. `skipped: already_performed` means a run was interrupted
 after doing its own work and finished only its receipt; `not_due` means the period had not elapsed.
-Qualification receipt: `evidence/runs/runtime-veckodrift-4/` (earlier rounds are kept and marked
+Qualification receipt: `evidence/runs/runtime-veckodrift-5/` (earlier rounds are kept and marked
 superseded).
 
 The worker process runs a separate `office-operations` queue and activity slot; a model/AP-10 activity

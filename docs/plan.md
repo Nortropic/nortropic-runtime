@@ -48,7 +48,13 @@ samtidigt. En kanal som fortsätter misslyckas görs om vid varje väckning, med
 som redan gjort sin vecka står stängd hela veckan — ett trasigt intag kan alltså inte
 göra den veckovisa driftkontrollen timvis. En period stängs bara av den körning som
 gjorde just den kanalens arbete, med den körningens egen starttid, så arbete i en gammal
-period kan aldrig stänga en ny.
+period kan aldrig stänga en ny. Varje kanal levererar och stänger sin period i samma
+stund dess eget arbete är klart, inte i slutet av körningen: monitorns bindningsfel
+kastas med avsikt vidare, och skulle annars hindra en redan utförd kontroll från att
+stänga sin vecka. En kanal räknas som utförd bara om dess egen läsning faktiskt skedde —
+en hälsokontroll som aldrig nådde ändpunkten lämnar sin period öppen. En körning som
+tappat sitt slutkvitto kan inte se om igen, så den läser tillbaka kanalernas egna
+beständiga hälsolägen; en avbruten incidentkörning förblir `completed: false`.
 
 Resultatet går den ordinarie vägen: driftkontrollens `DRIFT-<tid>.json` skrivs i kundens
 mapp, alltså precis den fil Digitalas `underhall.py besked` läser för ägarens veckobesked,
@@ -60,12 +66,19 @@ schemagränserna är namngivna konstanter (300/330/360) eftersom tre kanaler int
 D038:s 180 s; kontorets `BOUND_SECONDS` är 255 och kvalificeringen mäter den mot de
 hanterarbyte som prövas, i stället för att kopiera talet in i ett Runtime-prov.
 
-Tre granskningsrundor underkände kandidaten; alla tre domarna ligger ordagrant i
-`evidence/runs/runtime-veckodrift-4/`. Runda 1 fällde fem blockerare. Runda 2 visade att två
+Fyra granskningsrundor underkände kandidaten; alla fyra domarna ligger ordagrant i
+`evidence/runs/runtime-veckodrift-5/`. Runda 1 fällde fem blockerare. Runda 2 visade att två
 av rättningarna inte räckte: att binda kroppsläsningen lämnade statusrad och headers obundna —
 inget i anropet binder dem alls — och en server som droppade headerbyte strax inom
 socket-timeouten körde 757 s mot deklarerade 33. Försöken går nu i egen daemontråd och kanalen
 återvänder när join:en löper ut; det ÄR taket.
+
+Runda 4 fann fyra fel till, alla mina: trådtaket gällde inte alls mellan Runtime-aktiviteter
+(modulen laddas på nytt varje gång, så registret nollställdes), ett bestående monitorfel kunde
+fortfarande göra veckokontrollen timvis, en monitor som aldrig nådde ändpunkten stängde ändå sin
+period, och återupptagning svarade ovillkorligt `completed: true` — vilket kunde redovisa en
+avbruten incidentkörning som ett grönt resultat. Alla fyra är rättade, var och en med ett prov
+som faller utan rättningen.
 
 Runda 3 visade att runda 2:s andra rättning var sämre än felet den löste. Att göra varje kanals
 resultat beständigt per körning lät ett resultat ur en period stänga en senare med den senare
@@ -80,7 +93,7 @@ stred mot beställningens gräns hur sant den än beskrevs. Det var rätt, och d
 att avgöra. Ägaren avgjorde det före 16:07Z; hans ord står i kontorets
 DIGITALA-VECKODRIFT-20260929. Staging, aktivering och schemat täcks inte av beskedet.
 
-Kvitto: `evidence/runs/runtime-veckodrift-4/` ur `scripts/probe_veckodrift.py` — tre
+Kvitto: `evidence/runs/runtime-veckodrift-5/` ur `scripts/probe_veckodrift.py` — tre
 verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
 kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
 ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
@@ -88,15 +101,16 @@ period (`overdue_seconds` 3620) som utfördes som incident med kundkvitto och en
 kvittens. I den tredje väckningen flyttades bara driftkanalens kvitto bakåt, så intaget stod
 kvar inne i sin egen period och gjorde inte ett enda anrop: perioderna per kanal är visade,
 inte påstådda. Provet vägrar också om installeraren och hanteraren är oense om
-periodintervallet. Rundorna 1–3:s kvitton är bevarade och märkta ersatta.
+periodintervallet. Rundorna 1–4:s kvitton är bevarade och märkta ersatta.
 
-Svitkvitton, tre körningar av varje, alla tolv bevarade: Runtime 669 prov och kontoret 541, mot
-656 och 509 på oförändrad main `af78312`/`34bcedd` på samma maskin med samma tolk. Kontoret är
-grönt i alla sex körningarna. Två Runtime-prov faller och ingetdera är kandidatens: ett
-Chrome-processprov i varje körning, kandidat som baslinje, och `test_bounded`-provens
-processgruppfel ostadigt i två kandidat- och två baslinjekörningar av sex vardera. Ingetdera har
-någon kodväg till det kandidaten ändrar. Vad som orsakar dem är inte utrett, och inget utöver
-"finns i båda revisionerna" påstås.
+Svitkvitton, tre körningar av varje, alla tolv bevarade och alla ur denna rundas revisioner:
+Runtime 671 prov och kontoret 560, mot 656 och 509 på oförändrad main `af78312`/`34bcedd` på
+samma maskin med samma tolk; kandidaten lägger till 15 respektive 51 prov, och hanterarens egen
+provfil går från 10 till 61. Kontoret är grönt i alla sex körningarna. Två Runtime-prov faller och
+ingetdera är kandidatens: ett Chrome-processprov i varje körning, kandidat som baslinje, och
+`test_bounded`-provens processgruppfel ostadigt i en kandidat- och en baslinjekörning av tre
+vardera. Ingetdera har någon kodväg till det kandidaten ändrar. Vad som orsakar dem är inte
+utrett, och inget utöver "finns i båda revisionerna" påstås.
 
 Inte visat och inte gjort: sajten och signalytan är loopback-provdata, inte en kundadress
 och inte Kundstarts produktion eller dess lokala provtjänst. Den verkliga veckoperioden och

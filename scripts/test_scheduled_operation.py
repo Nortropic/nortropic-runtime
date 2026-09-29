@@ -142,9 +142,15 @@ class ReleaseOperationBindingTests(unittest.TestCase):
         self.files = {'office/tools/driftoperation.py': sha256(handler.read_bytes()).hexdigest()}
         self.input = self.home / 'reviewed-input.json'
         self.write_input({'schema': 'office-drift/1', 'state': str(self.home / 'private'),
-                          'period_seconds': 604800, 'drift': {'plan': '/abs/DRIFT.json'}})
+                          'period_seconds': 604800, 'drift': dict(self.DRIFT)})
         self.manifest = self.home / 'operations.json'
         self.write_manifest({'digitala-vecka': {'input': str(self.input), 'interval_seconds': 3600}})
+
+    # A complete drift channel, because staging now refuses a partial one: the handler
+    # needs every one of these keys to start a frozen tool at all.
+    DRIFT = {'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/drift_kontroll.py': 'x'},
+             'python_path': '/abs/python', 'python_sha256': 'y',
+             'plan': '/abs/DRIFT.json', 'plan_sha256': 'z', 'receipts': '/abs/kund'}
 
     def write_input(self, value):
         self.input.write_text(json.dumps(value))
@@ -239,17 +245,17 @@ class ReleaseOperationBindingTests(unittest.TestCase):
         base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
         for value in (base,                                            # no channel
                       {**base, 'monitor': {}},                          # empty channel
-                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': 60},
-                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': 2678401},
-                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': True},
-                      {**base, 'drift': {'plan': '/abs'}, 'period_seconds': '604800'}):
+                      {**base, 'drift': self.DRIFT, 'period_seconds': 60},
+                      {**base, 'drift': self.DRIFT, 'period_seconds': 2678401},
+                      {**base, 'drift': self.DRIFT, 'period_seconds': True},
+                      {**base, 'drift': self.DRIFT, 'period_seconds': '604800'}):
             self.write_input(value)
             with self.assertRaises(ValueError): self.bind()
 
     def test_a_wakeup_slower_than_the_period_is_refused(self):
         # A period can only be kept by a wakeup that comes at least as often as it.
         self.write_input({'schema': 'office-drift/1', 'state': str(self.home / 'private'),
-                          'drift': {'plan': '/abs'}, 'period_seconds': 3600})
+                          'drift': self.DRIFT, 'period_seconds': 3600})
         self.write_manifest({'ok': {'input': str(self.input), 'interval_seconds': 3601}})
         with self.assertRaises(ValueError): self.bind()
         self.write_manifest({'ok': {'input': str(self.input), 'interval_seconds': 3600}})
@@ -283,7 +289,41 @@ class ReleaseOperationBindingTests(unittest.TestCase):
     def test_a_probe_flag_on_any_channel_is_refused(self):
         base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
         for channel in ('intake', 'drift'):
-            self.write_input({**base, channel: {'isolated_test': True}})
+            whole = self.DRIFT if channel == 'drift' else {
+                'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/kundstart.py': 'x'},
+                'python_path': '/abs/python', 'python_sha256': 'y',
+                'base_url': 'https://k.example', 'key_file': '/abs/k.secret',
+                'customer': '/abs/kund', 'executor': 'runtime-veckodrift'}
+            self.write_input({**base, channel: {**whole, 'isolated_test': True}})
             with self.assertRaises(ValueError): self.bind()
-            self.write_input({**base, channel: {'plan': '/abs/DRIFT.json'}})
+            self.write_input({**base, channel: whole})
             self.assertIn('digitala-vecka', self.bind())
+
+    def test_an_incomplete_channel_binding_never_reaches_a_wakeup(self):
+        # The handler needs every one of these to start a frozen tool at all, so a
+        # release that omits one can only fail. Refuse it at staging instead.
+        drift = {'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/drift_kontroll.py': 'x'},
+                 'python_path': '/abs/python', 'python_sha256': 'y',
+                 'plan': '/abs/DRIFT.json', 'plan_sha256': 'z', 'receipts': '/abs/kund'}
+        intake = {'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/kundstart.py': 'x'},
+                  'python_path': '/abs/python', 'python_sha256': 'y',
+                  'base_url': 'https://k.example', 'key_file': '/abs/k.secret',
+                  'customer': '/abs/kund', 'executor': 'runtime-veckodrift'}
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        self.write_input({**base, 'drift': drift, 'intake': intake})
+        self.assertIn('digitala-vecka', self.bind())
+        for channel, whole in (('drift', drift), ('intake', intake)):
+            for key in whole:
+                self.write_input({**base, channel: {k: v for k, v in whole.items() if k != key}})
+                with self.assertRaises(ValueError): self.bind()
+            for key in ('digitala_root', 'python_path'):
+                self.write_input({**base, channel: {**whole, key: 'relativ/vag'}})
+                with self.assertRaises(ValueError): self.bind()
+
+    def test_a_candidate_that_is_not_a_string_is_refused_not_laundered(self):
+        # str() would let an integer past and leave the handler to raise TypeError.
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        for candidate in (int('1' * 40), None, ['a' * 40], True):
+            self.write_input({**base, 'monitor': {'url': 'https://kund.example/health',
+                                                  'candidate': candidate}})
+            with self.assertRaises(ValueError): self.bind()
