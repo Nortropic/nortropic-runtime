@@ -33,6 +33,11 @@ idempotenta bokföring av vad den konsumerat; en identisk kvittens får upprepas
 och den ändrar aldrig en exportrevision. Den rör inte kundens sajt, material eller svar. Kandidaten
 inför den inte och ändrar inte en byte i konsumenten: det frysta verktyget startas som det är.
 
+Utfall och period är två faser: `settled-<kanal>.json` först, `period-<kanal>.json` sedan. En
+avbruten körnings arbete slutförs därför av nästa väckning ur det som observerades, i stället
+för att läsas om, och kvittot bär `attested_by: settled_outcome`. Ett saknat utfallskvitto
+betyder att arbetet är skyldigt, aldrig att det var friskt.
+
 Väckningen är inte perioden. `interval_seconds` väcker operationen (3600 i den beredda
 bindningen); kontorets hanterare avgör ur sitt eget beständiga periodkvitto om veckan
 (`period_seconds` 604800) har gått. En period som missats för att Macen sov står därför
@@ -66,14 +71,20 @@ schemagränserna är namngivna konstanter (300/330/360) eftersom tre kanaler int
 D038:s 180 s; kontorets `BOUND_SECONDS` är 255 och kvalificeringen mäter den mot de
 hanterarbyte som prövas, i stället för att kopiera talet in i ett Runtime-prov.
 
-Fyra granskningsrundor underkände kandidaten; alla fyra domarna ligger ordagrant i
-`evidence/runs/runtime-veckodrift-5/`. Runda 1 fällde fem blockerare. Runda 2 visade att två
+Fem granskningsrundor underkände kandidaten; alla fem domarna ligger ordagrant i
+`evidence/runs/runtime-veckodrift-6/`. Runda 1 fällde fem blockerare. Runda 2 visade att två
 av rättningarna inte räckte: att binda kroppsläsningen lämnade statusrad och headers obundna —
 inget i anropet binder dem alls — och en server som droppade headerbyte strax inom
 socket-timeouten körde 757 s mot deklarerade 33. Försöken går nu i egen daemontråd och kanalen
 återvänder när join:en löper ut; det ÄR taket.
 
-Runda 4 fann fyra fel till, alla mina: trådtaket gällde inte alls mellan Runtime-aktiviteter
+Runda 5 fann fyra fel till, alla mina: `observed` sattes när monitortråden slutförts i stället
+för när ändpunkten svarat; en återupptagning blev grön när någon kanal bara var `not_due`;
+attesteringen godtog saknat, feltypat och gammalt hälsoläge; och ett avbrott före
+periodskrivningen gav dubbel driftkontroll inom samma vecka. Alla fyra är rättade med
+settle-then-commit och en `observed` som sätts av den kod som vet.
+
+Runda 4 fann fyra fel, alla mina: trådtaket gällde inte alls mellan Runtime-aktiviteter
 (modulen laddas på nytt varje gång, så registret nollställdes), ett bestående monitorfel kunde
 fortfarande göra veckokontrollen timvis, en monitor som aldrig nådde ändpunkten stängde ändå sin
 period, och återupptagning svarade ovillkorligt `completed: true` — vilket kunde redovisa en
@@ -93,7 +104,7 @@ stred mot beställningens gräns hur sant den än beskrevs. Det var rätt, och d
 att avgöra. Ägaren avgjorde det före 16:07Z; hans ord står i kontorets
 DIGITALA-VECKODRIFT-20260929. Staging, aktivering och schemat täcks inte av beskedet.
 
-Kvitto: `evidence/runs/runtime-veckodrift-5/` ur `scripts/probe_veckodrift.py` — tre
+Kvitto: `evidence/runs/runtime-veckodrift-6/` ur `scripts/probe_veckodrift.py` — fyra
 verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
 kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
 ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
@@ -101,12 +112,16 @@ period (`overdue_seconds` 3620) som utfördes som incident med kundkvitto och en
 kvittens. I den tredje väckningen flyttades bara driftkanalens kvitto bakåt, så intaget stod
 kvar inne i sin egen period och gjorde inte ett enda anrop: perioderna per kanal är visade,
 inte påstådda. Provet vägrar också om installeraren och hanteraren är oense om
-periodintervallet. Rundorna 1–4:s kvitton är bevarade och märkta ersatta.
+periodintervallet. Den fjärde väckningen hittar en avbruten settle-then-commit, stänger perioden
+ur den hälsa som bokfördes, kommer tillbaka `completed: false` och gör inget nytt anrop.
+Rundorna 1–5:s kvitton är bevarade och märkta ersatta.
 
 Svitkvitton, tre körningar av varje, alla tolv bevarade och alla ur denna rundas revisioner:
-Runtime 671 prov och kontoret 560, mot 656 och 509 på oförändrad main `af78312`/`34bcedd` på
-samma maskin med samma tolk; kandidaten lägger till 15 respektive 51 prov, och hanterarens egen
-provfil går från 10 till 61. Kontoret är grönt i alla sex körningarna. Två Runtime-prov faller och
+Runtime 675 prov och kontoret 563, mot 656 och 509 på oförändrad main `af78312`/`34bcedd` på
+samma maskin med samma tolk; kandidaten lägger till 19 respektive 54 prov. Hanterarens egen
+provfil ger 64 provkörningar på 52 olika metodnamn, mot 10 på oförändrad main — tolv
+`test_`-metoder ligger i en delad fixtur som ärvs av två klasser, så körningar och metodnamn är
+inte samma tal. Kontoret är grönt i alla sex körningarna. Två Runtime-prov faller och
 ingetdera är kandidatens: ett Chrome-processprov i varje körning, kandidat som baslinje, och
 `test_bounded`-provens processgruppfel ostadigt i en kandidat- och en baslinjekörning av tre
 vardera. Ingetdera har någon kodväg till det kandidaten ändrar. Vad som orsakar dem är inte
@@ -118,36 +133,23 @@ macOS-sömn är inte utövade i verklig tid. Ingen release är stagad, vald elle
 AP-10:s schema, tjänst och arbetare är orörda. Schemat installeras pausat och kräver
 uttryckligt `resume`.
 
-## PAUSAT PÅ ÄGARENS BESLUT 2026-09-29 ca 18:08Z — ej integrerat, ej levererat
+## Pausen upphävd 2026-09-29 ca 18:32Z; runda 5:s fyra blockerare rättade
 
-Ägaren beslutade att uppdraget pausas för veckokvotens skull. Frågan han svarade på och hans
-svar ordagrant står i kontorets DIGITALA-VECKODRIFT-20260929. Beskedet var: låt runda 5 gå
-och leverera om den godkänns, annars stanna till efter söndag. **Runda 5 underkände**, så
-arbetet stannar här. Kvoten nollställs 2026-10-04 07:00Z.
+Arbetet pausades 18:08Z för veckokvotens skull och återupptogs när det skälet var borta.
+Båda ägarbeskeden står ordagrant i kontorets DIGITALA-VECKODRIFT-20260929; kvotprovet strax
+före återupptagningen visade fönstren `five_hour` 0,05 och `seven_day` 0,01.
 
-Ingen integration är gjord och överlämningen OVL-20260929-4f194f står kvar som startad, inte
-levererad. Kandidaterna är frysta och oförändrade:
+Runda 5:s fyra blockerare är rättade. Tre av dem hade samma rot — ett kvitto eller ett
+hälsoläge som attesterade något det inte visste — och löses av settle-then-commit ovan:
+utfallet skrivs först, med namn på den enda period det stänger, och perioden stängs sedan.
+Den fjärde var att `observed` sattes när monitortråden slutförts i stället för när ändpunkten
+svarat, så ett tillfälligt DNS-fel kunde skjuta upp en skyldig kontroll en hel vecka.
+Dessutom kräver staging nu att en kanal fryser just det verktyg den startar.
 
-- Runtime `veckodrift/digitala-20260929` vid `d910694` (worktree
-  `.runtime/ap11/integrations/veckodrift`, plus baslinjeworktree `…/veckodrift-baslinje` vid
-  `af78312` som bara användes för mätning och kan tas bort).
-- Kontoret `veckodrift/kontor-20260929` vid `ff98676` (worktree
-  `~/nortropic-repos/nortropic-kontor-veckodrift-20260929`, plus
-  `~/nortropic-repos/nortropic-kontor-baslinje-20260929` vid `34bcedd` för mätning).
-
-Nästa session gör, i denna ordning:
-1. Läs `evidence/runs/runtime-veckodrift-5/GRANSKNING-r5-DOM-OATGARDAD.md`. Där står fyra
-   öppna blockerare ordagrant: en monitorperiod som stängs av två transportfel utan att något
-   hälsosvar lästes; en återupptagning som blir grön när någon kanal var `not_due` i stället
-   för `own_period_record`; en attestering som godtar saknat, feltypat och gammalt hälsoläge;
-   och ett avbrott före periodskrivningen som ger dubbel driftkontroll inom samma period.
-   Plus anmärkningen att staging inte kontrollerar att rätt verktyg står i `digitala_files`.
-2. Rätta dem, med ett prov per rättning som faller utan den. Läs rundorna 1–4:s domar först:
-   två av mina tidigare rättningar var sämre än felen de löste.
-3. Kör om båda helsviterna tre gånger var mot baslinjen, och `scripts/probe_veckodrift.py`.
-   Skriv kvittona i en ny `evidence/runs/runtime-veckodrift-6/` och märk r5 ersatt.
-4. Ny oberoende granskning. Först vid godkänd dom: skyddad integration i båda repona, och
-   kvittera överlämningen levererad.
+Under rättningen fann jag två egna fel av samma sort: två loopvariabler i `bind_operations`
+skuggade `files` (releasens filtabell) och `value` (operationens indata). Det första hade
+lämnat operationsindatans hash utanför releasen, så körningen hade vägrats; det andra tystade
+periodkontrollen helt. Rundturstestet fällde båda, och två prov låser nu fast namnen.
 
 Aktiveringen är och förblir ägarens: staga och kvalificera releasen med `--operations`,
 aktivera övergången, och först då `operation_schedule install` + `resume`. Operationen binds

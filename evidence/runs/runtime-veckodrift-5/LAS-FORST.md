@@ -110,3 +110,8 @@ läser, alltså den ordinarie vägen vidare.
 blockerare står öppna i `GRANSKNING-r5-DOM-OATGARDAD.md` plus anmärkningen om `digitala_files` vid
 staging. Kvittona i den här katalogen gäller kandidaterna Runtime `d910694` och kontoret `ff98676`
 som de står — de är kvalificerade i den mening kvittona beskriver, men inte godkända.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-6/`.** Kvittot bevaras som spår; läs r6
+för det läge som gäller.

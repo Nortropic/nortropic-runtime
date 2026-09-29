@@ -148,9 +148,15 @@ class ReleaseOperationBindingTests(unittest.TestCase):
 
     # A complete drift channel, because staging now refuses a partial one: the handler
     # needs every one of these keys to start a frozen tool at all.
-    DRIFT = {'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/drift_kontroll.py': 'x'},
+    DRIFT = {'digitala_root': '/abs/frozen',
+             'digitala_files': {'verktyg/drift_kontroll.py': 'a' * 64},
              'python_path': '/abs/python', 'python_sha256': 'y',
              'plan': '/abs/DRIFT.json', 'plan_sha256': 'z', 'receipts': '/abs/kund'}
+    INTAKE = {'digitala_root': '/abs/frozen',
+              'digitala_files': {'verktyg/kundstart.py': 'b' * 64},
+              'python_path': '/abs/python', 'python_sha256': 'y',
+              'base_url': 'https://k.example', 'key_file': '/abs/k.secret',
+              'customer': '/abs/kund', 'executor': 'runtime-veckodrift'}
 
     def write_input(self, value):
         self.input.write_text(json.dumps(value))
@@ -289,11 +295,7 @@ class ReleaseOperationBindingTests(unittest.TestCase):
     def test_a_probe_flag_on_any_channel_is_refused(self):
         base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
         for channel in ('intake', 'drift'):
-            whole = self.DRIFT if channel == 'drift' else {
-                'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/kundstart.py': 'x'},
-                'python_path': '/abs/python', 'python_sha256': 'y',
-                'base_url': 'https://k.example', 'key_file': '/abs/k.secret',
-                'customer': '/abs/kund', 'executor': 'runtime-veckodrift'}
+            whole = self.DRIFT if channel == 'drift' else self.INTAKE
             self.write_input({**base, channel: {**whole, 'isolated_test': True}})
             with self.assertRaises(ValueError): self.bind()
             self.write_input({**base, channel: whole})
@@ -302,13 +304,7 @@ class ReleaseOperationBindingTests(unittest.TestCase):
     def test_an_incomplete_channel_binding_never_reaches_a_wakeup(self):
         # The handler needs every one of these to start a frozen tool at all, so a
         # release that omits one can only fail. Refuse it at staging instead.
-        drift = {'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/drift_kontroll.py': 'x'},
-                 'python_path': '/abs/python', 'python_sha256': 'y',
-                 'plan': '/abs/DRIFT.json', 'plan_sha256': 'z', 'receipts': '/abs/kund'}
-        intake = {'digitala_root': '/abs/frozen', 'digitala_files': {'verktyg/kundstart.py': 'x'},
-                  'python_path': '/abs/python', 'python_sha256': 'y',
-                  'base_url': 'https://k.example', 'key_file': '/abs/k.secret',
-                  'customer': '/abs/kund', 'executor': 'runtime-veckodrift'}
+        drift, intake = dict(self.DRIFT), dict(self.INTAKE)
         base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
         self.write_input({**base, 'drift': drift, 'intake': intake})
         self.assertIn('digitala-vecka', self.bind())
@@ -327,3 +323,44 @@ class ReleaseOperationBindingTests(unittest.TestCase):
             self.write_input({**base, 'monitor': {'url': 'https://kund.example/health',
                                                   'candidate': candidate}})
             with self.assertRaises(ValueError): self.bind()
+
+    def test_a_channel_must_freeze_the_tool_it_actually_starts(self):
+        # The handler refuses a binding that freezes the wrong tool, so staging must
+        # too - otherwise the release carries a channel that can only fail.
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        for channel, wrong in (('drift', 'verktyg/kundstart.py'),
+                               ('intake', 'verktyg/drift_kontroll.py')):
+            whole = dict(self.DRIFT if channel == 'drift' else self.INTAKE)
+            whole['digitala_files'] = {wrong: 'c' * 64}
+            self.write_input({**base, channel: whole})
+            with self.assertRaises(ValueError): self.bind()
+            whole['digitala_files'] = {}
+            self.write_input({**base, channel: whole})
+            with self.assertRaises(ValueError): self.bind()
+
+    def test_a_frozen_file_must_be_a_safe_relative_path_with_a_real_hash(self):
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        tool = 'verktyg/drift_kontroll.py'
+        for files in ({tool: 'a' * 64, '/etc/passwd': 'b' * 64},
+                      {tool: 'a' * 64, '../utanfor.py': 'b' * 64},
+                      {tool: 'inte-en-hash'},
+                      {tool: 'A' * 64},
+                      {tool: None},
+                      {tool: 'a' * 63}):
+            self.write_input({**base, 'drift': {**self.DRIFT, 'digitala_files': files}})
+            with self.assertRaises(ValueError): self.bind()
+
+    def test_a_channel_that_is_not_an_object_is_refused_not_a_crash(self):
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        for channel in ('intake', 'drift', 'monitor'):
+            for given in ('en strang', ['lista'], 7):
+                self.write_input({**base, channel: given})
+                with self.assertRaises(ValueError): self.bind()
+
+    def test_the_period_check_is_reached_after_every_channel_check(self):
+        # Regression: an inner loop rebound the operation input, so the period check
+        # silently tested membership in a hash string and never fired.
+        self.write_input({'schema': 'office-drift/1', 'state': str(self.home / 'private'),
+                          'drift': self.DRIFT, 'intake': self.INTAKE, 'period_seconds': 3600})
+        self.write_manifest({'ok': {'input': str(self.input), 'interval_seconds': 3601}})
+        with self.assertRaises(ValueError): self.bind()

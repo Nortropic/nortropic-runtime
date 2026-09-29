@@ -85,6 +85,8 @@ def bind_operations(directory, files, manifest):
         if not any(value.get(channel) for channel in ('intake', 'drift', 'monitor')):
             raise ValueError('Operation binds no intake, drift or monitor channel: ' + name)
         monitor = value.get('monitor') or {}
+        if monitor and not isinstance(monitor, dict):
+            raise ValueError('Monitor must be an object in ' + name)
         if monitor:
             # The handler accepts plain HTTP only for an isolated loopback probe. A
             # staged release is not one, so refuse it here rather than at the first
@@ -104,6 +106,8 @@ def bind_operations(directory, files, manifest):
             given = value.get(channel)
             if not given:
                 continue
+            if not isinstance(given, dict):
+                raise ValueError('Channel %s must be an object in %s' % (channel, name))
             if given.get('isolated_test') is not None:
                 raise ValueError('isolated_test belongs to a probe, not a release: ' + name)
             # The handler needs every one of these to start a frozen tool at all. A
@@ -114,6 +118,25 @@ def bind_operations(directory, files, manifest):
             missing = sorted(key for key in required if not given.get(key))
             if missing:
                 raise ValueError('Channel %s lacks %s in %s' % (channel, ', '.join(missing), name))
+            # The handler refuses a binding that does not freeze the tool this channel
+            # actually starts. Staging must refuse the same, or a release could carry a
+            # channel that can only fail at its first wakeup.
+            tool = 'verktyg/drift_kontroll.py' if channel == 'drift' else 'verktyg/kundstart.py'
+            # NOT `files`: that name is the release's own file table, and shadowing it
+            # here silently dropped the operation input's hash out of the release.
+            frozen_files = given['digitala_files']
+            if not isinstance(frozen_files, dict) or tool not in frozen_files:
+                raise ValueError('Channel %s must freeze %s in %s' % (channel, tool, name))
+            # Loop names kept distinct from `value` and `relative`, which hold the
+            # operation input and the release-relative input path further down. Rebinding
+            # either one here silently skipped the period check and dropped the input's
+            # hash out of the release; both were caught by the round-trip test.
+            for frozen, frozen_hash in sorted(frozen_files.items()):
+                inside = Path(frozen)
+                if (inside.is_absolute() or '..' in inside.parts
+                        or not isinstance(frozen_hash, str)
+                        or not re.fullmatch('[0-9a-f]{64}', frozen_hash)):
+                    raise ValueError('Unsafe or unhashed frozen file %s in %s' % (frozen, name))
             for key in ('digitala_root', 'python_path') + (
                     ('plan', 'receipts') if channel == 'drift' else ('key_file', 'customer')):
                 if not Path(str(given[key])).is_absolute():

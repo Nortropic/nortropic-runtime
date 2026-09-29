@@ -1800,9 +1800,13 @@ the end of the run, because the monitor's binding error is raised on purpose and
 a check that already ran from closing its week - a standing monitor fault would then make the weekly
 drift check hourly. A channel counts as performed only when its own reading actually happened: a
 health probe that never reached the endpoint at all leaves its period open, because nothing was
-checked. And a run that lost its receipt after closing a period cannot re-observe the outcome, so it
-reads the channels' own durable health back rather than claiming success; an interrupted incident run
-stays `completed: false`. A period is only ever closed by the run that did that channel's work, stamped with that
+checked. Settle then commit, in that order: a channel's outcome is recorded first, naming the one period it
+closes, and only then is the period closed. An interruption between the two leaves the work findable,
+so the next wakeup - any run id - completes the commit from what was observed instead of reading the
+customer's site again inside the same week, and the receipt carries the health that was actually
+measured. An interrupted incident therefore comes back `completed: false`, never green. Because the
+record names its one period it can never attest a later one, which was round 3's hazard. An absent
+record means nothing was recorded, so the work is owed - never that it was healthy. A period is only ever closed by the run that did that channel's work, stamped with that
 run's own start, so work done in an old period can never close a new one. A run interrupted after
 closing its own channel recognises its own record, reads nothing again, advances no sequence and
 finishes its receipt; that state is reported as `already_performed`, not as a period that merely had
@@ -1829,8 +1833,10 @@ reviewed and activated carrying an operation that can only ever fail and would s
 incident: no channel at all, a period outside its range, a wakeup slower than the period it is meant
 to keep, a monitor that is not an explicit HTTPS endpoint with a candidate that is an exact
 40-character string (not an integer laundered through `str()`), a channel missing any key the handler
-needs to start a frozen tool, a relative path where the handler requires an absolute one, and any
-`isolated_test` flag, which belongs to a probe and never to a release. Rebinding a name in place is
+needs to start a frozen tool, a channel that does not freeze the very tool it starts, a frozen path
+that is absolute or escapes, a hash that is not 64 hex characters, a relative path where the handler
+requires an absolute one, a channel that is not an object at all, and any `isolated_test` flag, which
+belongs to a probe and never to a release. Rebinding a name in place is
 refused rather than silently replacing reviewed bytes. The qualification refuses when staging and the
 handler disagree on the accepted period range, so neither copy of that bound is trusted alone.
 
@@ -1843,8 +1849,10 @@ so a server trickling bytes just inside it could read on indefinitely, hold the 
 state lock past the workflow's own bound and block later periods. The monitor now carries its own
 enforced deadline and reads with `read1`, because `read(n)` blocks until it has all n bytes.
 
-Four review rounds rejected this candidate; all four verdicts are preserved verbatim in
-`evidence/runs/runtime-veckodrift-5/`. Round 1: a period record from the future silenced the work
+Five review rounds rejected this candidate; all five verdicts are preserved verbatim in
+`evidence/runs/runtime-veckodrift-6/`. The work was paused on the owner's decision between rounds 5
+and 6 for the account's weekly quota, and resumed on his word when that reason was gone; both his
+decisions are in the Office's DIGITALA-VECKODRIFT-20260929. Round 1: a period record from the future silenced the work
 until that date arrived and year 9999 overflowed the arithmetic unhandled, so a record later than a
 small clock skew is now quarantined as malformed and the work runs; resuming an interrupted run closed
 the same period twice; the blanket word "reading"; test counts stated without a receipt.
@@ -1855,6 +1863,20 @@ bytes just inside the socket timeout ran 757 s against a declared 33. The attemp
 their own daemon thread and the channel returns when the join times out: that IS the ceiling. The
 binding is validated before the thread, because a wrong endpoint must still be refused loudly rather
 than reported as a bound that ran out - that regression was caught by D038's own test.
+
+Round 5 found four more, all mine, and three shared one root: a receipt or a health state attesting
+something it did not know. `observed` was set when the monitor's thread finished rather than when the
+endpoint answered, so a transient DNS failure could postpone a still-owed check a whole week; a resume
+went green whenever any channel was merely `not_due`; the attestation read a missing state file as
+healthy, validated nothing and bound nothing to the period; and an interruption before the period write
+gave a second drift check inside the same week. The settle-then-commit above answers all four. Staging
+also did not check that a channel freezes the tool it actually starts, which it now does.
+
+Two faults I found myself while repairing, both the same kind: in `bind_operations` two loop variables
+shadowed outer names - `files`, the release's own file table, and `value`, the operation input. The first
+dropped the operation input's hash out of the release, so `scheduled_operation.operation` would have
+refused the operation at run time; the second silenced the period check entirely, because
+`'period_seconds' in value` tested membership in a hash string. The round-trip test caught both.
 
 Round 4 found four more, all of them mine. The stranded-thread cap did not hold at all: Runtime
 loads the handler afresh for every activity, so a registry in module state reset each wakeup while
@@ -1880,19 +1902,24 @@ mine to decide. The owner decided it on 2026-09-29 before 16:07Z; his words and 
 they answered are in the Office's DIGITALA-VECKODRIFT-20260929. Staging, activation and the schedule
 are not covered by that and remain his row in ÄGARENS TUR.
 
-Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-5/`
-(rounds 1 to 4 are kept and marked superseded). Three real scheduled wakeups on the existing engine
+Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-6/`
+(rounds 1 to 5 are kept and marked superseded). Four real scheduled wakeups on the existing engine
 with an isolated queue and schedule name, the candidate Office handler and Digitala's real frozen
 tools started as real subprocesses. A clean check, a no-op wakeup inside the period that made no
 request at all, and an overdue period performed as an incident with its customer receipt and one
 private acknowledgement. In that third wakeup only the drift channel's record was moved back, so the
 intake channel stayed inside its own period and made no request at all - the periods are shown to be
-independent, not asserted to be.
+independent, not asserted to be. The fourth wakeup finds an interrupted settle-then-commit, closes the
+period from the health that was recorded, comes back `completed: false` rather than green, and makes no
+further request; the planted state is byte-shaped exactly as the handler's own writer produces it, while
+a real interruption at that exact point is exercised in Office's tests.
 
 Measured suites, three consecutive runs of each, all twelve preserved rather than summarised, and
-all from this round's revisions alone: Runtime 671 tests and Office 560, against 656 and 509 on
+all from this round's revisions alone: Runtime 675 tests and Office 563, against 656 and 509 on
 unchanged main `af78312`/`34bcedd` on the same machine with the same interpreter, so the candidate
-adds 15 and 51 tests; the handler's own file goes from 10 to 61. Office is green in all six runs. Two
+adds 19 and 54 tests. The handler's own file gives 64 test runs over 52 distinct method names, against
+10 on unchanged main: twelve test methods live in a shared fixture inherited by two classes, so runs
+and method names are not the same number - round 5 found that an earlier wording hid it. Office is green in all six runs. Two
 Runtime tests fail and neither is this candidate's: the `test_web_profiles` Chrome-process check fails
 in every run, candidate and baseline alike, its `/bin/ps` listing not finding the process the test
 started; and the `test_bounded` process-group tests fail unsteadily, ending in `PermissionError` from

@@ -1,0 +1,19 @@
+{
+ "schema": 1,
+ "kund": "Provkund",
+ "tid": "2026-09-29T18:43:00Z",
+ "sajter": [
+  {
+   "adress": "http://127.0.0.1:64036/",
+   "status": 503,
+   "ms": 23,
+   "cert_dagar": null,
+   "incident": true,
+   "fynd": [
+    "svarar 503"
+   ]
+  }
+ ],
+ "incidenter": 1,
+ "not": "läsande kontroll; vid incident: läs kvittot, kontrollera värdplattformens status, återgång enligt lansering.md; ingen automatisk åtgärd"
+}

@@ -98,3 +98,8 @@ läser, alltså den ordinarie vägen vidare.
 
 **ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-5/`.** Granskningsrunda 4 underkände kandidaten
 efter denna runda. Kvittot bevaras som spår; läs r5 för det läge som gäller.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-6/`.** Kvittot bevaras som spår; läs r6
+för det läge som gäller.

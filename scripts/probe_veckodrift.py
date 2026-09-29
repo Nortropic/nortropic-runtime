@@ -160,6 +160,21 @@ def build(output, office_handler, digitala, interpreter, fixtures):
     return name, config, state, customer, plan
 
 
+def settle_without_commit(state, channel):
+    """Stand in for a run that recorded its outcome and died before closing the period.
+
+    The record written here is byte-identical in shape to what the handler's own
+    settle_outcome writes, and it names an incident, so the commit must come back
+    `completed: false` rather than green.
+    """
+    period = json.loads((state / ('period-' + channel + '.json')).read_text())
+    record = {'closes_sequence': period['sequence'] + 1, 'healthy': False,
+              'reason': 'site_incident', 'run_id': 'avbruten-korning',
+              'observed_at': datetime.now(timezone.utc).isoformat()}
+    (state / ('settled-' + channel + '.json')).write_text(json.dumps(record, indent=2) + '\n')
+    return record
+
+
 def rewind(state, channel, seconds):
     """Stand in for a host that slept past one channel's due time.
 
@@ -229,7 +244,7 @@ async def probe(output, office_handler, digitala, interpreter):
                 schedule.action.task_queue = name
                 schedule.spec = ScheduleSpec(
                     intervals=[ScheduleIntervalSpec(every=timedelta(seconds=TICK_SECONDS))])
-                schedule.state.limited_actions = True; schedule.state.remaining_actions = 3
+                schedule.state.limited_actions = True; schedule.state.remaining_actions = 4
                 handle = await client.create_schedule(name, schedule)
                 await asyncio.sleep(1)
                 if (await handle.describe()).info.num_actions:
@@ -295,10 +310,27 @@ async def probe(output, office_handler, digitala, interpreter):
                 if late['deliveries']['drift']['receipts'][0]['recipient'] != 'kontorets-privata-driftyta':
                     raise RuntimeError('Incident was not acknowledged by the private recipient')
 
+                # 4. A settle-then-commit that was interrupted: the outcome is on disk
+                #    but its period was never closed. The next wakeup must finish that
+                #    commit from what was observed, without reading the site again.
+                interrupted = settle_without_commit(state, 'drift')
+                site_before, signal_before = fixtures.site_calls, fixtures.signal_calls
+                workflow_id, committed = await next_result(client, handle, seen)
+                runs.append({'wakeup': 4, 'workflow_id': workflow_id, 'result': committed})
+                if not (committed.get('skipped') == 'already_performed'
+                        and committed['performed_channels'] == []
+                        and committed['attested_by'] == 'settled_outcome'
+                        and committed['settled_channels']['drift'] == interrupted
+                        and committed['completed'] is False
+                        and committed['periods_recorded']['drift']['sequence'] == 3):
+                    raise RuntimeError('Interrupted settle was not committed: ' + json.dumps(committed))
+                if (fixtures.site_calls, fixtures.signal_calls) != (site_before, signal_before):
+                    raise RuntimeError('The commit read the site or Kundstart again')
+
                 await handle.pause(note='Isolated qualification finished')
                 after = await handle.describe()
                 native_status = await execution_status(client, after)
-                if after.info.num_actions != 3 or after.schedule.state.remaining_actions != 0:
+                if after.info.num_actions != 4 or after.schedule.state.remaining_actions != 0:
                     raise RuntimeError('Native wakeup budget differs')
 
         receipts = sorted(customer.glob('DRIFT-*.json'))
@@ -318,6 +350,7 @@ async def probe(output, office_handler, digitala, interpreter):
             'ordinary_wakeup_seconds': WAKEUP_SECONDS, 'period_seconds': PERIOD_SECONDS,
             'accelerated_tick_seconds': TICK_SECONDS,
             'rewound_drift_period_to': rewound,
+            'interrupted_settle_committed': interrupted,
             'period_state': {path.name: json.loads(path.read_text())
                              for path in sorted(state.glob('period-*.json'))},
             'site_requests': fixtures.site_calls, 'signal_requests': fixtures.signal_calls,
@@ -338,8 +371,8 @@ async def probe(output, office_handler, digitala, interpreter):
                           'No release was staged, selected or activated.')}
         (output / 'RESULTAT.json').write_text(
             json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
-        print(json.dumps({'passed': True, 'output': str(output), 'wakeups': 3,
-                          'due_runs': 2, 'no_op_wakeups': 1,
+        print(json.dumps({'passed': True, 'output': str(output), 'wakeups': 4,
+                          'due_runs': 2, 'no_op_wakeups': 1, 'committed_wakeups': 1,
                           'office_bound_seconds': bound}))
     finally:
         if handle:
