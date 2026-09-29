@@ -121,7 +121,7 @@ Kvitto: `evidence/runs/runtime-veckodrift-7/` ur `scripts/probe_veckodrift.py` �
 verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
 kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
 ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
-period (`overdue_seconds` 3620) som utfördes som incident med kundkvitto och en privat
+period (`overdue_seconds` 3619) som utfördes som incident med kundkvitto och en privat
 kvittens. I den tredje väckningen flyttades bara driftkanalens kvitto bakåt, så intaget stod
 kvar inne i sin egen period och gjorde inte ett enda anrop: perioderna per kanal är visade,
 inte påstådda. Provet vägrar också om installeraren och hanteraren är oense om
@@ -137,8 +137,8 @@ provfil ger 85 provkörningar på 61 olika metodnamn, mot 10 på oförändrad ma
 inte samma tal. Processgruppsfelet föll i denna runda i noll kandidatkörningar och en
 baslinjekörning av tre vardera. Kontoret är grönt i alla sex körningarna. Två Runtime-prov faller och
 ingetdera är kandidatens: ett Chrome-processprov i varje körning, kandidat som baslinje, och
-`test_bounded`-provens processgruppfel ostadigt i en kandidat- och en baslinjekörning av tre
-vardera. Ingetdera har någon kodväg till det kandidaten ändrar. Vad som orsakar dem är inte
+`test_bounded`-provens processgruppfel ostadigt — i denna runda bara i baslinjen.
+Ingetdera har någon kodväg till det kandidaten ändrar. Vad som orsakar dem är inte
 utrett, och inget utöver "finns i båda revisionerna" påstås.
 
 Inte visat och inte gjort: sajten och signalytan är loopback-provdata, inte en kundadress
@@ -147,7 +147,43 @@ macOS-sömn är inte utövade i verklig tid. Ingen release är stagad, vald elle
 AP-10:s schema, tjänst och arbetare är orörda. Schemat installeras pausat och kräver
 uttryckligt `resume`.
 
-## Pausen upphävd 2026-09-29 ca 18:32Z; runda 5:s fyra blockerare rättade
+## PAUSAT PÅ ÄGARENS BESLUT 2026-09-29 ca 20:0xZ — ej integrerat, ej levererat
+
+Runda 7 underkände, och ägaren hade beslutat att den skulle avgöra: godkänd betydde
+integrera och leverera, underkänd betydde pausa tills en riktig kund är på väg. Skälet är
+alltså inte längre veckokvoten. Hans ord och frågan de svarade på står i kontorets
+DIGITALA-VECKODRIFT-20260929.
+
+Ingen integration är gjord. Överlämningen OVL-20260929-4f194f står kvar som **startad**.
+Kandidaterna är frysta och behålls med namngivet skäl enligt AGENTS.md, inte som lokala
+arbetsgrenar utan avslut:
+
+- Runtime `veckodrift/digitala-20260929` vid `18a3171`, worktree
+  `.runtime/ap11/integrations/veckodrift`.
+- Kontoret `veckodrift/kontor-20260929` vid `e15ad76`, worktree
+  `~/nortropic-repos/nortropic-kontor-veckodrift-20260929`.
+- Mätbaslinjernas worktrees är borttagna; de bar ingen egen gren.
+
+**Vad omstarten bör göra — och inte.** Läs
+`evidence/runs/runtime-veckodrift-7/GRANSKNING-r7-DOM-OATGARDAD.md`. Fyra blockerare och en
+anmärkning står öppna där. Men bygg inte vidare på den här mekaniken utan läs först
+granskarens egen slutsats i blockerare 4: det finns ingen generell lösning som både undviker
+omläsning och säkerställer utförande när utfallet saknar beständigt bevis. Sju rundor gick åt
+till att jaga "exakt en gång", och två av mina rättningar var sämre än felen de löste —
+båda gjorde att en missad vecka kunde döljas.
+
+Ägarens förslag till omstarten, som den här sessionen inte prövade: **hellre en körning för
+mycket än exakt en gång.** Driftkontrollen är renodlat läsande, och kvittensen får enligt
+KUNDSTART-KONTRAKT.md upprepas utan skada. Med den utgångspunkten försvinner hela
+settle-then-commit-mekaniken, `attempt-`/`settled-`posterna och attesteringen, och kvar blir
+en period per kanal plus ett `observed` som säger om ändpunkten svarade. Det är sannolikt
+rätt avvägning, och den bör prövas innan något av det som står i domen byggs vidare.
+
+Ordning för nästa session: 1) läs domen och detta stycke, 2) avgör med ägaren om den enklare
+modellen ska ersätta mekaniken, 3) bygg den valda vägen, 4) mät om och granska på nytt, 5)
+integrera först vid godkänd dom, och kvittera då överlämningen levererad.
+
+## Läget när arbetet pausades: runda 5:s fyra blockerare rättade, runda 6:s två av tre
 
 Arbetet pausades 18:08Z för veckokvotens skull och återupptogs när det skälet var borta.
 Båda ägarbeskeden står ordagrant i kontorets DIGITALA-VECKODRIFT-20260929; kvotprovet strax

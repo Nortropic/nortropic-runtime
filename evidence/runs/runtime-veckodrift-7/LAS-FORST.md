@@ -72,7 +72,7 @@ loopback-HTTP.
   sekvens 1. `completed: true`.
 - Väckning 2: båda inne i sin period. `not_due`, noll anrop, inget körkvitto. `completed: true`.
 - Väckning 3: bara driftkanalens periodkvitto flyttat bakåt, och sajten ur funktion. Driftkontrollen
-  utfördes (`overdue_seconds` 3620), fann incidenten, skrev kvittot i kundmappen och levererade händelsen
+  utfördes (`overdue_seconds` 3619), fann incidenten, skrev kvittot i kundmappen och levererade händelsen
   en gång till kontorets privata driftyta. Intaget stod kvar inne i sin egen period och gjorde inte ett
   enda anrop. `completed: false`.
 - Väckning 4: en avbruten settle-then-commit. Svarade `already_performed`,
