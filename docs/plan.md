@@ -35,8 +35,12 @@ inför den inte och ändrar inte en byte i konsumenten: det frysta verktyget sta
 
 Utfall och period är två faser: `settled-<kanal>.json` först, `period-<kanal>.json` sedan. En
 avbruten körnings arbete slutförs därför av nästa väckning ur det som observerades, i stället
-för att läsas om, och kvittot bär `attested_by: settled_outcome`. Ett saknat utfallskvitto
-betyder att arbetet är skyldigt, aldrig att det var friskt.
+för att läsas om, och kvittot bär `attested_by: settled_outcome`. Posten beskriver antingen
+perioden som ska stängas eller den som är stängd, så en körning som tappat sitt kvitto skriver
+det ur sitt eget utfall — bara sitt eget, så en senare vanlig väckning ärver inte förra
+periodens incident. Ett saknat utfallskvitto betyder att arbetet är skyldigt, aldrig att det
+var friskt. Dör en körning innan utfallet bokförts är det okänt om kontrollen hann klart, och
+då läses den om en gång och redovisas som `retried_after_interruption`.
 
 Väckningen är inte perioden. `interval_seconds` väcker operationen (3600 i den beredda
 bindningen); kontorets hanterare avgör ur sitt eget beständiga periodkvitto om veckan
@@ -71,14 +75,23 @@ schemagränserna är namngivna konstanter (300/330/360) eftersom tre kanaler int
 D038:s 180 s; kontorets `BOUND_SECONDS` är 255 och kvalificeringen mäter den mot de
 hanterarbyte som prövas, i stället för att kopiera talet in i ett Runtime-prov.
 
-Fem granskningsrundor underkände kandidaten; alla fem domarna ligger ordagrant i
-`evidence/runs/runtime-veckodrift-6/`. Runda 1 fällde fem blockerare. Runda 2 visade att två
+Sex granskningsrundor underkände kandidaten; alla sex domarna ligger ordagrant i
+`evidence/runs/runtime-veckodrift-7/`. Runda 1 fällde fem blockerare. Runda 2 visade att två
 av rättningarna inte räckte: att binda kroppsläsningen lämnade statusrad och headers obundna —
 inget i anropet binder dem alls — och en server som droppade headerbyte strax inom
 socket-timeouten körde 757 s mot deklarerade 33. Försöken går nu i egen daemontråd och kanalen
 återvänder när join:en löper ut; det ÄR taket.
 
-Runda 5 fann fyra fel till, alla mina: `observed` sattes när monitortråden slutförts i stället
+Runda 6 fann tre fel till: ett avbrott efter periodstängningen kunde ändå svara grönt, ett
+mottaget HTTP-svar kastades när kroppen eller den yttre gränsen sedan löpte ut, och
+dubbelläsningsluckan hade flyttats i stället för stängts. De två första är rättade.
+Den tredje besvaras med en uttalad avvägning: ett avbrott mellan att en läsning startar
+och att dess utfall bokförs gör det okänt om kontrollen hann klart, och då är de enda
+utgångarna att läsa om en gång eller att stänga en period vars resultat aldrig setts.
+Det senare döljer veckan — det var precis vad mina rättningar i runda 3 och 5 gjorde — så
+läsningen görs om, en gång, och syns som `retried_after_interruption` i kvittot.
+
+Runda 5 fann fyra fel, alla mina: `observed` sattes när monitortråden slutförts i stället
 för när ändpunkten svarat; en återupptagning blev grön när någon kanal bara var `not_due`;
 attesteringen godtog saknat, feltypat och gammalt hälsoläge; och ett avbrott före
 periodskrivningen gav dubbel driftkontroll inom samma vecka. Alla fyra är rättade med
@@ -104,7 +117,7 @@ stred mot beställningens gräns hur sant den än beskrevs. Det var rätt, och d
 att avgöra. Ägaren avgjorde det före 16:07Z; hans ord står i kontorets
 DIGITALA-VECKODRIFT-20260929. Staging, aktivering och schemat täcks inte av beskedet.
 
-Kvitto: `evidence/runs/runtime-veckodrift-6/` ur `scripts/probe_veckodrift.py` — fyra
+Kvitto: `evidence/runs/runtime-veckodrift-7/` ur `scripts/probe_veckodrift.py` — fyra
 verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
 kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
 ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
@@ -114,14 +127,15 @@ kvar inne i sin egen period och gjorde inte ett enda anrop: perioderna per kanal
 inte påstådda. Provet vägrar också om installeraren och hanteraren är oense om
 periodintervallet. Den fjärde väckningen hittar en avbruten settle-then-commit, stänger perioden
 ur den hälsa som bokfördes, kommer tillbaka `completed: false` och gör inget nytt anrop.
-Rundorna 1–5:s kvitton är bevarade och märkta ersatta.
+Rundorna 1–6:s kvitton är bevarade och märkta ersatta.
 
 Svitkvitton, tre körningar av varje, alla tolv bevarade och alla ur denna rundas revisioner:
-Runtime 675 prov och kontoret 563, mot 656 och 509 på oförändrad main `af78312`/`34bcedd` på
-samma maskin med samma tolk; kandidaten lägger till 19 respektive 54 prov. Hanterarens egen
-provfil ger 64 provkörningar på 52 olika metodnamn, mot 10 på oförändrad main — tolv
-`test_`-metoder ligger i en delad fixtur som ärvs av två klasser, så körningar och metodnamn är
-inte samma tal. Kontoret är grönt i alla sex körningarna. Två Runtime-prov faller och
+Runtime 676 prov och kontoret 584, mot 656 och 509 på oförändrad main `af78312`/`34bcedd` på
+samma maskin med samma tolk; kandidaten lägger till 20 respektive 75 prov. Hanterarens egen
+provfil ger 85 provkörningar på 61 olika metodnamn, mot 10 på oförändrad main — tolv
+`test_`-metoder ligger i en delad fixtur som ärvs av tre klasser, så körningar och metodnamn är
+inte samma tal. Processgruppsfelet föll i denna runda i noll kandidatkörningar och en
+baslinjekörning av tre vardera. Kontoret är grönt i alla sex körningarna. Två Runtime-prov faller och
 ingetdera är kandidatens: ett Chrome-processprov i varje körning, kandidat som baslinje, och
 `test_bounded`-provens processgruppfel ostadigt i en kandidat- och en baslinjekörning av tre
 vardera. Ingetdera har någon kodväg till det kandidaten ändrar. Vad som orsakar dem är inte

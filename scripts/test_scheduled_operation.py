@@ -150,11 +150,11 @@ class ReleaseOperationBindingTests(unittest.TestCase):
     # needs every one of these keys to start a frozen tool at all.
     DRIFT = {'digitala_root': '/abs/frozen',
              'digitala_files': {'verktyg/drift_kontroll.py': 'a' * 64},
-             'python_path': '/abs/python', 'python_sha256': 'y',
-             'plan': '/abs/DRIFT.json', 'plan_sha256': 'z', 'receipts': '/abs/kund'}
+             'python_path': '/abs/python', 'python_sha256': 'd' * 64,
+             'plan': '/abs/DRIFT.json', 'plan_sha256': 'e' * 64, 'receipts': '/abs/kund'}
     INTAKE = {'digitala_root': '/abs/frozen',
               'digitala_files': {'verktyg/kundstart.py': 'b' * 64},
-              'python_path': '/abs/python', 'python_sha256': 'y',
+              'python_path': '/abs/python', 'python_sha256': 'd' * 64,
               'base_url': 'https://k.example', 'key_file': '/abs/k.secret',
               'customer': '/abs/kund', 'executor': 'runtime-veckodrift'}
 
@@ -363,4 +363,13 @@ class ReleaseOperationBindingTests(unittest.TestCase):
         self.write_input({'schema': 'office-drift/1', 'state': str(self.home / 'private'),
                           'drift': self.DRIFT, 'intake': self.INTAKE, 'period_seconds': 3600})
         self.write_manifest({'ok': {'input': str(self.input), 'interval_seconds': 3601}})
+        with self.assertRaises(ValueError): self.bind()
+
+    def test_a_hash_that_can_never_match_a_sha256_is_refused(self):
+        base = {'schema': 'office-drift/1', 'state': str(self.home / 'private')}
+        for key in ('python_sha256', 'plan_sha256'):
+            for bad in ('y', 'A' * 64, 'a' * 63, None, 1):
+                self.write_input({**base, 'drift': {**self.DRIFT, key: bad}})
+                with self.assertRaises(ValueError): self.bind()
+        self.write_input({**base, 'intake': {**self.INTAKE, 'python_sha256': 'z'}})
         with self.assertRaises(ValueError): self.bind()

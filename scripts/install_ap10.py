@@ -141,6 +141,11 @@ def bind_operations(directory, files, manifest):
                     ('plan', 'receipts') if channel == 'drift' else ('key_file', 'customer')):
                 if not Path(str(given[key])).is_absolute():
                     raise ValueError('%s.%s must be an absolute path in %s' % (channel, key, name))
+            # A value that is not 64 hex characters can never equal a SHA256, so the
+            # handler would refuse it at the first wakeup. Refuse it while staging.
+            for key in ('python_sha256',) + (('plan_sha256',) if channel == 'drift' else ()):
+                if not re.fullmatch('[0-9a-f]{64}', str(given[key])):
+                    raise ValueError('%s.%s is not a SHA256 in %s' % (channel, key, name))
         if 'period_seconds' in value:
             period = value['period_seconds']
             if type(period) is not int or not PERIOD_FLOOR <= period <= PERIOD_CEILING:

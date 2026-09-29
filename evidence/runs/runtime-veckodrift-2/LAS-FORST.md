@@ -76,3 +76,8 @@ efter denna runda. Kvittot bevaras som spår; läs r5 för det läge som gäller
 
 **ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-6/`.** Kvittot bevaras som spår; läs r6
 för det läge som gäller.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-7/`.** Kvittot bevaras som spår; läs r7
+för det läge som gäller.

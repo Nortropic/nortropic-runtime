@@ -436,11 +436,15 @@ the weekly drift check into an hourly one. `skipped: already_performed` means a 
 after doing its own work and finished only its receipt; `not_due` means the period had not elapsed.
 A channel is `performed` only when its own reading actually happened: a health probe whose endpoint
 never answered (transport, DNS or timeout) leaves its period open, while a status code or a read body is
-an answer about the site and closes it. Outcome and period are two phases - `settled-<channel>.json`
+an answer about the site and closes it - counted the moment the status arrives, so a body that then
+hangs cannot erase it. Outcome and period are two phases - `settled-<channel>.json`
 first, `period-<channel>.json` second - so an interrupted run's work is completed by the next wakeup from
 what it observed rather than read again; `skipped: already_performed` is that commit, and the receipt then
 carries `attested_by: settled_outcome`. An absent settled record means the work is owed, never that it was
-healthy. Qualification receipt: `evidence/runs/runtime-veckodrift-6/` (earlier rounds are kept and marked
+healthy. A crash between a reading starting and its outcome being recorded leaves it unknown whether the
+check completed, so the next wakeup reads once more and says `retried_after_interruption` - closing a
+period whose result was never seen would hide the week. Qualification receipt:
+`evidence/runs/runtime-veckodrift-7/` (earlier rounds are kept and marked
 superseded).
 
 The worker process runs a separate `office-operations` queue and activity slot; a model/AP-10 activity

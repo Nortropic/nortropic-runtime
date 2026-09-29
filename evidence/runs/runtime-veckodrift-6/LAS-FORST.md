@@ -115,3 +115,8 @@ isolerade schemat till 10 sekunder och prövade perioden vid dess golv.
   kontorets prov mot en droppande server och en frusen transport, inte i motorprovet. `BOUND_SECONDS`
   binder när kanalen återvänder, inte livstiden på ett uttag som operativsystemet ännu håller.
 - Ingen release stagades, valdes eller aktiverades, och AP-10:s schema, tjänst och arbetare rördes inte.
+
+---
+
+**ERSATT 2026-09-29 av `evidence/runs/runtime-veckodrift-7/`.** Kvittot bevaras som spår; läs r7
+för det läge som gäller.

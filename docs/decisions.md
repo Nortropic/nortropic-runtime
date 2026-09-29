@@ -1801,7 +1801,9 @@ a check that already ran from closing its week - a standing monitor fault would 
 drift check hourly. A channel counts as performed only when its own reading actually happened: a
 health probe that never reached the endpoint at all leaves its period open, because nothing was
 checked. Settle then commit, in that order: a channel's outcome is recorded first, naming the one period it
-closes, and only then is the period closed. An interruption between the two leaves the work findable,
+describes - either the one about to be closed or the one already closed - and only then is the period
+closed. A run that lost its own receipt writes it from its own outcome, and only its own: a later
+ordinary wakeup does not inherit last period's incident. An interruption between the two leaves the work findable,
 so the next wakeup - any run id - completes the commit from what was observed instead of reading the
 customer's site again inside the same week, and the receipt carries the health that was actually
 measured. An interrupted incident therefore comes back `completed: false`, never green. Because the
@@ -1834,7 +1836,8 @@ incident: no channel at all, a period outside its range, a wakeup slower than th
 to keep, a monitor that is not an explicit HTTPS endpoint with a candidate that is an exact
 40-character string (not an integer laundered through `str()`), a channel missing any key the handler
 needs to start a frozen tool, a channel that does not freeze the very tool it starts, a frozen path
-that is absolute or escapes, a hash that is not 64 hex characters, a relative path where the handler
+that is absolute or escapes, any hash that is not 64 hex characters - including `python_sha256` and
+`plan_sha256`, which could never equal a real digest otherwise - a relative path where the handler
 requires an absolute one, a channel that is not an object at all, and any `isolated_test` flag, which
 belongs to a probe and never to a release. Rebinding a name in place is
 refused rather than silently replacing reviewed bytes. The qualification refuses when staging and the
@@ -1849,8 +1852,8 @@ so a server trickling bytes just inside it could read on indefinitely, hold the 
 state lock past the workflow's own bound and block later periods. The monitor now carries its own
 enforced deadline and reads with `read1`, because `read(n)` blocks until it has all n bytes.
 
-Five review rounds rejected this candidate; all five verdicts are preserved verbatim in
-`evidence/runs/runtime-veckodrift-6/`. The work was paused on the owner's decision between rounds 5
+Six review rounds rejected this candidate; all six verdicts are preserved verbatim in
+`evidence/runs/runtime-veckodrift-7/`. The work was paused on the owner's decision between rounds 5
 and 6 for the account's weekly quota, and resumed on his word when that reason was gone; both his
 decisions are in the Office's DIGITALA-VECKODRIFT-20260929. Round 1: a period record from the future silenced the work
 until that date arrived and year 9999 overflowed the arithmetic unhandled, so a record later than a
@@ -1863,6 +1866,20 @@ bytes just inside the socket timeout ran 757 s against a declared 33. The attemp
 their own daemon thread and the channel returns when the join times out: that IS the ceiling. The
 binding is validated before the thread, because a wrong endpoint must still be refused loudly rather
 than reported as a bound that ran out - that regression was caught by D038's own test.
+
+Round 6 found three more. A crash after the period closed could still answer green, because the
+outcome was only ever read for the period not yet closed; an HTTP status that had already arrived was
+discarded when the body read or the outer bound then ran out, leaving the period open and the check
+recurring every wakeup; and the duplicate-read window had moved rather than closed.
+
+That last one is answered with a stated trade-off rather than a mechanism, and it is a decision, not a
+gap. A crash between a reading starting and its outcome being recorded leaves it genuinely unknown
+whether the check completed. Nothing can know the outcome of work that is not done, so the choice is to
+read once more or to close a period whose result was never seen. The second hides the week, which the
+order forbids - and it is exactly what my repairs in rounds 3 and 5 did while trying to eliminate the
+duplicate. So the reading happens again, exactly once, and it is visible: an attempt marker is written
+before the reading has any effect, and the next wakeup reports `retried_after_interruption`. The cost is
+one extra read of the customer's own site and one extra DRIFT receipt; nothing is written at any provider.
 
 Round 5 found four more, all mine, and three shared one root: a receipt or a health state attesting
 something it did not know. `observed` was set when the monitor's thread finished rather than when the
@@ -1902,8 +1919,8 @@ mine to decide. The owner decided it on 2026-09-29 before 16:07Z; his words and 
 they answered are in the Office's DIGITALA-VECKODRIFT-20260929. Staging, activation and the schedule
 are not covered by that and remain his row in ÄGARENS TUR.
 
-Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-6/`
-(rounds 1 to 5 are kept and marked superseded). Four real scheduled wakeups on the existing engine
+Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-7/`
+(rounds 1 to 6 are kept and marked superseded). Four real scheduled wakeups on the existing engine
 with an isolated queue and schedule name, the candidate Office handler and Digitala's real frozen
 tools started as real subprocesses. A clean check, a no-op wakeup inside the period that made no
 request at all, and an overdue period performed as an incident with its customer receipt and one
@@ -1915,15 +1932,15 @@ further request; the planted state is byte-shaped exactly as the handler's own w
 a real interruption at that exact point is exercised in Office's tests.
 
 Measured suites, three consecutive runs of each, all twelve preserved rather than summarised, and
-all from this round's revisions alone: Runtime 675 tests and Office 563, against 656 and 509 on
+all from this round's revisions alone: Runtime 676 tests and Office 584, against 656 and 509 on
 unchanged main `af78312`/`34bcedd` on the same machine with the same interpreter, so the candidate
-adds 19 and 54 tests. The handler's own file gives 64 test runs over 52 distinct method names, against
-10 on unchanged main: twelve test methods live in a shared fixture inherited by two classes, so runs
+adds 20 and 75 tests. The handler's own file gives 85 test runs over 61 distinct method names, against
+10 on unchanged main: twelve test methods live in a shared fixture inherited by three classes, so runs
 and method names are not the same number - round 5 found that an earlier wording hid it. Office is green in all six runs. Two
 Runtime tests fail and neither is this candidate's: the `test_web_profiles` Chrome-process check fails
 in every run, candidate and baseline alike, its `/bin/ps` listing not finding the process the test
 started; and the `test_bounded` process-group tests fail unsteadily, ending in `PermissionError` from
-`os.killpg`, in one candidate and one baseline run of three each. Neither has any code path to what this candidate
+`os.killpg`, in this round no candidate run and one baseline run of three each. Neither has any code path to what this candidate
 changes: `scripts/bounded.py` and its tests import neither changed module, and the Office handler is
 in another repository. What causes them is NOT established - `/bin/ps` and `os.killpg` both succeed
 when run alone in the same shell - so nothing beyond "present in both revisions" is claimed.
