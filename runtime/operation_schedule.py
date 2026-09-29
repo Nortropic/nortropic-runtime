@@ -11,7 +11,7 @@ from temporalio.common import RetryPolicy
 from temporalio.service import RPCError
 from .release import require_active_code, delegate
 from .shared import SharedService
-from .scheduled_operation import ScheduledOperation, operation
+from .scheduled_operation import ScheduledOperation, operation, EXECUTION_BOUND
 
 
 def definition(config, identifier):
@@ -20,9 +20,13 @@ def definition(config, identifier):
     every = config['scheduled_operations'][identifier]['interval_seconds']
     return Schedule(action=ScheduleActionStartWorkflow(ScheduledOperation.run, request,
         id='operation-' + identifier, task_queue='office-operations',
-        execution_timeout=timedelta(seconds=240), retry_policy=RetryPolicy(maximum_attempts=1,
+        execution_timeout=timedelta(seconds=EXECUTION_BOUND), retry_policy=RetryPolicy(maximum_attempts=1,
             maximum_interval=timedelta(seconds=100))),
         spec=ScheduleSpec(intervals=[ScheduleIntervalSpec(every=timedelta(seconds=every))]),
+        # SKIP, not a buffer: Office's handler takes an exclusive lock on its state
+        # directory, so a second concurrent wakeup would fail and read as an incident.
+        # A dropped wakeup costs nothing because dueness lives in Office's durable
+        # state, which is also why the catch-up window stays small deliberately.
         policy=SchedulePolicy(overlap=ScheduleOverlapPolicy.SKIP,
             catchup_window=timedelta(seconds=min(60, every)), pause_on_failure=False),
         state=ScheduleState(paused=True, note='Prepared from reviewed release; explicit resume required'))

@@ -3,6 +3,11 @@
 The activated release chooses Office's handler and all inputs. A schedule supplies
 only an operation id and the release hash; neither models nor events select code.
 Business state and idempotency stay with Office/the ordinary customer tools.
+
+The interval here is a wakeup, not the work's period. Office's handler decides from
+its own durable state whether the period has elapsed, so a period missed because the
+host slept is performed by the first wakeup that becomes possible rather than being
+skipped, and Temporal's catch-up window is not what has to carry that guarantee.
 """
 import asyncio
 from datetime import timedelta
@@ -13,6 +18,15 @@ import re
 
 from temporalio import activity, workflow
 from temporalio.common import RetryPolicy
+
+# One place for the whole bound, so the schedule, the workflow and the activity can
+# not drift apart. Every value must exceed Office's own BOUND_SECONDS, which sums its
+# intake, drift and monitor ceilings; scripts/probe_veckodrift.py asserts that against
+# the release's actual handler bytes rather than against a number repeated here.
+ACTIVITY_BOUND = 300
+SCHEDULE_TO_CLOSE_BOUND = ACTIVITY_BOUND + 30
+EXECUTION_BOUND = SCHEDULE_TO_CLOSE_BOUND + 30
+HEARTBEAT_BOUND = 15
 
 
 def operation(config, request):
@@ -56,9 +70,9 @@ async def scheduled_operation(request: dict) -> dict:
         result = task.result()
     except asyncio.CancelledError:
         # Repeated cancellation must not interrupt durable cleanup or replace
-        # cancellation with the handler's exception. The handler is itself bound
-        # to 120 s consumer + 17 s health I/O; keep this extra wait bounded too.
-        deadline = asyncio.get_running_loop().time() + 180
+        # cancellation with the handler's exception. The handler carries its own
+        # per-channel ceilings (BOUND_SECONDS); keep this extra wait bounded too.
+        deadline = asyncio.get_running_loop().time() + ACTIVITY_BOUND
         while not task.done() and asyncio.get_running_loop().time() < deadline:
             try:
                 await asyncio.wait({task}, timeout=1)
@@ -79,8 +93,8 @@ class ScheduledOperation:
     @workflow.run
     async def run(self, request: dict) -> dict:
         return await workflow.execute_activity('scheduled_operation', request,
-            start_to_close_timeout=timedelta(seconds=180),
-            schedule_to_close_timeout=timedelta(seconds=210),
-            heartbeat_timeout=timedelta(seconds=15),
+            start_to_close_timeout=timedelta(seconds=ACTIVITY_BOUND),
+            schedule_to_close_timeout=timedelta(seconds=SCHEDULE_TO_CLOSE_BOUND),
+            heartbeat_timeout=timedelta(seconds=HEARTBEAT_BOUND),
             retry_policy=RetryPolicy(maximum_attempts=1),
             cancellation_type=workflow.ActivityCancellationType.WAIT_CANCELLATION_COMPLETED)

@@ -393,12 +393,37 @@ all scope checks. These commands never modify the AP-10 schedule.
 
 The release configuration must bind `scheduled_operations[OPERATION]` to
 `{"input":"operations/NAME.json","interval_seconds":300}` and include hashes for that input and
-`office/tools/driftoperation.py`. Only 60–86400 seconds are accepted. The Office input uses schema
-`office-drift/1`, a private `state` directory, and optional `intake` and `monitor` objects. Intake binds
+`office/tools/driftoperation.py`. Only 60–86400 seconds are accepted. Stage that binding with
+`python -B scripts/install_ap10.py stage --runtime REV --office REV --operations MANIFEST`, where the
+manifest is one reviewed JSON file, `{"NAME":{"input":"/abs/reviewed-input.json","interval_seconds":3600}}`,
+naming at most eight operations. Each input is copied read-only into `operations/NAME.json` and hashed;
+a name, interval, shape, relative path, symlink, foreign schema or relative private state directory is
+refused. Without `--operations` the key stays absent and no operation exists in the release.
+`config/veckodrift-operation.example.json` is a commented template, not a binding.
+
+The Office input uses schema
+`office-drift/1`, a private `state` directory, and optional `intake`, `drift` and `monitor` objects. Intake binds
 Digitala's frozen consumer bytes, an absolute resolved `python_path` and exact `python_sha256`,
 customer directory, executor, HTTPS base URL and credential file;
 monitor binds the exact HTTPS health address and 40-character candidate SHA. Secrets remain in private
 0600 files outside repositories. A bypass is internal monitor access, never customer authentication.
+Drift binds the same frozen Digitala bytes plus `verktyg/drift_kontroll.py`, the exact `plan`/`plan_sha256`
+of that customer's `DRIFT.json` and `receipts`, the existing customer directory the `DRIFT-<time>.json`
+receipt is written into. That receipt is what Digitala's `underhall.py besked` reads, so this is the
+ordinary path onward and not a separate report. `isolated_test` permits a loopback HTTP address and
+belongs only to a probe.
+
+### The wakeup is not the period (D040)
+
+`interval_seconds` is how often Runtime wakes the operation. With `period_seconds` in the input, Office's
+handler decides from its own durable `period.json` whether the period has elapsed; weekly is 604800, and
+3600–2678400 is accepted. A wakeup inside the current period reads nothing, writes nothing and leaves no
+run record, so it is not a check. A period missed because the Mac slept stays due and is performed by the
+first wakeup that becomes possible — that guarantee is Office's durable record, not Temporal's catch-up
+window, which stays deliberately small. Read `performed`, not only `completed`: an incident found by a
+check that ran is `performed: true, completed: false`, and only `performed` closes the period. A broken
+binding or a timeout leaves the period due for the next wakeup. Without `period_seconds` every wakeup is
+due, which is D038's unchanged behaviour. Qualification receipt: `evidence/runs/runtime-veckodrift-1/`.
 
 The worker process runs a separate `office-operations` queue and activity slot; a model/AP-10 activity
 on `development` cannot occupy this slot. Both workers retain the same managed worker process identity.

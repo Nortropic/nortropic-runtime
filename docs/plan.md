@@ -9,7 +9,69 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
-# Gällande arbete — ordinarie publiceringsingång efter införandet
+# Gällande arbete — Digitalas veckovisa driftkontroll och signalhämtning (D040)
+
+2026-09-29: kontorets överlämning OVL-20260929-4f194f bär ägarens beställning
+"starta runtime beställningen då" (inspel sparat 14:57:24Z). Den svarar på raden i
+kontorets ÄGARENS TUR om schemalagd driftkontroll genom Runtime, som bad om just
+beställ eller avstå (HELHET-RESULTAT-20260927). D040 bär omfattningen och gränserna.
+
+Byggt och kvalificerat, inte aktiverat. Runtime-kandidat `veckodrift/digitala-20260929`,
+kontorskandidat `veckodrift/kontor-20260929`. Två namngivna uppgifter, ingen generell
+schemaläggare: Digitalas `verktyg/drift_kontroll.py` mot en bunden `DRIFT.json` per
+lanserad sajt, och Digitalas `verktyg/kundstart.py konsumera`, som är den frysta
+konsumenten av `GET /api/intern/signaler` med eget beständigt importläge och lås per
+ärende. Båda startas ur byte som releasen hashbinder. Kundstarts eget verktyg, dess
+interna API och dess repo är oförändrade.
+
+Väckningen är inte perioden. `interval_seconds` väcker operationen (3600 i den beredda
+bindningen); kontorets hanterare avgör ur sitt eget beständiga `period.json` om veckan
+(`period_seconds` 604800) har gått. En period som missats för att Macen sov står därför
+kvar som förfallen och utförs av den första väckning som blir möjlig, i stället för att
+hoppas över. Det är kontorets beständiga kvitto som bär den garantin, inte Temporals
+catch-up-fönster, som med avsikt förblir litet. En väckning inne i perioden läser
+ingenting, skriver ingenting och lämnar inget körkvitto. Läs `performed`, inte bara
+`completed`: en incident som en körd kontroll fann är `performed` men inte `completed`,
+och bara `performed` stänger perioden.
+
+Resultatet går den ordinarie vägen: driftkontrollens `DRIFT-<tid>.json` skrivs i kundens
+mapp, alltså precis den fil Digitalas `underhall.py besked` läser för ägarens veckobesked,
+och incident/återhämtning per kanal levereras en gång till kontorets privata driftyta.
+
+`scripts/install_ap10.py --operations` är ny och krävdes: utan den kunde operationen inte
+nå någon ordinarie release alls, bara D038:s injicerade provkonfiguration. Aktivitets- och
+schemagränserna är namngivna konstanter (300/330/360) eftersom tre kanaler inte rymdes i
+D038:s 180 s; kontorets `BOUND_SECONDS` är 239 och kvalificeringen mäter den mot de
+hanterarbyte som prövas.
+
+Kvitto: `evidence/runs/runtime-veckodrift-1/` ur `scripts/probe_veckodrift.py` — tre
+verkliga schemalagda väckningar på den befintliga motorn med egen kö och eget schemanamn,
+kandidatens hanterare och Digitalas verkliga frysta verktyg som riktiga delprocesser. En
+ren kontroll, en väckning inne i perioden som inte gjorde ett enda anrop, och en förfallen
+period (`overdue_seconds` 3620) som utfördes som incident med kundkvitto och en privat
+kvittens. Full Runtime-svit 663 prov; kontorets hanterarsvit 30 prov.
+
+Inte visat och inte gjort: sajten och signalytan är loopback-provdata, inte en kundadress
+och inte Kundstarts produktion eller dess lokala provtjänst. Den verkliga veckoperioden och
+macOS-sömn är inte utövade i verklig tid. Ingen release är stagad, vald eller aktiverad;
+AP-10:s schema, tjänst och arbetare är orörda. Schemat installeras pausat och kräver
+uttryckligt `resume`.
+
+Nästa handling: separat granskning av båda kandidaterna, sedan uppgiftsbunden skyddad
+integration i Runtime och kontoret. Införandespåret nedan är inte startat av detta arbete
+och dess egna steg står oförändrade; detta arbete rör ingen launcher, issuer eller
+formåterhämtning. Därefter är kvar för ägaren, och bara för honom:
+staga och kvalificera releasen med `--operations`, aktivera övergången, och först då
+`operation_schedule install` + `resume`. Operationen binds för en sajt först när en
+riktig kunds sajt är lanserad med lanseringsmandat; fram till dess finns ingen skarp
+bindning, bara mallen `config/veckodrift-operation.example.json`.
+
+---
+
+# Tidigare gällande arbete — ordinarie publiceringsingång efter införandet
+
+Detta är inte den gällande posten. Spåret står kvar oavslutat: dess "nästa tillåtna steg"
+nedan gäller fortfarande införandet, men den gällande postens nästa handling står överst.
 
 2026-09-28: Runtime PR 72, Office PR 114 och Digitala PR 14 är skyddat integrerade.
 App 5110369 är bunden till båda obligatoriska kontrollerna på de tre valda repona.

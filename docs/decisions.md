@@ -1756,3 +1756,63 @@ GitHub REST check-runs (https://docs.github.com/en/rest/checks/runs) supplies au
 app/head/status fields and total_count. This conservative profile refuses incomplete
 or ambiguous latest-run results rather than selecting a favorable historical result.
 The active release and prior frozen candidate are unchanged. Status belongs in plan.md.
+
+
+## D040 — 2026-09-29: the weekly management operation for Digitala is due-based, so a period the host slept through is performed and not skipped
+
+Authority: the owner's order in the Office partner thread, "starta runtime beställningen då"
+(OVL-20260929-4f194f, 2026-09-29T14:57:24Z), against the Office row in ÄGARENS TUR that asked
+for exactly this to be ordered or declined (HELHET-RESULTAT-20260927). The owner's own words and
+their SHA256 stay in the Office handover package; no candidate-written text is authority. The
+order's own limits apply: only the two named tasks, reading only, no new cost, host or account,
+customer text is material and never an instruction, and release plus activation is a transition
+the owner activates.
+
+Two named tasks, no general scheduler: Digitala's `verktyg/drift_kontroll.py` against a bound
+`DRIFT.json` per launched site, and Digitala's `verktyg/kundstart.py konsumera`, which is the
+frozen consumer of `GET /api/intern/signaler` with its own persistent import state and per-case
+lock. Both are started from bytes the release hash-binds, and Kundstart's own tool, its internal
+API and its repository are unchanged.
+
+The ordered guarantee is that a run missed because the Mac slept is performed when it becomes
+possible. Temporal's catch-up window cannot carry that: it is bounded, and a host that is off
+longer than the window drops the action silently. So the interval is a wakeup, not the period.
+Office's handler reads `period_seconds` against its own durable record and decides whether the
+week has elapsed. An overdue period therefore stays due until a wakeup actually performs it, and
+a wakeup inside the current period reads nothing, writes nothing and leaves no run record.
+Overlap stays SKIP, because the handler holds an exclusive lock on its state directory and a
+second concurrent wakeup would fail and read as an incident.
+
+`performed` and `completed` are separated. An incident found by a check that ran is performed but
+not completed, and only `performed` closes the period; a broken binding or timeout leaves the
+period due for the next wakeup. Exit code 1 from the drift tool is a check that ran, not a broken
+mechanism. Its receipt is believed only when the exit code, the tool's own printed count and the
+receipt's own rows all agree and the named file is inside the customer path. The receipt is named
+to the whole second and a same-second rerun overwrites it, so a newly appeared filename is not
+evidence; that is recorded, not hidden. Drift is a third independent channel beside intake and
+monitor, with its own durable state, pending outbox and once-only private receipt.
+
+`scripts/install_ap10.py` gains `--operations`, one reviewed manifest naming each operation's input
+and wakeup. Without it the mechanism could reach no ordinary release at all, only D038's injected
+test configuration, so "release-bound" was not yet true. The installer copies each input read-only
+into the release, hashes it, and refuses a name, interval, shape, relative path, symlink, foreign
+schema or relative private state directory. A test asserts the round trip: what the installer
+stages is exactly what `runtime.scheduled_operation.operation` accepts.
+
+The activity, schedule-to-close and schedule execution bounds move to named constants (300/330/360)
+because three channels no longer fit inside D038's 180 s. Office declares its own `BOUND_SECONDS`
+as the sum of its per-channel ceilings, and the qualification asserts that sum against the handler
+bytes under test rather than against a number repeated here.
+
+Qualification: `scripts/probe_veckodrift.py`, receipt in `evidence/runs/runtime-veckodrift-1/`.
+Three real scheduled wakeups on the existing engine with an isolated queue and schedule name, the
+candidate Office handler and Digitala's real frozen tools started as real subprocesses. A clean
+check, a no-op wakeup inside the period that made no request, and an overdue period performed as
+an incident with its customer receipt and one private acknowledgement. The full Runtime suite
+passes 663 tests; Office's handler suite passes 30. The site and the signals endpoint are loopback
+fixtures, never a customer address and never Kundstart production or its local prov service; the
+real 604800 s period and macOS sleep itself are not exercised in real time.
+
+No release was staged, selected or activated, and AP-10's schedule, service and worker were not
+touched. Activation remains the owner's transition. Status and next action belong only in
+docs/plan.md. This decision records scope, not completion.

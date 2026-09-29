@@ -1,0 +1,34 @@
+{
+  "_las": [
+    "Mall, inte en bindning. Kopiera den till en granskad fil utanför repot, byt varje",
+    "ABSOLUT-sökväg och varje hash mot verkliga värden, och stage den med",
+    "scripts/install_ap10.py stage --operations <manifestfil>. Manifestet är en egen fil:",
+    "{\"digitala-vecka\": {\"input\": \"/abs/denna-fil.json\", \"interval_seconds\": 3600}}.",
+    "interval_seconds är väckningen; period_seconds är arbetets period (604800 = en vecka).",
+    "Hämta digitala_files/python_sha256/plan_sha256 med sha256 på de frysta byten.",
+    "Aktiveras för en sajt först när en riktig kunds sajt har lanserats med lanseringsmandat.",
+    "isolated_test hör bara till ett prov och får aldrig stå i en skarp bindning."
+  ],
+  "schema": "office-drift/1",
+  "state": "/ABSOLUT/privat/driftlage-for-kunden",
+  "period_seconds": 604800,
+  "drift": {
+    "digitala_root": "/ABSOLUT/fryst-digitala",
+    "digitala_files": {"verktyg/drift_kontroll.py": "SHA256", "verktyg/...": "SHA256"},
+    "python_path": "/ABSOLUT/python",
+    "python_sha256": "SHA256",
+    "plan": "/ABSOLUT/kundmapp/DRIFT.json",
+    "plan_sha256": "SHA256",
+    "receipts": "/ABSOLUT/kundmapp"
+  },
+  "intake": {
+    "digitala_root": "/ABSOLUT/fryst-digitala",
+    "digitala_files": {"verktyg/kundstart.py": "SHA256", "verktyg/...": "SHA256"},
+    "python_path": "/ABSOLUT/python",
+    "python_sha256": "SHA256",
+    "base_url": "https://KUNDSTART-ADRESS",
+    "key_file": "/ABSOLUT/privat/KUNDSTART_INTERN_NYCKEL.secret",
+    "customer": "/ABSOLUT/kundmapp",
+    "executor": "runtime-veckodrift"
+  }
+}

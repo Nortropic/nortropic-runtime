@@ -1,13 +1,17 @@
 """Release binding and native schedule definition, isolated fixtures only."""
 import copy
 from hashlib import sha256
+import json
 from pathlib import Path
+import shutil
+import stat
 import tempfile
 import unittest
 from datetime import datetime, timezone
 from types import SimpleNamespace as NS
 from unittest.mock import AsyncMock, Mock, patch
 from temporalio.service import RPCError, RPCStatusCode
+from scripts import install_ap10
 from runtime.scheduled_operation import operation
 from runtime.operation_schedule import definition
 from runtime.operation_schedule import execution_status, operate
@@ -96,3 +100,122 @@ class ExecutionObservationTests(unittest.IsolatedAsyncioTestCase):
 
 
 if __name__ == '__main__': unittest.main()
+
+
+class WeeklyBoundTests(unittest.TestCase):
+    """The wakeup's bounds and the release binding an operation can actually use."""
+
+    def test_bounds_are_ordered_and_the_schedule_carries_the_outermost(self):
+        from runtime.scheduled_operation import (ACTIVITY_BOUND, SCHEDULE_TO_CLOSE_BOUND,
+                                                 EXECUTION_BOUND, HEARTBEAT_BOUND)
+        self.assertLess(HEARTBEAT_BOUND, ACTIVITY_BOUND)
+        self.assertLess(ACTIVITY_BOUND, SCHEDULE_TO_CLOSE_BOUND)
+        self.assertLess(SCHEDULE_TO_CLOSE_BOUND, EXECUTION_BOUND)
+        # Office's handler sums its own channel ceilings to 245 s; the innermost
+        # Runtime bound must exceed that, or a whole channel could never finish.
+        self.assertGreater(ACTIVITY_BOUND, 245)
+        home = Path(tempfile.mkdtemp()); self.addCleanup(shutil.rmtree, home)
+        config = {'directory': str(home), 'config_sha256': 'a' * 64, 'files': {},
+                  'scheduled_operations': {'weekly-case': {'input': 'operations/weekly-case.json',
+                                                           'interval_seconds': 3600}}}
+        for name in ('operations/weekly-case.json', 'office/tools/driftoperation.py'):
+            path = home / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text('{}')
+            config['files'][name] = sha256(path.read_bytes()).hexdigest()
+        schedule = definition(config, 'weekly-case')
+        self.assertEqual(schedule.action.execution_timeout.total_seconds(), EXECUTION_BOUND)
+        self.assertEqual(schedule.spec.intervals[0].every.total_seconds(), 3600)
+
+
+class ReleaseOperationBindingTests(unittest.TestCase):
+    """bind_operations must produce exactly what scheduled_operation.operation accepts."""
+
+    def setUp(self):
+        # Under the repository, not /var: the reviewed staging checks refuse a
+        # symlinked ancestor, and on macOS /var itself is one.
+        scratch = Path('.scratch'); scratch.mkdir(exist_ok=True)
+        self.tmp = tempfile.TemporaryDirectory(dir=scratch); self.addCleanup(self.tmp.cleanup)
+        self.home = Path(self.tmp.name).absolute()
+        self.release = self.home / 'release'; self.release.mkdir()
+        handler = self.release / 'office/tools/driftoperation.py'
+        handler.parent.mkdir(parents=True); handler.write_text('# reviewed handler\n')
+        self.files = {'office/tools/driftoperation.py': sha256(handler.read_bytes()).hexdigest()}
+        self.input = self.home / 'reviewed-input.json'
+        self.write_input({'schema': 'office-drift/1', 'state': str(self.home / 'private'),
+                          'period_seconds': 604800, 'drift': {'plan': '/abs/DRIFT.json'}})
+        self.manifest = self.home / 'operations.json'
+        self.write_manifest({'digitala-vecka': {'input': str(self.input), 'interval_seconds': 3600}})
+
+    def write_input(self, value):
+        self.input.write_text(json.dumps(value))
+
+    def write_manifest(self, value):
+        self.manifest.write_text(json.dumps(value))
+
+    def bind(self):
+        return install_ap10.bind_operations(self.release, self.files, self.manifest)
+
+    def test_bound_operation_is_accepted_by_the_runtime_validator(self):
+        bound = self.bind()
+        self.assertEqual(bound, {'digitala-vecka': {'input': 'operations/digitala-vecka.json',
+                                                    'interval_seconds': 3600}})
+        copied = self.release / 'operations/digitala-vecka.json'
+        self.assertEqual(copied.read_bytes(), self.input.read_bytes())
+        self.assertEqual(stat.S_IMODE(copied.stat().st_mode), 0o444)
+        self.assertEqual(self.files['operations/digitala-vecka.json'],
+                         sha256(copied.read_bytes()).hexdigest())
+        # The round trip is the point: a staged release must be runnable, which the
+        # injected qualification configuration never proved for the installer.
+        config = {'directory': str(self.release), 'config_sha256': 'c' * 64,
+                  'files': self.files, 'scheduled_operations': bound}
+        selected, handler = operation(config, {'operation': 'digitala-vecka',
+                                               'config_sha256': 'c' * 64})
+        self.assertEqual(selected, copied)
+        self.assertEqual(handler, self.release / 'office/tools/driftoperation.py')
+        self.assertEqual(json.loads(selected.read_text())['period_seconds'], 604800)
+
+    def test_manifest_entry_shape_name_and_interval_are_closed(self):
+        for manifest in ({}, {'Digitala': {'input': str(self.input), 'interval_seconds': 3600}},
+                         {'-bad': {'input': str(self.input), 'interval_seconds': 3600}},
+                         {'ok': {'input': str(self.input)}},
+                         {'ok': {'input': str(self.input), 'interval_seconds': 3600, 'extra': 1}},
+                         {'ok': {'input': str(self.input), 'interval_seconds': 59}},
+                         {'ok': {'input': str(self.input), 'interval_seconds': 86401}},
+                         {'ok': {'input': str(self.input), 'interval_seconds': True}},
+                         {'ok': {'input': 'reviewed-input.json', 'interval_seconds': 3600}},
+                         {'ok': [str(self.input), 3600]}):
+            self.write_manifest(manifest)
+            with self.assertRaises(ValueError): self.bind()
+        self.write_manifest({'a%d' % i: {'input': str(self.input), 'interval_seconds': 3600}
+                             for i in range(9)})
+        with self.assertRaises(ValueError): self.bind()
+
+    def test_foreign_schema_relative_state_and_empty_input_are_refused(self):
+        for value in ({'schema': 'other/1', 'state': str(self.home / 'private')},
+                      {'schema': 'office-drift/1', 'state': 'private'},
+                      {'schema': 'office-drift/1'},
+                      ['office-drift/1']):
+            self.write_input(value)
+            with self.assertRaises(ValueError): self.bind()
+        self.input.write_bytes(b'')
+        with self.assertRaises(ValueError): self.bind()
+
+    def test_a_symlinked_manifest_or_input_is_refused(self):
+        link = self.home / 'linked-input.json'; link.symlink_to(self.input)
+        self.write_manifest({'ok': {'input': str(link), 'interval_seconds': 3600}})
+        with self.assertRaises(ValueError): self.bind()
+        linked_manifest = self.home / 'linked-operations.json'
+        linked_manifest.symlink_to(self.manifest)
+        self.manifest = linked_manifest
+        with self.assertRaises(ValueError): self.bind()
+
+    def test_operations_require_the_reviewed_office_handler_in_the_release(self):
+        self.files = {}
+        with self.assertRaises(ValueError): self.bind()
+
+    def test_staging_without_operations_leaves_the_key_absent(self):
+        with patch.object(install_ap10, 'copy_code', return_value={'AGENTS.md': 'a' * 64}), \
+             patch.object(install_ap10, 'instruction_guards', return_value={}), \
+             patch.object(install_ap10, 'ROOT', self.home / 'host'):
+            (self.home / 'host/.runtime/ap10').mkdir(parents=True)
+            path = install_ap10.stage('a' * 40, 'b' * 40)
+            self.assertNotIn('scheduled_operations', json.loads(Path(path).read_text()))

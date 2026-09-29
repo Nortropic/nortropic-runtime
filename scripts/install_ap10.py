@@ -35,7 +35,55 @@ def copy_code(repo, revision, dest):
     return hashes
 
 
-def stage(runtime_revision, office_revision, context=None):
+OPERATION_NAME = re.compile('[a-z0-9][a-z0-9-]{0,79}')
+
+
+def bind_operations(directory, files, manifest):
+    """Bind named operations into the release: input bytes, interval and handler.
+
+    Without this the operation mechanism cannot reach an ordinary release at all,
+    only an injected test configuration. The manifest is one reviewed file naming
+    each operation; nothing outside it, and no path outside the release, is bound.
+    The interval is the wakeup, not the work's period, which lives in the input.
+    """
+    source = Path(manifest).absolute()
+    if any(parent.is_symlink() for parent in (source, *source.parents)) or not source.is_file():
+        raise ValueError('Operation manifest must be a regular reviewed file')
+    selected = json.loads(source.read_text())
+    if not isinstance(selected, dict) or not selected or len(selected) > 8:
+        raise ValueError('Bounded named operation manifest required')
+    if 'office/tools/driftoperation.py' not in files:
+        raise ValueError('Operations require the reviewed Office handler in the release')
+    operations = {}
+    for name, entry in sorted(selected.items()):
+        if not OPERATION_NAME.fullmatch(name) or not isinstance(entry, dict) or set(entry) != {'input', 'interval_seconds'}:
+            raise ValueError('Operation entry must name exactly an input and an interval')
+        interval = entry['interval_seconds']
+        if type(interval) is not int or not 60 <= interval <= 86400:
+            raise ValueError('Invalid bounded schedule interval for ' + name)
+        given = Path(entry['input'])
+        if not given.is_absolute() or any(parent.is_symlink() for parent in (given, *given.parents)):
+            raise ValueError('Operation input must be an absolute regular path')
+        raw = given.read_bytes()
+        if not raw or len(raw) > 65536:
+            raise ValueError('Bounded operation input required')
+        value = json.loads(raw)
+        # The release only ever binds Office's own accepted input schema; no command,
+        # interpreter or path is selected here, and every path in it stays absolute.
+        if not isinstance(value, dict) or value.get('schema') != 'office-drift/1':
+            raise ValueError('Operation input is not an accepted Office operation')
+        if not Path(value.get('state', '')).is_absolute():
+            raise ValueError('Operation state must be an absolute private directory')
+        relative = 'operations/' + name + '.json'
+        target = directory / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(raw); target.chmod(0o444)
+        files[relative] = sha(target)
+        operations[name] = {'input': relative, 'interval_seconds': interval}
+    return operations
+
+
+def stage(runtime_revision, office_revision, context=None, operations=None):
     """Stage only; operator separately reviews config and selects/loads it."""
     home = ROOT / '.runtime/ap10'; home.mkdir(parents=True, exist_ok=True, mode=0o700)
     directory = home / 'releases' / (runtime_revision + '-' + office_revision)
@@ -57,9 +105,13 @@ def stage(runtime_revision, office_revision, context=None):
                 raise ValueError('Only selected regular context text')
             target=directory/'context'/p.name;target.parent.mkdir(exist_ok=True,mode=0o700)
             target.write_bytes(p.read_bytes());target.chmod(0o400);files['context/'+p.name]=sha(target)
+    # Bound before the config is built: the operation inputs must be inside `files`.
+    bound = None if operations is None else bind_operations(directory, files, operations)
     config = dict(schema=1, host_root=str(ROOT), office_root=str(ROOT.parent/'nortropic-projektkontor'),
                   database=str(ROOT/'.runtime/runtime.sqlite'), runtime_revision=runtime_revision,
                   office_revision=office_revision, files=files, instruction_guards=instruction_guards())
+    if bound is not None:
+        config['scheduled_operations'] = bound
     path = directory/'config.json';path.write_text(json.dumps(config,indent=2)+'\n');path.chmod(0o400)
     return path
 
@@ -106,8 +158,9 @@ def plist(config):
 if __name__ == '__main__':
     os.umask(0o077)
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['stage','select','write-plist'])
-    p.add_argument('--runtime');p.add_argument('--office');p.add_argument('--config');p.add_argument('--context');a=p.parse_args()
-    if a.action=='stage':print(stage(a.runtime,a.office,a.context))
+    p.add_argument('--runtime');p.add_argument('--office');p.add_argument('--config');p.add_argument('--context')
+    p.add_argument('--operations');a=p.parse_args()
+    if a.action=='stage':print(stage(a.runtime,a.office,a.context,a.operations))
     elif a.action=='select':print(select(a.config))
     else:
         dest=Path.home()/'Library/LaunchAgents'/ (LABEL+'.plist')
