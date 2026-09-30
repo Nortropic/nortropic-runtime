@@ -363,6 +363,46 @@ whether that model is still the chosen one; the record itself, under `.runtime/a
 choices with the exact commands and the models qualified for that executor. Waiting needs no action. Nothing is
 switched until the owner runs the tool, and buying credits or upgrades is never one of the choices.
 
+## Credential-free measurement as the key-less test user (D042)
+
+A whole suite for sealing (Runtime `scripts`, the office's `tools`, Digitala's `verktyg`) is measured as the hidden
+role account `_nortropicprov`, which holds no key, by one fixed root-owned script that one sudoers rule pins. Sessions
+never run sudo: they queue, and the owner's agent (`model_choice.py auto`, D040) runs the rule for them.
+
+The owner installs it once, in their own logged-in Terminal, from the primary checkout on main. First check that the two
+files are the reviewed ones (the rule's digest is the script's sha256; D042's entry in the plan names both):
+
+    R="$HOME/nortropic-repos/Nortropic Runtime"
+    shasum -a 256 "$R/scripts/matning_provanvandare.py" "$R/config/nortropic-matning.sudoers"
+    sudo sysadminctl -addUser _nortropicprov -roleAccount -UID 470 -fullName "Nortropic provanvändare" -shell /usr/bin/false -home /Users/_nortropicprov -password "$(/usr/bin/openssl rand -base64 30)"
+    sudo install -d -o _nortropicprov -m 0755 /Users/_nortropicprov
+    sudo install -d -o root -g wheel -m 0755 /usr/local/libexec/nortropic
+    sudo install -o root -g wheel -m 0555 "$R/scripts/matning_provanvandare.py" /usr/local/libexec/nortropic/matning
+    sudo visudo -cf "$R/config/nortropic-matning.sudoers" && sudo install -o root -g wheel -m 0440 "$R/config/nortropic-matning.sudoers" /etc/sudoers.d/nortropic-matning && sudo visudo -c
+    sudo -n -u _nortropicprov /usr/local/libexec/nortropic/matning gransprob
+
+`visudo -c` lists `/private/etc/sudoers.d/nortropic-matning` among the files it parsed; if it does not, `/etc/sudoers`
+lacks its `#includedir /private/etc/sudoers.d` line and the rule is not read. The last line is the boundary probe as
+the test user: every key on the owner's list must read `nekad` or `finns inte`,
+and it ends with `"kredentialfri": true` (exit 0). The random password is never shown or kept; the role account has no
+login. To remove everything: `sudo rm /etc/sudoers.d/nortropic-matning /usr/local/libexec/nortropic/matning` and
+`sudo sysadminctl -deleteUser _nortropicprov`.
+
+A session queues a candidate branch and waits for the result:
+
+    python3 -B "$R/scripts/measurement_queue.py" begar --repo runtime|kontoret|digitala --git <repository> --ref refs/heads/<branch> [--antal N]
+    python3 -B "$R/scripts/measurement_queue.py" vanta <id> --till <directory of the session's own>
+    python3 -B "$R/scripts/measurement_queue.py" status
+
+The request lies in `/Users/Shared/nortropic-matning/in/<id>/` (the branch as a bundle of every branch, the request, and
+for Digitala a view of the active Runtime release's code and configuration); the result in
+`/Users/_nortropicprov/ut/<id>/` (`suite.json` in the issuer's form, `suite.log`, `gransprob.json`, `klar.json`). The
+agent looks every five minutes and starts a measurement only when the AP-10 watch is not running and at least 20 minutes
+plus one whole measurement (90 minutes) away, and none after the first 15 minutes of a look; it writes
+`.runtime/ap10/measurement-status.json`; `not_installed` means the owner's step above is
+missing. Sealing copies `suite.json` and `suite.log` into the issuer request exactly as before. A change to the script
+needs the owner's install again, with the new digest in the rule.
+
 ## The web profiles (D034)
 
 Three host commands for a management function's recurring steps: `runtime.web_measure` (no model),

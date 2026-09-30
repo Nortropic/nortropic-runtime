@@ -29,7 +29,9 @@ def stop_group(proc):
         try:
             os.killpg(proc.pid, 0)
             return True
-        except ProcessLookupError:
+        except (ProcessLookupError, PermissionError):
+            # macOS answers EPERM, not ESRCH, when only zombies remain in the group (measured 2026-09-30, D042): nothing
+            # in it runs any more, and nothing could be signalled.
             return False
 
     for sig, grace in ((signal.SIGTERM, 2), (signal.SIGKILL, 2)):
@@ -37,7 +39,7 @@ def stop_group(proc):
             return True
         try:
             os.killpg(proc.pid, sig)
-        except ProcessLookupError:
+        except (ProcessLookupError, PermissionError):
             return True
         end = time.monotonic() + grace
         while time.monotonic() < end:

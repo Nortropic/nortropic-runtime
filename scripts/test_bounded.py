@@ -56,6 +56,23 @@ class BoundedTest(unittest.TestCase):
     def test_sigterm_with_term_ignoring_child(self):
         self.exercise('signal')
 
+    def test_a_group_of_only_zombies_counts_as_gone(self):
+        """macOS answers EPERM for a process group in which only zombies remain; that is a stopped group, not a failure."""
+        import importlib.util
+        from unittest import mock
+        spec = importlib.util.spec_from_file_location('bounded', SCRIPT); bounded = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bounded)
+        proc = mock.Mock(pid=4242); proc.poll.return_value = 0
+        with mock.patch.object(bounded.os, 'killpg', side_effect=PermissionError(1, 'Operation not permitted')):
+            self.assertTrue(bounded.stop_group(proc))
+        signals = []
+        def only_zombies_after_term(pid, sig):
+            signals.append(sig)
+            if sig != 0 and len(signals) > 1:
+                raise PermissionError(1, 'Operation not permitted')
+        with mock.patch.object(bounded.os, 'killpg', side_effect=only_zombies_after_term):
+            self.assertTrue(bounded.stop_group(proc))
+
 
 if __name__ == '__main__':
     unittest.main()

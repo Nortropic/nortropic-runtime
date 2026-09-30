@@ -14,6 +14,10 @@ model and its effort (`--runtime`), and the AP-10 watch's executor, model and ef
 transition run by the workplace's recorded choice when Runtime is idle, from a LaunchAgent the owner starts once with
 `agent install`; it waits while Runtime works, activates with the same way back, and records what it did.
 
+D042 widens what the same agent does at each look: after the workplace's choice (D040), queued credential-free
+measurements, run as the key-less test user through the one sudoers rule (scripts/measurement_queue.py), each kept away
+from the AP-10 watch. The agent file itself does not change.
+
 D022 made the model an explicit part of the frozen release configuration, changed only through a controlled release
 transition, and every change so far needed its own derived transition script and its own review. This is that
 transition written once, with the model as its parameter and `development.models` as the ONLY thing it can change.
@@ -272,7 +276,15 @@ def show(host):
                       'efforts_run': efforts(config), 'executors': executors(config), 'watch': watch(config),
                       'tool': str(Path(old['directory']) / TOOL), 'questions': questions(config),
                       'automatic': json.loads(status.read_text()) if status.is_file() else None,
+                      'measurements': read_optional(Path(host) / '.runtime/ap10/measurement-status.json'),
                       'agent_installed': paths(host)['agent'].is_file()}, indent=2, ensure_ascii=False))
+
+
+def read_optional(path):
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, ValueError):
+        return None
 
 
 def stage(host, requested, code_root=CODE_ROOT, now=None, request_id=None):
@@ -956,6 +968,40 @@ async def automatic(host):
                             **{**base, 'active_config_sha256': active_release(host)[0]['config_sha256']})
 
 
+async def ap10_quiet(margin):
+    """Heavy work - a measurement, a rehearsal - waits while the AP-10 watch runs or its next run is closer than the
+    20-minute lead plus margin: the watch's analysis heartbeat has about two seconds to spare (measured 2026-09-30 07:01Z,
+    when a publication and suites ran beside it). Refuses with the reason; returns the next run."""
+    try:
+        client = await temporal()
+        described = await raw_schedule(client)
+    except Exception as error:
+        refuse('the AP10 schedule could not be read (%r); heavy work waits' % (error,))
+    if described['info'].get('running_workflows'):
+        refuse('an AP10 watch run is in progress; heavy work waits')
+    upcoming = (described['info'].get('future_action_times') or [None])[0]
+    if not upcoming or (datetime.fromisoformat(upcoming.replace('Z', '+00:00')) - datetime.now(timezone.utc)).total_seconds() < LEAD_SECONDS + margin:
+        refuse('the next AP10 run is less than 20 minutes away (with room for heavy work: %d s); heavy work waits' % margin)
+    return upcoming
+
+
+def tick(host):
+    """One look of the owner's agent: the workplace's choice (D040), then queued credential-free measurements (D042).
+    A failure in one part is written to its own status and never stops the next part; nothing here stops or starts the
+    service except an activation under its preconditions."""
+    for part in ('choice', 'measurements'):
+        try:
+            if part == 'choice':
+                asyncio.run(automatic(host))
+            else:
+                from scripts import measurement_queue
+                measurement_queue.run_pending(host, quiet=lambda margin: asyncio.run(ap10_quiet(margin)))
+        except SystemExit as refusal:
+            print('%s %s: %s' % (datetime.now(timezone.utc).isoformat(), part, refusal), flush=True)
+        except Exception as error:
+            print('%s %s: unexpected %r' % (datetime.now(timezone.utc).isoformat(), part, error), flush=True)
+
+
 def agent_plist(host):
     """The owner's LaunchAgent for auto. Its program resolves the ACTIVE release's own copy of this tool at every run,
     from the active pointer, so it always runs the bytes the active release binds; the tool refuses any other copy."""
@@ -1045,7 +1091,7 @@ def main(argv=None):
         with exclusive(host):
             asyncio.run(do_forward(host))
     elif arguments.action == 'auto':
-        asyncio.run(automatic(host))
+        tick(host)
     elif arguments.action == 'agent':
         agent(host, arguments.what)
     else:
