@@ -312,6 +312,7 @@ class FlowTests(unittest.TestCase):
             if activate:
                 activate()
         def rehearse(host, old, new, base):
+            asyncio.run(asyncio.sleep(0))   # as code_rehearsal.rehearse does: an event loop of its own (D045)
             self.calls.append('rehearse'); self.bases.append(base)
             if rehearse_waits:
                 return {'passed': False, 'waiting': True, 'reason': 'work is in progress in the engine copy (t-1)'}
@@ -351,6 +352,24 @@ class FlowTests(unittest.TestCase):
         value = self.look(rehearse_passes=False)
         self.assertEqual(value['state'], 'refused'); self.assertIn('did not start', value['reason'])
         self.assertEqual(self.calls, ['static', 'quiet', 'preconditions', 'rehearse'])
+
+    def test_the_rehearsal_runs_outside_the_looks_event_loop(self):
+        self.chain.publish()
+        seen = []
+        def rehearse(host, old, new, base):
+            try:
+                asyncio.get_running_loop(); seen.append('inside a running loop')
+            except RuntimeError:
+                seen.append('no running loop')
+            return {'passed': True, 'reason': None}
+        async def pre(host, mc, record, staged):
+            pass
+        async def act(host, mc, record, staged):
+            pass
+        with patch.object(ct, 'preconditions', pre), patch.object(ct, 'activate', act):
+            value = asyncio.run(ct.automatic(self.chain.repo, self.mc, github=self.github, rehearse=rehearse,
+                                             copy_code=lambda *a: {}, check_binding=check_binding))
+        self.assertEqual((seen, value['state']), (['no running loop'], 'activated'))
 
     def test_no_rehearsal_starts_while_runtime_works(self):
         self.chain.publish()

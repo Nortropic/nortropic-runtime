@@ -2109,3 +2109,31 @@ Limits:
 - Only a test changes; no file the owner approved once (D043's `OWNER_FILES`) changes, so the agent activates the
   release carrying this by itself, after its chain proof, rehearsal and preconditions.
 - The fixed script is unchanged, and so is its digest in the rule.
+
+## D045 — 2026-09-30: the automatic look runs the rehearsal in a thread of its own
+
+The owner's words (same file as D042): "Bygg ut aktiveraren från D040, så att en Runtime-release som passerat skyddad
+publicering och separat granskning stegas, kontrolleras och aktiveras av sig själv när Runtime är ledigt."
+
+Measured: the agent's first automatic code transition (D044, main `a4393e6`, 2026-09-30 14:08Z) proved the chain,
+staged the release and passed the static checks, and then refused it: "the isolated rehearsal of the new release did
+not pass: the rehearsal could not be prepared or run: RuntimeError('asyncio.run() cannot be called from a running event
+loop')". `code_rehearsal.rehearse` runs an event loop of its own, and D043's `automatic` called it from inside the
+look's loop (`model_choice.tick` runs `automatic` with `asyncio.run`). Nothing was stopped or selected; the copy was
+removed and the service ran on unchanged. D043's tests and frozen cases gave the look a rehearsal double without a loop
+of its own, and its rehearsal of the whole look replaced the rehearsal step, so the seam was never run.
+
+Decision: `automatic` runs `rehearse` with `asyncio.to_thread`, a thread with no running loop, as it runs under the
+agent. The tests' rehearsal double now runs an event loop of its own the way the real one does, and one test checks that
+the rehearsal sees no running loop.
+
+Tested: the flow's tests with that double (with the old call ten of them fail) and, before publication, the candidate's
+own `code_rehearsal.rehearse` on this host's real pair, called through `asyncio.to_thread` inside `asyncio.run` as the
+look calls it (the office's `evidence/nasta-uppdrag/local/full-autonomi-20260930/h-ovning/`).
+
+Limits:
+- `scripts/code_transition.py` is one of `OWNER_FILES`, so the agent reports this release as the owner's
+  (`owner_needed`), and the owner activates it with his own controlled transition (transition 21), which carries D044
+  too. D044 stays `refused` for the active release until then; it is looked at anew once the active release changes.
+- Until transition 21 the agent still proves, stages and statically checks a new release, and then refuses it at the
+  rehearsal. Nothing is ever activated that way.
