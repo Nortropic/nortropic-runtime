@@ -1969,3 +1969,119 @@ Limits:
   decision, activated by the owner's controlled transition (the release changes model_choice.py); until then a session
   measures as before.
 
+## D043 — 2026-09-30: an integrated, reviewed Runtime release is activated by itself when Runtime is idle
+
+The owner's words (same file as D042): "B. Automatiska kodövergångar. Bygg ut aktiveraren från D040, så att en
+Runtime-release som passerat skyddad publicering och separat granskning stegas, kontrolleras och aktiveras av sig själv
+när Runtime är ledigt. Samma förvillkor, samma väg tillbaka och status i arbetsplatsen. Den aktiverar aldrig något som
+inte är integrerat och granskat, och den väntar medan Runtime arbetar. Pröva den i en isolerad startövning före drift."
+
+Decision:
+- The agent's look (`model_choice.py auto`, D040) gets a part between the choice and the measurements (D042),
+  `scripts/code_transition.py`. It reads main from GitHub and proves every first-parent commit from the active revision
+  to main: the squash merge of exactly one pull request into main; that request's head carries both required checks
+  from the one App the branch protection names (the protection read as strictly as the publisher reads it: strict,
+  enforced for admins, no force pushes or deletions, linear history, pull request reviews), the latest of each (every
+  page of check runs) a completed success and both with one binding; the binding is recomputed with `check_binding`
+  from a sealed issuer request on this host whose review approves with no blocking finding by a reviewer who did not
+  implement; the head's tree is the merge's tree, and each merge's parent is the previous main. The receipts a session
+  writes are not trusted; GitHub's check runs are, as the only records set by the App.
+- A release whose net difference from the active one changes what the owner approved once (`OWNER_FILES`: the
+  activator model_choice and code_transition, its rehearsal code_rehearsal, the chain proof's binding
+  runtime/integration, the code that issues the checks and seals the requests it matches (runtime/check_issuer,
+  runtime/host_publication), the agent's measurement queue, and install_ap10), the AP-10 command, the service plist or
+  the web tools is `owner_needed`: it is the owner's own controlled transition, as before.
+- Staging copies the Runtime code from git at the target and carries every other file and every other key of the
+  active configuration unchanged (office revision, the choice, context, history archives); the guards are computed by
+  the new code. `only_code_differs` refuses anything else. A staged record is reused while it waits.
+- A rehearsal starts only when the AP-10 watch is not running and not closer than the 20-minute lead plus 45 minutes
+  (`ap10_quiet`; the rehearsal's bounded steps take at most about 40), and when the same preconditions as the
+  activation's pass (below): Runtime idle. `scripts/code_rehearsal.py` then rehearses the transition on a private copy: a consistent copy
+  of the database, both releases with their engine port literals shifted in Python code (a literal in any other file
+  but Markdown refuses) and their roots re-keyed, every schedule in the copy paused through the new code's own engine
+  start. If an open execution in the copy has a pending activity or workflow task, no worker is started and the look
+  waits. Otherwise the new daemon starts twice and every open development task is queried through its worker (its
+  history replays under the new code); then the old daemon starts on the same copy (the way back).
+- Every child of the rehearsal runs under a sandbox profile that allows by default, runs only /bin/ps outside itself,
+  and restricts by deny rules alone: no outbound network beyond this Mac and no name lookup, no binding of the live
+  engine's ports, no write anywhere but the rehearsal's own directory, no launchctl, sudo or su; HOME and TMPDIR lie in
+  that directory. So an activity the copy's worker ran for real could reach neither a
+  model nor GitHub nor write into a repository or the live host. This Mac's sandbox ignores a rule for one port on this
+  Mac as soon as another rule names all of them (measured 2026-09-30, so the earlier profile's port denials had no
+  effect); the live engine is therefore kept away by the port shift and measured: at every confirmed start the copy's
+  daemon, engine and worker must hold TCP connections, and each must end at, or have been accepted on, a port one of
+  them listens on. A failed rehearsal refuses the revision; a copy holding work, or connections that could not be read,
+  is a wait.
+- Then model_choice's preconditions again, measured now: the staged Runtime code byte for byte git at the proven
+  revision (the same released names, each the same blob, so what is activated is what the chain proved, whatever wrote
+  the staged record), no AP-10 run and the next more than 20 minutes away, its
+  schedule bound to the active release, the recorded service alive, no web profile run, no busy execution, no AP-11
+  execution at all, the native inputs as the new code binds them, the NEW code's own daemon start requirements (run by
+  that code), and the active release's own offline start check (the way back). A precondition that passes by itself is
+  a wait; the look comes back. When a refusal inside the activation comes before any stop, this tool's own list of
+  waiting reasons decides between waiting and refused; a Refused or OwnerNeeded from the re-check is decided as such.
+- The activation is model_choice's: backup, stop, select, start and confirm, restore and restart the previous release
+  if the new one does not start, then rebind only the AP-10 schedule's config hash.
+- Status for the workplace: `.runtime/ap10/automatic-code-status.json` (`current`, `waiting`, `refused`,
+  `owner_needed`, `activating`, `activated`, `restored`, `failed`, `interrupted`) with the target revision, the proven
+  pull requests and the reason. A revision that ended refused, owner_needed, restored, failed or interrupted is not
+  tried again while the active release stays the same; a newer revision, or the same one after another activation
+  changed the active release, is looked at anew, its chain, rehearsal and preconditions proven again.
+  `model_choice.py code-forward` is the owner's continuation of an activation whose stop completed; it checks what
+  model_choice's `forward` checks (the staging tool, the staged files, the new code's offline daemon start requirements
+  and recorded writers), and that the staged code is the proven revision's, before it selects and starts.
+
+Tested (`scripts/test_code_transition.py`): on real git repositories with GitHub's answers as doubles and the real
+binding function - two publications proven one by one; a push without a pull request, checks from another App, a
+failed or split check, a newer success over an older failure, checks without a sealed request, a review that does not
+approve or is by the implementer, a request for another repository, a tree other than the reviewed head's, protection
+other than the two checks of one App or weaker than the publisher reads it, every page of check runs, main not
+descending from the active revision, the owner's files, staged code that is not the proven revision's bytes; staging on
+the synthetic host; the flow's order (quiet, preconditions, rehearsal, preconditions, activation) with model_choice's
+own write and replace, no rehearsal while Runtime works, a copy holding work as a wait whose rehearsal runs again in a
+fresh directory and replaces the record, the waiting words inside the activation, and the states current, waiting, refused,
+owner_needed, activated, restored, failed and interrupted, a decided revision not tried again, a passed rehearsal not
+repeated, the lock, the watch rule, code-forward's checks; the rehearsal copy's port shift and its refusal, the profile,
+the private HOME and TMPDIR, a busy copy, and the connection check.
+
+Rehearsed in isolation before any use, on the reviewed candidate's own bytes (the office's
+`evidence/nasta-uppdrag/local/full-autonomi-20260930/b-ovning/KVITTO-ovning-b.md` names the candidate commit and tree
+each receipt ran), nothing live touched:
+- The profile's boundary: a child under the candidate's own profile could not reach an address beyond this Mac or look
+  up a name, bind the live engine's port, write in the live `.runtime`, the Runtime checkout, the office repository,
+  the owner's home, `~/Library/LaunchAgents`, `/Users/Shared` or `/private/tmp`, or run launchctl, sudo or su; it could
+  write in its own directory, run ps and use a listener of its own. A connection it held to a port that was listening
+  before it started was allowed by the profile and found by the connection check.
+- The rehearsal itself (the candidate's `code_rehearsal.rehearse`) on this host's real pair, the active release and a
+  release of the candidate built as staging builds it: it passed; the copy's schedules paused, no open execution
+  busy, the new daemon confirmed twice and the old one after it, every open development task replayed under the new
+  code without a failure, no connection outside the copy, every stop clean.
+- The chain proof against the real GitHub: the candidate's own `verify_chain` proved the active revision's way to main
+  (D042, pull request 76, bound to its sealed request) and found model_choice and the measurement queue among the
+  owner's files, as transition 20 treats them.
+- The whole look in a separate copy under the candidate's own profile: a clone of the candidate with its engine ports
+  shifted and its own origin as main, a consistent copy of the database, the candidate as the copy's active release
+  with the live release's non-code files and keys, and the candidate's own model_choice and code_transition run as the
+  agent runs them. GitHub was a double for synthetic publications (real commits, a sealed request, checks with the
+  real binding; the protection as the real GitHub returned it), launchctl a stand-in that starts and stops the plist's
+  program (the real one could not run under the profile), and the rehearsal step inside the look a stub (rehearsed
+  above). A harmless change was activated (stop, select, start, confirmation, AP-10 rebinding); a release whose daemon
+  does not start was restored (the previous release selected, restarted and confirmed with three live processes); a
+  change to the activator itself was left for the owner.
+
+Limits:
+- The first release carrying D042 and D043 changes the activator itself, so it is activated by the owner's controlled
+  transition (transition 20). From then on a release that changes none of `OWNER_FILES` needs no one.
+- A Runtime publication still needs its credential-free suite (D042) and its separate review; this decision activates
+  what those produced, it does not replace them.
+- The agent's `gh` login reads GitHub; if it cannot, the look waits. The owner's account, which the agent is, can also
+  change branch protection; the check reads the protection as it is and requires it as strict as the publisher does.
+- `runtime/release.py` (the guards) is not among the owner's files: the new code computes the guards it is then
+  checked against, as in every controlled transition, and that code is integrated and separately reviewed first.
+- The rehearsal holds the choice lock while it runs, so the owner's own stage, activate or forward is refused for
+  those minutes with a clear message.
+- The rehearsal profile does not restrict reads, or listening on ports other than the live engine's: on this Mac a
+  rule that confines listening to this Mac also cancels the rules for the live engine's ports (measured 2026-09-30).
+  The copy's database and the closed AP-11 scope it carries lie in the rehearsal's own 0700 directory and are removed
+  afterwards. The connection check is one sample per confirmed start, of port numbers.
+- launchctl in an automatic code activation has run only as model_choice's, which the owner ran for D029 and D040.

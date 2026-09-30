@@ -54,7 +54,8 @@ Ordningen:
    så en session kan aldrig använda regeln själv; någon policyändring behövs inte. Integreras på vanligt sätt, med
    separat granskning, efter att ägaren aktiverat övergång 19. Övergång 19 kräver att main är `faf3cfb` fram till dess.
 2. D043 (del B): aktiveraren stegar, kontrollerar, startövar och aktiverar en integrerad och granskad Runtime-release av
-   sig själv när Runtime är ledigt. Den bygger på D042 och integreras efter den.
+   sig själv när Runtime är ledigt. Den bygger på D042 och integreras efter den. Den övas isolerat före granskningen:
+   startövningen på en kopia av värden, och hela titten med aktivering och återställning i en fristående kopia.
 3. Ägarens engångssteg, i hans egen Terminal: installationen i runbooken ("Credential-free measurement as the key-less
    test user") med gränsproben som provanvändaren, därefter övergång 20 (D042 och D043). Övergång 20 är den sista
    kodövergången han kör själv; releasen ändrar själva aktiveraren.
