@@ -257,10 +257,18 @@ class SudoersTests(unittest.TestCase):
             self.assertEqual(done.returncode, 0, done.stderr)
 
     def test_usage_is_refused_without_the_test_user(self):
+        done = subprocess.run([sys.executable, '-B', str(SCRIPT), 'annat'], capture_output=True, text=True)
+        self.assertEqual(done.returncode, 2); self.assertIn('VÄGRAR', done.stderr)
+        try:
+            prov = pwd.getpwnam(fast.PROV).pw_uid
+        except KeyError:
+            prov = None
+        if os.getuid() == prov:
+            # The suite is measured AS the test user (D042): the real probe would pass and write into its out directory.
+            # Who else is refused is proven in-process (IdentityTests); the command line only for any other runner.
+            return
         done = subprocess.run([sys.executable, '-B', str(SCRIPT), 'gransprob'], capture_output=True, text=True)
         self.assertEqual(done.returncode, 2); self.assertIn('VÄGRAR', done.stderr)
-        done = subprocess.run([sys.executable, '-B', str(SCRIPT), 'annat'], capture_output=True, text=True)
-        self.assertEqual(done.returncode, 2)
 
 
 if __name__ == '__main__':

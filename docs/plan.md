@@ -60,6 +60,12 @@ Ordningen:
    test user") med gränsproben som provanvändaren, därefter övergång 20 (D042 och D043). Övergång 20 är den sista
    kodövergången han kör själv; releasen ändrar själva aktiveraren.
 
+Läge 2026-09-30: ägaren installerade provanvändaren 12:56Z (gränsproben ren) och aktiverade övergång 20 13:09Z. Agentens
+första titt 13:11Z gav valet `none`, kodövergången `current` och körde de tre köade mätningarna som provanvändaren:
+Digitala grön, kontoret föll på fildeskriptorer under launchd (rättat i kontoret) och Runtime på ett prov som
+förutsätter att det inte körs av provanvändaren (D044). D044 rör ingen av ägarens filer och ska aktiveras av agenten
+själv, den första automatiska kodövergången.
+
 Återupptagning: kontorets `evidence/nasta-uppdrag/local/full-autonomi-20260930/LAGE.md`.
 
 ---
