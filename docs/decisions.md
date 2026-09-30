@@ -1874,3 +1874,98 @@ Limits:
   key stay bound whole.
 - The exemption rests on a property of the code. A future Runtime command that runs a Codex model without setting both
   keys itself would have to end it; the premise test covers today's command builders.
+
+
+## D042 — 2026-09-30: whole suites are measured as a key-less local user, through one sudoers rule
+
+The owner's words, verbatim in the office's `evidence/nasta-uppdrag/local/full-autonomi-20260930/owner-words-full-autonomi-20260930.md`:
+"A. Kredentialfri mätning utan undantag. En separat lokal macOS-användare utan nycklar, och en enda sudoers-regel som
+bara tillåter ett fast, granskat mätskript att köras som den användaren, inget annat kommando. Pröva först om den
+hanterade policyn tillåter en sådan regel. Om inte, säg exakt vad det kräver." and "Inga nya konton eller behörigheter
+utöver dessa tre: provanvändaren, den enda sudoers-regeln och agenten jag installerar. Sessioner får aldrig generell
+sudo, och policyn som nekar launchctl ändras inte."
+
+Why: the issuer seals only a whole-candidate suite measured credential-free (`credential_free_execution`, returncode 0,
+last line `OK`), and a sandbox profile cannot give Runtime's suite that: three tests start a sandbox of their own and a
+sandbox cannot start inside another (D040's and D041's composite route, the owner's decision "1"). A separate account
+needs no outer sandbox. The issuer does not check who ran the suite; `docs/check-issuer.md` makes the flag the holder's
+attestation, which this decision grounds in the account and a probe instead of a profile.
+
+Measured first: the managed policy (`/Library/Application Support/ClaudeCode/managed-settings.json`) denies
+`Bash(sudo:*)`, `su`, `dscl`, `visudo` and `launchctl` to every session, and a deny cannot be narrowed by an allow. A
+sudoers rule is therefore allowed to exist (the policy governs sessions, not the system), but no session can use it.
+What the owner's constraints permit without changing the policy: the agent the owner installs (D040) runs as the owner
+outside that policy, so it runs the rule for a queued request. Changing the policy instead would mean removing the
+sudo deny altogether, since it cannot be narrowed to one command; that is not proposed.
+
+Decision:
+- The test user is a hidden role account `_nortropicprov` (UID 470, shell `/usr/bin/false`, home
+  `/Users/_nortropicprov`, not in admin); this Mac's own `sysadminctl` says a role account needs a name starting with `_`
+  and a UID in 450-499. No key, login or secret is copied to it; it has no keychain of its own.
+- The fixed script is `scripts/matning_provanvandare.py`, installed root-owned as `/usr/local/libexec/nortropic/matning`
+  and run by the Command Line Tools' root-owned Python 3.9, which no session can change. The one rule,
+  `config/nortropic-matning.sudoers`, lets the owner's account run exactly that file, pinned by its sha256, as
+  `_nortropicprov`, with no other command and no other target user. The script refuses to run as anyone else, as root
+  or as a member of admin, and judges its arguments itself: `gransprob`, or `mat ID` for a request in the owner-only
+  inbox `/Users/Shared/nortropic-matning/in/ID` (a bounded request of exactly the recorded shape and a git bundle, both
+  written by the owner's account in directories only it can write).
+- `mat` runs the boundary probe first and never runs code when it finds a key. Then it clones exactly the requested
+  candidate from the bundle (commit, tree and branch checked), gives it a fresh home, temp directory and git identity,
+  an empty `~/.codex/config.toml` and an empty `.scratch`, and runs the repository's whole suite with the issuer's
+  command (`python -B -m unittest discover -s scripts|tools|verktyg -p test_*.py -v`). Runtime is measured as its own
+  host root, with the host's read-only `.runtime/bin`, `temporal-venv` and `web-tools` linked in; Digitala installs its
+  npm lock and Playwright's browsers into the test user's own caches and is told where Runtime and the office are;
+  its tests that run the ACTIVE Runtime release's own code read a view of that release's code and configuration that the
+  session puts in the request (`runtime-vy`: no context, no history; the host's interpreter linked). A Digitala request
+  without that view is refused; the owner's own checkout is never used in its place. The clone gets every branch of the repository (some
+  suites read older commits by id) and the test user's own temporary directory under `/var/folders`.
+  The result (`suite.json` in the issuer's form, `suite.log`, `gransprob.json`, `klar.json`) lands in the test user's
+  home, readable by the owner's account; the work area is removed. An id is measured once.
+- The probe tries, for real, every key on the owner's list: the App key, the Claude login (keychain item and file),
+  the Codex login, GitHub (hosts file, keychain item, `gh auth token`), SSH (keys and the agent's sockets), the login
+  keychain and `~/.nortropic-hemligheter` (listing it and reading a file inside directly). A readable one is reported by its path, never by what it holds. It also
+  reports, without failing on them, readable files outside the list and a bounded sweep of files whose names look like
+  keys (outside `~/Library`, which other accounts cannot list; the keychains in it are tried above).
+- Sessions queue with `scripts/measurement_queue.py begar` and wait with `vanta`; the agent's look, after the choice,
+  runs `sudo -n -u _nortropicprov /usr/local/libexec/nortropic/matning mat ID` for each queued request within a
+  15-minute budget, records `agent.json` next to it and `.runtime/ap10/measurement-status.json`. A session copies
+  `suite.json` and `suite.log` into its sealed request as before. The agent file does not change.
+- A pre-existing race in `scripts/bounded.py` is fixed, because it makes a green measurement depend on timing: macOS
+  answers EPERM, not ESRCH, when only zombies remain in a process group, and `stop_group` took that as an error. One of
+  the rehearsed whole-suite runs below failed `test_bounded` this way; a zombie-only group now counts as stopped.
+- Heavy work keeps away from the AP-10 watch (`ap10_quiet`): a measurement starts only when the watch is not running and
+  its next run is at least the 20-minute lead plus one whole measurement away. One measurement is bounded by the fixed
+  script's own limits (under 4800 s together; the agent allows 5400 s), so none can still run when the watch starts.
+  On 2026-09-30 the 07:00Z watch lost its analysis activity to a heartbeat timeout (margin about two seconds) while a
+  publication and suites ran beside it.
+
+Tested (`scripts/test_matning_provanvandare.py`, `scripts/test_measurement_queue.py`): the request's every field, an id
+outside the pattern, a writable inbox, a link, another owner; identity (another user, root, admin); the probe on real
+files readable and unreadable, never keeping what it read; the whole measurement of a real repository in the issuer's
+form, a failing suite, a bundle that does not carry the request, a probe that finds a key; the rule's exact line and
+digest; the script's Python 3.9 syntax; the queue's exact sudo argument list, budget, lock, hang and not-installed
+state; the watch rule. Rehearsed on this host with exactly these script bytes (the office's
+`evidence/nasta-uppdrag/local/full-autonomi-20260930/sim/KVITTO-simulering.md`): the script run as the owner, with its
+identity and probe replaced, in a clone outside the owner's home, under a sandbox profile that denies reading every file
+and directory in the owner's home another local account could not read - the office's suite 630 tests OK and
+Digitala's 321 OK, twice; Runtime's 743 with only the three tests that start their own sandbox and `test_bounded`'s
+process-group race failing under that outer profile, and without it, which is how the test user runs, 743 OK in one run
+and one failure of that race in the other (fixed above; the rehearsals measured main, which does not carry the fix).
+
+Limits:
+- The first run as the real test user is the owner's own `gransprob` after installing. Its account, group and home
+  are measured then, not before; a key the probe finds stops every measurement until the owner closes it.
+- The test user reads what every local account reads: the owner's home is world-listable, so world-readable files
+  there (the probe names them) are readable. `~/.claude.json` is such a file (0644). It is not on the owner's list and
+  its contents were not read (the managed policy denies sessions reading it); the owner decides whether to restrict it.
+- The suite runs code the candidate brings, as the test user, with network. That is the point of measuring it; the
+  account holds nothing a candidate could take. The toolchains under `/opt/homebrew` and the host's linked
+  `.runtime` tools belong to the owner's account; their integrity rests on review as before.
+- A change to the fixed script needs the owner again (a new install and a new digest in the rule).
+- A queued measurement waits for the agent's next look (at most five minutes). No new measurement starts after the
+  first 15 minutes of a look; one that started runs to its end. While it runs the agent's next look waits too (launchd
+  starts no second copy of the agent), so a choice waits with it; an activation does not change the host tools a
+  measurement links (`.runtime/bin`, `temporal-venv`, `web-tools`). The agent runs this only in a release carrying this
+  decision, activated by the owner's controlled transition (the release changes model_choice.py); until then a session
+  measures as before.
+

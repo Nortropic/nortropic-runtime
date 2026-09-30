@@ -1,0 +1,6 @@
+# /etc/sudoers.d/nortropic-matning - Nortropic Runtime D042: the ONE rule.
+# The owner's account may run exactly the fixed, reviewed measurement script, pinned by its sha256, as the key-less
+# test user _nortropicprov, and nothing else: no other command, no other target user, never root. Sessions cannot
+# run sudo (managed policy); the owner's agent runs this rule for queued measurements (scripts/measurement_queue.py).
+# The owner installs it once (docs/runbook.md, "The key-less test user"); check first: sudo visudo -cf <this file>
+elinhaggstrom ALL = (_nortropicprov) NOPASSWD: sha256:715cc6c42727a6f8c31845f210708ebe6292f34e4c987397b938fb16b9fd7fd4 /usr/local/libexec/nortropic/matning

@@ -40,6 +40,29 @@ Ordningen:
 
 ---
 
+# Parallellt gällande — full autonomi utan root (D042, D043)
+
+Parallellt uppdrag med eget skrivansvar: sessionen nortropic-repos-07 (Claude Code), på ägarens beställning FULL AUTONOMI
+UTAN ROOT (ordagrant i kontorets `evidence/nasta-uppdrag/local/full-autonomi-20260930/`). Varje ägarsteg som återstår ska
+bli en smal mekanism som ägaren godkänner en gång. Gränserna är hans: inga nya kostnader, och bara tre nya saker:
+provanvändaren, en enda sudoers-regel och agenten han installerar. Sessioner får aldrig generell sudo, och policyn som
+nekar launchctl ändras inte. Blocket ersätter inget annat block.
+
+Ordningen:
+1. D042 (del A): helsviter mäts som den nyckellösa provanvändaren `_nortropicprov`, genom ett fast rotägt mätskript som en
+   enda sudoers-regel pinnar. Sessioner köar, och ägarens agent kör regeln. Den hanterade policyn nekar sessioner `sudo`,
+   så en session kan aldrig använda regeln själv; någon policyändring behövs inte. Integreras på vanligt sätt, med
+   separat granskning, efter att ägaren aktiverat övergång 19. Övergång 19 kräver att main är `faf3cfb` fram till dess.
+2. D043 (del B): aktiveraren stegar, kontrollerar, startövar och aktiverar en integrerad och granskad Runtime-release av
+   sig själv när Runtime är ledigt. Den bygger på D042 och integreras efter den.
+3. Ägarens engångssteg, i hans egen Terminal: installationen i runbooken ("Credential-free measurement as the key-less
+   test user") med gränsproben som provanvändaren, därefter övergång 20 (D042 och D043). Övergång 20 är den sista
+   kodövergången han kör själv; releasen ändrar själva aktiveraren.
+
+Återupptagning: kontorets `evidence/nasta-uppdrag/local/full-autonomi-20260930/LAGE.md`.
+
+---
+
 # Gällande arbete — ordinarie publiceringsingång efter införandet
 
 2026-09-28: Runtime PR 72, Office PR 114 och Digitala PR 14 är skyddat integrerade.
