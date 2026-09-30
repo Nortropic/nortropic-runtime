@@ -240,7 +240,14 @@ separate process and context whose run must differ from every implementation run
 When author and reviewer use the same model family that separation is NOT a claim
 of independent judgment. The Claude author has Read/Edit/Write only and cannot run
 tests; host acceptance runs afterwards in the existing sandbox. Managed Claude
-settings are bound with the other native instruction inputs.
+settings are bound with the other native instruction inputs. The Codex home
+configuration (`~/.codex/config.toml`) is bound without its two top-level keys
+`model` and `model_reasoning_effort` (D041): every Runtime command that runs a
+Codex model sets both itself, so the owner may change his own Codex sessions'
+model and effort, in the workplace's Flödet or in Codex's `/model`, without
+stopping Runtime. Every other change to that file still stops every new model
+call until a release staged with the new bytes is active. A release staged
+before D041 is checked against the whole file.
 
 Release-transition constraint: this revision extends the bound instruction inputs,
 so its guard key set differs from every earlier frozen configuration. The frozen
