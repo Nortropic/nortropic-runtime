@@ -1,0 +1,19 @@
+{
+ "source": "Actual run 2026-09-30, one model call: the watch's route runtime.profile.command(writable=False) (the private stage adds only --output-schema) with the pinned Codex CLI 0.159.2 on a synthetic read task in a git workspace, parsed by runtime.provider_result.parse as the private stage does (scripts/measure_codex_shapes.py exec). The raw events stay in the private evidence root, named by their hash.",
+ "returncode": 0,
+ "raw_sha256": "efc4b50b92ae7042f608a0a1a30856459b6ac8b108da704136cecdb4e7eb79fa",
+ "event_types": [
+  "item.completed",
+  "item.started",
+  "thread.started",
+  "turn.completed",
+  "turn.started"
+ ],
+ "item_types": [
+  "agent_message",
+  "command_execution"
+ ],
+ "valid_terminal": true,
+ "answer": "42",
+ "answer_correct": true
+}

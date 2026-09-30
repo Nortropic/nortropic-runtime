@@ -18,7 +18,8 @@ CODE = ('runtime/__init__.py', 'runtime/check_issuer.py', 'runtime/integration.p
         'runtime/profile.py', 'runtime/release.py', 'runtime/targets.py',
         'runtime/construction_registration.py', 'runtime/development_binding.py',
         'runtime/development_scope.py', 'runtime/snapshot.py',
-        'runtime/claude_profile.py', 'scripts/probe_bridge.py', 'scripts/publish_construction.py',
+        'runtime/claude_profile.py', 'runtime/codex_pin.py',
+        'scripts/probe_bridge.py', 'scripts/publish_construction.py',
         'scripts/publish_digitala.py')
 
 

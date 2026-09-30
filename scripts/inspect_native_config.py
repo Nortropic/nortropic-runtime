@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import subprocess
+from runtime import codex_pin
 from runtime.release import ROOT, inspect_installation
 
 
@@ -10,8 +11,8 @@ def inspect():
     if value is None:
         return {'installed': False}
     versions = {}
-    for name in ('codex-0.155.1',):
-        run = subprocess.run([str(ROOT/'.runtime/bin'/name), '--version'], capture_output=True,
+    for name, binary in (('codex-' + codex_pin.VERSION, ROOT / codex_pin.BINARY),):
+        run = subprocess.run([str(binary), '--version'], capture_output=True,
                              text=True, timeout=10, check=True)
         versions[name] = run.stdout.strip()
     return {'installed': True, 'config_sha256': value['config_sha256'],

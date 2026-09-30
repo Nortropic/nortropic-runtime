@@ -223,7 +223,8 @@ def codex_permission_arguments(workspace):
 
 def codex_sandbox_command(workspace, argv):
     """The same sandbox as the Codex session, without a model (used by the host checks)."""
-    return [str((ROOT / '.runtime/bin/codex-0.155.1').resolve()), 'sandbox', *codex_permission_arguments(workspace),
+    from .codex_pin import BINARY
+    return [str((ROOT / BINARY).resolve()), 'sandbox', *codex_permission_arguments(workspace),
             '-P', 'nr', '-C', str(workspace), *argv]
 
 

@@ -30,7 +30,8 @@ CODE = ('runtime/__init__.py', 'runtime/check_issuer.py', 'runtime/integration.p
         'runtime/profile.py', 'runtime/release.py', 'runtime/targets.py',
         'runtime/construction_registration.py', 'runtime/development_binding.py',
         'runtime/development_scope.py', 'runtime/snapshot.py',
-        'runtime/claude_profile.py', 'scripts/probe_bridge.py', 'scripts/publish_construction.py',
+        'runtime/claude_profile.py', 'runtime/codex_pin.py',
+        'scripts/probe_bridge.py', 'scripts/publish_construction.py',
         'scripts/publish_digitala.py')
 TARGETS = ('Nortropic/nortropic-runtime', 'Nortropic/nortropic-projektkontor',
            'Nortropic/nortropic-digitala', 'Nortropic/nortropic-kundstart')
@@ -137,9 +138,10 @@ def run_isolated(workspace, program, input_data=b'', timeout=120):
     # Extend only the read table for pinned interpreters/CLIs needed by regression
     # tests. Host evidence, keychain, real HOME, App key and Temporal remain denied.
     index = next(i for i, value in enumerate(command) if value.startswith('permissions.nr.filesystem='))
+    from . import claude_profile, codex_pin     # the pinned programs, from their one place each (D046, D047)
     extra = {str(ROOT / '.runtime/temporal-venv'): 'read',
-             str(ROOT / '.runtime/bin/claude-2.1.257'): 'read',
-             str(ROOT / '.runtime/bin/codex-0.155.1'): 'read'}
+             str(ROOT / '.runtime/bin' / ('claude-' + claude_profile.VERSION)): 'read',
+             str((ROOT / codex_pin.BINARY).parent): 'read'}
     command[index] = command[index][:-1] + ',' + ','.join(json.dumps(k)+'='+json.dumps(v)
                                                         for k,v in extra.items()) + '}'
     process = subprocess.Popen(command, cwd=workspace, env=env, stdin=subprocess.PIPE,

@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 
+from runtime import codex_pin
 from runtime.release import ROOT
 WORKSPACES = ROOT / '.runtime' / 'workspaces'
 
@@ -41,7 +42,7 @@ def worker_command(model='gpt-6-astra', effort='high'):
     # The Runtime profile passes the release's model choice here (D028) and its effort choice (D040). The defaults
     # are the recorded baseline, so the fixture and inspection scripts that call this without them build exactly the
     # command they always did (json.dumps of 'high' is the '"high"' that was written here before).
-    command = [str(ROOT / '.runtime/bin/codex-0.155.1'),
+    command = [str(ROOT / codex_pin.BINARY),
                '-c', 'model=' + json.dumps(model), '-c', 'approval_policy="never"',
                '-c', 'model_reasoning_effort=' + json.dumps(effort)]
     # These built-in providers are not entries in [mcp_servers].

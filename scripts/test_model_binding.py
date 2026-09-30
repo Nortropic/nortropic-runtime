@@ -22,7 +22,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from runtime import claude_profile, development_interactive as interactive, model_question, profile
+from runtime import claude_profile, codex_pin, development_interactive as interactive, model_question, profile
 from runtime.development_host import RUN_FIELDS
 from runtime.development_model import models, EXECUTORS
 from runtime.development_scope import ScopeClosed
@@ -38,7 +38,8 @@ CHOSEN = 'claude-opus-5'
 MEASURED = json.loads(Path(claude_profile.EVIDENCE + '/model-binding-init-shape.json').read_text())
 # The pinned Codex CLI's own resolution of the startup chain's arguments (config/read, no thread, no turn). Codex exec
 # reports no model identity in its event stream, so this measured resolution is the premise the Codex choice rests on.
-CODEX_MEASURED = json.loads(Path('evidence/codex-model-binding/config-read-shape.json').read_text())
+# Measured again for each pin (D047); evidence/codex-model-binding keeps the first measurement, of 0.155.1 (D028).
+CODEX_MEASURED = json.loads(Path(codex_pin.EVIDENCE + '/config-read-shape.json').read_text())
 
 
 def config(selection=None, levels=None):
@@ -216,10 +217,15 @@ class CodexResolutionTests(unittest.TestCase):
                     self.assertEqual([a for a in argv if a.startswith('model=')],
                                      CODEX_MEASURED['cases'][label]['model_argument'])
 
-    def test_the_default_was_measured_unchanged_against_the_active_release(self):
-        unchanged = CODEX_MEASURED['default_unchanged']
-        self.assertTrue(unchanged['worker_command_identical'])
-        self.assertEqual(unchanged['identical_per_shape'], dict.fromkeys(('read_only', 'writable', 'allowed', 'interactive'), True))
+    def test_the_measurement_is_of_the_pinned_cli(self):
+        self.assertEqual(CODEX_MEASURED['cli'], {'version': codex_pin.VERSION, 'binary_sha256': codex_pin.SHA256})
+
+    def test_against_the_active_release_the_default_commands_differ_only_in_the_binary(self):
+        against = CODEX_MEASURED['default_against_active']
+        self.assertTrue(against['code_roots_differ'], 'two code roots were compared, not one with itself')
+        self.assertEqual(against['only_the_binary_differs'], dict.fromkeys(('worker', 'read_only', 'writable', 'allowed', 'interactive'), True))
+        self.assertEqual(against['binaries'][1], '<host>/' + codex_pin.BINARY)
+        self.assertNotEqual(against['binaries'][0], against['binaries'][1])
 
 
 class PrivateStageBaselineTests(unittest.TestCase):

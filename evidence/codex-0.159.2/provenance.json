@@ -1,0 +1,66 @@
+{
+ "observed_at": "2026-09-30T23:15:35.980849+00:00",
+ "why": "The owner said on 2026-09-30 \"jag tror \u00e4ven codex har uppdateringar\"; Runtime pinned 0.155.1, the current release is 0.159.2 (GitHub openai/codex rust-v0.159.2, 2026-09-29). D047 pins it in a directory of its own with the code-mode host of the same version; 0.155.1 stays as the previous release's way back.",
+ "source": {
+  "release": "openai/codex rust-v0.159.2",
+  "fetched_with": "gh release download rust-v0.159.2 --repo openai/codex",
+  "tarballs": {
+   "codex-aarch64-apple-darwin.tar.gz": {
+    "sha256": "025deffd84cbc99d88ef952e585dc67c7c94e4273f89ba3d45f7e5799743c13c",
+    "github_digest": "sha256:025deffd84cbc99d88ef952e585dc67c7c94e4273f89ba3d45f7e5799743c13c",
+    "digest_equal": true,
+    "members": [
+     [
+      "codex-aarch64-apple-darwin",
+      true,
+      240184096
+     ]
+    ]
+   },
+   "codex-code-mode-host-aarch64-apple-darwin.tar.gz": {
+    "sha256": "4f9f3c0e3eabe9bee128946bb04cc9523423e82f9751880b7f03d41aa9e482f2",
+    "github_digest": "sha256:4f9f3c0e3eabe9bee128946bb04cc9523423e82f9751880b7f03d41aa9e482f2",
+    "digest_equal": true,
+    "members": [
+     [
+      "codex-code-mode-host-aarch64-apple-darwin",
+      true,
+      65359872
+     ]
+    ]
+   }
+  },
+  "extracted": "only the regular member of each tarball, to codex and codex-code-mode-host"
+ },
+ "installed": {
+  "codex": {
+   "path": ".runtime/bin/codex-0.159.2/codex",
+   "sha256": "16593cc2f422d5f398a8e40f550ebbaf1245392528957be342c295920a300704",
+   "bytes": 240184096,
+   "code_signature": [
+    "Identifier=codex",
+    "TeamIdentifier=2DC432GLL2"
+   ],
+   "code_signature_verifies": true,
+   "reports": "codex-cli 0.159.2"
+  },
+  "codex-code-mode-host": {
+   "path": ".runtime/bin/codex-0.159.2/codex-code-mode-host",
+   "sha256": "ed79fbc9e1683feb29d73fb421f3e16932d178a459f63741754014c6c7ea6107",
+   "bytes": 65359872,
+   "code_signature": [
+    "Identifier=codex-code-mode-host",
+    "TeamIdentifier=2DC432GLL2"
+   ],
+   "code_signature_verifies": true
+  }
+ },
+ "previous": {
+  "path": ".runtime/bin/codex-0.155.1",
+  "sha256": "8eaf1ad12fe6bf89b1710330f58900014322c7c5af677e43be116d8ac5fc0a9e",
+  "code_signature": [
+   "Identifier=codex",
+   "TeamIdentifier=2DC432GLL2"
+  ]
+ }
+}
