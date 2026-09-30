@@ -65,6 +65,9 @@ första titt 13:11Z gav valet `none`, kodövergången `current` och körde de tr
 Digitala grön, kontoret föll på fildeskriptorer under launchd (rättat i kontoret) och Runtime på ett prov som
 förutsätter att det inte körs av provanvändaren (D044). D044 rör ingen av ägarens filer och ska aktiveras av agenten
 själv, den första automatiska kodövergången.
+Agentens första automatiska kodövergång (D044, 14:08Z) vägrades vid övningen: övningen kördes inne i tittens egen
+händelseloop (D045). Inget stoppades. D045 rättar det men ändrar en av ägarens filer, så ägaren aktiverar D044 och D045
+med övergång 21.
 
 Återupptagning: kontorets `evidence/nasta-uppdrag/local/full-autonomi-20260930/LAGE.md`.
 

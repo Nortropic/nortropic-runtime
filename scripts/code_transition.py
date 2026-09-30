@@ -619,8 +619,10 @@ async def automatic(host, mc, github=None, rehearse=None, copy_code=None, check_
                 await quiet(mc, REHEARSAL_MARGIN)
                 await preconditions(host, mc, record_directory, staged)      # the rehearsal, too, only while Runtime is idle
                 attempt = now().strftime('%Y%m%dT%H%M%SZ')
-                result = rehearse(host, Path(staged['old_config']).parent, Path(staged['config']).parent,
-                                  record_directory / ('rehearsal-' + attempt))
+                # rehearse runs an event loop of its own (asyncio.run); this look already runs in one (model_choice.tick),
+                # so the rehearsal runs in a thread of its own (D045).
+                result = await asyncio.to_thread(rehearse, host, Path(staged['old_config']).parent, Path(staged['config']).parent,
+                                                 record_directory / ('rehearsal-' + attempt))
                 result = {**result, 'new_config_sha256': staged['sha256'], 'old_config_sha256': staged['old_config_sha256']}
                 mc.replace(record_directory / 'rehearsal.json',       # a waited rehearsal is run again: never 'x'
                            (json.dumps(result, indent=2, default=str) + '\n').encode())
