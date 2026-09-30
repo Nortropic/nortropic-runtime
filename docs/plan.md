@@ -1,3 +1,14 @@
+# Backlog54c10b: heartbeat margin, preparation2026-09-30
+
+P1–P4 are implemented on a separate branch based on bbe2246 (D046). See
+BACKLOG-54C10B-HEARTBEAT-20260930 and evidence/heartbeat-throttle for the measured
+before/after/load evidence and sampling limitation. Three model-free P1 tests
+pass; exact-candidate whole-suite and native acceptance, independent review,
+protected publication and observed activation remain. No live engine, schedule,
+partner service or owner file has been changed. Next: commit this candidate,
+queue its keyless full suite, freeze native behavior cases and request review.
+The earlier plan is preserved below; it does not override this named work.
+
 # Rutin: ingången följer main
 
 Gäller varje session (kontorets UNDERHALL-INGANGAR-20260924; D032). Börja med `python3 -B scripts/check_entry.py`: den

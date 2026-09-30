@@ -2198,3 +2198,35 @@ Limits:
 - D046 touches no owner file and leaves the AP-10 command unchanged, so the agent activates it by itself once it is
   integrated and reviewed and Runtime is idle. The workplace must measure the new program before a new model choice is
   activated (`model_choice.measured` compares the measurement's binary with the pinned one).
+
+
+## BACKLOG-54C10B-HEARTBEAT-20260930
+
+Implement OVL-20260930-54c10b P1–P4 under the current user's autonomous backlog
+mandate. Both runtime/worker.py Worker instances cap SDK heartbeat throttling at
+2seconds. For the current10/10/15second activity timeouts, min(0.8×timeout,2) is
+at most one quarter of each timeout (scripts/test_heartbeat_throttle.py).
+
+P2 first measured the previous default: maximum received-heartbeat gap8.004227s,
+margin1.995773s (evidence/heartbeat-throttle/baseline.json). With the2s cap,
+the maximum was2.005321s and margin7.994679s (capped.json). Each run lasted at
+least60s, on its own empty engine and task queue, Python3.12.13/temporalio1.33.0.
+
+P3 observed the capped activity from21:25:11.444426Z to21:47:00.695628Z. The
+keyless whole Runtime suite at bbe2246f9b9418a18d71871f8181da9d8b6c8161 ran
+21:43:31.656551Z–21:47:00.103107Z,836 tests, returncode0; it is the load,
+not this candidate's acceptance suite. Maximum observed heartbeat gap2.099447s,
+minimum margin7.900553s, no heartbeat timeout; the own engine was removed.
+The maximum poll gap was0.645287s against a0.4s target; preserve that sampling
+limitation (loaded.json and README.md), without inferring unobserved precision.
+
+The baseline supports SDK throttling as the cause of the narrow default margin.
+The measured load no longer needs ap10_quiet solely for this heartbeat margin.
+It does not prove safety under arbitrary host starvation or remove other reasons
+for quiet operation. ap10_quiet remains unchanged, as required by P4.
+
+Integration still requires the exact candidate's keyless whole suite, frozen
+native acceptance and separate review. This entry grants no activation: the
+ordinary D043 route must report activated for the resulting revision, otherwise
+an owner-controlled transition is still required. Private originals and the
+exact historical harness are bound by hashes in the public evidence.
