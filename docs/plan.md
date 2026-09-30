@@ -85,6 +85,10 @@ den sista kodövergång ägaren kör själv: en release som ändrar någon av ä
 D046 (Claude Code 2.1.285, kvalificerad på nytt, läsarnas nivå): på ägarens beställning 2026-09-30, så att Opus 5.5 går
 att välja för Runtime. Den rör ingen ägarfil och inte AP-10:s kommando, så agenten aktiverar den själv. Codex
 uppdateras i en egen ändring med ägarens övergång.
+Agenten aktiverade D046 själv 2026-09-30 21:01Z, den första automatiska kodövergången.
+Agenten aktiverade också BACKLOG-54C10B (PR 81, ffffb12) själv 2026-09-30 22:32Z.
+D047 (Codex 0.159.2, pinnad på ett ställe), på ffffb12: ändrar ägarfiler och AP-10:s kommando (binären), så ägaren
+aktiverar den med övergång 22.
 
 Återupptagning: kontorets `evidence/nasta-uppdrag/local/full-autonomi-20260930/LAGE.md` och
 `evidence/nasta-uppdrag/local/runtime-binarer-20260930/LAGE.md`.

@@ -73,9 +73,6 @@ STATUS_SCHEMA = 'automatic-choice-status/1'
 AGENT_LABEL = 'se.nortropic.ap10-runtime-choice'
 AGENT_INTERVAL = 300                # seconds between the agent's looks; a switch waits at most this long after Runtime is idle
 # Refusals that pass by themselves: auto waits and looks again. Every other refusal ends that request until it changes.
-# The pinned Codex binary the startup chain launches, relative to the host; test_model_choice asserts it against
-# worker_command() itself, so drift on either side fails a test instead of trusting a measurement of another binary.
-CODEX_BINARY = '.runtime/bin/codex-0.155.1'
 MEASUREMENT = 'evidence/partner/local/modellmatning.json'   # the workplace's own receipt, under the office root the release binds
 FINAL = ('refused', 'restored', 'failed', 'interrupted')    # decided for this request; auto looks again only for a new one
 WAITING = ('an AP10 watch run is in progress', 'the next AP10 run is less than 20 minutes away',
@@ -113,6 +110,10 @@ if __name__ == '__main__':
     sys.path.insert(0, str(CODE_ROOT))
 
 from runtime import claude_profile, daemon, model_question, release           # noqa: E402
+# The pinned Codex binary the startup chain launches, relative to the host, read from its one place (D047);
+# test_model_choice asserts it against worker_command() itself, so drift on either side fails a test instead of
+# trusting a measurement of another binary.
+from runtime.codex_pin import BINARY as CODEX_BINARY                         # noqa: E402
 from runtime.development_model import ROLES, efforts, executors, models, watch  # noqa: E402
 from runtime.private_stage import check_private_processes                    # noqa: E402
 from runtime.run import check_unfinished_writers                             # noqa: E402

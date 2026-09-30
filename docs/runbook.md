@@ -4,8 +4,8 @@ The living plan owns the current task, wait reason, attempt identity and next
 specific action. Read it before starting any process. Both accepted tasks are completed; see docs/runtime-v0.1.md for measured scope and limits.
 
 The current installation uses a pinned local Temporal 1.9.1 development service,
-Python 3.12 with temporalio1.33.0 in `.runtime/temporal-venv`, and Codex0.155.1
-under `.runtime/bin`. Dependency lock and recorded hashes are under config/ and
+Python 3.12 with temporalio1.33.0 in `.runtime/temporal-venv`, and Codex 0.159.2
+under `.runtime/bin/codex-0.159.2` (runtime/codex_pin.py, D047). Dependency lock and recorded hashes are under config/ and
 evidence/startup/. Authentication uses the already authorized Codex and Claude Max subscriptions;
 GitHub authentication is available only to the host publication activity. No
 Temporal Cloud or paid API fallback is configured. This is a trusted local Mac
@@ -171,10 +171,14 @@ bounded qualification, never automatic API fallback.
 For a fresh isolated project installation, inspect these exact selected artifacts
 and their retained download/inspection records before extraction:
 
-- openai/codex release rust-v0.155.1: codex-aarch64-apple-darwin.tar.gz and
-  codex-code-mode-host-aarch64-apple-darwin.tar.gz; extract only selected regular
-  executables to .runtime/bin/codex-0.155.1 and .runtime/bin/codex-code-mode-host.
-  Commands and outcomes: evidence/startup/codex-download/ and codex-host-download/.
+- openai/codex release rust-v0.159.2 (D047): codex-aarch64-apple-darwin.tar.gz and
+  codex-code-mode-host-aarch64-apple-darwin.tar.gz, digests equal to GitHub's; extract
+  only the regular member of each to .runtime/bin/codex-0.159.2/codex and
+  .runtime/bin/codex-0.159.2/codex-code-mode-host. Record:
+  evidence/codex-0.159.2/provenance.json. rust-v0.155.1 (.runtime/bin/codex-0.155.1 and
+  .runtime/bin/codex-code-mode-host; evidence/startup/codex-download/ and
+  codex-host-download/) stays as the previous release's way back. A new Codex pin changes
+  runtime/codex_pin.py only and measures again with scripts/measure_codex_shapes.py.
 - temporalio/cli release v1.9.1: temporal_cli_1.9.1_darwin_arm64.tar.gz; selected
   regular temporal member to .runtime/bin/temporal-1.9.1. Download and inspected
   archive hash/members: evidence/durable-probe/cli-download/ and cli-inspection.json.

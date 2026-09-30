@@ -1,0 +1,60 @@
+{
+ "source": "Actual no-model measurement 2026-09-30 with the pinned Codex CLI 0.159.2 (scripts/measure_codex_shapes.py config-read): the app-server started with exactly the global argument prefix runtime.profile.command(writable=False) builds for the exec route, then initialize and config/read. No thread and no turn were requested. Reduced mechanically to the resolved model, reasoning effort and the type of the layer each came from; paths, the owner's own configuration values and the rest of the response are omitted. The raw protocol stays in the private evidence root, named by its hash.",
+ "why": "The premise the Codex choice rests on, measured rather than assumed, again for this pin: that the pinned CLI takes the model argument the startup chain passes VERBATIM as its effective model, from the command-line layer, over the owner's own config.toml that names a model too.",
+ "cli": {
+  "version": "0.159.2",
+  "binary_sha256": "16593cc2f422d5f398a8e40f550ebbaf1245392528957be342c295920a300704"
+ },
+ "requests": [
+  "config/read",
+  "initialize",
+  "initialized"
+ ],
+ "layers": [
+  "sessionFlags",
+  "user",
+  "system"
+ ],
+ "layer_sets_model": {
+  "sessionFlags": true,
+  "user": true,
+  "system": false
+ },
+ "cases": {
+  "no_choice": {
+   "model_argument": [
+    "model=\"gpt-6-astra\""
+   ],
+   "resolved_model": "gpt-6-astra",
+   "resolved_reasoning_effort": "high",
+   "origin_model": "sessionFlags",
+   "origin_reasoning_effort": "sessionFlags",
+   "raw_sha256": "eaf3cbf92f94bd858e1ea4f8dffa3889a51413f3cb34cef181ca3843662472da"
+  },
+  "probe_name": {
+   "model_argument": [
+    "model=\"nr-probe.model-1\""
+   ],
+   "resolved_model": "nr-probe.model-1",
+   "resolved_reasoning_effort": "high",
+   "origin_model": "sessionFlags",
+   "origin_reasoning_effort": "sessionFlags",
+   "raw_sha256": "50347d50155b315f6221b66666c3cec54075d79c45ace4b4b15e7c6dcf7d5e25"
+  }
+ },
+ "default_against_active": {
+  "what": "The default commands built by the ACTIVE release's own code (<host>/.runtime/ap10/releases/ffffb125174ede97e4c43aaf135cbde937a955bb-df5ed5dc64c0e475ce6fa6a5ebd2c187ba5335c8-code-20260930T223134Z/runtime) and by this code, in separate interpreters that each imported from their own code root, for the same workspace and host root.",
+  "code_roots_differ": true,
+  "only_the_binary_differs": {
+   "worker": true,
+   "read_only": true,
+   "writable": true,
+   "allowed": true,
+   "interactive": true
+  },
+  "binaries": [
+   "<host>/.runtime/bin/codex-0.155.1",
+   "<host>/.runtime/bin/codex-0.159.2/codex"
+  ]
+ }
+}

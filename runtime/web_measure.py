@@ -159,7 +159,8 @@ def detector(run, name):
     binary = common.impeccable_binary().resolve()
     table = {':minimal': 'read', str(binary): 'read', str(snapshot): 'read', str(scratch): 'write'}
     encoded = '{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in table.items()) + '}'
-    argv = [str((ROOT / '.runtime/bin/codex-0.155.1').resolve()), 'sandbox', '-c', 'permissions.nr.filesystem=' + encoded,
+    from .codex_pin import BINARY
+    argv = [str((ROOT / BINARY).resolve()), 'sandbox', '-c', 'permissions.nr.filesystem=' + encoded,
             '-c', 'permissions.nr.network.enabled=false', '-c', 'default_permissions="nr"', '-P', 'nr',
             '-C', str(scratch), str(binary), 'detect', '--json', '--no-config', str(snapshot)]
     env = {'PATH': '/usr/bin:/bin', 'HOME': str(scratch), 'TMPDIR': str(scratch), 'LANG': 'C'}

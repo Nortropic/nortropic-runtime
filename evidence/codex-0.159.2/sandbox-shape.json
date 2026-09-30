@@ -1,0 +1,15 @@
+{
+ "source": "Actual no-model run 2026-09-30 of runtime.profile.sandbox_command(writable=False) with the pinned Codex CLI 0.159.2 (scripts/measure_codex_shapes.py sandbox).",
+ "returncode": 0,
+ "exit_status": {
+  "read": "0",
+  "scratch": "0",
+  "tools": "1",
+  "home": "1",
+  "network": "6"
+ },
+ "read_the_workspace": true,
+ "scratch_written": true,
+ "read_only_written": false,
+ "home_written": false
+}

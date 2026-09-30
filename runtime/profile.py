@@ -77,5 +77,6 @@ def environment():
 
 
 def sandbox_command(workspace, argv, writable=False, allowed_paths=None):
-    return [str(ROOT / '.runtime/bin/codex-0.155.1'), 'sandbox',
+    from .codex_pin import BINARY
+    return [str(ROOT / BINARY), 'sandbox',
             *permissions(workspace, writable=writable, allowed_paths=allowed_paths), '-P', 'nr', '-C', str(workspace), *argv]

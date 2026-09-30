@@ -2230,3 +2230,56 @@ native acceptance and separate review. This entry grants no activation: the
 ordinary D043 route must report activated for the resulting revision, otherwise
 an owner-controlled transition is still required. Private originals and the
 exact historical harness are bound by hashes in the public evidence.
+
+## D047 — 2026-09-30: Codex 0.159.2, pinned in one place
+
+The owner's words (the office's `evidence/nasta-uppdrag/local/runtime-binarer-20260930/owner-words-runtime-binarer-20260930.md`):
+"fixa opus 5.5 för runtime vid tillfälle, hur kan det inte vara uppdaterat? jag tror även codex har uppdateringar."
+
+Runtime pinned Codex 0.155.1 since D004. The current release is 0.159.2 (openai/codex `rust-v0.159.2`). The pin's path was
+written out in seven places: the startup chain (`scripts/probe_bridge.worker_command`), the sandbox commands
+(`runtime.profile`, `runtime.web_visitor`, `runtime.web_measure`), `scripts/inspect_native_config.py`, the activator's
+check that the workplace measured this very program (`scripts/model_choice.py`) and the issuer's sandbox read table
+(`runtime/check_issuer.py`).
+
+Decision:
+1. Pin Codex 0.159.2 in one place, `runtime/codex_pin.py` (`VERSION`, `BINARY`, `SHA256`, `EVIDENCE`); every one of
+   those seven reads it, and `scripts/test_codex_pin.py` fails if any other Runtime code names a Codex version. The
+   binary lives in a directory of its own, `.runtime/bin/codex-0.159.2/`, beside the code-mode host of the same release,
+   so two versions never share a helper. 0.155.1 and its host stay where they are as the previous release's way back.
+2. Fetched with `gh release download rust-v0.159.2 --repo openai/codex`: both tarballs equal GitHub's own digests, only the
+   one regular member of each extracted, code signature valid for the same team as 0.155.1
+   (`evidence/codex-0.159.2/provenance.json`).
+3. Everything measured with the pinned bytes lives in `codex_pin.EVIDENCE` (`evidence/codex-<VERSION>`), measured by
+   `scripts/measure_codex_shapes.py` (new, so the next pin measures the same way): `config-read`, `sandbox` and `exec`.
+   `evidence/codex-model-binding/` keeps D028's measurement of 0.155.1 as history; the model-binding tests read the pinned
+   version's directory.
+4. The issuer's code list (`CODE` in `runtime/check_issuer.py` and `scripts/host_publication.py`) gains
+   `runtime/codex_pin.py`, since the issuer's own imports now reach it; its sandbox read table reads both pins instead of
+   naming `claude-2.1.257` and `codex-0.155.1` (D046's limit). Publication keeps running through the adopted copy with its
+   own files; these take effect at the next issuer adoption.
+
+Measured with 0.159.2 (`evidence/codex-0.159.2/`), the same shapes as with 0.155.1:
+- config/read: the app-server started with exactly the startup chain's global arguments took `model` from the command line
+  verbatim (`sessionFlags`), over the owner's own configured model, both with no choice (gpt-6-astra, high) and with a probe
+  name; the requests were initialize, initialized and config/read only. The default commands built by the active release's
+  own code and by this code, in separate interpreters and for one workspace, differ only in the binary, for the startup
+  chain, the read-only, writable and allowed-paths exec commands and the interactive session;
+- sandbox: the workspace read and `.scratch` written; a write to the read-only `tools/` and to the stand-in home the
+  sandbox ran with refused; the network refused;
+- exec: the read-only exec route with the baseline model answered a synthetic read task correctly (its last agent message
+  is the value), ending in a terminal `runtime.provider_result.parse('codex', …)` accepts. That is the watch's own route
+  and model (the active selection is Codex gpt-6-astra at high); the private stage adds only `--output-schema`. Measured
+  attempts that got the method wrong, and the first measurements before the separate review's notes, are kept in the
+  private `.runtime/codex-shapes-0.159.2/`.
+
+Limits:
+- As before, the launches do not hash the Codex binary; `SHA256` is what the measurements and their tests check. The copy
+  is Runtime's own, under `.runtime/bin`, extracted from the release tarball rather than installed by a package manager.
+- The workplace offers what it measured with the pinned programs, and `model_choice.measured` compares the measurement's
+  binary with the pinned one. Until the workplace has measured 0.159.2, a new Codex choice is refused; the active choice
+  stays as it is.
+- D047 changes two owner files (`OWNER_FILES` in `scripts/code_transition.py`: `scripts/model_choice.py` and
+  `runtime/check_issuer.py`) and the AP-10 command (its binary), so the owner activates it in an owner-run transition.
+  `scripts/host_publication.py` is the source of the separately adopted launcher; its change, like `check_issuer.py`'s
+  code list, takes effect only at the next adoption.
