@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 
 from temporalio.client import Client
 from temporalio.worker import Worker
@@ -19,9 +20,9 @@ async def main():
     with ThreadPoolExecutor(max_workers=1) as executor:
         async with Worker(client, task_queue='development', workflows=[DevelopmentTask, ServiceIdentity, PrivateAssessment, FiniteDevelopment, FiniteAssessment, CapacityTrial],
                           activities=[execute_codex, execute_claude, review_candidate, publish_candidate, private_stage, development_step, capacity_trial_stage], activity_executor=executor,
-                          max_concurrent_activities=1), Worker(client, task_queue='office-operations',
+                          max_concurrent_activities=1, max_heartbeat_throttle_interval=timedelta(seconds=2)), Worker(client, task_queue='office-operations',
                           workflows=[ScheduledOperation], activities=[scheduled_operation],
-                          max_concurrent_activities=1):
+                          max_concurrent_activities=1, max_heartbeat_throttle_interval=timedelta(seconds=2)):
             await asyncio.Event().wait()
 
 
