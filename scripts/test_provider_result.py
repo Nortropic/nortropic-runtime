@@ -2,12 +2,13 @@ import copy
 import json
 from pathlib import Path
 import unittest
+from runtime.claude_profile import EVIDENCE
 from runtime.provider_result import parse
 
 
 class ProviderResultTest(unittest.TestCase):
     def test_real_claude_terminal_and_fail_closed_variants(self):
-        events=[json.loads(l) for l in Path('evidence/claude-qualification/boundary-direct/stdout.log').read_text().splitlines()]
+        events=[json.loads(l) for l in Path(EVIDENCE + '/qualification/boundary-direct/stdout.log').read_text().splitlines()]
         self.assertTrue(parse('claude',events)['valid_terminal'])
         terminal=next(e for e in events if e.get('type')=='result')
         for field,value in [('is_error',True),('is_error',0),('subtype','error_during_execution'),

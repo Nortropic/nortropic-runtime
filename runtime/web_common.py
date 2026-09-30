@@ -47,6 +47,20 @@ SECRET_MAX_BYTES = 4096
 SECRET_MIN_CHARS = 16
 
 
+def reader_effort(effort):
+    """The critic's and visitor's reasoning level (D046): None keeps each profile's own recorded level (Claude medium,
+    Codex high), so a call without --anstrangning builds exactly the command it always did; a named level must be a plain
+    word by claude_profile's rule before it can reach an argument list."""
+    from .claude_profile import selected_effort
+    return None if effort is None else selected_effort(effort)
+
+
+def codex_effort(effort):
+    """worker_command's keyword for a chosen level, or nothing, which keeps its recorded baseline."""
+    level = reader_effort(effort)
+    return {} if level is None else {'effort': level}
+
+
 def now():
     return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 

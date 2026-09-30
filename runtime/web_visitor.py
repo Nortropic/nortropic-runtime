@@ -81,6 +81,7 @@ def parse(argv):
     parser.add_argument('--vy', choices=sorted(VIEWS), required=True)
     parser.add_argument('--utforare', choices=('claude', 'codex'), required=True)
     parser.add_argument('--modell', required=True)
+    parser.add_argument('--anstrangning', help="Reasoning level for the chosen model (D046); absent keeps the profile's own")
     parser.add_argument('--etikett', required=True)
     parser.add_argument('--max-handlingar', type=int, default=40)
     parser.add_argument('--tid', type=int, default=1200)
@@ -114,6 +115,7 @@ def parse(argv):
     from .claude_profile import selected_model
     from .profile import selected_model as codex_model
     (selected_model if args.utforare == 'claude' else codex_model)(args.modell)
+    common.reader_effort(args.anstrangning)
     return args
 
 
@@ -225,12 +227,12 @@ def codex_sandbox_command(workspace, argv):
             '-P', 'nr', '-C', str(workspace), *argv]
 
 
-def codex_command(workspace, model):
+def codex_command(workspace, model, effort=None):
     from scripts.probe_bridge import worker_command
     from .profile import selected_model
     shell = {'PATH': '/opt/homebrew/bin:/usr/bin:/bin', 'TMPDIR': str(workspace / '.scratch')}
     shell_table = '{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in shell.items()) + '}'
-    base = worker_command(selected_model(model))[:-1]
+    base = worker_command(selected_model(model), **common.codex_effort(effort))[:-1]
     # Codex re-executes itself inside the sandbox to load instructions; it must be named by its real path.
     base[0] = str(Path(base[0]).resolve())
     return base + codex_permission_arguments(workspace) + [
@@ -256,16 +258,16 @@ def workspace_spellings(workspace):
     return sorted(forms)
 
 
-def claude_command(workspace, model):
-    from .claude_profile import qualified_binary, selected_model
+def claude_command(workspace, model, effort=None):
+    from .claude_profile import PLUGINS_OFF, qualified_binary, selected_effort, selected_model
     # In Claude Code's rule syntax a leading '//' names an absolute path ('/x' would be relative to the settings);
     # the PreToolUse guard, which resolves every path, remains the boundary that decides.
     rules = ['Read(/' + form + '/**)' for form in workspace_spellings(workspace)]
-    settings = {'enabledPlugins': {'slack@claude-plugins-official': False}, 'autoMemoryEnabled': False,
+    settings = {'enabledPlugins': dict(PLUGINS_OFF), 'autoMemoryEnabled': False,
                 'permissions': {'defaultMode': 'dontAsk', 'allow': rules},
                 'hooks': {'PreToolUse': [{'matcher': '.*', 'hooks': [{'type': 'command', 'command': guard_command(),
                                                                       'timeout': 20}]}]}}
-    return [qualified_binary(), '-p', '--model', selected_model(model), '--effort', 'medium',
+    return [qualified_binary(), '-p', '--model', selected_model(model), '--effort', selected_effort(common.reader_effort(effort)),
             '--output-format', 'stream-json', '--verbose', '--include-hook-events',
             '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--setting-sources', 'local',
             '--tools', 'Read,Bash', '--allowedTools', *rules, '--permission-mode', 'dontAsk',
@@ -392,7 +394,8 @@ def visit(args, started, tools, checked, secret, run_directory, temporary, works
     parameters = {'start': args.start, 'allowed': args.allowed, 'view': args.vy, 'executor': args.utforare,
                   'model': args.modell, 'max_actions': args.max_handlingar, 'seconds_limit': args.tid,
                   'bindings': args.bindings, 'label': args.etikett,
-                  'exception': args.undantag_sort if secret_used else None}
+                  'exception': args.undantag_sort if secret_used else None,
+                  **({'effort': args.anstrangning} if args.anstrangning else {})}
     problem = start_problem(ready, args.allowed)
     if problem:
         stop_holder(holder)
@@ -418,11 +421,11 @@ def visit(args, started, tools, checked, secret, run_directory, temporary, works
     if args.utforare == 'claude':
         from .claude_profile import require_subscription
         require_subscription()
-        argv_used = claude_command(workspace, args.modell)
+        argv_used = claude_command(workspace, args.modell, effort=args.anstrangning)
         env = common.filtered_environment({'NR_VISITOR_WORKSPACE': str(workspace),
                                            'NR_VISITOR_GUARD_LOG': str(run_directory / 'spar' / 'vakt.jsonl')})
     else:
-        argv_used = codex_command(workspace, args.modell)
+        argv_used = codex_command(workspace, args.modell, effort=args.anstrangning)
         env = common.filtered_environment()
     (run_directory / 'start.json').write_text(json.dumps({'argv': argv_used, 'cwd': str(workspace),
                                                           'prompt_sha256': common.sha256_bytes(prompt.encode())},

@@ -137,7 +137,8 @@ safeguards. See the evidence index and current limitations in docs/plan.md.
 
 ### Restored Claude access on the retained report task
 
-The qualified Claude path uses the existing Max subscription, pinned CLI2.1.257,
+The qualified Claude path uses the existing Max subscription, the pinned CLI
+(claude_profile.VERSION; 2.1.285 since D046, with its two built-in plugins off),
 Read/Edit/Write only, exact accepted file grants, strict empty MCP and native
 AGENTS.md file loading. Host runs tests after cleanup. A changed binary/auth path
 stops before model invocation; diagnose/requalify rather than enabling API fallback.
@@ -161,9 +162,9 @@ for the actual current checkpoint; the command above is not a request to resubmi
 
 The current workstation is installed and qualified. Do not reinstall or update it
 as part of ordinary resume. [dependencies.json](../evidence/v0.1/dependencies.json)
-records current binary hashes, Python3.12.13, macOS26.3 and arm64. Claude2.1.257's
+records current binary hashes, Python3.12.13, macOS26.3 and arm64. The pinned Claude's
 binary SHA256 is enforced by runtime/claude_profile.py on the Runtime's own copy,
-.runtime/bin/claude-2.1.257, never on whatever `claude` PATH resolves to (D023); it
+.runtime/bin/claude-<VERSION> (2.1.285 since D046), never on whatever `claude` PATH resolves to (D023); it
 uses existing account credentials. A changed version/auth route requires a new
 bounded qualification, never automatic API fallback.
 
@@ -177,9 +178,17 @@ and their retained download/inspection records before extraction:
 - temporalio/cli release v1.9.1: temporal_cli_1.9.1_darwin_arm64.tar.gz; selected
   regular temporal member to .runtime/bin/temporal-1.9.1. Download and inspected
   archive hash/members: evidence/durable-probe/cli-download/ and cli-inspection.json.
-- npm @anthropic-ai/claude-code-darwin-arm64@2.1.257, fetched with `npm pack`; only
-  the regular member package/claude to .runtime/bin/claude-2.1.257, used only if its
-  SHA256 equals BINARY_SHA256. Record: evidence/claude-host-copy/provenance.json.
+- npm @anthropic-ai/claude-code-darwin-arm64@2.1.285 (D046), fetched with `npm pack`;
+  only the regular member package/claude to .runtime/bin/claude-2.1.285, used only if
+  its SHA256 equals BINARY_SHA256. Record: evidence/claude-2.1.285/provenance.json.
+  2.1.257 (evidence/claude-host-copy/provenance.json) stays as the previous release's
+  way back.
+- A new Claude pin: install the copy beside the old one, set VERSION and BINARY_SHA256,
+  run the qualification (`scripts.probe_claude_boundary`, `scripts.probe_claude_explicit
+  direct|root|subdir`, `scripts.verify_claude_qualification`) and
+  `scripts.measure_claude_shapes review|binding|interactive` in runtime.profile.environment();
+  each writes to claude_profile.EVIDENCE and refuses to overwrite. Read every init's
+  plugins before anything else (D046).
 - Python SDK and every transitive package/version/hash are fixed by
   config/temporal-probe-requirements.lock. The recorded installation used inspected
   wheels, no source build or extra startup .pth code (wheel-inspection.json).
@@ -200,7 +209,7 @@ another service while a recorded writer or listener is alive.
 
 Routine support checks are `python3 -m unittest discover -s scripts -p "test_*.py" -v`
 and `git diff --check`. The suite builds real Claude commands, so the root it resolves
-(the checkout itself, or NR_HOST_ROOT) must hold .runtime/bin/claude-2.1.257; an
+(the checkout itself, or NR_HOST_ROOT) must hold .runtime/bin/claude-<VERSION>; an
 integration worktree reaches the host's copy through its .runtime/bin link, and a fresh
 checkout without one fails those tests closed (D023). Native replay runs without provider calls using
 `.runtime/temporal-venv/bin/python -m scripts.replay_runtime`. Historical experiment

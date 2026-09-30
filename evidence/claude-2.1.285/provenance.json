@@ -1,0 +1,33 @@
+{
+ "observed_at": "2026-09-30T20:11:08.046595+00:00",
+ "why": "Johnny asked for Opus 5.5 in Runtime (2026-09-30); the pinned 2.1.257 answered \"version 2.1.280 or newer is required\" for it in the workplace measurement. D046 pins 2.1.285, the current release, as its own host copy beside 2.1.257, which stays as the way back for the previous release.",
+ "source": {
+  "package": "@anthropic-ai/claude-code-darwin-arm64",
+  "version": "2.1.285",
+  "registry_tarball": "https://registry.npmjs.org/@anthropic-ai/claude-code-darwin-arm64/-/claude-code-darwin-arm64-2.1.285.tgz",
+  "registry_integrity": "sha512-82pac0p/rTdZvxSspGJsEdqELADhd5aR9AC6JRSJx8kx8q0ggHjOHSCEH/LZeufREACAZv13TcsOPs0AMAptCQ==",
+  "pack_integrity": "sha512-82pac0p/rTdZvxSspGJsEdqELADhd5aR9AC6JRSJx8kx8q0ggHjOHSCEH/LZeufREACAZv13TcsOPs0AMAptCQ==",
+  "integrity_equal": true,
+  "fetched_with": "npm pack @anthropic-ai/claude-code-darwin-arm64@2.1.285 (npm verifies the registry integrity)",
+  "tarball_sha256": "071464aa2be9980e0100d1818177ecae784e670c9a2a6d4fbbcf8a0845d4235a",
+  "member": "package/claude (the only member extracted)"
+ },
+ "installed": {
+  "path": ".runtime/bin/claude-2.1.285",
+  "sha256": "51f09bd1e021d9fa8a1864c179799bd37cb39962a937935c5cf6823398e86db4",
+  "bytes": 223821616,
+  "equals_pin": true,
+  "reports": "2.1.285 (Claude Code)",
+  "code_signature": [
+   "Identifier=com.anthropic.claude-code",
+   "TeamIdentifier=Q6L2SF6YDW"
+  ],
+  "code_signature_verifies": true
+ },
+ "subscription_route_through_the_copy": {
+  "loggedIn": true,
+  "authMethod": "claude.ai",
+  "apiProvider": "firstParty",
+  "subscriptionType": "max"
+ }
+}

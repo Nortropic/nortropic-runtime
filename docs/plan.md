@@ -68,8 +68,15 @@ själv, den första automatiska kodövergången.
 Agentens första automatiska kodövergång (D044, 14:08Z) vägrades vid övningen: övningen kördes inne i tittens egen
 händelseloop (D045). Inget stoppades. D045 rättar det men ändrar en av ägarens filer, så ägaren aktiverar D044 och D045
 med övergång 21.
+Ägaren aktiverade övergång 21 14:53Z; agentens första titt därefter gav `current`. Övergång 20 var alltså inte
+den sista kodövergång ägaren kör själv: en release som ändrar någon av ägarfilerna blir alltid hans.
 
-Återupptagning: kontorets `evidence/nasta-uppdrag/local/full-autonomi-20260930/LAGE.md`.
+D046 (Claude Code 2.1.285, kvalificerad på nytt, läsarnas nivå): på ägarens beställning 2026-09-30, så att Opus 5.5 går
+att välja för Runtime. Den rör ingen ägarfil och inte AP-10:s kommando, så agenten aktiverar den själv. Codex
+uppdateras i en egen ändring med ägarens övergång.
+
+Återupptagning: kontorets `evidence/nasta-uppdrag/local/full-autonomi-20260930/LAGE.md` och
+`evidence/nasta-uppdrag/local/runtime-binarer-20260930/LAGE.md`.
 
 ---
 

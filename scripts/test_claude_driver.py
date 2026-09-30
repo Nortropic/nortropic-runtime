@@ -1,6 +1,6 @@
 """Finite-goal roles with an explicit frozen executor: read-only structured calls and
 the genuine interactive session. Fake provider processes and measured row shapes
-(evidence/claude-office-roles/*.json); explicitly NOT application evidence.
+(claude_profile.EVIDENCE, the pinned version's own directory; D046); explicitly NOT application evidence.
 """
 import copy
 import hashlib
@@ -21,8 +21,8 @@ from runtime import claude_profile, development_host as host, development_intera
 from runtime.development_scope import Scope, ScopeClosed, initialize
 from scripts.test_development_scope import contract
 
-REVIEW = json.loads(Path('evidence/claude-office-roles/review-terminal-shape.json').read_text())
-SESSION = json.loads(Path('evidence/claude-office-roles/interactive-session-shape.json').read_text())
+REVIEW = json.loads(Path(claude_profile.EVIDENCE + '/review-terminal-shape.json').read_text())
+SESSION = json.loads(Path(claude_profile.EVIDENCE + '/interactive-session-shape.json').read_text())
 ALL_CLAUDE = {'development': {'executors': {role: 'claude' for role in model.ROLES}}}
 
 
@@ -287,8 +287,13 @@ class InteractiveClaudeTest(unittest.TestCase):
              patch.object(claude_profile, 'qualified_binary', return_value='/pinned/claude'):
             argv = interactive.claude_interactive_command(workspace, 'p', SESSION_ID)
         self.assertEqual(argv[1], 'p'); self.assertIn('Edit(/'+str(workspace/'.scratch/answer.json')+')', argv)
-        self.assertEqual(SESSION['untrusted_ancestor_run'], {'trust_dialog_default': 'No, exit', 'returncode': 1, 'model_call': False,
-                                                             'session_record': False, 'global_state_changed_keys': 0})
+        # Measured for the pinned version (D046): the trust question's default leaves before any model call or record. How
+        # many global keys it changed was measured for 2.1.257 by reading ~/.claude.json, which the measuring session for
+        # 2.1.285 may not read; that one field is recorded as not measured, never carried over.
+        untrusted = SESSION['untrusted_ancestor_run']
+        self.assertEqual({k: untrusted[k] for k in ('trust_dialog_default', 'returncode', 'model_call', 'session_record')},
+                         {'trust_dialog_default': 'No, exit', 'returncode': 1, 'model_call': False, 'session_record': False})
+        self.assertIn(untrusted['global_state_changed_keys'], (0, 'not measured: this measurement may not read ~/.claude.json'))
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory).resolve(); real = home/'runtime/calls/x/workspace'; real.mkdir(parents=True)
             state = {'projects': {str(home/'runtime'): {'hasTrustDialogAccepted': True}}}

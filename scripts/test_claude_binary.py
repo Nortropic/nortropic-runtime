@@ -6,6 +6,7 @@ the published suite red. The host now keeps the qualified bytes beside its pinne
 binaries; the hash check and its messages are the ones D019 established.
 """
 import hashlib
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -65,6 +66,51 @@ class HostCopyTests(unittest.TestCase):
                     patch.object(claude_profile, 'BINARY_SHA256', hashlib.sha256(b'the qualified bytes\n').hexdigest()):
                 with self.assertRaisesRegex(ValueError, 'Qualified Claude CLI is unavailable'):
                     claude_profile.qualified_binary()
+
+
+
+class PinnedVersionEvidenceTests(unittest.TestCase):
+    """D046: what was measured with the pinned bytes, read back from the version's own evidence directory."""
+
+    def inits(self):
+        base = Path(claude_profile.EVIDENCE)
+        found = {}
+        for log in sorted((base / 'qualification').glob('*/stdout.log')):
+            rows = [json.loads(line) for line in log.read_text().splitlines() if line.startswith('{')]
+            found['qualification/' + log.parent.name] = next(r for r in rows if r.get('type') == 'system' and r.get('subtype') == 'init')
+        for name in ('review-terminal-shape.json', 'model-binding-init-shape.json'):
+            found[name] = json.loads((base / name).read_text())['init']
+        return found
+
+    def test_every_measured_start_is_the_pinned_version_without_any_plugin(self):
+        inits = self.inits()
+        self.assertEqual(sorted(inits), ['model-binding-init-shape.json', 'qualification/boundary', 'qualification/boundary-direct',
+                                         'qualification/explicit-root', 'qualification/explicit-subdir', 'review-terminal-shape.json'])
+        for name, init in inits.items():
+            with self.subTest(name=name):
+                self.assertEqual(init['claude_code_version'], claude_profile.VERSION)
+                self.assertEqual(init['plugins'], [])
+                self.assertEqual(init['mcp_servers'], [])
+                self.assertEqual(init['apiKeySource'], 'none')
+
+    def test_the_profile_turns_off_the_built_in_plugins_the_pinned_version_starts(self):
+        """Measured before the profile turned them off: every start listed the two built-ins (fynd-inbyggda-plugins)."""
+        self.assertEqual(claude_profile.SETTINGS['enabledPlugins'], claude_profile.PLUGINS_OFF)
+        self.assertEqual({k for k, v in claude_profile.PLUGINS_OFF.items() if v is False}, set(claude_profile.PLUGINS_OFF))
+        finding = Path(claude_profile.EVIDENCE) / 'fynd-inbyggda-plugins/qualification'
+        started = set()
+        for log in finding.glob('*/stdout.log'):
+            rows = [json.loads(line) for line in log.read_text().splitlines() if line.startswith('{')]
+            init = next(r for r in rows if r.get('type') == 'system' and r.get('subtype') == 'init')
+            started |= {plugin['source'] for plugin in init['plugins']}
+        self.assertTrue(started)
+        self.assertLessEqual(started, set(claude_profile.PLUGINS_OFF))
+
+    def test_the_qualification_record_names_the_pinned_bytes(self):
+        record = json.loads((Path(claude_profile.EVIDENCE) / 'qualification/verification.json').read_text())
+        self.assertTrue(record['passed'])
+        self.assertEqual((record['version'], record['binary_sha256']), (claude_profile.VERSION, claude_profile.BINARY_SHA256))
+        self.assertEqual(sorted(record['runs']), ['boundary', 'boundary-direct', 'explicit-root', 'explicit-subdir'])
 
 
 if __name__ == '__main__':

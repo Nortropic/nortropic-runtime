@@ -1,0 +1,313 @@
+{
+ "source": "Actual genuine interactive TUI session 2026-09-30 in a PTY: pinned Claude Code 2.1.285, runtime.claude_profile.interactive_command, synthetic workspace under an already trusted ancestor; ended by two Ctrl-C (scripts/measure_claude_shapes.py interactive). Rows reduced mechanically to the fields the host reads; text, tool inputs, paths and ids omitted. <WORKSPACE> stands for the exact delivered cwd and <SESSION> for the host-chosen session id.",
+ "raw_session_sha256": "ed46307164c7bc7d8c8acad02c8ec95963a2e12ecc2023d4734296cbbd5b5a2b",
+ "exit_code": 0,
+ "exit_action": "two Ctrl-C 0.5 s apart after a quiet screen (1 pair(s))",
+ "ctrl_c_pairs": [
+  {
+   "at_seconds": 20.0,
+   "exited": true,
+   "screen_after": "foragents The task ended with \"Then stop,\" so there's no obvious next step. \u001b(B\u000f Press Ctrl-C again to exit >4m<u\u001b(B\u000f\u001b7\u001b8 Resume this session with: claude --resume db76c8ac-79a2-4b7b-86e3-0c3dfe33fe24"
+  }
+ ],
+ "untrusted_ancestor_run": {
+  "trust_question_seen": true,
+  "trust_dialog_default": "No, exit",
+  "returncode": 1,
+  "model_call": false,
+  "session_record": false,
+  "global_state_changed_keys": "not measured: this measurement may not read ~/.claude.json"
+ },
+ "write_boundary": {
+  "granted_scratch_answer_written": true,
+  "other_workspace_writes_refused": true
+ },
+ "global_state": "not measured for this version: the measuring session may not read ~/.claude.json",
+ "rows": [
+  {
+   "type": "mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "permission-mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "atis-latch",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "file-history-snapshot"
+  },
+  {
+   "type": "file-history-snapshot"
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "ai-title",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "text"
+     }
+    ]
+   }
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Read"
+     }
+    ]
+   }
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "last-prompt",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "ai-title",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "permission-mode",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "atis-latch",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "thinking"
+     }
+    ]
+   }
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Write"
+     }
+    ]
+   }
+  },
+  {
+   "type": "file-history-delta"
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "text"
+     }
+    ]
+   }
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "tool_use",
+    "content": [
+     {
+      "type": "tool_use",
+      "name": "Write"
+     }
+    ]
+   }
+  },
+  {
+   "type": "user",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "attachment",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "assistant",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285",
+   "message": {
+    "model": "claude-fable-5-1",
+    "stop_reason": "end_turn",
+    "content": [
+     {
+      "type": "text"
+     }
+    ]
+   }
+  },
+  {
+   "type": "system",
+   "sessionId": "<SESSION>",
+   "cwd": "<WORKSPACE>",
+   "version": "2.1.285"
+  },
+  {
+   "type": "last-prompt",
+   "sessionId": "<SESSION>"
+  },
+  {
+   "type": "cost-state",
+   "sessionId": "<SESSION>"
+  }
+ ],
+ "session_id_run": {
+  "source": "The same session: a host-chosen --session-id and a working directory with a space and dots.",
+  "record_named_by_host_session_id": true,
+  "directory_rule_nonalnum_to_dash_held": true,
+  "trust_dialog_seen": false,
+  "returncode": 0,
+  "ancestor_project_instructions_loaded": false,
+  "workspace_instructions_loaded": true
+ },
+ "answer_value_correct": true
+}

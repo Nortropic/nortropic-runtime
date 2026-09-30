@@ -24,6 +24,7 @@ import unittest
 from unittest import mock
 import urllib.parse
 
+from runtime import claude_profile
 from runtime import web_common as common
 from runtime import web_critique, web_measure, web_visitor, web_visitor_guard
 from runtime.release import CODE_ROOT
@@ -235,6 +236,35 @@ class WorkspaceAndCommandTests(unittest.TestCase):
         self.assertEqual(codex[codex.index('--output-schema') + 1], str(self.parent / 's.json'))
 
 
+    def test_the_readers_level_is_each_profiles_own_by_default_and_a_plain_chosen_word_otherwise(self):
+        """D046: the critic and the visitor take a reasoning level; without one they build exactly the old command."""
+        workspace = web_visitor.prepare_workspace(self.parent, 'claude', 40)
+        level = lambda argv: argv[argv.index('--effort') + 1]
+        reasoning = lambda argv: [a for a in argv if a.startswith('model_reasoning_effort=')]
+        self.assertEqual(level(web_visitor.claude_command(workspace, 'claude-opus-5')), 'medium')
+        self.assertEqual(level(web_visitor.claude_command(workspace, 'claude-opus-5', effort='max')), 'max')
+        self.assertEqual(reasoning(web_visitor.codex_command(workspace, 'gpt-6-astra')), ['model_reasoning_effort="high"'])
+        self.assertEqual(reasoning(web_visitor.codex_command(workspace, 'gpt-6-astra', effort='ultra')),
+                         ['model_reasoning_effort="ultra"'])
+        (workspace / 'AGENTS.md').write_text('x')
+        schema = '{"type":"object"}'
+        self.assertEqual(level(web_critique.claude_command(workspace, 'claude-opus-5', schema)), 'medium')
+        self.assertEqual(level(web_critique.claude_command(workspace, 'claude-opus-5', schema, effort='xhigh')), 'xhigh')
+        paths = (self.parent / 's.json', self.parent / 'm.txt', [])
+        self.assertEqual(reasoning(web_critique.codex_command(workspace, 'gpt-6-astra', *paths)), ['model_reasoning_effort="high"'])
+        self.assertEqual(reasoning(web_critique.codex_command(workspace, 'gpt-6-astra', *paths, effort='low')),
+                         ['model_reasoning_effort="low"'])
+        self.assertEqual(web_visitor.claude_command(workspace, 'claude-opus-5', effort=None),
+                         web_visitor.claude_command(workspace, 'claude-opus-5'))
+        for bad in ('--max', 'high medium', 'MAX', '', 'x' * 17):
+            for build in (lambda e: web_visitor.claude_command(workspace, 'claude-opus-5', effort=e),
+                          lambda e: web_visitor.codex_command(workspace, 'gpt-6-astra', effort=e),
+                          lambda e: web_critique.claude_command(workspace, 'claude-opus-5', schema, effort=e),
+                          lambda e: web_critique.codex_command(workspace, 'gpt-6-astra', *paths, effort=e)):
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    build(bad)
+
+
 class GuardTests(unittest.TestCase):
     def setUp(self):
         self.parent = Path(tempfile.mkdtemp()).resolve()
@@ -426,7 +456,7 @@ class SchemaTests(unittest.TestCase):
 
 
 def claude_stream(tools=('Bash', 'Read'), model='claude-opus-5', error=False, text='rapport'):
-    init = {'type': 'system', 'subtype': 'init', 'session_id': 's', 'claude_code_version': '2.1.257', 'model': model,
+    init = {'type': 'system', 'subtype': 'init', 'session_id': 's', 'claude_code_version': claude_profile.VERSION, 'model': model,
             'tools': list(tools), 'mcp_servers': [], 'plugins': [], 'slash_commands': [], 'apiKeySource': 'none'}
     result = {'type': 'result', 'subtype': 'error_during_execution' if error else 'success', 'is_error': error,
               'terminal_reason': 'completed', 'session_id': 's', 'result': text, 'num_turns': 3,
@@ -491,7 +521,6 @@ class ClassificationTests(unittest.TestCase):
             self.assertIsNone(web_critique.claude_answer(stream, 'claude-opus-5', parent)[0])
         finally:
             shutil.rmtree(parent)
-
 
 class ParameterTests(unittest.TestCase):
     def test_measurement_parameters_are_checked_before_anything_runs(self):

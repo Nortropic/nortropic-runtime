@@ -35,7 +35,7 @@ CHOSEN = 'claude-opus-5'
 # the premise that the CLI echoes an explicitly selected --model VERBATIM into system/init.model is the
 # one everything else rests on. If it normalised the name, every run under a selection would fail the
 # identity check while still spending a call.
-MEASURED = json.loads(Path('evidence/claude-model-binding/opus5-review-init-shape.json').read_text())
+MEASURED = json.loads(Path(claude_profile.EVIDENCE + '/model-binding-init-shape.json').read_text())
 # The pinned Codex CLI's own resolution of the startup chain's arguments (config/read, no thread, no turn). Codex exec
 # reports no model identity in its event stream, so this measured resolution is the premise the Codex choice rests on.
 CODEX_MEASURED = json.loads(Path('evidence/codex-model-binding/config-read-shape.json').read_text())
@@ -329,12 +329,12 @@ class InteractiveAgreementTests(unittest.TestCase):
     interactive start is the scarcest resource in the mission (all approved starts are spent, and a further
     one needs a new owner decision AND a code change).
 
-    The rows have the shape measured from a real session, evidence/claude-office-roles/interactive-session-shape.json.
+    The rows have the shape measured from a real session, <claude_profile.EVIDENCE>/interactive-session-shape.json.
     """
 
     def rows(self, model):
         rows = copy.deepcopy(json.loads(
-            Path('evidence/claude-office-roles/interactive-session-shape.json').read_text())['rows'])
+            Path(claude_profile.EVIDENCE + '/interactive-session-shape.json').read_text())['rows'])
         for row in rows:
             if row.get('type') == 'assistant' and isinstance(row.get('message'), dict):
                 row['message']['model'] = model
