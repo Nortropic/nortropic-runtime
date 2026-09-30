@@ -171,19 +171,19 @@ def file_listing(rows):
             'Öppna varje bild.\n\n| plats | sha256 | byte | vad |\n|---|---|---|---|\n' + table + '\n')
 
 
-def claude_command(workspace, model, schema_text):
+def claude_command(workspace, model, schema_text, effort=None):
     from .claude_profile import command
-    return command(workspace, (), writable=False, model=model) + ['--json-schema', schema_text]
+    return command(workspace, (), writable=False, model=model, effort=common.reader_effort(effort)) + ['--json-schema', schema_text]
 
 
-def codex_command(workspace, model, schema_path, last_path, images):
+def codex_command(workspace, model, schema_path, last_path, images, effort=None):
     from scripts.probe_bridge import worker_command
     from .profile import selected_model
     table = {':minimal': 'read', str(workspace): 'read', str(workspace / '.scratch'): 'write'}
     encoded = '{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in table.items()) + '}'
     shell = {'PATH': '/usr/bin:/bin', 'TMPDIR': str(workspace / '.scratch')}
     shell_table = '{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in shell.items()) + '}'
-    base = worker_command(selected_model(model))[:-1]
+    base = worker_command(selected_model(model), **common.codex_effort(effort))[:-1]
     # Codex re-executes itself inside the sandbox to load instructions; it must be named by its real path.
     base[0] = str(Path(base[0]).resolve())
     return base + [
@@ -264,6 +264,7 @@ def parse(argv):
     parser.add_argument('--schema', required=True)
     parser.add_argument('--utforare', choices=('claude', 'codex'), required=True)
     parser.add_argument('--modell', required=True)
+    parser.add_argument('--anstrangning', help="Reasoning level for the chosen model (D046); absent keeps the profile's own")
     parser.add_argument('--etikett', required=True)
     parser.add_argument('--tid', type=int, default=1200)
     parser.add_argument('--aterhamta', help='Immutable failed critique run to recover; no new image review')
@@ -286,6 +287,7 @@ def parse(argv):
     from .claude_profile import selected_model
     from .profile import selected_model as codex_model
     (selected_model if args.utforare == 'claude' else codex_model)(args.modell)
+    common.reader_effort(args.anstrangning)
     return args
 
 
@@ -312,9 +314,10 @@ def run(argv=None):
     if args.utforare == 'claude':
         from .claude_profile import require_subscription
         require_subscription()
-        argv_used = claude_command(workspace, args.modell, json.dumps(args.schema_value))
+        argv_used = claude_command(workspace, args.modell, json.dumps(args.schema_value), effort=args.anstrangning)
     else:
-        argv_used = codex_command(workspace, args.modell, run_directory / 'schema.json', last_path, images)
+        argv_used = codex_command(workspace, args.modell, run_directory / 'schema.json', last_path, images,
+                                  effort=args.anstrangning)
     from .profile import environment
     (run_directory / 'start.json').write_text(json.dumps({'argv': argv_used, 'cwd': str(workspace)}, indent=1,
                                                          ensure_ascii=False) + '\n')
@@ -358,7 +361,7 @@ def run(argv=None):
     workspace_copy = run_directory / 'arbetsyta'
     receipt = {'profile': 'kritik', 'code': common.code_files(*CODE), **common.code_root_info(), 'started_at': started,
                'parameters': {'executor': args.utforare, 'model': args.modell, 'seconds_limit': args.tid,
-                              'label': args.etikett},
+                              'label': args.etikett, **({'effort': args.anstrangning} if args.anstrangning else {})},
                'underlag': [{k: r[k] for k in ('place', 'source_sha256', 'copy_sha256', 'bytes', 'source')} for r in rows],
                'argv': argv_used, 'tools': {'executor_binary': executor_identity(args.utforare, argv_used)},
                'files_md_sha256': common.sha256_file(workspace_copy / 'FILES.md'),

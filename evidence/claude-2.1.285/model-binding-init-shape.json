@@ -1,0 +1,26 @@
+{
+ "init": {
+  "apiKeySource": "none",
+  "claude_code_version": "2.1.285",
+  "mcp_servers": [],
+  "model": "claude-opus-5",
+  "permissionMode": "dontAsk",
+  "plugins": [],
+  "session_id": "bc634692-79af-4cc7-806f-0e9e94538650",
+  "slash_commands": [],
+  "subtype": "init",
+  "tools": [
+   "Read",
+   "StructuredOutput"
+  ],
+  "type": "system"
+ },
+ "raw_events_sha256": "be9c475bbbf70515c006323eeccb192de89dda05835000044c45beb21442822a",
+ "source": "Actual run 2026-09-30: pinned Claude Code 2.1.285, runtime.claude_profile.command(writable=False) plus --json-schema, with MODEL substituted by the release selection claude-opus-5 (scripts/measure_claude_shapes.py binding). Synthetic fixture, no project material. The init row is reduced mechanically to the fields runtime.provider_result.parse reads. Raw events stay in the private host area.",
+ "why": "The qualification premise this file makes checkable: that the pinned CLI echoes an explicitly selected --model value VERBATIM into system/init.model, and that the review role inventory is unchanged under it. Measured again for this pin, not carried from an earlier version.",
+ "terminal": {
+  "is_error": false,
+  "subtype": "success",
+  "terminal_reason": "completed"
+ }
+}

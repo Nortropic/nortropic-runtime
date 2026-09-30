@@ -2,7 +2,7 @@
 and no path from a missing, interrupted or malformed review to approval.
 
 Terminal rows have the shape measured with the pinned CLI (see
-evidence/claude-office-roles/review-terminal-shape.json), not an invented one.
+evidence/claude-<VERSION>/review-terminal-shape.json, claude_profile.EVIDENCE), not an invented one.
 """
 import copy
 import io
@@ -18,7 +18,7 @@ from runtime import attempt, claude_profile, profile, release, review, task, tar
 from runtime.integration import GateClosed, digest, require_gate
 from runtime.provider_result import parse
 
-SHAPE = json.loads(Path('evidence/claude-office-roles/review-terminal-shape.json').read_text())
+SHAPE = json.loads(Path(claude_profile.EVIDENCE + '/review-terminal-shape.json').read_text())
 # An explicit release model choice that is not the profile default, so a launch that ignored the
 # selection and fell back to the hardcoded model would fail rather than look identical.
 MODEL_CHOICE = 'claude-opus-5'

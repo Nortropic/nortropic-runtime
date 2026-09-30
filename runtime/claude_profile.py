@@ -16,8 +16,12 @@ MODEL_NAME = re.compile(r'\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z')
 # A reasoning level as the CLIs name them (low, medium, high, xhigh, max, and Codex's ultra): lower-case letters only,
 # bounded. It becomes an argv element too, so anything that could be read as a flag or a second value is refused.
 EFFORT_NAME = re.compile(r'\A[a-z]{1,16}\Z')
-VERSION = '2.1.257'
-BINARY_SHA256 = '64590d7d9d9c189d33fb3dfa58c5408eaf2a10fe556bd84155d95efaab46b60e'
+VERSION = '2.1.285'
+BINARY_SHA256 = '51f09bd1e021d9fa8a1864c179799bd37cb39962a937935c5cf6823398e86db4'
+# Everything measured with the pinned bytes lives in one directory per version (D046): the qualification runs
+# (D019's probes), the review terminal, the interactive session and the model-binding init. The records of an
+# earlier version stay where they were, as history; a new pin measures again into its own directory.
+EVIDENCE = 'evidence/claude-' + VERSION
 
 
 def qualified_binary():
@@ -36,7 +40,11 @@ def qualified_binary():
     return str(binary)
 
 
-SETTINGS={'enabledPlugins':{'slack@claude-plugins-official':False},
+# 2.1.285 starts two built-in plugins even under --restricted: cc-plugin-agents-md (automatic AGENTS.md loading, which
+# D019 replaced by --append-system-prompt-file) and cc-plugin-telemetry. The qualified shape has no plugins (the
+# terminal checks require plugins == []), so the profile turns both off; measured in D046's qualification.
+PLUGINS_OFF={'slack@claude-plugins-official':False,'cc-plugin-agents-md@builtin':False,'cc-plugin-telemetry@builtin':False}
+SETTINGS={'enabledPlugins':dict(PLUGINS_OFF),
           'autoMemoryEnabled':False,
           'permissions':{'defaultMode':'dontAsk','blockReadsOutsideWorkingDirectories':True}}
 

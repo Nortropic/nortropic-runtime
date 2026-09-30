@@ -2137,3 +2137,64 @@ Limits:
   too. D044 stays `refused` for the active release until then; it is looked at anew once the active release changes.
 - Until transition 21 the agent still proves, stages and statically checks a new release, and then refuses it at the
   rehearsal. Nothing is ever activated that way.
+
+## D046 — 2026-09-30: Claude Code 2.1.285, qualified again, and the readers' level
+
+The owner's words (the office's `evidence/nasta-uppdrag/local/runtime-binarer-20260930/owner-words-runtime-binarer-20260930.md`):
+"fixa opus 5.5 för runtime vid tillfälle, hur kan det inte vara uppdaterat? jag tror även codex har uppdateringar." and
+"jag kan bara välja medium på läsarna också, inte högre än så."
+
+Measured: the workplace's measurement of this host's pinned programs (the office's `evidence/partner/local/modellmatning.json`,
+2026-09-29 22:02Z) got, at every level, "API Error: 400 Claude Code 2.1.257 does not support this model; version 2.1.280 or
+newer is required" for claude-opus-5-5 with the pinned 2.1.257. The workplace offers only what worked there, so Opus 5.5
+could not be chosen for Runtime.
+
+Decision:
+1. Pin Claude Code 2.1.285, the current npm release: `claude_profile.VERSION` and `BINARY_SHA256`, on the host copy
+   `.runtime/bin/claude-2.1.285` beside 2.1.257, which stays as the previous release's way back. Fetched with `npm pack`,
+   the registry's integrity equal, only `package/claude` extracted, code signature valid for the same team as 2.1.257,
+   subscription route unchanged: `evidence/claude-2.1.285/provenance.json`.
+2. Everything measured with the pinned bytes lives in one directory per version, `claude_profile.EVIDENCE`
+   (`evidence/claude-<VERSION>`): D019's qualification (its probes and verifier now write and read there), the review
+   terminal, the model-binding init and the interactive session (`scripts/measure_claude_shapes.py`, new, so the next pin
+   measures the same way). The records of 2.1.257 stay where they were, as history; the tests read the pinned version's
+   directory. Nothing in the new directory is copied from 2.1.257.
+3. Found in the qualification: under `--restricted`, 2.1.285 starts two built-in plugins, `cc-plugin-agents-md@builtin`
+   (automatic AGENTS.md loading, which D019 replaced with `--append-system-prompt-file`) and `cc-plugin-telemetry@builtin`.
+   Every terminal check requires `plugins == []` (`provider_result`, `critique_format`, `web_visitor`), so a bare version
+   bump would have failed every Claude run. The profile turns both off in `enabledPlugins` (`claude_profile.PLUGINS_OFF`),
+   and the web visitor's own settings use the same map. The first qualification runs, with the plugins on, are kept in
+   `evidence/claude-2.1.285/fynd-inbyggda-plugins/`.
+4. The readers' level: `runtime.web_critique` and `runtime.web_visitor` take `--anstrangning`; without it each builds exactly
+   the command it did (Claude medium, Codex high). A named level passes `claude_profile.selected_effort`'s rule first. The
+   office passes the workplace's choice; the review reader already took `effort` through `claude_profile.command`.
+
+Measured with 2.1.285 and the profile (`evidence/claude-2.1.285/`), the same shapes as with 2.1.257:
+- qualification: the allowed write only; outside, context, unaccepted and symlink attempts denied; three direct writes
+  blocked; the instruction file loaded from the root and from `tools/` with no tools (`qualification/verification.json`);
+- review terminal: Read and StructuredOutput only, the verdict in the single terminal's `structured_output`, the outside
+  read denied, the workspace unchanged; a SIGTERM to the group after 6 s gives 143 and no terminal; an invalid schema
+  gives 1 before any model call;
+- model binding: `--model claude-opus-5` echoed verbatim in `system/init.model`, the review inventory unchanged;
+- interactive session: the scratch answer written and every other write refused; the record named by the host's session id
+  under the non-alphanumeric-to-dash directory rule; the workspace's instructions loaded and an ancestor's project
+  instructions not; in an untrusted directory the trust question's default "No, exit" leaves with 1, no model call and no
+  record. The session ends with exit 0 on two Ctrl-C 0.5 s apart once the screen has settled; presses seconds apart each
+  count as a first one ("Press Ctrl-C again to exit"). Measured attempts that got this wrong are kept in the private
+  `.runtime/claude-shapes-2.1.285/`.
+
+Limits:
+- The interactive record's `global_state` (which `~/.claude.json` keys an honest session changes) was measured for 2.1.257
+  by reading that file. The session that measured 2.1.285 may not read it, so that field is recorded as not measured and
+  the test asserts the measured fields only. `development_interactive.claude_authority` itself is unchanged and still
+  compares the authority chain around every real interactive session.
+- Ended any other way than by the operator's two Ctrl-C, the 2.1.285 TUI outlived SIGTERM for 15 s in the exit
+  experiments; Runtime's `stop_group` escalates to SIGKILL after 2 s, as before.
+- `runtime/check_issuer.py` still names `claude-2.1.257` in the issuer sandbox's read table. That file is the adopted
+  issuer's code (`CODE`); publication runs through the adopted copy with its own pins, which D046 does not change. It is
+  an owner file, so it is left for the next issuer adoption.
+- Codex stays 0.155.1. Its path is in `scripts/model_choice.py` (an owner file), and a new path changes the AP-10 command,
+  which the automatic look always leaves to the owner; that is a separate change with the owner's own transition.
+- D046 touches no owner file and leaves the AP-10 command unchanged, so the agent activates it by itself once it is
+  integrated and reviewed and Runtime is idle. The workplace must measure the new program before a new model choice is
+  activated (`model_choice.measured` compares the measurement's binary with the pinned one).
