@@ -9,6 +9,31 @@ instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gälla
 
 ---
 
+# Parallellt gällande — modellvalet i arbetsplatsen aktiveras av sig självt (D040)
+
+Parallellt uppdrag med eget skrivansvar: sessionen nortropic-repos-d7 (Claude Code), under kontorets MODELLKARTA-20260929
+steg 2 (ägarens ord ordagrant i kontorets `evidence/nasta-uppdrag/local/modellkarta-20260929/`). Blocket ersätter inte
+publiceringsspåret nedan, och det ersätter inte detta.
+
+Ägaren väljer i arbetsplatsens Flödet modell och ansträngning för Runtime och för bevakningen. Modellen avgör utföraren:
+en Codex-modell gör att rollerna kör Codex, en Claude-modell att de kör Claude. Valet aktiveras av sig självt när
+Runtime är ledigt, med samma väg tillbaka som ett handbyte. D040 är beslutet: ansträngningen och bevakningens utförare
+blir val i releasen, modellvalets verktyg tar hela valet, och `auto` tillämpar arbetsplatsens registrerade val.
+Integrationen aktiverar ingenting.
+
+Ordningen:
+1. Kandidaten (gren `runtime/modellval-steg2-20260930`) granskas separat och integreras skyddat.
+2. Kontorets del: Flödet sparar valet för Runtime och bevakningen, visar aktiveringens status, och startvakten följer
+   Runtimes ansträngning.
+3. Övergång 19 stegas med den nya Runtime-revisionen och med kontorets revision och valen oförändrade. Den prövas i en
+   isolerad startövning.
+4. Ägarens engångssteg, i hans egen Terminal: övergång 19:s `check` och `activate`, därefter `model_choice.py agent install`.
+   Först därefter aktiveras ett val i arbetsplatsen av sig självt.
+
+Återupptagning: kontorets `evidence/nasta-uppdrag/local/modellkarta-20260929/LAGE.md`.
+
+---
+
 # Gällande arbete — ordinarie publiceringsingång efter införandet
 
 2026-09-28: Runtime PR 72, Office PR 114 och Digitala PR 14 är skyddat integrerade.

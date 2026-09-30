@@ -15,8 +15,9 @@ import time
 
 from .development_scope import Scope, ScopeClosed, identifier, decode
 from .release import ROOT, require_active_code, require_workspace_instructions
-from .profile import command, environment, MODEL as CODEX_MODEL
-from .claude_profile import command as claude_command, require_subscription, MODEL as CLAUDE_MODEL, MODEL_NAME
+from .profile import command, environment, MODEL as CODEX_MODEL, REASONING_EFFORT as CODEX_EFFORT
+from .claude_profile import (command as claude_command, require_subscription, MODEL as CLAUDE_MODEL, MODEL_NAME,
+                             EFFORT as CLAUDE_EFFORT, EFFORT_NAME)
 from .provider_result import parse
 from .model_question import ask_safely
 from .review import claude_response
@@ -75,6 +76,45 @@ def models(config):
     return {'claude': chosen.get('claude', CLAUDE_MODEL), 'codex': chosen.get('codex', CODEX_MODEL)}
 
 
+def efforts(config):
+    """Explicit frozen per-executor effort choice (D040); absent is each profile's own pinned level.
+
+    The same shape and the same refusals as models(): part of the frozen release configuration, one level per
+    executor applied to every role it drives, an unknown or singular key refused rather than defaulted, and a level
+    that is not a plain word refused before it can reach an argument list. Without a choice every command is the one
+    the release built before the effort became a choice.
+    """
+    development = config.get('development') or {}
+    if 'efforts' in config or 'effort' in config or not isinstance(development, dict) or 'effort' in development:
+        raise ScopeClosed('Invalid explicit effort selection')
+    chosen = development.get('efforts', {})
+    if (not isinstance(chosen, dict) or set(chosen) - set(EXECUTORS)
+            or any(not isinstance(value, str) or not EFFORT_NAME.match(value) for value in chosen.values())):
+        raise ScopeClosed('Invalid explicit effort selection')
+    return {'claude': chosen.get('claude', CLAUDE_EFFORT), 'codex': chosen.get('codex', CODEX_EFFORT)}
+
+
+def watch(config):
+    """The AP-10 watch's explicit executor, model and effort (D040); absent is the recorded Codex baseline.
+
+    The watch is outside the development selection (D028): it does not read development.models or
+    development.efforts. Its choice is one complete triple, so a half-made choice cannot combine one executor with
+    the other executor's model; anything else, including a misplaced key under development, is refused.
+    """
+    development = config.get('development')
+    if isinstance(development, dict) and 'watch' in development:
+        raise ScopeClosed('Invalid explicit watch selection')
+    chosen = config.get('watch')
+    if chosen is None:
+        return {'executor': 'codex', 'model': CODEX_MODEL, 'effort': CODEX_EFFORT}
+    if (not isinstance(chosen, dict) or set(chosen) != {'executor', 'model', 'effort'}
+            or chosen['executor'] not in EXECUTORS
+            or not isinstance(chosen['model'], str) or not MODEL_NAME.match(chosen['model'])
+            or not isinstance(chosen['effort'], str) or not EFFORT_NAME.match(chosen['effort'])):
+        raise ScopeClosed('Invalid explicit watch selection')
+    return {'executor': chosen['executor'], 'model': chosen['model'], 'effort': chosen['effort']}
+
+
 def capacity_lost(provider, records):
     """Quota or access loss, from the provider's own terminal or error rows only; agent text is never authority."""
     if provider == 'claude':
@@ -128,17 +168,17 @@ def execute(request):
     # Validated BEFORE the exclusive consumed receipt: the receipt cannot be rewritten and the stage
     # directory cannot be re-made, so a selection that refuses after it would strand this prepared call
     # on a key that can never be delivered again.
-    chosen = models(config)
+    chosen = models(config); levels = efforts(config)
     write(stage / 'consumed.json', {'nonce': nonce, 'input_sha256': request['input_sha256']})
     provider = executors(config)[data['role']]
-    selected = chosen[provider]
+    selected = chosen[provider]; level = levels[provider]
     if provider == 'claude':
         # Same order as the Codex profile: bound inputs and the qualified subscription
         # route are checked before any model could start. Read-only, no file grant.
         require_subscription(); require_workspace_instructions(workspace)
-        argv = claude_command(workspace, (), writable=False, model=selected) + ['--json-schema', json.dumps(data['schema'])]
+        argv = claude_command(workspace, (), writable=False, model=selected, effort=level) + ['--json-schema', json.dumps(data['schema'])]
     else:
-        argv = command(workspace, writable=False, model=selected)
+        argv = command(workspace, writable=False, model=selected, effort=level)
         argv = argv[:-1] + ['--output-schema', str(workspace / 'OUTPUT_SCHEMA.json'), '-']
     parent = os.getppid()
     parent_identity = process_identity(parent)

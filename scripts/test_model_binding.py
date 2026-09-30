@@ -41,10 +41,12 @@ MEASURED = json.loads(Path('evidence/claude-model-binding/opus5-review-init-shap
 CODEX_MEASURED = json.loads(Path('evidence/codex-model-binding/config-read-shape.json').read_text())
 
 
-def config(selection=None):
+def config(selection=None, levels=None):
     development = {'id': 'office-ap11', 'executors': {'implementation': 'claude', 'review': 'claude'}}
     if selection is not None:
         development['models'] = selection
+    if levels is not None:
+        development['efforts'] = levels          # the release's effort choice (D040)
     return {'development': development}
 
 
@@ -377,14 +379,14 @@ class AttemptWireThroughTests(unittest.TestCase):
         (self.state / 'candidate' / 'AGENTS.md').write_text('# workspace\n')
         self.evidence = self.root / 'evidence'; self.evidence.mkdir()
 
-    def run_attempt(self, selection, expect_failure=False):
+    def run_attempt(self, selection, expect_failure=False, levels=None):
         from runtime import attempt as attempt_module
         from runtime import release as release_module
         seen = {}
 
-        def spy(workspace, allowed_paths, writable=True, model=None):
-            seen['model'] = model
-            real = claude_profile.command(workspace, allowed_paths, writable=writable, model=model)
+        def spy(workspace, allowed_paths, writable=True, model=None, effort=None):
+            seen['model'] = model; seen['effort'] = effort
+            real = claude_profile.command(workspace, allowed_paths, writable=writable, model=model, effort=effort)
             body = ('import json,sys\n'
                     'sys.stdin.buffer.read()\n'
                     'print(json.dumps(%r))\n'
@@ -402,7 +404,7 @@ class AttemptWireThroughTests(unittest.TestCase):
              patch.object(attempt_module, 'require_subscription', return_value={'subscriptionType': 'max'}), \
              patch.object(attempt_module, 'reserve_task_call', return_value=None), \
              patch.object(attempt_module, 'ROOT', self.root), \
-             patch.object(release_module, 'require_active_code', return_value=config(selection)), \
+             patch.object(release_module, 'require_active_code', return_value=config(selection, levels)), \
              patch.object(release_module, 'require_workspace_instructions', return_value=None), \
              patch.dict(os.environ, {'NR_CONFIG_SHA256': 'x' * 64}):
             # execute() prints its own report; the publication wrapper requires the suite's last line to be OK.
@@ -419,6 +421,24 @@ class AttemptWireThroughTests(unittest.TestCase):
                          'and the real profile put it in the argument list')
         self.assertTrue(report['provider_completed'], 'the reported identity confirmed the selected model')
         self.assertEqual(code, 0)
+
+    def test_the_releases_effort_reaches_the_launched_claude_command(self):
+        code, seen, report, _ = self.run_attempt({'claude': CHOSEN}, levels={'claude': 'max'})
+        self.assertEqual(seen['effort'], 'max', 'the release configuration decided the effort')
+        self.assertEqual(seen['argv'][seen['argv'].index('--effort') + 1], 'max', 'and the real profile put it in the argument list')
+        self.assertTrue(report['provider_completed']); self.assertEqual(code, 0)
+
+    def test_without_an_effort_choice_the_claude_attempt_keeps_the_pinned_level(self):
+        _, seen, report, _ = self.run_attempt({'claude': CHOSEN})
+        self.assertEqual(seen['effort'], claude_profile.EFFORT)
+        self.assertEqual(seen['argv'][seen['argv'].index('--effort') + 1], 'medium')
+        self.assertTrue(report['provider_completed'])
+
+    def test_an_invalid_effort_selection_is_a_diagnosable_preflight_failure(self):
+        code, seen, report, launch = self.run_attempt({'claude': CHOSEN}, levels={'claude': '--max'})
+        self.assertEqual(code, 1); self.assertEqual(seen, {}, 'nothing was built, so nothing was launched')
+        self.assertIn('Provider preflight failed', report['reason']); self.assertIn('effort', report['reason'])
+        self.assertFalse(report['model_started']); self.assertIsNone(launch)
 
     def test_an_unbound_release_resolves_to_the_profiles_qualified_model_explicitly(self):
         """An absent selection still yields a named model, so what ran is never left implicit."""
@@ -438,16 +458,16 @@ class AttemptWireThroughTests(unittest.TestCase):
         self.assertFalse(report['model_started'], 'and no model was started')
         self.assertIsNone(launch, 'no launch marker for a run that never launched')
 
-    def run_codex_attempt(self, selection, bound=True, failure=None):
+    def run_codex_attempt(self, selection, bound=True, failure=None, levels=None):
         """The same real attempt path for a Codex step. The Codex profile is the REAL one; only its launch is a
         plain Python process emitting the measured exec event shape (thread.started, one turn.completed)."""
         from runtime import attempt as attempt_module
         from runtime import release as release_module
         seen = {}
 
-        def spy(workspace, writable=True, allowed_paths=None, model=None):
-            seen['model'] = model
-            seen['argv'] = profile.command(workspace, writable=writable, allowed_paths=allowed_paths, model=model)
+        def spy(workspace, writable=True, allowed_paths=None, model=None, effort=None):
+            seen['model'] = model; seen['effort'] = effort
+            seen['argv'] = profile.command(workspace, writable=writable, allowed_paths=allowed_paths, model=model, effort=effort)
             last = failure or {"type": "turn.completed", "usage": {}}
             body = ('import json,sys\n'
                     'sys.stdin.buffer.read()\n'
@@ -466,7 +486,7 @@ class AttemptWireThroughTests(unittest.TestCase):
              patch.object(attempt_module, 'reserve_task_call', return_value=None), \
              patch.object(attempt_module, 'ROOT', self.root), \
              patch.object(profile, 'require_workspace_instructions', return_value=None), \
-             patch.object(release_module, 'require_active_code', return_value=config(selection)), \
+             patch.object(release_module, 'require_active_code', return_value=config(selection, levels)), \
              patch.object(release_module, 'require_workspace_instructions', return_value=None), \
              patch.object(model_question, 'ROOT', self.root), patch.object(release_module, 'installed', return_value=None), \
              patch.dict(os.environ):
@@ -488,6 +508,12 @@ class AttemptWireThroughTests(unittest.TestCase):
         self.assertEqual(report['model'], 'gpt-6-other', 'the record says which model was started')
         self.assertTrue(report['provider_completed'])
         self.assertEqual(code, 0)
+
+    def test_the_releases_codex_effort_reaches_the_launched_command(self):
+        code, seen, report, _ = self.run_codex_attempt({'codex': 'gpt-6-other'}, levels={'codex': 'low'})
+        self.assertEqual(seen['effort'], 'low')
+        self.assertEqual([a for a in seen['argv'] if a.startswith('model_reasoning_effort=')], ['model_reasoning_effort="low"'])
+        self.assertEqual([a for a in seen['argv'] if a.startswith('model=')], ['model="gpt-6-other"'])
 
     def test_a_codex_step_under_a_release_without_a_choice_runs_the_baseline(self):
         _, seen, report, _ = self.run_codex_attempt({'claude': CHOSEN})

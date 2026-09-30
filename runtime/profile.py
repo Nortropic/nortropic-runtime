@@ -4,14 +4,14 @@ import os
 from pathlib import Path
 
 from scripts.probe_bridge import ROOT, worker_command
-from .claude_profile import MODEL_NAME
+from .claude_profile import MODEL_NAME, EFFORT_NAME
 from .release import require_workspace_instructions
 
 # The Codex startup chain's ACTUAL specified model and reasoning effort, as worker_command() builds
 # them - not a presumed CLI default. Recorded here so a model choice has a real baseline to start
 # from; test_model_binding asserts these against worker_command() itself, so drift on either side
-# fails a test instead of silently changing which model runs. A release choice replaces the model
-# only (D028); the reasoning effort stays pinned and is not part of the choice.
+# fails a test instead of silently changing which model runs. A release choice replaces the model (D028)
+# and, since D040, the reasoning effort; without a choice both stay these values.
 MODEL = 'gpt-6-astra'
 REASONING_EFFORT = 'high'
 
@@ -25,6 +25,14 @@ def selected_model(model=None):
     chosen = MODEL if model is None else model
     if not isinstance(chosen, str) or not MODEL_NAME.match(chosen):
         raise ValueError('Codex profile needs a plain model name')
+    return chosen
+
+
+def selected_effort(effort=None):
+    """The release's explicit Codex reasoning effort (D040), or the recorded baseline when none is bound."""
+    chosen = REASONING_EFFORT if effort is None else effort
+    if not isinstance(chosen, str) or not EFFORT_NAME.match(chosen):
+        raise ValueError('Codex profile needs a plain effort level')
     return chosen
 
 
@@ -47,14 +55,15 @@ def permissions(workspace, writable=True, allowed_paths=None):
             '-c', 'default_permissions="nr"']
 
 
-def command(workspace, writable=True, allowed_paths=None, model=None):
+def command(workspace, writable=True, allowed_paths=None, model=None, effort=None):
     chosen = selected_model(model)
+    level = selected_effort(effort)
     if os.environ.get('NR_CONFIG_SHA256'):
         require_workspace_instructions(workspace)
     shell_env = {'PATH': '/opt/homebrew/bin:/usr/bin:/bin', 'PYTHONDONTWRITEBYTECODE': '1',
                  'TMPDIR': str(Path(workspace).resolve() / '.scratch')}
     env_table = '{' + ','.join(json.dumps(k) + '=' + json.dumps(v) for k, v in shell_env.items()) + '}'
-    return worker_command(chosen)[:-1] + permissions(workspace, writable=writable, allowed_paths=allowed_paths) + [
+    return worker_command(chosen, level)[:-1] + permissions(workspace, writable=writable, allowed_paths=allowed_paths) + [
         '-c', 'web_search="disabled"',
         '-c', 'shell_environment_policy.inherit="none"',
         '-c', 'shell_environment_policy.set=' + env_table,

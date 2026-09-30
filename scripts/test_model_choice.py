@@ -13,6 +13,7 @@ import io
 import json
 from pathlib import Path
 import sqlite3
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -128,20 +129,29 @@ class ActiveCopyTests(HostCase):
 class InvariantTests(unittest.TestCase):
     BASE = {'files': {'a': '1'}, 'development': {'id': 'g', 'executors': {'driver': 'claude'}, 'models': {'claude': 'm'}}}
 
-    def test_a_change_of_models_only_is_accepted(self):
-        new = copy.deepcopy(self.BASE); new['development']['models'] = {'claude': 'n', 'codex': 'o'}
-        tool.only_models_differ(self.BASE, new)
+    def test_a_change_of_the_choice_only_is_accepted(self):
+        """D040: models, efforts, executors and the watch are the choice; each may change, alone or together."""
+        for change in (lambda c: c['development'].update(models={'claude': 'n', 'codex': 'o'}),
+                       lambda c: c['development'].update(efforts={'claude': 'max'}),
+                       lambda c: c['development']['executors'].update(driver='codex'),
+                       lambda c: c.update(watch={'executor': 'claude', 'model': 'm', 'effort': 'high'}),
+                       lambda c: (c['development'].update(executors={'driver': 'codex'}, models={'codex': 'x'}),
+                                  c.update(watch={'executor': 'codex', 'model': 'x', 'effort': 'low'}))):
+            new = copy.deepcopy(self.BASE); change(new)
+            with self.subTest(new=new):
+                tool.only_choice_differs(self.BASE, new)
 
     def test_any_other_change_refuses(self):
-        for change in (lambda c: c['development']['executors'].update(driver='codex'), lambda c: c['files'].update(b='2'),
-                       lambda c: c.update(runtime_revision='x'), lambda c: c['development'].pop('id')):
+        for change in (lambda c: c['files'].update(b='2'), lambda c: c.update(runtime_revision='x'),
+                       lambda c: c['development'].pop('id'), lambda c: c['development'].update(watch={'executor': 'codex'}),
+                       lambda c: c['development'].update(contract_sha256='d'), lambda c: c.update(instruction_guards={})):
             new = copy.deepcopy(self.BASE); change(new)
             with self.subTest(new=new), self.assertRaises(SystemExit):
-                tool.only_models_differ(self.BASE, new)
+                tool.only_choice_differs(self.BASE, new)
 
     def test_a_configuration_without_a_development_selection_refuses(self):
         with self.assertRaises(SystemExit):
-            tool.only_models_differ({'files': {}}, {'files': {}})
+            tool.only_choice_differs({'files': {}}, {'files': {}})
 
 
 class CopyTests(HostCase):
@@ -175,7 +185,7 @@ class StageTests(HostCase):
         self.assertEqual(staged.parent.name, '%s-%s-models-%s' % (RT, OF, NOW.strftime('%Y%m%dT%H%M%SZ')))
         new = json.loads(staged.read_text())
         self.assertEqual(new['development']['models'], {'claude': 'claude-opus-5-5'})
-        tool.only_models_differ(self.host.config, new)
+        tool.only_choice_differs(self.host.config, new)
         for name in self.host.config['files']:
             self.assertEqual((staged.parent / name).read_bytes(), (self.host.release / name).read_bytes())
         self.assertEqual(record['sha256'], sha(staged.read_bytes()))
@@ -264,13 +274,13 @@ class PreconditionTests(HostCase):
     def setUp(self):
         super().setUp()
         self.record, self.directory = self.stage({'claude': 'claude-opus-5-5'})
-        self.engine = Engine(self.record['old_config_sha256']); self.way_back = True
+        self.engine = Engine(self.record['old_config_sha256']); self.way_back = True; self.web_runs = []
         self.host.service.write_text(json.dumps({'config_sha256': self.record['old_config_sha256']}))
         fakes = {'temporal': self.engine.temporal, 'raw_schedule': self.engine.raw_schedule,
                  'schedule_argument': self.engine.schedule_argument, 'work_in_progress': self.engine.work_in_progress,
                  'alive': lambda service: {'daemon': 1, 'engine': 2, 'worker': 3}, 'plist': lambda path: b'new plist',
                  'startable': lambda config: self.way_back, 'check_unfinished_writers': lambda: None,
-                 'check_private_processes': lambda: None}
+                 'check_private_processes': lambda: None, 'web_profile_runs': lambda: self.web_runs}
         for name, value in fakes.items():
             patcher = patch.object(tool, name, value); patcher.start(); self.addCleanup(patcher.stop)
         for name, value in (('delivered_histories', self.engine.delivered_histories), ('archived_delivery', lambda config, name: {})):
@@ -573,6 +583,393 @@ class RebindTests(unittest.TestCase):
                 observed = self.schedule(argument); client, updates = self.client(observed, running)
                 done, actual, error = run(tool.rebind(client, old, 'n', SimpleNamespace(schedule=self.schedule(old))))
                 self.assertFalse(done); self.assertEqual(updates, [])
+
+
+# ------------------------------------------------------------------ D040: the whole choice, the workplace's request, auto
+class ChoiceStageTests(HostCase):
+    """The runtime triple makes its executor drive every role, with its model and effort; the watch triple is the watch."""
+
+    def test_a_runtime_choice_moves_every_role_to_the_executor_of_the_chosen_model(self):
+        record, _ = self.stage({'runtime': 'codex/gpt-6-sol/ultra'})
+        new = json.loads(Path(record['config']).read_text())
+        self.assertEqual(set(new['development']['executors'].values()), {'codex'})
+        self.assertEqual(sorted(new['development']['executors']), sorted(tool.ROLES), 'every role, not only those listed before')
+        self.assertEqual(new['development']['models'], {'claude': 'claude-opus-5', 'codex': 'gpt-6-sol'})
+        self.assertEqual(new['development']['efforts'], {'codex': 'ultra'})
+        self.assertEqual((record['efforts_before'], record['efforts_after']),
+                         ({'claude': 'medium', 'codex': 'high'}, {'claude': 'medium', 'codex': 'ultra'}))
+        self.assertEqual(set(record['executors'].values()), {'codex'})
+        self.assertEqual(record['executors_before']['driver'], 'claude')
+        tool.only_choice_differs(self.host.config, new)
+
+    def test_a_watch_choice_is_the_whole_triple_at_the_top_level(self):
+        record, _ = self.stage({'watch': 'claude/claude-opus-5/high'})
+        new = json.loads(Path(record['config']).read_text())
+        self.assertEqual(new['watch'], {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'high'})
+        self.assertEqual(record['watch_before'], {'executor': 'codex', 'model': 'gpt-6-astra', 'effort': 'high'})
+        self.assertEqual(new['development'], self.host.config['development'], 'the development choice is untouched')
+
+    def test_the_release_rules_refuse_a_bad_triple_and_leave_nothing_behind(self):
+        cases = {'two parts': {'runtime': 'claude/claude-opus-5'}, 'empty part': {'watch': 'codex//high'},
+                 'unknown executor': {'runtime': 'gemini/x/high'}, 'flag-like effort': {'watch': 'codex/gpt-6-astra/--max'},
+                 'flag-like model': {'runtime': 'claude/--restricted/high'}, 'upper-case effort': {'runtime': 'claude/claude-opus-5/HIGH'},
+                 'four parts': {'runtime': 'claude/claude-opus-5/high/x'}}
+        for name, requested in cases.items():
+            with self.subTest(case=name):
+                with self.assertRaises(SystemExit):
+                    self.stage(requested)
+                self.assertEqual(sorted(p.name for p in self.host.releases.iterdir()), [RT + '-' + OF])
+
+    def test_restating_what_runs_is_a_change_of_the_configuration_only_when_it_adds_a_key(self):
+        record, _ = self.stage({'runtime': 'claude/claude-opus-5/medium'})
+        self.assertEqual(record['efforts_before'], record['efforts_after'], 'what runs is the same')
+        with self.assertRaises(SystemExit):              # the same again, now explicit in the active release: nothing to change
+            tool.stage(self.host.root, {'claude': 'claude-opus-5'}, code_root=self.host.release / 'runtime', now=NOW + timedelta(seconds=1))
+
+
+class ChoicePreconditionTests(PreconditionTests):
+    def test_a_web_profile_run_refuses_before_anything_is_stopped(self):
+        self.web_runs = ['pid 4242']; self.refused('a web profile run is in progress')
+
+    def test_a_staged_watch_or_effort_that_differs_from_the_record_refuses(self):
+        for key, value in (('watch_after', {'executor': 'claude', 'model': 'x', 'effort': 'low'}),
+                           ('efforts_after', {'claude': 'max', 'codex': 'high'})):
+            with self.subTest(key=key):
+                saved = self.record; self.record = dict(saved, **{key: value})
+                self.refused('not the one recorded at staging'); self.record = saved
+
+
+class WebProfileRunTests(unittest.TestCase):
+    def listing(self, stdout, code=0):
+        return patch.object(tool.subprocess, 'run', return_value=SimpleNamespace(returncode=code, stdout=stdout))
+
+    def test_a_running_profile_is_named_by_its_process_id(self):
+        out = ('  101 /usr/sbin/cron\n  202 /x/.runtime/temporal-venv/bin/python -B -m runtime.web_critique --underlag m.json\n'
+               '  303 python -m runtime.web_measure --mal https://x\n  404 python -m runtime.daemon\n')
+        with self.listing(out):
+            self.assertEqual(tool.web_profile_runs(), ['pid 202', 'pid 303'])
+
+    def test_no_profile_is_no_run(self):
+        with self.listing('  1 /sbin/launchd\n  2 python -m runtime.daemon\n'):
+            self.assertEqual(tool.web_profile_runs(), [])
+
+    def test_an_unreadable_process_list_counts_as_a_run(self):
+        with self.listing('', code=1):
+            self.assertEqual(tool.web_profile_runs(), ['the process list could not be read'])
+        with patch.object(tool.subprocess, 'run', side_effect=OSError('denied')):
+            self.assertEqual(tool.web_profile_runs(), ['the process list could not be read'])
+
+
+class CodexBinaryTests(unittest.TestCase):
+    def test_the_pinned_codex_binary_is_the_one_the_startup_chain_launches(self):
+        from scripts.probe_bridge import ROOT, worker_command
+        self.assertEqual(Path(worker_command()[0]).relative_to(ROOT).as_posix(), tool.CODEX_BINARY)
+
+
+class AutomaticTests(HostCase):
+    """auto on a synthetic host: the request, the measurement, waiting, activating, and never twice for a decided request."""
+
+    def setUp(self):
+        super().setUp()
+        office = Path(self.temp.name) / 'office'
+        self.host.config['office_root'] = str(office)
+        # as the real active release: every role named, all on Claude
+        self.host.config['development']['executors'] = {role: 'claude' for role in tool.ROLES}
+        self.host.config_path.chmod(0o600); self.host.config_path.write_text(json.dumps(self.host.config, indent=2) + '\n')
+        self.host.config_path.chmod(0o400)
+        self.host.active.write_text(json.dumps({'config': str(self.host.config_path), 'sha256': sha(self.host.config_path.read_bytes())}))
+        self.engine = Engine(sha(self.host.config_path.read_bytes())); self.way_back = True; self.web_runs = []
+        self.host.service.write_text(json.dumps({'config_sha256': sha(self.host.config_path.read_bytes())}))
+        fakes = {'temporal': self.engine.temporal, 'raw_schedule': self.engine.raw_schedule,
+                 'schedule_argument': self.engine.schedule_argument, 'work_in_progress': self.engine.work_in_progress,
+                 'alive': lambda service: {'daemon': 1, 'engine': 2, 'worker': 3}, 'plist': lambda path: b'new plist',
+                 'startable': lambda config: self.way_back, 'check_unfinished_writers': lambda: None,
+                 'check_private_processes': lambda: None, 'web_profile_runs': lambda: self.web_runs,
+                 'do_activate': self.activate}
+        for name, value in fakes.items():
+            patcher = patch.object(tool, name, value); patcher.start(); self.addCleanup(patcher.stop)
+        for name, value in (('delivered_histories', self.engine.delivered_histories), ('archived_delivery', lambda config, name: {})):
+            patcher = patch.object(tool.daemon, name, value); patcher.start(); self.addCleanup(patcher.stop)
+        code = patch.object(tool, 'CODE_ROOT', self.host.release / 'runtime'); code.start(); self.addCleanup(code.stop)
+        now = patch.object(tool, 'datetime', wraps=datetime); self.clock = now.start(); self.addCleanup(now.stop)
+        self.stamps = iter(NOW + timedelta(minutes=n) for n in range(1000))
+        self.clock.now.side_effect = lambda tz=None: next(self.stamps)
+        self.activations = []; self.activation_result = 'switch'
+        self.receipt = office / tool.MEASUREMENT; self.receipt.parent.mkdir(parents=True)
+        self.measure(('claude_runtime', 'claude-opus-5', 'high'), ('claude_runtime', 'claude-sonnet-5', 'low'),
+                     ('codex_runtime', 'gpt-6-astra', 'high'), ('codex_runtime', 'gpt-6-sol', 'ultra'))
+
+    def measure(self, *ok, binaries=None):
+        root = self.host.root
+        value = {'schema': 'modellmatning/2',
+                 'binarer': binaries or {'claude_runtime': {'sokvag': str(root / '.runtime/bin' / ('claude-' + tool.claude_profile.VERSION))},
+                                         'codex_runtime': {'sokvag': str(root / tool.CODEX_BINARY)}},
+                 'resultat': [{'program': p, 'modell': m, 'niva': n, 'ok': True} for p, m, n in ok]
+                             + [{'program': 'claude_runtime', 'modell': 'claude-fable-5-1', 'niva': 'max', 'ok': False}]}
+        self.receipt.write_text(json.dumps(value))
+
+    def request(self, runtime='claude/claude-opus-5/high', watch='codex/gpt-6-astra/high', ident='r1', **extra):
+        def as_triple(text):
+            e, m, n = text.split('/'); return {'executor': e, 'model': m, 'effort': n}
+        value = {'schema': tool.REQUEST_SCHEMA, 'id': ident, 'requested_at': '2026-09-30T02:00:00Z',
+                 'runtime': as_triple(runtime), 'watch': as_triple(watch), **extra}
+        self.host.paths(self.host.root)['request'].write_text(json.dumps(value))
+
+    async def activate(self, host, chosen=None):
+        """The real activation is ForwardTests' subject; here it switches the pointer or fails as the case says."""
+        if self.activation_result == 'engine gone':
+            raise ConnectionError('engine gone before any stop')
+        record_directory, staged = chosen or tool.latest_staged(host); self.activations.append(staged['request_id'])
+        if self.activation_result == 'switch':
+            pointer = Path(staged['config'])
+            self.host.active.write_text(json.dumps({'config': str(pointer), 'sha256': staged['sha256']}))
+            return
+        directory = record_directory / 'activation-20260930T020000Z'; directory.mkdir()
+        (directory / 'state.json').write_text(json.dumps({'stop_completed': True}))
+        (directory / 'rollback.json').write_text(json.dumps({'restored_service': {'config_sha256': 'old'} if self.activation_result == 'restored' else None}))
+        tool.refuse('activation failed (fixture); see ' + str(directory))
+
+    def auto(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return run(tool.automatic(self.host.root))
+
+    def staged_count(self):
+        return len([d for d in self.host.releases.iterdir() if '-models-' in d.name])
+
+    def test_no_request_is_nothing_to_do(self):
+        status = self.auto()
+        self.assertEqual((status['state'], status['request_id']), ('none', None))
+        self.assertEqual(self.staged_count(), 0); self.assertEqual(self.activations, [])
+
+    def test_a_malformed_request_is_refused_and_nothing_is_staged(self):
+        for extra in ({'command': 'rm -rf /'}, {'id': '../x'}, {'schema': 'other/1'}):
+            with self.subTest(extra=extra):
+                self.request(**extra); status = self.auto()
+                self.assertEqual(status['state'], 'refused'); self.assertEqual(self.staged_count(), 0)
+
+    def test_a_request_for_what_already_runs_is_in_effect_and_nothing_is_staged(self):
+        self.request(runtime='claude/claude-opus-5/medium', watch='codex/gpt-6-astra/high')
+        status = self.auto()
+        self.assertEqual(status['state'], 'in_effect'); self.assertEqual(self.staged_count(), 0); self.assertEqual(self.activations, [])
+
+    def test_an_unmeasured_choice_is_refused_before_anything_is_staged(self):
+        for runtime, watch in (('claude/claude-fable-5-1/max', 'codex/gpt-6-astra/high'),    # measured, but failed
+                               ('claude/claude-opus-5/xhigh', 'codex/gpt-6-astra/high'),     # never measured at that level
+                               ('claude/claude-opus-5/high', 'codex/gpt-6-luna/high')):      # watch not measured
+            with self.subTest(runtime=runtime, watch=watch):
+                self.request(runtime=runtime, watch=watch, ident='u' + str(abs(hash(runtime + watch)) % 1000))
+                status = self.auto()
+                self.assertEqual(status['state'], 'refused'); self.assertIn('did not work in the measurement', status['reason'])
+        self.assertEqual(self.staged_count(), 0); self.assertEqual(self.activations, [])
+
+    def test_a_measurement_of_another_binary_is_refused(self):
+        self.measure(('claude_runtime', 'claude-opus-5', 'high'), ('codex_runtime', 'gpt-6-astra', 'high'),
+                     binaries={'claude_runtime': {'sokvag': '/opt/homebrew/bin/claude'}, 'codex_runtime': {'sokvag': '/opt/homebrew/bin/codex'}})
+        self.request(); status = self.auto()
+        self.assertEqual(status['state'], 'refused'); self.assertIn('pinned', status['reason']); self.assertEqual(self.staged_count(), 0)
+
+    def test_an_idle_runtime_activates_the_measured_choice(self):
+        self.request(runtime='codex/gpt-6-sol/ultra', watch='claude/claude-opus-5/high')
+        status = self.auto()
+        self.assertEqual(status['state'], 'activated', status); self.assertEqual(self.activations, ['r1'])
+        _, staged = tool.latest_staged(self.host.root)
+        self.assertEqual(staged['request_id'], 'r1'); self.assertEqual(set(staged['executors'].values()), {'codex'})
+        self.assertEqual(staged['watch_after'], {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'high'})
+        self.assertEqual(status['active_config_sha256'], staged['sha256'])
+        again = self.auto()                              # the next look finds it in effect and keeps when it happened
+        self.assertEqual(again['state'], 'in_effect'); self.assertEqual(again['activated_at'], status['activated_at'])
+        self.assertEqual(self.activations, ['r1'])
+
+    def test_a_busy_runtime_waits_and_the_next_look_activates_the_same_staging(self):
+        self.request(runtime='codex/gpt-6-astra/high')
+        self.engine.running = ['watch']
+        first = self.auto()
+        self.assertEqual(first['state'], 'waiting'); self.assertIn('AP10 watch run is in progress', first['reason'])
+        self.engine.running = []; self.engine.upcoming = (NOW + timedelta(minutes=10)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        second = self.auto()
+        self.assertEqual(second['state'], 'waiting'); self.assertIn('less than 20 minutes away', second['reason'])
+        self.engine.upcoming = (NOW + timedelta(hours=5)).strftime('%Y-%m-%dT%H:%M:%SZ'); self.web_runs = ['pid 7']
+        self.assertEqual(self.auto()['state'], 'waiting')
+        self.web_runs = []; self.engine.busy = [{'id': 'x', 'type': 'DevelopmentTask'}]
+        self.assertEqual(self.auto()['state'], 'waiting')
+        self.engine.busy = []
+        self.assertEqual(self.auto()['state'], 'activated')
+        self.assertEqual(self.staged_count(), 1, 'one staging for one request, reused while waiting')
+
+    def test_a_refused_request_is_not_tried_again_until_a_new_one_comes(self):
+        self.request(runtime='codex/gpt-6-sol/ultra'); self.way_back = False
+        first = self.auto()
+        self.assertEqual(first['state'], 'refused'); self.assertIn('no way back', first['reason'])
+        self.way_back = True
+        self.assertEqual(self.auto(), first, 'decided: the same request is not tried again on its own')
+        self.request(runtime='codex/gpt-6-sol/ultra', ident='r2')
+        self.assertEqual(self.auto()['state'], 'activated'); self.assertEqual(self.activations, ['r2'])
+
+    def test_a_restored_activation_is_reported_and_not_retried(self):
+        self.request(runtime='codex/gpt-6-sol/ultra'); self.activation_result = 'restored'
+        status = self.auto()
+        self.assertEqual(status['state'], 'restored'); self.assertEqual(self.activations, ['r1'])
+        self.assertEqual(self.auto()['state'], 'restored'); self.assertEqual(self.activations, ['r1'])
+
+    def test_a_failed_activation_without_a_restored_service_is_failed(self):
+        self.request(runtime='codex/gpt-6-sol/ultra'); self.activation_result = 'failed'
+        self.assertEqual(self.auto()['state'], 'failed')
+
+    def test_a_cut_off_activation_is_not_restarted_but_reported(self):
+        self.request(runtime='codex/gpt-6-sol/ultra')
+        tool.write_status(self.host.root, state='activating', request_id='r1', record='rec',
+                          active_config_sha256=sha(self.host.config_path.read_bytes()))
+        status = self.auto()
+        self.assertEqual(status['state'], 'interrupted'); self.assertIn('forward', status['reason'])
+        self.assertEqual(self.activations, []); self.assertEqual(self.staged_count(), 0)
+        self.assertEqual(self.auto()['state'], 'interrupted', 'and it stays so until the owner looks or chooses again')
+
+    def test_a_cut_off_activation_whose_switch_completed_is_in_effect(self):
+        self.request(runtime='codex/gpt-6-sol/ultra'); self.auto()          # activates
+        pointer = json.loads(self.host.active.read_text())
+        tool.write_status(self.host.root, state='activating', request_id='r1', record='rec', active_config_sha256=pointer['sha256'])
+        status = self.auto()
+        self.assertEqual(status['state'], 'in_effect'); self.assertEqual(self.activations, ['r1'])
+
+    def test_a_service_that_is_down_waits_instead_of_ending_the_request(self):
+        self.request(runtime='codex/gpt-6-sol/ultra')
+        with patch.object(tool, 'alive', lambda service: {'daemon': 1}):
+            self.assertEqual(self.auto()['state'], 'waiting')
+        self.assertEqual(self.auto()['state'], 'activated')
+
+    def test_the_owners_activate_takes_the_same_lock(self):
+        import fcntl
+        with self.host.paths(self.host.root)['lock'].open('a') as held:
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with self.assertRaises(SystemExit) as caught:
+                tool.exclusive(self.host.root)
+            self.assertIn('holds the lock', str(caught.exception))
+        with tool.exclusive(self.host.root):
+            pass
+
+    def test_auto_activates_exactly_the_record_it_verified(self):
+        """Review r1: the owner staging a newer record between auto's check and its activation changes nothing."""
+        self.request(runtime='codex/gpt-6-sol/ultra')
+        real = tool.preconditions
+        async def and_then_the_owner_stages(host, record_directory, staged):
+            result = await real(host, record_directory, staged)
+            tool.stage(host, {'claude': 'claude-sonnet-5'}, code_root=self.host.release / 'runtime', now=NOW + timedelta(days=1))
+            return result
+        with patch.object(tool, 'preconditions', and_then_the_owner_stages):
+            status = self.auto()
+        self.assertEqual(status['state'], 'activated'); self.assertEqual(self.activations, ['r1'])
+        newest = tool.latest_staged(self.host.root)[1]
+        self.assertIsNone(newest['request_id'], 'the owner record is the newest one')
+        pointer = json.loads(self.host.active.read_text())
+        self.assertNotEqual(pointer['sha256'], newest['sha256'], 'and it was not the one activated')
+
+    def test_an_engine_that_cannot_be_asked_is_a_wait_and_the_next_look_activates(self):
+        self.request(runtime='codex/gpt-6-sol/ultra')
+        async def gone():
+            raise ConnectionError('engine not reachable')
+        with patch.object(tool, 'temporal', gone):
+            status = self.auto()
+        self.assertEqual(status['state'], 'waiting'); self.assertIn('unexpected before any stop', status['reason'])
+        self.assertEqual(self.auto()['state'], 'activated')
+
+    def test_an_error_inside_the_activation_before_the_stop_is_a_wait_not_a_cut_off(self):
+        self.request(runtime='codex/gpt-6-sol/ultra'); self.activation_result = 'engine gone'
+        first = self.auto()
+        self.assertEqual(first['state'], 'waiting'); self.assertIn('engine gone', first['reason'])
+        self.activation_result = 'switch'
+        self.assertEqual(self.auto()['state'], 'activated'); self.assertEqual(self.activations, ['r1'])
+
+    def test_a_look_while_another_holds_the_lock_does_nothing(self):
+        self.request(runtime='codex/gpt-6-sol/ultra')
+        import fcntl
+        with self.host.paths(self.host.root)['lock'].open('a') as held:
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.assertIsNone(self.auto())
+        self.assertEqual(self.activations, [])
+
+    def test_a_linked_request_is_refused(self):
+        """A link to an otherwise valid request: only the regular-file rule can refuse it."""
+        self.request(runtime='codex/gpt-6-sol/ultra')
+        request = self.host.paths(self.host.root)['request']
+        target = Path(self.temp.name) / 'elsewhere.json'; target.write_bytes(request.read_bytes()); request.unlink()
+        request.symlink_to(target)
+        status = self.auto()
+        self.assertEqual(status['state'], 'refused'); self.assertIn('regular file', status['reason'])
+        self.assertEqual(self.activations, [])
+
+
+class AgentTests(HostCase):
+    def setUp(self):
+        super().setUp()
+        self.agent_file = Path(self.temp.name) / 'LaunchAgents' / (tool.AGENT_LABEL + '.plist')
+        original = self.host.paths
+        patcher = patch.object(tool, 'paths', lambda host: {**original(host), 'agent': self.agent_file})
+        patcher.start(); self.addCleanup(patcher.stop)
+        self.calls = []; self.loaded = False
+        def launchctl(argv, **kw):
+            self.calls.append(tuple(argv[:2]))
+            if argv[1] == 'print':
+                return SimpleNamespace(returncode=0 if self.loaded else 113, stderr='')
+            if argv[1] == 'bootstrap':
+                self.loaded = True
+            if argv[1] == 'bootout':
+                self.loaded = False
+            return SimpleNamespace(returncode=0, stderr='')
+        patcher = patch.object(tool.subprocess, 'run', side_effect=launchctl); patcher.start(); self.addCleanup(patcher.stop)
+
+    def quiet(self, what):
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            tool.agent(self.host.root, what)
+        return out.getvalue()
+
+    def test_the_agent_runs_the_active_release_own_copy_of_auto_every_interval(self):
+        value = tool.agent_plist(self.host.root)
+        self.assertEqual(value['Label'], tool.AGENT_LABEL); self.assertEqual(value['StartInterval'], tool.AGENT_INTERVAL)
+        self.assertEqual(value['ProgramArguments'][:2], ['/bin/sh', '-c'])
+        script, python, host = value['ProgramArguments'][2:]
+        self.assertEqual(host, str(self.host.root)); self.assertTrue(python.endswith('.runtime/temporal-venv/bin/python'))
+        self.assertIn('.runtime/ap10/active.json', script); self.assertIn('runtime/scripts/model_choice.py" auto', script)
+        self.assertEqual(value['EnvironmentVariables']['LC_ALL'], 'C')
+
+    def test_the_agent_script_resolves_the_tool_of_the_active_release(self):
+        import subprocess as real
+        value = tool.agent_plist(self.host.root)
+        script = value['ProgramArguments'][2].replace('exec "$0" -B', 'echo')
+        import shlex
+        fake = Path(self.temp.name) / 'python'; fake.write_text('#!/bin/sh\nexec %s "$@"\n' % shlex.quote(sys.executable)); fake.chmod(0o755)
+        # Popen, not run: this class replaces subprocess.run with its launchctl double
+        proc = real.Popen(['/bin/sh', '-c', script, str(fake), str(self.host.root)], stdout=real.PIPE, stderr=real.PIPE, text=True)
+        stdout, stderr = proc.communicate(timeout=30)
+        self.assertEqual(stdout.strip(), str(self.host.release / 'runtime/scripts/model_choice.py') + ' auto', stderr)
+
+    def test_install_writes_the_file_once_and_starts_it(self):
+        self.quiet('install')
+        self.assertEqual(self.agent_file.read_bytes(), tool.plistlib.dumps(tool.agent_plist(self.host.root)))
+        self.assertIn(('launchctl', 'bootstrap'), self.calls)
+        self.calls.clear(); self.quiet('install')               # again: nothing new, already loaded
+        self.assertNotIn(('launchctl', 'bootstrap'), self.calls)
+
+    def test_install_refuses_a_different_existing_file(self):
+        self.agent_file.parent.mkdir(parents=True, exist_ok=True); self.agent_file.write_bytes(b'other agent')
+        with self.assertRaises(SystemExit):
+            self.quiet('install')
+        self.assertEqual(self.agent_file.read_bytes(), b'other agent'); self.assertNotIn(('launchctl', 'bootstrap'), self.calls)
+
+    def test_remove_stops_it_and_deletes_the_file(self):
+        self.quiet('install'); self.quiet('remove')
+        self.assertFalse(self.agent_file.exists()); self.assertIn(('launchctl', 'bootout'), self.calls); self.assertFalse(self.loaded)
+
+    def test_show_writes_nothing(self):
+        out = self.quiet('show')
+        self.assertIn(tool.AGENT_LABEL, out); self.assertFalse(self.agent_file.exists()); self.assertEqual(self.calls, [])
+
+
+class ArgumentTests(unittest.TestCase):
+    def test_a_choice_outside_stage_and_agent_words_outside_agent_refuse(self):
+        for argv in (['check', '--runtime', 'claude/claude-opus-5/high'], ['auto', '--watch', 'codex/gpt-6-astra/high'],
+                     ['agent'], ['show', 'install'], ['activate', 'remove']):
+            with self.subTest(argv=argv), self.assertRaises(SystemExit):
+                tool.main(argv)
 
 
 if __name__ == '__main__':

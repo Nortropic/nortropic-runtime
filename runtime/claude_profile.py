@@ -7,9 +7,15 @@ import subprocess
 import uuid
 
 MODEL = 'claude-fable-5-1'
+# The effort every Claude command carried before the effort became a release choice (D040). It stays the default, so
+# a release without a choice builds exactly the command it always did.
+EFFORT = 'medium'
 # A provider model id: alphanumeric start, then the characters real ids use, bounded. Deliberately
 # narrow - this value becomes an argv element, and the only names that need to pass are model ids.
 MODEL_NAME = re.compile(r'\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z')
+# A reasoning level as the CLIs name them (low, medium, high, xhigh, max, and Codex's ultra): lower-case letters only,
+# bounded. It becomes an argv element too, so anything that could be read as a flag or a second value is refused.
+EFFORT_NAME = re.compile(r'\A[a-z]{1,16}\Z')
 VERSION = '2.1.257'
 BINARY_SHA256 = '64590d7d9d9c189d33fb3dfa58c5408eaf2a10fe556bd84155d95efaab46b60e'
 
@@ -50,7 +56,20 @@ def selected_model(model=None):
     return chosen
 
 
-def interactive_command(workspace, prompt, answer, session, model=None):
+def selected_effort(effort=None):
+    """The release's explicit effort choice (D040), or this profile's own pinned level when none is bound.
+
+    Refused here, before a launch, by the same kind of rule as the model name: a level that is not a plain word
+    never reaches an argument list. Whether the pinned CLI accepts the level for the model is measured, not assumed
+    here; the workplace offers only what worked in its measurement of this binary.
+    """
+    chosen = EFFORT if effort is None else effort
+    if not isinstance(chosen, str) or not EFFORT_NAME.match(chosen):
+        raise ValueError('Claude profile needs a plain effort level')
+    return chosen
+
+
+def interactive_command(workspace, prompt, answer, session, model=None, effort=None):
     """Genuine TUI session that may read its workspace and write ONE scratch file.
 
     Measured with the pinned CLI: the prompt must come first because the variadic
@@ -64,7 +83,7 @@ def interactive_command(workspace, prompt, answer, session, model=None):
         raise ValueError('Interactive profile needs a plain prompt and one scratch answer file')
     if not isinstance(session,str) or str(uuid.UUID(session))!=session:
         raise ValueError('Interactive profile needs a canonical host-chosen session id')
-    return [qualified_binary(),prompt,'--session-id',session,'--model',selected_model(model),'--effort','medium',
+    return [qualified_binary(),prompt,'--session-id',session,'--model',selected_model(model),'--effort',selected_effort(effort),
             '--restricted','--strict-mcp-config','--mcp-config','{"mcpServers":{}}',
             '--tools','Read,Write','--allowedTools','Read','Edit(/'+str(answer)+')',
             '--permission-mode','dontAsk','--no-chrome','--disable-slash-commands',
@@ -72,13 +91,13 @@ def interactive_command(workspace, prompt, answer, session, model=None):
             '--append-system-prompt-file',str(workspace/'AGENTS.md')]
 
 
-def command(workspace, allowed_paths=(), writable=True, model=None):
+def command(workspace, allowed_paths=(), writable=True, model=None, effort=None):
     workspace=Path(workspace).resolve()
     grants=['Read']
     if writable:
         grants += ['Edit(/'+str(workspace/name)+')' for name in allowed_paths]
     settings=SETTINGS
-    return [qualified_binary(),'-p','--model',selected_model(model),'--effort','medium',
+    return [qualified_binary(),'-p','--model',selected_model(model),'--effort',selected_effort(effort),
             '--output-format','stream-json','--verbose','--include-hook-events',
             '--restricted','--strict-mcp-config','--mcp-config','{"mcpServers":{}}',
             '--tools','Read,Edit,Write' if writable else 'Read',

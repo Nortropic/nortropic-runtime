@@ -300,27 +300,52 @@ staged with the new bytes is active, and the code transitions refuse a changed i
 
 ## Changing the model choice
 
-The model each executor runs is `development.models` in the active release configuration (D022, D028). It is changed
-by one reviewed tool (D029), never by editing source and never by hand: the active release's OWN copy of
-`scripts/model_choice.py`, which refuses to run from anywhere else. From any directory:
+The choice is part of the active release configuration: the model each executor runs (`development.models`, D022,
+D028), its effort (`development.efforts`, D040), which executor drives each role (`development.executors`) and the
+AP-10 watch's executor, model and effort (`watch`, D040). The owner makes it in the workplace's Flödet; from there it is
+activated automatically (below). It is changed by one reviewed tool (D029, D040), never by editing source and never by
+hand: the active release's OWN copy of `scripts/model_choice.py`, which refuses to run from anywhere else. From any
+directory:
 
     R="<runtime>"; A="$(dirname "$(/usr/bin/python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["config"])' "$R/.runtime/ap10/active.json")")"
     "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" show
-    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" stage --claude <model> [--codex <model>]
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" stage --runtime claude/claude-opus-5/high [--watch codex/gpt-6-astra/high]
     "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" check
     "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" activate
 
-`show` reads the selection, what each executor runs and which executor drives which role. `stage` copies the active
-release byte for byte into a new release directory whose configuration differs ONLY in `development.models`, after the
-release's own rule has accepted the names, and prints the next two commands with their paths; nothing is stopped or
-selected. `check` measures every precondition of the switch and changes nothing. `activate` is the owner's step, in
+`show` reads the selection, what each executor runs at which effort, which executor drives which role, the watch, the
+automatic activation's status and whether its agent is installed. `stage` copies the active release byte for byte into
+a new release directory whose configuration differs ONLY in the choice, after the release's own rules have accepted
+it, and prints the next two commands with their paths; nothing is stopped or selected. `--runtime EXECUTOR/MODEL/EFFORT`
+makes that executor drive every development role with that model and effort; `--watch EXECUTOR/MODEL/EFFORT` sets the
+watch; `--claude MODEL` and `--codex MODEL` still change only a model. `check` measures every precondition of the switch and changes nothing. `activate` is the owner's step, in
 their own logged-in terminal: it backs up the database, stops the service, selects and starts the staged release,
 restores and restarts the previous one if the new one does not start, and then rebinds only the config hash of the
 AP-10 schedule. It refuses to begin while an AP-10 run is in progress or less than 20 minutes away, while any work
-runs in the engine, or without a way back. After a stop that did not complete, `forward` continues; after a switch
+runs in the engine or a web profile run is in progress, or without a way back. After a stop that did not complete, `forward` continues; after a switch
 whose schedule rebinding failed, `rebind` completes only that, run with the NEW release's copy, which is then the
 active one (the message names it). Staging again makes a new record; `check` and `activate` always take the newest.
 The tool sets `LC_ALL=C` and the host root itself. Records: `.runtime/ap10/model-transitions/<time>/`.
+
+### The automatic activation (D040)
+
+The workplace records the owner's choice for Runtime and the watch in `.runtime/ap10/workplace-choice.json`, only from
+what worked in its measurement of this host's pinned programs. `auto` looks at it: nothing to do when the choice already
+runs; a wait while Runtime is not idle; otherwise the same activation as `activate`, with the same way back. It checks
+the measurement again, stages each request once, never tries a refused, restored, failed or cut-off request again until
+a new one is recorded, and each look that decides something writes `.runtime/ap10/automatic-choice-status.json`
+(`none`, `in_effect`, `waiting`, `refused`, `activating`, `activated`, `restored`, `failed`, `interrupted`) with the reason.
+An unexpected error before any stop is a wait. A LaunchAgent runs it every
+five minutes. The owner installs it once, in their own logged-in terminal (sessions cannot run `launchctl`):
+
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" agent install
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" agent remove
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" agent show
+
+The agent runs the active release's own copy of the tool, resolved at every run; its output goes to
+`.runtime/ap10/automatic-choice.log`. `interrupted` means a look found its own earlier activation cut off before it
+reported: read the record named in the status; if the service is down, `forward` continues it. `stage`, `activate`,
+`forward` and `auto` share one lock and never run together.
 
 A model that is selectable is not thereby qualified; a new model needs its own proportionate qualification. The choice
 binds at activation: an idle development task that is resumed afterwards runs the new choice, and `check` lists them.

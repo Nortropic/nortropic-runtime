@@ -101,10 +101,10 @@ class StructuredCallTest(unittest.TestCase):
         source = ('import json,sys\nopen("../seen-argv.json","w").write(json.dumps(sys.argv[1:]))\n'
                   'for e in '+repr(events)+': print(json.dumps(e),flush=True)\nsys.exit('+str(code)+')')
         order = []
-        def claude(workspace, allowed, writable=True, model=None):
-            # The double carries the real signature, including the release's explicit model choice: a
+        def claude(workspace, allowed, writable=True, model=None, effort=None):
+            # The double carries the real signature, including the release's explicit model and effort choice: a
             # stub that silently accepted anything would hide a selection that never reached the profile.
-            order.append(('command', tuple(allowed), writable, model)); return [sys.executable, '-u', '-c', source]
+            order.append(('command', tuple(allowed), writable, model, effort)); return [sys.executable, '-u', '-c', source]
         with patch.object(model, 'active_scope', return_value=(self.scope, config)), \
              patch.object(model, 'claude_command', side_effect=claude), \
              patch.object(model, 'command', side_effect=AssertionError('Codex profile must not be built for a claude role')), \
@@ -113,10 +113,16 @@ class StructuredCallTest(unittest.TestCase):
              patch.object(model, 'environment', return_value={}):
             return model.execute(self.request), order
 
+    def test_the_releases_effort_reaches_the_goal_role_command(self):
+        chosen = {'development': {**ALL_CLAUDE['development'], 'efforts': {'claude': 'xhigh'}}}
+        result, order = self.run_fixture(self.rows(), config=chosen)
+        self.assertTrue(result['completed'], result)
+        self.assertEqual(order[:3], ['subscription', 'guard', ('command', (), False, claude_profile.MODEL, 'xhigh')])
+
     def test_measured_terminal_completes_read_only_with_the_host_schema(self):
         result, order = self.run_fixture(self.rows())
         self.assertTrue(result['completed'], result); self.assertEqual(result['answer'], {'action': 'hold'})
-        self.assertEqual(order[:3], ['subscription', 'guard', ('command', (), False, claude_profile.MODEL)])
+        self.assertEqual(order[:3], ['subscription', 'guard', ('command', (), False, claude_profile.MODEL, claude_profile.EFFORT)])
         # The delivered role schema itself, not a file name or the review schema, constrains the answer.
         self.assertEqual(json.loads((self.stage/'seen-argv.json').read_text()), ['--json-schema', json.dumps(self.schema)])
         self.assertEqual(json.loads((self.workspace/'OUTPUT_SCHEMA.json').read_text()), self.schema)
@@ -191,9 +197,9 @@ class StructuredCallTest(unittest.TestCase):
         for selection, expected in (({'codex': 'gpt-6-other'}, 'gpt-6-other'), (None, profile.MODEL)):
             with self.subTest(selection=selection):
                 self.tearDown(); self.setUp(); seen = []
-                def codex(workspace, writable=True, allowed_paths=None, model=None):
+                def codex(workspace, writable=True, allowed_paths=None, model=None, effort=None):
                     # The real signature: a double that accepted anything would hide a choice that never arrived.
-                    seen.append((writable, allowed_paths, model)); return [sys.executable, '-u', '-c', source, '-']
+                    seen.append((writable, allowed_paths, model, effort)); return [sys.executable, '-u', '-c', source, '-']
                 development = {'executors': {'review': 'claude'}, **({'models': selection} if selection else {})}
                 with patch.object(model, 'active_scope', return_value=(self.scope, {'development': development})), \
                      patch.object(model, 'command', side_effect=codex), \
@@ -202,7 +208,7 @@ class StructuredCallTest(unittest.TestCase):
                      patch.object(model, 'require_workspace_instructions', return_value={}), patch.object(model, 'environment', return_value={}):
                     result = model.execute(self.request)
                 self.assertTrue(result['completed'], result)
-                self.assertEqual(seen, [(False, None, expected)])
+                self.assertEqual(seen, [(False, None, expected, profile.REASONING_EFFORT)])
 
 
 SESSION_ID = '0f1e2d3c-4b5a-4978-8695-a4b3c2d1e0f9'
@@ -538,11 +544,28 @@ class InteractiveExecuteTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'codex route reached'): interactive.execute(self.request)
         self.assertFalse((self.stage/'consumed.json').exists())
 
+    def test_the_interactive_routes_are_given_the_releases_effort(self):
+        """D040: the same one value per session for the effort, for either executor, resolved before anything is consumed."""
+        (self.home/'mode').write_text('honest'); seen = []
+        def codex(workspace, prompt, model=None, effort=None):
+            seen.append(effort); raise ValueError('codex route reached')
+        for levels, expected in (({'codex': 'ultra'}, 'ultra'), (None, profile.REASONING_EFFORT)):
+            development = {'executors': {'driver': 'claude'}, **({'efforts': levels} if levels else {})}
+            with patch.object(interactive, 'active_scope', return_value=(self.scope, {'development': development})), \
+                 patch.object(interactive, 'require_workspace_instructions', return_value={}), \
+                 patch.object(interactive, 'claude_interactive_command', side_effect=AssertionError('interactive was not selected as claude')), \
+                 patch.object(claude_profile, 'require_subscription', side_effect=AssertionError('no Claude preflight for a codex selection')), \
+                 patch.object(interactive, 'interactive_command', side_effect=codex), \
+                 patch.object(interactive.os, 'isatty', return_value=True):
+                with self.assertRaisesRegex(ValueError, 'codex route reached'): interactive.execute(self.request)
+        self.assertEqual(seen, ['ultra', profile.REASONING_EFFORT])
+        self.assertFalse((self.stage/'consumed.json').exists())
+
     def test_the_codex_interactive_route_is_given_the_releases_codex_model(self):
         """One value per session for either executor (D028): the Codex launch takes the release's choice, and
         it is resolved before anything is consumed."""
         (self.home/'mode').write_text('honest'); seen = []
-        def codex(workspace, prompt, model=None):
+        def codex(workspace, prompt, model=None, effort=None):
             seen.append(model); raise ValueError('codex route reached')
         for selection in ({'codex': 'gpt-6-other'}, None):
             development = {'executors': {'driver': 'claude'}, **({'models': selection} if selection else {})}

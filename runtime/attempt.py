@@ -98,6 +98,7 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
     if provider not in ('codex','claude') or provider not in accepted:
         raise ValueError('Unqualified provider/role')
     model = None
+    effort = None
     state = task_directory(task_id)
     if role == 'review':
         if not isinstance(workspace_name, str) or not workspace_name.startswith('commit-') or not workspace_name[7:].isdigit():
@@ -121,10 +122,12 @@ def execute(task_id, number, prompt, seconds, change_reason=None, task_digest=No
                 # the same handler as the other preflight refusals so a release transition, a drifted
                 # baseline or a misspelt key is reported as a diagnosable preflight failure instead of an
                 # uncaught crash that leaves no result at all. ScopeClosed is a ValueError, so it lands here too.
-                from .development_model import models
-                model = models(require_active_code())[provider]
+                from .development_model import models, efforts
+                active = require_active_code()
+                model = models(active)[provider]
+                effort = efforts(active)[provider]      # the release's effort for the same executor (D040)
             # A Claude reviewer receives the read-only profile: no edit tool and no file grant.
-            argv = claude_command(workspace, task['allowed_paths'], writable=role == 'implementation', model=model) if provider == 'claude' else command(workspace, writable=role == 'implementation', allowed_paths=task['allowed_paths'] if task['target'] == OFFICE else None, model=model)
+            argv = claude_command(workspace, task['allowed_paths'], writable=role == 'implementation', model=model, effort=effort) if provider == 'claude' else command(workspace, writable=role == 'implementation', allowed_paths=task['allowed_paths'] if task['target'] == OFFICE else None, model=model, effort=effort)
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             report = {'task':task_id,'attempt':number,'provider':provider,'provider_completed':False,
                       'reason':'Provider preflight failed: '+str(error),'process_group_removed':True,

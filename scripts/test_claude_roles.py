@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from runtime import attempt, claude_profile, release, review, task, targets
+from runtime import attempt, claude_profile, profile, release, review, task, targets
 from runtime.integration import GateClosed, digest, require_gate
 from runtime.provider_result import parse
 
@@ -229,13 +229,13 @@ class AttemptRoleBindingTest(unittest.TestCase):
             accepted = {'id': 't', 'target': targets.OFFICE, 'attempt_seconds': 60, 'allowed_paths': ['tools/a.py'],
                         'steps': [{'provider': 'codex', 'prompt': 'p'}], 'review_provider': provider}
             calls = {}
-            def claude(workspace, allowed, writable=True, model=None):
-                # Real signature, including the release's explicit model choice for this run.
-                calls['claude'] = {'allowed': list(allowed), 'writable': writable, 'model': model}
+            def claude(workspace, allowed, writable=True, model=None, effort=None):
+                # Real signature, including the release's explicit model and effort choice for this run.
+                calls['claude'] = {'allowed': list(allowed), 'writable': writable, 'model': model, 'effort': effort}
                 return ['pinned-claude', '--tools', 'Read']
-            def codex(workspace, writable=True, allowed_paths=None, model=None):
-                # Real signature, including the release's explicit Codex choice (D028).
-                calls['codex'] = {'writable': writable, 'model': model}; return ['codex', 'exec', '-']
+            def codex(workspace, writable=True, allowed_paths=None, model=None, effort=None):
+                # Real signature, including the release's explicit Codex choice (D028, D040).
+                calls['codex'] = {'writable': writable, 'model': model, 'effort': effort}; return ['codex', 'exec', '-']
             order = []
             env = {'NR_CONFIG_SHA256': 'x'} if active else {}
             with mock.patch.object(attempt, 'ROOT', root), mock.patch.object(attempt, 'load', return_value=accepted), \
@@ -257,7 +257,8 @@ class AttemptRoleBindingTest(unittest.TestCase):
 
     def test_claude_review_launch_is_read_only_with_the_host_schema(self):
         code, record, report, calls, order = self.launch('claude', active=True)
-        self.assertEqual(calls, {'claude': {'allowed': ['tools/a.py'], 'writable': False, 'model': MODEL_CHOICE}},
+        self.assertEqual(calls, {'claude': {'allowed': ['tools/a.py'], 'writable': False, 'model': MODEL_CHOICE,
+                                            'effort': claude_profile.EFFORT}},
                          'the review runs as the model the active release selected')
         self.assertEqual(record['command'][:3], ['pinned-claude', '--tools', 'Read'])
         self.assertEqual(record['command'][-2], '--json-schema')
@@ -270,7 +271,7 @@ class AttemptRoleBindingTest(unittest.TestCase):
 
     def test_codex_review_launch_is_unchanged(self):
         code, record, report, calls, order = self.launch('codex')
-        self.assertEqual(calls, {'codex': {'writable': False, 'model': None}}, 'an unbound run looks nothing up')
+        self.assertEqual(calls, {'codex': {'writable': False, 'model': None, 'effort': None}}, 'an unbound run looks nothing up')
         self.assertEqual(record['command'][-3], '--output-schema'); self.assertEqual(record['command'][-1], '-')
         self.assertTrue(record['command'][-2].endswith('REVIEW_SCHEMA.json'))
         self.assertNotIn('--json-schema', record['command']); self.assertEqual(order, [])
@@ -281,7 +282,7 @@ class AttemptRoleBindingTest(unittest.TestCase):
         for selection, expected in (({'claude': MODEL_CHOICE}, 'gpt-6-astra'), ({'codex': 'gpt-6-other'}, 'gpt-6-other')):
             with self.subTest(selection=selection):
                 code, record, report, calls, order = self.launch('codex', active=True, selection=selection)
-                self.assertEqual(calls, {'codex': {'writable': False, 'model': expected}})
+                self.assertEqual(calls, {'codex': {'writable': False, 'model': expected, 'effort': profile.REASONING_EFFORT}})
                 self.assertEqual(record['command'][-3], '--output-schema')
                 self.assertEqual(code, 1); self.assertFalse(report['provider_completed'])
 
