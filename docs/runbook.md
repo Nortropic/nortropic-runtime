@@ -354,6 +354,23 @@ The agent runs the active release's own copy of the tool, resolved at every run;
 reported: read the record named in the status; if the service is down, `forward` continues it. `stage`, `activate`,
 `forward` and `auto` share one lock and never run together.
 
+### Automatic code transitions (D043)
+
+At each look, after the choice, the same agent compares the active Runtime revision with main on GitHub. A newer main is
+activated by itself only when every commit on the way was merged through one protected pull request whose head carries
+both App checks bound to a sealed, approved separate review on this host; when the release changes none of the
+activator, its rehearsal, the chain proof's binding, the measurement queue, the service definition, the AP-10 command or
+the web tools; when an isolated rehearsal on a sandboxed copy, started only while Runtime is idle, started the new
+release twice and the old one after it; and when Runtime is idle, exactly as for a choice. Status:
+`.runtime/ap10/automatic-code-status.json` (`current`, `waiting`, `refused`, `owner_needed`, `activating`, `activated`,
+`restored`, `failed`, `interrupted`), shown in the workplace's Runtime card, and `show` prints it under
+`automatic_code`. Records: `.runtime/ap10/code-transitions/<time>/` (staged record, static checks, rehearsal, activation).
+`owner_needed` names what only the owner activates; that release goes through a controlled transition of its own, as
+before. `interrupted` means a look found its own activation cut off: read the record; if the service is down, continue
+it in the owner's Terminal with the active release's copy of the tool:
+
+    "$R/.runtime/temporal-venv/bin/python" -B "$A/runtime/scripts/model_choice.py" code-forward
+
 A model that is selectable is not thereby qualified; a new model needs its own proportionate qualification. The choice
 binds at activation: an idle development task that is resumed afterwards runs the new choice, and `check` lists them.
 

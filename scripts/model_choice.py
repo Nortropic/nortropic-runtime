@@ -6,6 +6,7 @@ usage, as the owner of the Runtime directory, with the active release's own copy
                                                                    [--runtime EXECUTOR/MODEL/EFFORT] [--watch EXECUTOR/MODEL/EFFORT]
     <runtime venv python> -B <active release>/runtime/scripts/model_choice.py check | activate | forward | rebind
     <runtime venv python> -B <active release>/runtime/scripts/model_choice.py auto
+    <runtime venv python> -B <active release>/runtime/scripts/model_choice.py code-forward
     <runtime venv python> -B <active release>/runtime/scripts/model_choice.py agent install | remove | show
 `show` and `stage` print the exact paths; docs/runbook.md has the whole sequence.
 
@@ -14,9 +15,12 @@ model and its effort (`--runtime`), and the AP-10 watch's executor, model and ef
 transition run by the workplace's recorded choice when Runtime is idle, from a LaunchAgent the owner starts once with
 `agent install`; it waits while Runtime works, activates with the same way back, and records what it did.
 
-D042 widens what the same agent does at each look: after the workplace's choice (D040), queued credential-free
-measurements, run as the key-less test user through the one sudoers rule (scripts/measurement_queue.py), each kept away
-from the AP-10 watch. The agent file itself does not change.
+D042 and D043 widen what the same agent does at each look, in this order and each under its own guards: the
+workplace's choice (D040); then a new Runtime revision proven integrated and reviewed on GitHub, staged, rehearsed in
+isolation and activated when Runtime is idle (scripts/code_transition.py, D043); then queued credential-free
+measurements, run as the key-less test user through the one sudoers rule (scripts/measurement_queue.py, D042). Heavy
+work keeps away from the AP-10 watch. The agent file itself does not change. `code-forward` is the owner's continuation
+of an automatic code activation whose stop completed.
 
 D022 made the model an explicit part of the frozen release configuration, changed only through a controlled release
 transition, and every change so far needed its own derived transition script and its own review. This is that
@@ -276,6 +280,7 @@ def show(host):
                       'efforts_run': efforts(config), 'executors': executors(config), 'watch': watch(config),
                       'tool': str(Path(old['directory']) / TOOL), 'questions': questions(config),
                       'automatic': json.loads(status.read_text()) if status.is_file() else None,
+                      'automatic_code': read_optional(Path(host) / '.runtime/ap10/automatic-code-status.json'),
                       'measurements': read_optional(Path(host) / '.runtime/ap10/measurement-status.json'),
                       'agent_installed': paths(host)['agent'].is_file()}, indent=2, ensure_ascii=False))
 
@@ -986,13 +991,16 @@ async def ap10_quiet(margin):
 
 
 def tick(host):
-    """One look of the owner's agent: the workplace's choice (D040), then queued credential-free measurements (D042).
-    A failure in one part is written to its own status and never stops the next part; nothing here stops or starts the
-    service except an activation under its preconditions."""
-    for part in ('choice', 'measurements'):
+    """One look of the owner's agent: the workplace's choice (D040), a new integrated and reviewed Runtime revision (D043),
+    then queued credential-free measurements (D042). A failure in one part is written to its own status and never stops
+    the next part; nothing here stops or starts the service except an activation under its preconditions."""
+    for part in ('choice', 'code', 'measurements'):
         try:
             if part == 'choice':
                 asyncio.run(automatic(host))
+            elif part == 'code':
+                from scripts import code_transition
+                asyncio.run(code_transition.automatic(host, sys.modules[__name__]))
             else:
                 from scripts import measurement_queue
                 measurement_queue.run_pending(host, quiet=lambda margin: asyncio.run(ap10_quiet(margin)))
@@ -1059,7 +1067,8 @@ def exclusive(host):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    parser.add_argument('action', choices=['show', 'stage', 'check', 'activate', 'forward', 'rebind', 'auto', 'agent'])
+    parser.add_argument('action', choices=['show', 'stage', 'check', 'activate', 'forward', 'rebind', 'auto', 'agent',
+                                           'code-forward'])
     parser.add_argument('what', nargs='?', choices=['install', 'remove', 'show'])
     parser.add_argument('--claude'); parser.add_argument('--codex'); parser.add_argument('--runtime'); parser.add_argument('--watch')
     arguments = parser.parse_args(argv)
@@ -1092,6 +1101,10 @@ def main(argv=None):
             asyncio.run(do_forward(host))
     elif arguments.action == 'auto':
         tick(host)
+    elif arguments.action == 'code-forward':
+        from scripts import code_transition
+        with exclusive(host):
+            asyncio.run(code_transition.owner_forward(host, sys.modules[__name__]))
     elif arguments.action == 'agent':
         agent(host, arguments.what)
     else:
