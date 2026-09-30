@@ -1756,3 +1756,74 @@ GitHub REST check-runs (https://docs.github.com/en/rest/checks/runs) supplies au
 app/head/status fields and total_count. This conservative profile refuses incomplete
 or ambiguous latest-run results rather than selecting a favorable historical result.
 The active release and prior frozen candidate are unchanged. Status belongs in plan.md.
+
+## D040 — 2026-09-30: the workplace's choice is the release choice, and it is activated automatically when Runtime is idle
+
+The owner's order MODELLKARTA-20260929 (verbatim in the office's
+`evidence/nasta-uppdrag/local/partner-backlog-20260929/owner-words-modellval-i-dashboarden-20260929.md` and
+`evidence/nasta-uppdrag/local/modellkarta-20260929/owner-words-modellkarta-codex-20260929.md`): "jag vill att
+aktiveringarna sker per automatik utifrån modell och effort nivåer jag väljer i arbetsplatsen", and from the Codex
+addition: "Runtime: väljer jag en Codex-modell ska rollerna köra Codex, och väljer jag en Claude-modell ska de köra
+Claude. Utförarna byts alltså i releasen. Ta med det i steg 2, så att även det bytet aktiveras av sig självt när Runtime
+är ledig.", "Bevakningen ska kunna köra antingen Codex eller Claude." and "Erbjud bara modeller och nivåer som
+bevisligen fungerar på mitt abonnemang." This is step 2 of that order. The office's step 1a already shows the choices on
+its map and reads them from the active release with the release's own code.
+
+Decision:
+- The effort is part of the release choice: `development.efforts.{claude,codex}`, read by `efforts(config)` with the
+  guards of `models()`: one level per executor applied to every role it drives, an unknown or singular key refused, a
+  level that is not a plain lower-case word refused before it can reach an argument list. Absent, each profile keeps its
+  pinned level (Claude `medium`, Codex `high`), so every command of a release without a choice is byte-identical to
+  before. The profiles take the effort; the task attempts, the goal roles and the interactive route pass it with the
+  model. D022 and D028 pinned the effort; this replaces that limit.
+- The AP-10 watch's executor, model and effort are a choice: the top-level `watch = {executor, model, effort}`, read by
+  `watch(config)` as one complete triple. Absent, it is the recorded Codex baseline (`gpt-6-astra`, `high`), byte for
+  byte. With Claude the private stage runs the same read-only profile as the goal roles (Read only, the schema through
+  `--json-schema`, the answer only the single terminal's structured output, the reported model checked), after the
+  subscription and instruction checks and before its one call is consumed. The office's frozen watch policy reads the
+  same result shape either way; Claude's session id is the thread id it requires.
+- `scripts/model_choice.py` changes the whole choice. `--runtime EXECUTOR/MODEL/EFFORT` makes that executor drive every
+  development role with that model and effort, so the model the owner chooses decides which executor runs;
+  `--watch EXECUTOR/MODEL/EFFORT` sets the watch. The invariant widens from `development.models` to
+  `development.models`, `development.efforts`, `development.executors` and `watch`; everything else must be equal.
+- `auto` applies the choice the workplace records in `.runtime/ap10/workplace-choice.json`. The file is untrusted input:
+  a regular bounded file of exactly the recorded shape, whose triples the release's own rules judge. A choice that did not
+  work in the workplace's measurement of this host's pinned programs is refused (the office's receipt `modellmatning/2`
+  under the office root the release binds, whose binaries must be the host's pinned Claude and Codex). A choice that
+  already runs is left alone. While Runtime is not idle - an AP-10 run in progress or less than 20 minutes away, work in
+  the engine, a web profile run, the service not the recorded one - auto waits and looks again. Otherwise it runs the
+  same activation as the owner's, with the same way back. One request is staged once and reused while it waits. A
+  request that ended refused, restored, failed or cut off is not tried again until the workplace records a new one. An
+  unexpected error before any stop, such as an engine that cannot be asked, is a wait. Auto activates exactly the record
+  it verified. Each look that decides something writes `.runtime/ap10/automatic-choice-status.json`, which the workplace
+  reads; a look that finds the lock held, or the request already decided, leaves it as it is. One lock keeps auto and the
+  owner's own `stage`, `activate` or `forward` from running together.
+- A LaunchAgent runs auto every five minutes (`se.nortropic.ap10-runtime-choice`). Its program resolves the ACTIVE
+  release's own copy of the tool from the active pointer at every run, so it always runs the bytes the active release
+  binds. Sessions cannot run `launchctl` (managed policy); the owner installs it once with `agent install` and can remove
+  it with `agent remove`. For choices recorded in the workplace this replaces D029's "activate (the owner)". The owner's
+  manual path stays.
+- Every activation, manual or automatic, now also requires that no web profile run (`runtime.web_measure`,
+  `web_critique`, `web_visitor`) is in progress; an unreadable process list counts as one.
+
+Measured before the change: the workplace's measurement of 2026-09-29 22:02Z ran each program with its own login. The
+pinned Claude 2.1.257 answered with `claude-fable-5-1`, `claude-sonnet-5`, `claude-opus-5` and `claude-haiku-4-5-20251001`
+at low, medium, high, xhigh and max, and refused `claude-opus-5-5` ("version 2.1.280 or newer is required"). The
+pinned Codex 0.155.1 answered with seven models, each at its own levels. Tested on doubles and a synthetic host: the
+effort choice and its refusals in both profiles and every route, the watch on either executor including a wrong
+reported model, a text that contradicts the object and a refused subscription that consumes nothing, the widened
+invariant, staging of both triples, the web profile precondition, every branch of auto, the agent file and its script,
+and the shared lock, auto's activation of exactly the record it verified, and an unexpected error before any stop that is a wait. Each of thirteen guards in the tool was removed in turn and a test failed each time.
+
+Limits:
+- The first release carrying this has to be activated by a controlled code transition, as D029 said of its own first
+  release. The agent is installed once by the owner. Until both are done, a choice recorded in the workplace waits.
+- The launchctl part of an automatic switch has run only against doubles. The sequence is D029's, which the owner ran on
+  2026-09-24.
+- A Claude watch has not run live. Its first run is the first AP-10 round after such a choice, with the read-only
+  profile D022 qualified for `claude-opus-5`; other models are selectable when measured, not otherwise qualified.
+- The web profiles (D034-D037) keep their own model parameter and pinned effort; the readers' choice is a later step of
+  the same order.
+- A switch comes at most five minutes after Runtime becomes idle. The web profile check matches the documented
+  invocation `-m runtime.web_…`.
+- Nothing is activated by this change.

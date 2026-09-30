@@ -1,17 +1,25 @@
-"""Change the release's model choice through one reviewed, reusable controlled transition (D029).
+"""Change the release's model choice through one reviewed, reusable controlled transition (D029, D040).
 
 usage, as the owner of the Runtime directory, with the active release's own copy of this file:
     <runtime venv python> -B <active release>/runtime/scripts/model_choice.py show
     <runtime venv python> -B <active release>/runtime/scripts/model_choice.py stage [--claude MODEL] [--codex MODEL]
+                                                                   [--runtime EXECUTOR/MODEL/EFFORT] [--watch EXECUTOR/MODEL/EFFORT]
     <runtime venv python> -B <active release>/runtime/scripts/model_choice.py check | activate | forward | rebind
+    <runtime venv python> -B <active release>/runtime/scripts/model_choice.py auto
+    <runtime venv python> -B <active release>/runtime/scripts/model_choice.py agent install | remove | show
 `show` and `stage` print the exact paths; docs/runbook.md has the whole sequence.
+
+D040 widens the choice to what the owner chooses in the workplace: the executor that drives every development role, its
+model and its effort (`--runtime`), and the AP-10 watch's executor, model and effort (`--watch`). `auto` is the same
+transition run by the workplace's recorded choice when Runtime is idle, from a LaunchAgent the owner starts once with
+`agent install`; it waits while Runtime works, activates with the same way back, and records what it did.
 
 D022 made the model an explicit part of the frozen release configuration, changed only through a controlled release
 transition, and every change so far needed its own derived transition script and its own review. This is that
 transition written once, with the model as its parameter and `development.models` as the ONLY thing it can change.
 
 stage     copies the ACTIVE release byte for byte into a new release directory and writes its configuration with only
-          `development.models` replaced. The release's own code judges the choice, so a selection that release could
+          the choice replaced: `development.models`, `development.efforts`, `development.executors` and `watch`. The release's own code judges the choice, so a selection that release could
           not run is refused here. Nothing is stopped or selected.
 check     every precondition of activate against the live engine and service; nothing is changed.
 activate  (the owner) backs up the database, stops the service, selects the staged release, starts and confirms it,
@@ -32,10 +40,13 @@ import argparse
 import asyncio
 import copy
 from datetime import datetime, timezone
+import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path
+import re
+import plistlib
 import signal
 import sqlite3
 import subprocess
@@ -47,6 +58,21 @@ WATCH = 'office-python-temporal'
 LEAD_SECONDS = 1200                 # the next AP-10 run must be at least this far away, as for every earlier transition
 ENGINE = ('127.0.0.1:7339', 'nortropic-runtime')
 TOOL = 'runtime/scripts/model_choice.py'
+# D040: the choice this transition may change, and nothing else.
+CHOICE_KEYS = ('models', 'efforts', 'executors')          # under development; plus the top-level `watch`
+REQUEST_SCHEMA = 'workplace-choice/1'
+STATUS_SCHEMA = 'automatic-choice-status/1'
+AGENT_LABEL = 'se.nortropic.ap10-runtime-choice'
+AGENT_INTERVAL = 300                # seconds between the agent's looks; a switch waits at most this long after Runtime is idle
+# Refusals that pass by themselves: auto waits and looks again. Every other refusal ends that request until it changes.
+# The pinned Codex binary the startup chain launches, relative to the host; test_model_choice asserts it against
+# worker_command() itself, so drift on either side fails a test instead of trusting a measurement of another binary.
+CODEX_BINARY = '.runtime/bin/codex-0.155.1'
+MEASUREMENT = 'evidence/partner/local/modellmatning.json'   # the workplace's own receipt, under the office root the release binds
+FINAL = ('refused', 'restored', 'failed', 'interrupted')    # decided for this request; auto looks again only for a new one
+WAITING = ('an AP10 watch run is in progress', 'the next AP10 run is less than 20 minutes away',
+           'work is in progress in the engine', 'work started in the engine meanwhile', 'a web profile run is in progress',
+           'the running service is not the recorded one')
 
 
 def refuse(message):
@@ -78,8 +104,8 @@ if __name__ == '__main__':
     os.environ['LC_ALL'] = 'C'
     sys.path.insert(0, str(CODE_ROOT))
 
-from runtime import daemon, model_question, release                           # noqa: E402
-from runtime.development_model import executors, models                      # noqa: E402
+from runtime import claude_profile, daemon, model_question, release           # noqa: E402
+from runtime.development_model import ROLES, efforts, executors, models, watch  # noqa: E402
 from runtime.private_stage import check_private_processes                    # noqa: E402
 from runtime.run import check_unfinished_writers                             # noqa: E402
 from runtime.shared import process_identity                                  # noqa: E402
@@ -111,7 +137,11 @@ def paths(host):
     home = Path(host) / '.runtime/ap10'
     return {'active': home / 'active.json', 'releases': home / 'releases', 'transitions': home / 'model-transitions',
             'service': home / 'service.json', 'database': Path(host) / '.runtime/runtime.sqlite',
-            'plist': Path.home() / 'Library/LaunchAgents' / (LABEL + '.plist')}
+            'plist': Path.home() / 'Library/LaunchAgents' / (LABEL + '.plist'),
+            # D040: the workplace's recorded choice, what auto did with it, and the agent that runs auto
+            'request': home / 'workplace-choice.json', 'status': home / 'automatic-choice-status.json',
+            'lock': home / 'automatic-choice.lock', 'log': home / 'automatic-choice.log',
+            'agent': Path.home() / 'Library/LaunchAgents' / (AGENT_LABEL + '.plist')}
 
 
 def active_release(host):
@@ -140,15 +170,64 @@ def require_active_copy(host, code_root=CODE_ROOT):
     return directory
 
 
-def only_models_differ(old, new):
-    """The one invariant of this transition: the configurations are equal once development.models is set aside."""
+def only_choice_differs(old, new):
+    """The one invariant of this transition: the configurations are equal once the choice is set aside (D040).
+
+    The choice is `development.models`, `development.efforts`, `development.executors` and the top-level `watch`.
+    Everything else - files, revisions, scope, contract, amendments, guards, archives - is equal or it refuses.
+    """
     a, b = copy.deepcopy(old), copy.deepcopy(new)
     for value in (a, b):
         if not isinstance(value.get('development'), dict):
             refuse('a configuration without a development selection has no model choice to change')
-        value['development'].pop('models', None)
+        for key in CHOICE_KEYS:
+            value['development'].pop(key, None)
+        value.pop('watch', None)
     if a != b:
-        refuse('the staged configuration differs from the active one beyond development.models')
+        refuse('the staged configuration differs from the active one beyond the choice '
+               '(development.models, development.efforts, development.executors, watch)')
+
+
+def triple(text, what):
+    """EXECUTOR/MODEL/EFFORT from the command line or the workplace's request; the release's own rules judge the values."""
+    if isinstance(text, dict):
+        parts = [text.get('executor'), text.get('model'), text.get('effort')]
+        if set(text) != {'executor', 'model', 'effort'}:
+            refuse(what + ' must name exactly executor, model and effort')
+    else:
+        parts = str(text).split('/')
+    if len(parts) != 3 or not all(isinstance(part, str) and part for part in parts):
+        refuse(what + ' must be EXECUTOR/MODEL/EFFORT, for example claude/claude-opus-5/high')
+    return {'executor': parts[0], 'model': parts[1], 'effort': parts[2]}
+
+
+def apply_choice(config, requested):
+    """The configuration with the requested choice applied. Only the choice keys can change (only_choice_differs).
+
+    requested: {'claude': MODEL|None, 'codex': MODEL|None, 'runtime': triple|None, 'watch': triple|None}. A runtime
+    triple makes its executor drive EVERY development role, with that model and effort for that executor: the model
+    the owner chooses decides which executor runs (D040). The other executor's model and effort are kept.
+    """
+    new = copy.deepcopy(config)
+    development = new.get('development')
+    if not isinstance(development, dict):
+        refuse('the active release has no development selection to change')
+    names = {executor: requested.get(executor) for executor in ('claude', 'codex') if requested.get(executor) is not None}
+    if names:
+        development['models'] = {**(development.get('models') or {}), **names}
+    if requested.get('runtime') is not None:
+        chosen = triple(requested['runtime'], '--runtime')
+        development['executors'] = {role: chosen['executor'] for role in ROLES}
+        development['models'] = {**(development.get('models') or {}), chosen['executor']: chosen['model']}
+        development['efforts'] = {**(development.get('efforts') or {}), chosen['executor']: chosen['effort']}
+    if requested.get('watch') is not None:
+        new['watch'] = triple(requested['watch'], '--watch')
+    return new
+
+
+def choice_of(config):
+    """What the release runs, by the release's own rules: executors per role, model and effort per executor, the watch."""
+    return {'executors': executors(config), 'models': models(config), 'efforts': efforts(config), 'watch': watch(config)}
 
 
 def verify_files(directory, files, what):
@@ -187,13 +266,16 @@ def questions(config):
 def show(host):
     old, raw = active_release(host); config = json.loads(raw)
     development = config.get('development') or {}
+    status = paths(host)['status']
     print(json.dumps({'active_config_sha256': old['config_sha256'], 'release': old['directory'],
                       'selection': development.get('models'), 'models_run': models(config),
-                      'executors': executors(config), 'tool': str(Path(old['directory']) / TOOL),
-                      'questions': questions(config)}, indent=2, ensure_ascii=False))
+                      'efforts_run': efforts(config), 'executors': executors(config), 'watch': watch(config),
+                      'tool': str(Path(old['directory']) / TOOL), 'questions': questions(config),
+                      'automatic': json.loads(status.read_text()) if status.is_file() else None,
+                      'agent_installed': paths(host)['agent'].is_file()}, indent=2, ensure_ascii=False))
 
 
-def stage(host, requested, code_root=CODE_ROOT, now=None):
+def stage(host, requested, code_root=CODE_ROOT, now=None, request_id=None):
     old, raw = active_release(host); directory = Path(old['directory'])
     if Path(code_root) != directory / 'runtime':
         refuse('this is not the active release own copy of the tool; run ' + str(directory / TOOL))
@@ -203,20 +285,17 @@ def stage(host, requested, code_root=CODE_ROOT, now=None):
     development = config.get('development')
     if not isinstance(development, dict):
         refuse('the active release has no development selection to change')
-    requested = {executor: name for executor, name in requested.items() if name is not None}
-    if not requested:
-        refuse('name at least one model: --claude MODEL and/or --codex MODEL')
-    previous = development.get('models')
-    selection = {**(previous or {}), **requested}
-    if selection == previous:
-        refuse('the selection is already %s; nothing to change' % json.dumps(previous))
-    new = copy.deepcopy(config); new['development']['models'] = selection
+    if not any(requested.get(key) is not None for key in ('claude', 'codex', 'runtime', 'watch')):
+        refuse('name a choice: --claude MODEL, --codex MODEL, --runtime EXECUTOR/MODEL/EFFORT and/or --watch EXECUTOR/MODEL/EFFORT')
+    new = apply_choice(config, requested)
+    previous, selection = development.get('models'), new['development'].get('models')
     try:
-        before, after = models(config), models(new)          # the release's own rule, applied by the release's own code
-        roles = executors(new)
+        before, after = choice_of(config), choice_of(new)    # the release's own rules, applied by the release's own code
     except ValueError as error:
         refuse('this release refuses the selection: %s' % error)
-    only_models_differ(config, new)
+    if new == config:
+        refuse('the selection is already %s; nothing to change' % json.dumps(after))
+    only_choice_differs(config, new)
     stamp = (now or datetime.now(timezone.utc)).strftime('%Y%m%dT%H%M%SZ')
     target = paths(host)['releases'] / ('%s-%s-models-%s' % (config['runtime_revision'], config['office_revision'], stamp))
     record_directory = paths(host)['transitions'] / stamp
@@ -233,8 +312,12 @@ def stage(host, requested, code_root=CODE_ROOT, now=None):
     record = {'staged_at': (now or datetime.now(timezone.utc)).isoformat(), 'tool_sha256': config['files'][TOOL],
               'old_config': str(directory / 'config.json'), 'old_config_sha256': old['config_sha256'],
               'config': str(path), 'sha256': sha_bytes(path.read_bytes()),
-              'previous_selection': previous, 'selection': selection, 'models_before': before, 'models_after': after,
-              'executors': roles, 'runtime_revision': new['runtime_revision'], 'office_revision': new['office_revision']}
+              'previous_selection': previous, 'selection': selection,
+              'models_before': before['models'], 'models_after': after['models'],
+              'efforts_before': before['efforts'], 'efforts_after': after['efforts'],
+              'executors_before': before['executors'], 'executors': after['executors'],
+              'watch_before': before['watch'], 'watch_after': after['watch'], 'request_id': request_id,
+              'runtime_revision': new['runtime_revision'], 'office_revision': new['office_revision']}
     write(record_directory / 'staged.json', record)
     return record, record_directory
 
@@ -276,6 +359,23 @@ async def work_in_progress(client):
     return busy, idle
 
 
+def web_profile_runs():
+    """Running web profile commands (D034-D037: runtime.web_measure, web_critique, web_visitor), as process ids.
+
+    They run as host commands outside the engine, so the engine's work list does not show them, and a switch under one
+    would leave its receipt naming a release that is no longer the active one. A process list that cannot be read
+    counts as a run in progress: the switch waits rather than guesses.
+    """
+    try:
+        listing = subprocess.run(['/bin/ps', '-axww', '-o', 'pid=,command='], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return ['the process list could not be read']
+    if listing.returncode != 0:
+        return ['the process list could not be read']
+    return ['pid ' + line.split()[0] for line in listing.stdout.splitlines()
+            if re.search(r'-m\s+runtime\.web_(measure|critique|visitor)\b', line)]
+
+
 def alive(service):
     return {k: service[k]['pid'] for k in ('daemon', 'engine', 'worker')
             if service[k].get('identity') and process_identity(service[k]['pid']) == service[k]['identity']}
@@ -311,13 +411,15 @@ async def preconditions(host, record_directory, staged):
     old, raw = active_release(host)
     if old['config_sha256'] != staged['old_config_sha256']:
         refuse('the active selection changed since staging; stage again')
-    new = json.loads(new_path.read_text()); only_models_differ(json.loads(raw), new)
+    new = json.loads(new_path.read_text()); only_choice_differs(json.loads(raw), new)
     verify_files(new_path.parent, new['files'], 'staged file differs: ')
     try:
-        resolved = models(new)
+        resolved = choice_of(new)
     except ValueError as error:
         refuse('this release refuses the staged selection: %s' % error)
-    if resolved != staged['models_after'] or new['development'].get('models') != staged['selection']:
+    if (resolved['models'] != staged['models_after'] or resolved['efforts'] != staged['efforts_after']
+            or resolved['executors'] != staged['executors'] or resolved['watch'] != staged['watch_after']
+            or new['development'].get('models') != staged['selection']):
         refuse('the staged selection is not the one recorded at staging')
     new_plist = plist(new_path)
     client = await temporal(); before = await raw_schedule(client)
@@ -332,6 +434,9 @@ async def preconditions(host, record_directory, staged):
     old_service = read_json(paths(host)['service'], 'service receipt')
     if old_service.get('config_sha256') != old['config_sha256'] or len(alive(old_service)) != 3:
         refuse('the running service is not the recorded one')
+    running = web_profile_runs()
+    if running:
+        refuse('a web profile run is in progress (%s); activate later' % ', '.join(running))
     busy, idle = await work_in_progress(client)
     if busy:
         refuse('work is in progress in the engine: %s; activate later' % json.dumps(busy))
@@ -352,7 +457,10 @@ async def preconditions(host, record_directory, staged):
 def summary_of(staged, p):
     return {'would_activate': staged['sha256'], 'replacing': p['old']['config_sha256'],
             'selection': {'from': staged['previous_selection'], 'to': staged['selection']},
-            'models_run': {'from': staged['models_before'], 'to': staged['models_after']}, 'executors': staged['executors'],
+            'models_run': {'from': staged['models_before'], 'to': staged['models_after']},
+            'efforts_run': {'from': staged['efforts_before'], 'to': staged['efforts_after']},
+            'executors': {'from': staged['executors_before'], 'to': staged['executors']},
+            'watch': {'from': staged['watch_before'], 'to': staged['watch_after']},
             'idle_development_workflows': p['idle'], 'next_ap10_run': p['next_ap10'],
             'new_daemon_start_requirements_now': p['startup'],
             'way_back': 'restore and restart the previous release (its own offline start check passed on its own bytes)'}
@@ -364,11 +472,14 @@ async def do_check(host):
                       **summary_of(staged, p)}, indent=2, default=str))
 
 
-async def do_activate(host):
-    record_directory, staged = latest_staged(host); p = await preconditions(host, record_directory, staged)
+async def do_activate(host, chosen=None):
+    """The owner's activation of the newest staged record, or auto's of exactly the record it verified (chosen)."""
+    record_directory, staged = chosen or latest_staged(host); p = await preconditions(host, record_directory, staged)
     target = paths(host)['plist']; summary = summary_of(staged, p)
-    say('Modellbyte: %s -> %s. Rollerna enligt releasen: %s. %s'
-        % (json.dumps(staged['models_before']), json.dumps(staged['models_after']), json.dumps(staged['executors']),
+    say('Modellbyte: %s -> %s. Ansträngning: %s -> %s. Bevakningen: %s -> %s. Rollerna enligt releasen: %s. %s'
+        % (json.dumps(staged['models_before']), json.dumps(staged['models_after']),
+           json.dumps(staged['efforts_before']), json.dumps(staged['efforts_after']),
+           json.dumps(staged['watch_before']), json.dumps(staged['watch_after']), json.dumps(staged['executors']),
            ('Vilande utvecklingskörningar som vid en återupptagning kör det nya valet: %s.' % json.dumps(p['idle'])) if p['idle']
            else 'Inga vilande utvecklingskörningar.'))
     say('En återgång FINNS: startar inte den nya versionen återställs och startas den nuvarande. AP10:s schema binds om först '
@@ -587,6 +698,7 @@ async def forward(host, state, directory, progress):
     final = {'completed': not problems, 'problems': problems, 'observed_at': datetime.now(timezone.utc).isoformat(),
              'config_sha256': staged['sha256'], 'replaced_config_sha256': state['old_config_sha256'],
              'selection': staged['selection'], 'models_run': staged['models_after'], 'executors': staged['executors'],
+             'efforts_run': staged['efforts_after'], 'watch': staged['watch_after'], 'request_id': staged.get('request_id'),
              'note': 'A model choice changes which model a development role starts; it starts no model and qualifies none.'}
     try:
         write(directory / ('transition-result-%s.json' % stamp()), final)
@@ -602,8 +714,9 @@ async def forward(host, state, directory, progress):
             'versionens kopia av verktyget,  %s -B %s rebind  (kräver inte launchctl). Rapportera till Claude.'
             % ('; '.join(problems), sys.executable, new_path.parent / TOOL))
         refuse('activated with readback problems; see ' + str(directory))
-    say('KLART. Den nya versionen kör (bekräftat nu) med modellvalet %s, och AP10:s schema pekar på den. Inget mer behöver göras '
-        'av dig.' % json.dumps(staged['models_after']))
+    say('KLART. Den nya versionen kör (bekräftat nu) med modellvalet %s, ansträngningen %s och bevakningen %s, och AP10:s schema '
+        'pekar på den. Inget mer behöver göras av dig.' % (json.dumps(staged['models_after']), json.dumps(staged['efforts_after']),
+                                                           json.dumps(staged['watch_after'])))
 
 
 def latest_activation(record_directory):
@@ -659,13 +772,255 @@ async def do_rebind(host):
         refuse('the AP10 schedule is still not bound to the active release')
 
 
+def read_request(host):
+    """The workplace's recorded choice (D040), or None when there is none. Untrusted input: a regular bounded file of
+    exactly the recorded shape; the triples are judged by the release's own rules like any other choice."""
+    path = paths(host)['request']
+    if not path.exists() and not path.is_symlink():
+        return None
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 64 * 1024:
+        refuse('the workplace choice is not a regular file of bounded size')
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, ValueError):
+        refuse('the workplace choice is unreadable')
+    if (not isinstance(value, dict) or value.get('schema') != REQUEST_SCHEMA
+            or set(value) != {'schema', 'id', 'requested_at', 'runtime', 'watch'}
+            or not isinstance(value['id'], str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', value['id'])
+            or not isinstance(value['requested_at'], str) or len(value['requested_at']) > 64):
+        refuse('the workplace choice does not have the recorded shape')
+    return {'id': value['id'], 'requested_at': value['requested_at'],
+            'runtime': triple(value['runtime'], 'the runtime choice'), 'watch': triple(value['watch'], 'the watch choice')}
+
+
+def measured(host, config, request):
+    """Only what worked in the workplace's measurement of THIS host's pinned programs is activated automatically.
+
+    The owner's rule is to offer only models and levels that demonstrably work on the subscription. The workplace offers
+    only those; this checks it again where it matters, against the office's own receipt (modellmatning/2) under the
+    office root the release binds, whose binaries must be exactly the ones the release launches.
+    """
+    receipt = Path(config['office_root']) / MEASUREMENT
+    try:
+        if receipt.is_symlink() or not receipt.is_file() or receipt.stat().st_size > 8 * 1024 * 1024:
+            raise ValueError('not a regular bounded file')
+        value = json.loads(receipt.read_text())
+        if not isinstance(value, dict) or value.get('schema') != 'modellmatning/2':
+            raise ValueError('not a modellmatning/2 receipt')
+        binaries, results = value['binarer'], value['resultat']
+        if not isinstance(binaries, dict) or not isinstance(results, list):
+            raise ValueError('no binaries or results')
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        refuse('the workplace measurement could not be read (%s); nothing is activated without it' % error)
+    pinned = {'claude': str(Path(host) / '.runtime/bin' / ('claude-' + claude_profile.VERSION)),
+              'codex': str(Path(host) / CODEX_BINARY)}
+    for part in ('runtime', 'watch'):
+        chosen = request[part]; program = chosen['executor'] + '_runtime'
+        if chosen['executor'] not in pinned or (binaries.get(program) or {}).get('sokvag') != pinned[chosen['executor']]:
+            refuse('the measurement of the %s choice was not made with this host pinned %s program' % (part, chosen['executor']))
+        if not any(isinstance(row, dict) and row.get('program') == program and row.get('modell') == chosen['model']
+                   and row.get('niva') == chosen['effort'] and row.get('ok') is True for row in results):
+            refuse('the %s choice %s at %s did not work in the measurement of this host pinned %s program'
+                   % (part, chosen['model'], chosen['effort'], chosen['executor']))
+
+
+def read_status(host):
+    try:
+        value = json.loads(paths(host)['status'].read_text())
+        return value if isinstance(value, dict) else None
+    except (OSError, ValueError):
+        return None
+
+
+def write_status(host, **fields):
+    value = {'schema': STATUS_SCHEMA, 'checked_at': datetime.now(timezone.utc).isoformat(), **fields}
+    replace(paths(host)['status'], (json.dumps(value, indent=2, ensure_ascii=False, default=str) + '\n').encode())
+    return value
+
+
+def reuse_or_stage(host, desired, request):
+    """The newest staged record when it is exactly this request on the active release with this tool; else stage anew."""
+    try:
+        directory, staged = latest_staged(host)
+    except SystemExit:
+        directory, staged = None, None
+    old = active_release(host)[0]
+    content = (json.dumps(desired, indent=2) + '\n').encode()
+    if (staged and staged.get('request_id') == request['id'] and staged.get('old_config_sha256') == old['config_sha256']
+            and staged.get('sha256') == sha_bytes(content) and staged.get('tool_sha256') == sha_bytes(Path(__file__).read_bytes())):
+        return directory, staged
+    record, directory = stage(host, {'runtime': request['runtime'], 'watch': request['watch']}, code_root=CODE_ROOT,
+                              request_id=request['id'])
+    return directory, record
+
+
+def outcome(host, record_directory, staged, text, unexpected=False):
+    """What a refused or failed activation left behind: waiting, refused before the stop, restored, failed or active.
+    An unexpected error before any stop (unexpected=True) is a wait: nothing was stopped or selected, and the next look
+    measures everything again."""
+    activations = sorted(record_directory.glob('activation-2*Z')) if record_directory else []
+    last = activations[-1] if activations else None
+    if last is not None and (last / 'rollback.json').is_file():
+        try:
+            restored = json.loads((last / 'rollback.json').read_text()).get('restored_service') is not None
+        except (OSError, ValueError):
+            restored = False
+        return 'restored' if restored else 'failed'
+    try:
+        if json.loads(paths(host)['active'].read_text()).get('sha256') == staged['sha256']:
+            return 'activated'                          # the new release runs; the reason names what the readback found
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    if last is not None and (last / 'state.json').is_file():
+        try:
+            if json.loads((last / 'state.json').read_text()).get('stop_completed'):
+                return 'failed'
+        except (OSError, ValueError):
+            return 'failed'
+    return 'waiting' if unexpected or any(fragment in text for fragment in WAITING) else 'refused'
+
+
+async def automatic(host):
+    """The workplace's recorded choice, activated when Runtime is idle (D040). The owner's agent runs this every few
+    minutes: nothing to do, the choice already in effect, waiting while Runtime works, or the same activation as the
+    owner's, with the same way back. What happened is written to the status file the workplace reads."""
+    handle = paths(host)['lock'].open('a')
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close(); return None                  # an earlier look is still running
+    with handle:
+        old, raw = active_release(host); config = json.loads(raw)
+        base = {'active_config_sha256': old['config_sha256']}
+        try:
+            request = read_request(host)
+        except SystemExit as refusal:
+            return write_status(host, state='refused', request_id=None, reason=str(refusal), **base)
+        if request is None:
+            return write_status(host, state='none', request_id=None, reason=None, **base)
+        base.update(request_id=request['id'], requested_at=request['requested_at'],
+                    runtime=request['runtime'], watch=request['watch'])
+        previous = read_status(host)
+        if (previous and previous.get('request_id') == request['id'] and previous.get('state') in FINAL
+                and previous.get('active_config_sha256') == old['config_sha256']):
+            return previous                          # decided for this request; a new request is needed to try again
+        carried = {k: previous[k] for k in ('activated_at', 'record') if previous and previous.get('request_id') == request['id']
+                   and previous.get(k) is not None}
+        # A look that finds its own earlier 'activating' was cut off before it could report (the lock is free, so it is not
+        # running). Unless the switch completed, nothing more is tried automatically: the owner looks, and forward exists.
+        cut_off = previous is not None and previous.get('request_id') == request['id'] and previous.get('state') == 'activating'
+        record_directory = staged = None
+        try:
+            desired = apply_choice(config, {'runtime': request['runtime'], 'watch': request['watch']})
+            try:
+                wanted, running = choice_of(desired), choice_of(config)
+            except ValueError as error:
+                refuse('this release refuses the selection: %s' % error)
+            if wanted == running:
+                if cut_off:
+                    carried.setdefault('activated_at', previous.get('checked_at'))
+                return write_status(host, state='in_effect', reason=None, **base, **carried)
+            if cut_off:
+                return write_status(host, state='interrupted', record=previous.get('record'), **base,
+                                    reason='an automatic activation of this request was cut off before it reported; nothing '
+                                           'more is tried automatically. Read the record; if the service is down, the tool '
+                                           'continues with forward')
+            measured(host, config, request)
+            record_directory, staged = reuse_or_stage(host, desired, request)
+            await preconditions(host, record_directory, staged)
+        except SystemExit as refusal:
+            text = str(refusal)
+            return write_status(host, state='waiting' if any(f in text for f in WAITING) else 'refused', reason=text,
+                                record=str(record_directory) if record_directory else None, **base)
+        except Exception as error:            # the engine could not be asked, for example; nothing was stopped: look again
+            return write_status(host, state='waiting', reason='unexpected before any stop: %r' % (error,),
+                                record=str(record_directory) if record_directory else None, **base)
+        write_status(host, state='activating', reason=None, record=str(record_directory), **base)
+        try:
+            await do_activate(host, (record_directory, staged))     # exactly the record verified above, never a newer one
+        except Exception as error:
+            # before the stop do_activate raises on its own (after it, it reports through refuse); either way the record
+            # directory says what happened
+            text = 'unexpected: %r' % (error,)
+            state = outcome(host, record_directory, staged, text, unexpected=True)
+            now = active_release(host)[0]['config_sha256']
+            return write_status(host, state=state, reason=text, record=str(record_directory), **{**base, 'active_config_sha256': now})
+        except SystemExit as refusal:
+            state = outcome(host, record_directory, staged, str(refusal))
+            now = active_release(host)[0]['config_sha256']
+            return write_status(host, state=state, reason=str(refusal), record=str(record_directory),
+                                **{**base, 'active_config_sha256': now},
+                                **({'activated_at': datetime.now(timezone.utc).isoformat()} if state == 'activated' else {}))
+        return write_status(host, state='activated', reason=None, record=str(record_directory),
+                            activated_at=datetime.now(timezone.utc).isoformat(),
+                            **{**base, 'active_config_sha256': active_release(host)[0]['config_sha256']})
+
+
+def agent_plist(host):
+    """The owner's LaunchAgent for auto. Its program resolves the ACTIVE release's own copy of this tool at every run,
+    from the active pointer, so it always runs the bytes the active release binds; the tool refuses any other copy."""
+    python = str(Path(host) / '.runtime/temporal-venv/bin/python')
+    script = ('A="$(dirname "$("$0" -B -c \'import json,sys; print(json.load(open(sys.argv[1]))["config"])\' '
+              '"$1/.runtime/ap10/active.json")")" && exec "$0" -B "$A/runtime/scripts/model_choice.py" auto')
+    return {'Label': AGENT_LABEL, 'ProgramArguments': ['/bin/sh', '-c', script, python, str(host)],
+            'EnvironmentVariables': {'LC_ALL': 'C', 'PATH': '/opt/homebrew/bin:/usr/bin:/bin', 'PYTHONDONTWRITEBYTECODE': '1'},
+            'StartInterval': AGENT_INTERVAL, 'RunAtLoad': True, 'ProcessType': 'Background', 'Umask': 63,
+            'StandardOutPath': str(paths(host)['log']), 'StandardErrorPath': str(paths(host)['log'])}
+
+
+def agent(host, what):
+    """install: the owner's one-time step - write the agent file and start it; remove: stop it and delete the file;
+    show: print it and whether it is installed. Sessions cannot run launchctl; this is run in the owner's own terminal."""
+    target = paths(host)['agent']; data = plistlib.dumps(agent_plist(host)); domain = 'gui/' + str(os.getuid())
+    if what == 'show':
+        print(data.decode()); print(json.dumps({'file': str(target), 'installed': target.is_file() and target.read_bytes() == data}))
+        return
+    if what == 'install':
+        if target.exists() or target.is_symlink():
+            if target.is_symlink() or target.read_bytes() != data:
+                refuse('%s exists with other content; run agent remove first' % target)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open('xb') as stream:
+                stream.write(data)
+            target.chmod(0o644)
+        loaded = subprocess.run(['launchctl', 'print', domain + '/' + AGENT_LABEL], capture_output=True, text=True, timeout=30)
+        if loaded.returncode != 0:
+            result = subprocess.run(['launchctl', 'bootstrap', domain, str(target)], capture_output=True, text=True, timeout=30)
+            if result.returncode != 0:
+                refuse('launchctl bootstrap failed: ' + result.stderr.strip())
+        say('Den automatiska aktiveringen är igång. Den tittar var %d:e sekund efter arbetsplatsens val för Runtime och '
+            'bevakningen och byter bara när Runtime är ledigt, med samma väg tillbaka som vid ett handbyte. Stoppa den med: '
+            '%s -B %s agent remove' % (AGENT_INTERVAL, sys.executable, Path(__file__).resolve()))
+        return
+    subprocess.run(['launchctl', 'bootout', domain + '/' + AGENT_LABEL], capture_output=True, text=True, timeout=30)
+    if target.is_file() and not target.is_symlink():
+        target.unlink()
+    say('Den automatiska aktiveringen är stoppad och borttagen. Arbetsplatsens val ligger kvar men aktiveras inte förrän '
+        'agenten installeras igen; ett byte kan alltid göras för hand med stage, check och activate.')
+
+
+def exclusive(host):
+    """The same lock auto holds, for the owner's own activate and forward: the two never interleave."""
+    handle = paths(host)['lock'].open('a')
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        refuse('an automatic or manual activation holds the lock now; nothing was stopped or selected. Try again in a few minutes')
+    return handle
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    parser.add_argument('action', choices=['show', 'stage', 'check', 'activate', 'forward', 'rebind'])
-    parser.add_argument('--claude'); parser.add_argument('--codex')
+    parser.add_argument('action', choices=['show', 'stage', 'check', 'activate', 'forward', 'rebind', 'auto', 'agent'])
+    parser.add_argument('what', nargs='?', choices=['install', 'remove', 'show'])
+    parser.add_argument('--claude'); parser.add_argument('--codex'); parser.add_argument('--runtime'); parser.add_argument('--watch')
     arguments = parser.parse_args(argv)
-    if arguments.action != 'stage' and (arguments.claude or arguments.codex):
-        refuse('a model is named only when staging')
+    if arguments.action != 'stage' and (arguments.claude or arguments.codex or arguments.runtime or arguments.watch):
+        refuse('a choice is named only when staging')
+    if (arguments.action == 'agent') != (arguments.what is not None):
+        refuse('agent takes install, remove or show, and no other action takes one')
     os.umask(0o077); host = host_root()
     if os.getuid() != host.stat().st_uid:
         refuse('run this as the owner of the Runtime directory, never with sudo')
@@ -673,7 +1028,9 @@ def main(argv=None):
     if arguments.action == 'show':
         show(host)
     elif arguments.action == 'stage':
-        record, record_directory = stage(host, {'claude': arguments.claude, 'codex': arguments.codex})
+        with exclusive(host):                  # never between auto's check of its record and its activation
+            record, record_directory = stage(host, {'claude': arguments.claude, 'codex': arguments.codex,
+                                                    'runtime': arguments.runtime, 'watch': arguments.watch})
         tool = Path(record['old_config']).parent / TOOL
         print(json.dumps(record, indent=2))
         say('Förberett, ingenting är stoppat eller valt. Kontrollera sedan (ändrar inget):  %s -B %s check\n'
@@ -682,9 +1039,15 @@ def main(argv=None):
     elif arguments.action == 'check':
         asyncio.run(do_check(host))
     elif arguments.action == 'activate':
-        asyncio.run(do_activate(host))
+        with exclusive(host):
+            asyncio.run(do_activate(host))
     elif arguments.action == 'forward':
-        asyncio.run(do_forward(host))
+        with exclusive(host):
+            asyncio.run(do_forward(host))
+    elif arguments.action == 'auto':
+        asyncio.run(automatic(host))
+    elif arguments.action == 'agent':
+        agent(host, arguments.what)
     else:
         asyncio.run(do_rebind(host))
 

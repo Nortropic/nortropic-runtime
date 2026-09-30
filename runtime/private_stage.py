@@ -15,7 +15,9 @@ import importlib.metadata
 
 from .release import ROOT, require_active_code, sha, require_workspace_instructions
 from .profile import command, environment
+from .claude_profile import command as claude_command, require_subscription
 from .provider_result import parse
+from .review import claude_response
 from .shared import process_identity
 from scripts.bounded import stop_group
 
@@ -61,11 +63,27 @@ def previous():
             'packet':json.loads((home/'intake/data/packet.json').read_text())}
 
 
-def model(stage, workspace, prompt, schema, seconds, parent):
+def model(stage, workspace, prompt, schema, seconds, parent, choice=None):
+    """One read-only model call for the watch, with the release's watch choice (D040).
+
+    Without a choice this is the recorded Codex baseline, byte for byte. With Claude it is the same read-only Claude
+    profile the goal roles use (Read only, no network tool, the schema through --json-schema), and its answer is only
+    the single terminal's structured output. The office's policy reads the same result shape either way.
+    """
     (workspace/'.scratch').mkdir(mode=0o700,exist_ok=True)
     write(workspace/'OUTPUT_SCHEMA.json',schema)
-    argv=command(workspace,writable=False)
-    argv=argv[:-1]+['--output-schema',str(workspace/'OUTPUT_SCHEMA.json'),'-']
+    choice=choice or {'executor':'codex','model':None,'effort':None}
+    provider=choice['executor']
+    if provider=='claude':
+        # Same order as the goal roles: the qualified subscription route and the bound instructions are checked
+        # before any model could start and before this stage's one call is consumed.
+        require_subscription();require_workspace_instructions(workspace)
+        argv=claude_command(workspace,(),writable=False,model=choice['model'],effort=choice['effort'])+['--json-schema',json.dumps(schema)]
+    elif provider=='codex':
+        argv=command(workspace,writable=False,model=choice['model'],effort=choice['effort'])
+        argv=argv[:-1]+['--output-schema',str(workspace/'OUTPUT_SCHEMA.json'),'-']
+    else:
+        raise ValueError('Unsupported watch executor')
     record={'parent_pid':parent,'parent_identity':process_identity(parent),
             'started_epoch':time.time(),'seconds_limit':seconds,'automatic_retries':0,
             'prompt_sha256':hashlib.sha256(prompt.encode()).hexdigest()}
@@ -120,14 +138,18 @@ def model(stage, workspace, prompt, schema, seconds, parent):
     records=[]
     try:
         for line in (stage/'events.jsonl').read_text().splitlines():records.append(json.loads(line))
-        parsed=parse('codex',records)
+        parsed=parse('claude',records,'structured',model=choice['model']) if provider=='claude' else parse('codex',records)
         if not parsed.get('valid_terminal'):reason=reason or 'no valid provider terminal'
         require_workspace_instructions(workspace)
     except (OSError,ValueError):parsed={};reason=reason or 'invalid evidence or changed active binding'
-    messages=[r.get('item',{}).get('text') for r in records if r.get('type')=='item.completed' and r.get('item',{}).get('type')=='agent_message']
     answer=None
-    try:answer=json.loads(messages[-1])
-    except (ValueError,IndexError,TypeError):reason=reason or 'no structured answer'
+    if provider=='claude':
+        try:answer=claude_response(records)
+        except (ValueError,TypeError):reason=reason or 'no structured answer'
+    else:
+        messages=[r.get('item',{}).get('text') for r in records if r.get('type')=='item.completed' and r.get('item',{}).get('type')=='agent_message']
+        try:answer=json.loads(messages[-1])
+        except (ValueError,IndexError,TypeError):reason=reason or 'no structured answer'
     result={'completed':reason is None and proc is not None and proc.returncode==0 and removed,
             'reason':reason,'provider':parsed,'elapsed_seconds':round(time.monotonic()-start,3),
             'exit_code':proc.returncode if proc is not None else None,
@@ -247,7 +269,8 @@ def main(request):
         workspace=round_home/(role+'-workspace');workspace.mkdir(mode=0o700)
         # Office prepares only frozen copies, no direct permission on original data.
         policy.workspace(workspace,round_home,Path(config['directory'])/'context',role)
-        result=model(stage,workspace,policy.prompt(role),policy.schema(role),request['seconds'],os.getppid())
+        from .development_model import watch    # here, not at the top: development_model imports this module
+        result=model(stage,workspace,policy.prompt(role),policy.schema(role),request['seconds'],os.getppid(),watch(config))
     else:
         result=policy.finish(round_home,request,config)
         write(stage/'result.json',result)

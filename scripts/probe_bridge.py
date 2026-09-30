@@ -37,12 +37,13 @@ def restrict_message(message, workspace):
     return message
 
 
-def worker_command(model='gpt-6-astra'):
-    # The Runtime profile passes the release's model choice here (D028). The default is the recorded baseline,
-    # so the fixture and inspection scripts that call this without one build exactly the command they always did.
+def worker_command(model='gpt-6-astra', effort='high'):
+    # The Runtime profile passes the release's model choice here (D028) and its effort choice (D040). The defaults
+    # are the recorded baseline, so the fixture and inspection scripts that call this without them build exactly the
+    # command they always did (json.dumps of 'high' is the '"high"' that was written here before).
     command = [str(ROOT / '.runtime/bin/codex-0.155.1'),
                '-c', 'model=' + json.dumps(model), '-c', 'approval_policy="never"',
-               '-c', 'model_reasoning_effort="high"']
+               '-c', 'model_reasoning_effort=' + json.dumps(effort)]
     # These built-in providers are not entries in [mcp_servers].
     for feature in ('apps', 'computer_use', 'browser_use', 'browser_use_external',
                     'browser_use_full_cdp_access', 'in_app_browser', 'image_generation',

@@ -1,4 +1,6 @@
 import asyncio
+from contextlib import redirect_stdout
+import io
 import dataclasses
 from datetime import datetime,timezone,timedelta
 from zoneinfo import ZoneInfo
@@ -288,5 +290,147 @@ class StageSignalTests(unittest.TestCase):
         result = json.loads((self.stage / 'result.json').read_text())
         self.assertTrue(result['completed'], result); self.assertEqual(result['answer'], {'decision': 'hold'})
         self.assertTrue(result['provider']['valid_terminal']); self.assertTrue(result['process_group_removed'])
+
+
+class WatchChoiceTests(unittest.TestCase):
+    """D040: the watch runs the release's watch choice, Claude or Codex; without a choice it is the Codex baseline."""
+
+    ANSWER = {'decision': 'hold'}
+
+    def claude_events(self, model, answer=None):
+        from runtime import claude_profile
+        answer = self.ANSWER if answer is None else answer
+        return [{'type': 'system', 'subtype': 'init', 'session_id': 'session-1', 'claude_code_version': claude_profile.VERSION,
+                 'model': model, 'tools': ['Read', 'StructuredOutput'], 'mcp_servers': [], 'plugins': [],
+                 'slash_commands': [], 'apiKeySource': 'none'},
+                {'type': 'result', 'subtype': 'success', 'is_error': False, 'terminal_reason': 'completed',
+                 'session_id': 'session-1', 'structured_output': answer, 'result': json.dumps(answer), 'usage': {}}]
+
+    def fixture(self, events):
+        code = ('import json,sys;sys.stdin.read()\nfor e in %r: print(json.dumps(e),flush=True)' % (events,))
+        return [sys.executable, '-c', code]
+
+    def test_without_a_choice_the_watch_is_the_codex_baseline_byte_for_byte(self):
+        from runtime import development_model, profile
+        self.assertEqual(development_model.watch({'development': {}}),
+                         {'executor': 'codex', 'model': profile.MODEL, 'effort': profile.REASONING_EFFORT})
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d).resolve()
+            self.assertEqual(profile.command(work, writable=False),
+                             profile.command(work, writable=False, model=profile.MODEL, effort=profile.REASONING_EFFORT))
+            chosen = profile.command(work, writable=False, model='gpt-6-sol', effort='ultra')
+            self.assertEqual([a for a in chosen if a.startswith(('model=', 'model_reasoning_effort='))],
+                             ['model="gpt-6-sol"', 'model_reasoning_effort="ultra"'])
+
+    def test_a_codex_choice_reaches_the_codex_command(self):
+        with tempfile.TemporaryDirectory() as d:
+            stage = Path(d).resolve()/'analysis'; stage.mkdir(); work = stage/'work'; work.mkdir(); seen = []
+            events = [{'type': 'thread.started', 'thread_id': 't'},
+                      {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': json.dumps(self.ANSWER)}},
+                      {'type': 'turn.completed', 'usage': {}}]
+            def codex(workspace, writable=True, allowed_paths=None, model=None, effort=None):
+                seen.append((writable, model, effort)); return self.fixture(events) + ['-']
+            with patch.object(ps, 'command', side_effect=codex), patch.object(ps, 'require_workspace_instructions'), \
+                 patch.object(ps, 'claude_command', side_effect=AssertionError('a codex watch never builds a Claude command')):
+                result = ps.model(stage, work, 'p', {}, 10, os.getppid(), {'executor': 'codex', 'model': 'gpt-6-sol', 'effort': 'max'})
+            self.assertEqual(seen, [(False, 'gpt-6-sol', 'max')])
+            self.assertTrue(result['completed'], result); self.assertEqual(result['answer'], self.ANSWER)
+
+    def test_a_claude_watch_runs_the_read_only_profile_and_reads_only_its_structured_answer(self):
+        with tempfile.TemporaryDirectory() as d:
+            stage = Path(d).resolve()/'analysis'; stage.mkdir(); work = stage/'work'; work.mkdir(); seen = []; order = []
+            schema = {'type': 'object'}
+            def claude(workspace, allowed, writable=True, model=None, effort=None):
+                seen.append((tuple(allowed), writable, model, effort)); order.append('command')
+                return self.fixture(self.claude_events('claude-opus-5'))
+            with patch.object(ps, 'claude_command', side_effect=claude), \
+                 patch.object(ps, 'require_subscription', side_effect=lambda: order.append('subscription')), \
+                 patch.object(ps, 'require_workspace_instructions', side_effect=lambda w: order.append('guard')), \
+                 patch.object(ps, 'command', side_effect=AssertionError('a claude watch never builds a Codex command')):
+                result = ps.model(stage, work, 'p', schema, 10, os.getppid(), {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'high'})
+            self.assertEqual(seen, [((), False, 'claude-opus-5', 'high')])
+            self.assertEqual(order[:3], ['subscription', 'guard', 'command'])
+            launched = json.loads((stage/'launch.json').read_text())
+            self.assertTrue(launched['provider_pid'])
+            self.assertTrue(result['completed'], result); self.assertEqual(result['answer'], self.ANSWER)
+            self.assertTrue(result['provider']['valid_terminal']); self.assertEqual(result['provider']['thread_id'], 'session-1')
+            self.assertEqual(result['provider']['reported_model'], 'claude-opus-5')
+
+    def test_a_claude_watch_passes_the_schema_as_the_json_schema_argument(self):
+        from runtime import claude_profile
+        with tempfile.TemporaryDirectory() as d:
+            stage = Path(d).resolve()/'analysis'; stage.mkdir(); work = stage/'work'; work.mkdir(); argv = []
+            schema = {'type': 'object', 'required': ['decision']}
+            real = claude_profile.command
+            seen_argv = Path(d).resolve()/'argv.json'
+            record = ('import json,sys;open(%r,"w").write(json.dumps(sys.argv[1:]));sys.stdin.read()\nfor e in %r: print(json.dumps(e),flush=True)'
+                      % (str(seen_argv), self.claude_events('claude-opus-5')))
+            def claude(workspace, allowed, writable=True, model=None, effort=None):
+                argv.extend(real(workspace, allowed, writable=writable, model=model, effort=effort))
+                return [sys.executable, '-c', record]
+            with patch.object(ps, 'claude_command', side_effect=claude), patch.object(ps, 'require_subscription'), \
+                 patch.object(ps, 'require_workspace_instructions'), \
+                 patch.object(claude_profile, 'qualified_binary', return_value='pinned-claude'):
+                result = ps.model(stage, work, 'p', schema, 10, os.getppid(), {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'xhigh'})
+            self.assertTrue(result['completed'], result)
+            # the profile's own command for the choice: read-only, the chosen model and effort
+            self.assertEqual(argv[argv.index('--model') + 1], 'claude-opus-5'); self.assertEqual(argv[argv.index('--effort') + 1], 'xhigh')
+            self.assertEqual(argv[argv.index('--tools') + 1], 'Read')
+            # and what the launched process actually received after it: the schema as --json-schema, nothing else
+            self.assertEqual(json.loads(seen_argv.read_text()), ['--json-schema', json.dumps(schema)])
+
+    def test_a_claude_answer_that_does_not_match_its_model_or_repeat_is_no_answer(self):
+        cases = {'another model reported': self.claude_events('claude-sonnet-5'),
+                 'text differs from the object': self.claude_events('claude-opus-5')[:1] + [
+                     {**self.claude_events('claude-opus-5')[1], 'result': json.dumps({'decision': 'act'})}],
+                 'no terminal': self.claude_events('claude-opus-5')[:1]}
+        for name, events in cases.items():
+            with self.subTest(case=name), tempfile.TemporaryDirectory() as d:
+                stage = Path(d).resolve()/'analysis'; stage.mkdir(); work = stage/'work'; work.mkdir()
+                with patch.object(ps, 'claude_command', return_value=self.fixture(events)), patch.object(ps, 'require_subscription'), \
+                     patch.object(ps, 'require_workspace_instructions'):
+                    result = ps.model(stage, work, 'p', {}, 10, os.getppid(), {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'high'})
+                self.assertFalse(result['completed'], name)
+
+    def test_a_claude_watch_without_the_subscription_route_consumes_nothing(self):
+        with tempfile.TemporaryDirectory() as d:
+            stage = Path(d).resolve()/'analysis'; stage.mkdir(); work = stage/'work'; work.mkdir()
+            with patch.object(ps, 'require_subscription', side_effect=ValueError('Previously qualified subscription path is not active')), \
+                 patch.object(ps, 'claude_command', side_effect=AssertionError('no command without the subscription route')):
+                with self.assertRaisesRegex(ValueError, 'subscription'):
+                    ps.model(stage, work, 'p', {}, 10, os.getppid(), {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'high'})
+            self.assertFalse((stage/'budget.json').exists(), 'the stage call is not consumed by a refused preflight')
+
+    def test_the_stage_runs_the_active_release_watch_choice(self):
+        from runtime import development_model
+        for chosen in (None, {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'high'}):
+            with self.subTest(chosen=chosen), tempfile.TemporaryDirectory() as d:
+                home = Path(d).resolve()/'rounds'; home.mkdir(); run = '00000000-0000-0000-0000-000000000002'; seen = []
+                config = {'config_sha256': 'a', 'directory': str(Path(d).resolve()), **({'watch': chosen} if chosen else {})}
+                class Policy:
+                    def workspace(self, *a): pass
+                    def prompt(self, role): return 'p'
+                    def schema(self, role): return {}
+                def model(stage, workspace, prompt, schema, seconds, parent, choice=None):
+                    seen.append(choice); return {'completed': True}
+                req = dict(config_sha256='a', obligation='office-python-temporal', run_id=run, role='analysis', seconds=480)
+                with patch.object(ps, 'HOME', home), patch.object(ps, 'require_active_code', return_value=config), \
+                     patch.object(ps, 'check_private_processes'), patch.object(ps, 'private_size', return_value=0), \
+                     patch.object(ps, 'module', return_value=Policy()), patch.object(ps, 'model', side_effect=model):
+                    with redirect_stdout(io.StringIO()):
+                        ps.main(req)
+                self.assertEqual(seen, [development_model.watch(config)])
+
+    def test_an_invalid_watch_choice_is_refused_not_defaulted(self):
+        from runtime import development_model
+        from runtime.development_scope import ScopeClosed
+        good = {'executor': 'claude', 'model': 'claude-opus-5', 'effort': 'high'}
+        for bad in ({**good, 'executor': 'gemini'}, {**good, 'model': '--dangerous'}, {**good, 'effort': 'HIGH'},
+                    {**good, 'effort': 'high medium'}, {'executor': 'claude', 'model': 'claude-opus-5'},
+                    {**good, 'extra': 1}, 'claude', []):
+            with self.subTest(bad=bad), self.assertRaises(ScopeClosed):
+                development_model.watch({'watch': bad})
+        with self.assertRaises(ScopeClosed):
+            development_model.watch({'development': {'watch': good}})
 
 if __name__=='__main__':unittest.main()
