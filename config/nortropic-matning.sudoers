@@ -3,4 +3,5 @@
 # test user _nortropicprov, and nothing else: no other command, no other target user, never root. Sessions cannot
 # run sudo (managed policy); the owner's agent runs this rule for queued measurements (scripts/measurement_queue.py).
 # The owner installs it once (docs/runbook.md, "The key-less test user"); check first: sudo visudo -cf <this file>
-elinhaggstrom ALL = (_nortropicprov) NOPASSWD: sha256:715cc6c42727a6f8c31845f210708ebe6292f34e4c987397b938fb16b9fd7fd4 /usr/local/libexec/nortropic/matning
+# TEMPLATE: the owner substitutes NORTROPIC_OWNER with the verified fixed-inbox OS owner before installation.
+NORTROPIC_OWNER ALL = (_nortropicprov) NOPASSWD: sha256:e16096f2cbef1bd975207d576473788f165532564ac57340a2c721f1ad903e90 /usr/local/libexec/nortropic/matning

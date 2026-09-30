@@ -5,6 +5,7 @@ candidate access. Candidate behavior runs in the native sandbox; this host
 process compares its data with the private expectation, then reads the App key.
 """
 from datetime import datetime, timezone
+from contextlib import ExitStack
 import base64
 import hashlib
 import json
@@ -23,16 +24,20 @@ import urllib.request
 
 from .integration import GateClosed, Publisher, digest, require_gate, check_binding
 from .release import ROOT
+from .failure_ledger import Ledger, Refused as LedgerRefused, require_acl
+from .measurement_observer import private_directory, private_output, write_owner
+from scripts.bounded import stop_group
 
 NAMES = ('runtime/tests', 'runtime/review')
 CODE = ('runtime/__init__.py', 'runtime/check_issuer.py', 'runtime/integration.py',
-        'runtime/host_publication.py',
+        'runtime/host_publication.py', 'runtime/decision_guard.py', 'runtime/content_guard.py', 'runtime/failure_ledger.py',
         'runtime/profile.py', 'runtime/release.py', 'runtime/targets.py',
         'runtime/construction_registration.py', 'runtime/development_binding.py',
         'runtime/development_scope.py', 'runtime/snapshot.py',
         'runtime/claude_profile.py', 'runtime/codex_pin.py',
         'scripts/probe_bridge.py', 'scripts/publish_construction.py',
-        'scripts/publish_digitala.py')
+        'scripts/publish_digitala.py', 'scripts/bounded.py', 'scripts/matning_provanvandare.py',
+        'runtime/measurement_observer.py', 'scripts/measurement_queue.py')
 TARGETS = ('Nortropic/nortropic-runtime', 'Nortropic/nortropic-projektkontor',
            'Nortropic/nortropic-digitala', 'Nortropic/nortropic-kundstart')
 
@@ -48,13 +53,30 @@ def binding(task, subject, review):
 
 def private_bytes(path):
     path = Path(path).absolute()
-    if any(p.is_symlink() for p in (path, *path.parents)):
+    if any(p.is_symlink() for p in (path,*path.parents)):
         raise GateClosed('Issuer authority must not use symlinks')
-    info = path.stat()
-    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
-            or stat.S_IMODE(info.st_mode) not in (0o400, 0o600)):
-        raise GateClosed('Issuer authority must be a private owner file')
-    return path.read_bytes()
+    try:
+        for parent in path.parents:
+            info=parent.lstat()
+            if (not stat.S_ISDIR(info.st_mode) or info.st_uid not in (0,os.getuid())
+                    or info.st_mode&0o022 and not (info.st_uid==0 and info.st_mode&stat.S_ISVTX)):
+                raise GateClosed('Unsafe issuer authority ancestor')
+            require_acl(parent)
+        info=path.lstat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid()
+                or stat.S_IMODE(info.st_mode) not in (0o400,0o600)):
+            raise GateClosed('Issuer authority must be a private owner file')
+        require_acl(path,private=True)
+        identity=lambda st:(st.st_dev,st.st_ino,st.st_size,st.st_mtime_ns,st.st_ctime_ns)
+        fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+        with os.fdopen(fd,'rb') as stream:
+            if identity(os.fstat(fd))!=identity(info):raise GateClosed('Issuer authority changed before read')
+            data=stream.read()
+            if identity(os.fstat(fd))!=identity(info) or identity(path.lstat())!=identity(info):
+                raise GateClosed('Issuer authority changed during read')
+        return data
+    except LedgerRefused as error:
+        raise GateClosed(str(error)) from None
 
 
 def read_object(path):
@@ -65,8 +87,8 @@ def read_object(path):
 
 
 def git(repo, *args):
-    return subprocess.run(['git', '-C', str(repo), *args], check=True,
-                          capture_output=True, timeout=30).stdout
+    from .integration import publication_git
+    return publication_git(repo, *args, text=False)
 
 
 def current_main(repository):
@@ -144,17 +166,18 @@ def run_isolated(workspace, program, input_data=b'', timeout=120):
              str((ROOT / codex_pin.BINARY).parent): 'read'}
     command[index] = command[index][:-1] + ',' + ','.join(json.dumps(k)+'='+json.dumps(v)
                                                         for k,v in extra.items()) + '}'
-    process = subprocess.Popen(command, cwd=workspace, env=env, stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
     timed_out, overflow = False, False
     streams = {'output': bytearray(), 'stderr': bytearray()}
     deadline = time.monotonic() + timeout
-    reader = selectors.DefaultSelector()
-    reader.register(process.stdout, selectors.EVENT_READ, 'output')
-    reader.register(process.stderr, selectors.EVENT_READ, 'stderr')
-    reader.register(process.stdin, selectors.EVENT_WRITE, 'input')
     pending = memoryview(input_data)
+    reader = None
+    process = subprocess.Popen(command, cwd=workspace, env=env, stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
     try:
+        reader = selectors.DefaultSelector()
+        reader.register(process.stdout, selectors.EVENT_READ, 'output')
+        reader.register(process.stderr, selectors.EVENT_READ, 'stderr')
+        reader.register(process.stdin, selectors.EVENT_WRITE, 'input')
         while reader.get_map():
             if time.monotonic() >= deadline:
                 timed_out = True
@@ -187,14 +210,15 @@ def run_isolated(workspace, program, input_data=b'', timeout=120):
     finally:
         # A completed parent may have left a detached child in its group.
         try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        process.wait(timeout=10)
-        reader.close()
-        process.stdout.close()
-        process.stderr.close()
-        process.stdin.close()
+            try:removed = stop_group(process)
+            finally:process.wait(timeout=10)
+        finally:
+            from contextlib import ExitStack
+            with ExitStack() as handles:
+                for stream in (process.stdin, process.stdout, process.stderr):handles.callback(stream.close)
+                if reader is not None:handles.callback(reader.close)
+        if not removed:
+            raise GateClosed('Acceptance process group remains')
     output, stderr = bytes(streams['output']), bytes(streams['stderr'])
     return {'returncode': process.returncode, 'timed_out': timed_out,
             'output_limit_exceeded': overflow, 'output_sha256': sha(output), 'output': output,
@@ -245,7 +269,7 @@ def assert_behavior(measured, expected):
         raise GateClosed('Frozen acceptance behavior differs; no successful check issued')
 
 
-def sealed_construction_suite(repository, candidate, discover, identifier, expected_count, issuer=None):
+def sealed_construction_suite(repository, candidate, discover, identifier, expected_count, issuer=None, phase='sealed'):
     """Consume an actual whole-suite measurement sealed by the existing holder.
 
 Historical host-fixture tests cannot run in the model filesystem profile. They
@@ -257,7 +281,7 @@ separate frozen acceptance ALWAYS executes in the native sandbox afterwards.
             or type(expected_count) is not int or expected_count <= 0):
         raise GateClosed('Invalid sealed-suite task/profile')
     issuer = issuer or HostIssuer()
-    issuer.authority()
+    authority = issuer.authority()
     directory = issuer.home / 'requests' / identifier
     request = read_object(directory / 'request.json')
     record_bytes = private_bytes(directory / 'suite.json')
@@ -279,6 +303,11 @@ separate frozen acceptance ALWAYS executes in the native sandbox afterwards.
     lines = [line for line in text.splitlines() if line.strip()]
     if counts != [str(expected_count)] or not lines or lines[-1] != 'OK':
         raise GateClosed('Sealed suite log does not show every expected test passing without skips')
+    try:
+        issuer.ledger.consume(candidate, phase, sha(record_bytes), record,
+                              authority['code_sha256'])
+    except LedgerRefused as error:
+        raise GateClosed(str(error)) from None
     return subprocess.CompletedProcess(expected_command, record['returncode'], log)
 
 
@@ -335,17 +364,22 @@ class DigitalaPublisher(Publisher):
         if not re.fullmatch('[a-z0-9][a-z0-9-]{0,119}', review['reviewer_run']):
             raise GateClosed('Digitala reviewer identity is not a safe public run label')
         sealed_construction_suite(self.repository, subject['candidate'], 'verktyg', identifier,
-                                  task.get('expected_test_count'), issuer=self.issuer)
+                                  task.get('expected_test_count'), issuer=self.issuer, phase='publication')
         pin_digest = self.pins(subject['candidate'])
         tests = {key: subject[key] for key in ('task_id', 'task_sha256', 'candidate', 'acceptance_sha256')}
         # This gate input is derived only AFTER real holder-sealed measurement and
         # exact pin verification. No caller-supplied success can select this path.
         tests.update(scope='whole_task', terminal_status='completed', passed=True)
-        receipt = self._publish(task, subject, tests, review)
-        receipt.update(suite_sha256=record['suite_sha256'], pins_sha256=pin_digest)
         destination = self.issuer.home / 'observations' / ('digitala-publication-' + uuid.uuid4().hex + '.json')
         destination.parent.mkdir(mode=0o700, exist_ok=True)
-        destination.write_text(json.dumps(receipt, indent=2)+'\n'); destination.chmod(0o600)
+        # Reconciliation of an already merged PR skips issue_checks, so this
+        # entry must establish its own private boundary before any effects.
+        from .measurement_observer import private_output
+        with private_output(destination) as stream:
+            receipt = self._publish(task, subject, tests, review)
+            receipt.update(suite_sha256=record['suite_sha256'], pins_sha256=pin_digest)
+            stream.write((json.dumps(receipt, indent=2)+'\n').encode())
+            stream.flush(); os.fsync(stream.fileno())
         return receipt
 
 
@@ -403,9 +437,16 @@ class AppTransport:
 
 
 class HostIssuer:
-    def __init__(self, host=ROOT):
+    def __init__(self, host=ROOT, ledger=None):
+        self._ledger = ledger
         self.host = Path(host).resolve()
         self.home = self.host / '.runtime/ap11/check-issuer'
+
+    @property
+    def ledger(self):
+        if self._ledger is None:
+            self._ledger = Ledger()
+        return self._ledger
 
     def authority(self):
         config = read_object(self.home / 'authority.json')
@@ -467,13 +508,22 @@ class HostIssuer:
                 or git(repository, 'rev-parse', '--show-toplevel').decode().strip() != str(repository)):
             raise GateClosed('Issuer candidate repository is not the fixed host mapping')
         head, base = subject['candidate'], subject['base']
-        if git(repository, 'remote', 'get-url', 'origin').decode().strip() != 'https://github.com/' + task['target'] + '.git':
-            raise GateClosed('Issuer candidate origin differs')
+        from .integration import require_git_origin
+        require_git_origin(repository, 'https://github.com/' + task['target'] + '.git')
         if git(repository, 'rev-list', '--parents', '-n', '1', head).decode().split() != [head, base]:
             raise GateClosed('Issuer candidate is not one commit on accepted base')
         changes = set(filter(None, git(repository, 'diff', '--name-only', '--no-renames', '-z', base, head).decode().split('\0')))
         if not changes or not changes.issubset(set(task['allowed_paths'])):
             raise GateClosed('Issuer candidate exceeds accepted paths')
+        from .content_guard import require_content, require_deletion, ContentRefused
+        try:
+            for path in changes:
+                if not git(repository,'ls-tree','-z',head,'--',path):require_deletion(repository,base,path,task['target'])
+            content_receipt = require_content(repository, base, head, task['target'])
+            from .decision_guard import require_decisions
+            decision_receipt = require_decisions(repository, base, head, task['target'])
+        except ContentRefused as error:
+            raise GateClosed(str(error)) from None
         client = transport or AppTransport(config['app_id'], config['installation_id'], self.home / 'app.pem')
         # Read-only main freshness before expensive work; PAT never issues a status.
         remote = current_main(task['target']) if transport is None else client.api(task['target'], 'commits/main').get('sha')
@@ -482,6 +532,7 @@ class HostIssuer:
         contract = acceptance_contract(directory)
         work = self.home / 'workspaces'
         work.mkdir(mode=0o700, exist_ok=True)
+        private_directory(work)
         if any(p.is_symlink() for p in (work, *work.parents)):
             raise GateClosed('Issuer workspace must not use symlinks')
         with tempfile.TemporaryDirectory(prefix='acceptance-', dir=work) as temporary:
@@ -492,28 +543,55 @@ class HostIssuer:
             program.write_bytes(private_bytes(directory / 'probe.py')); program.chmod(0o400)
             observations = self.home / 'observations'
             observations.mkdir(mode=0o700, exist_ok=True)
+            private_directory(observations)
             attempt = observations / uuid.uuid4().hex
             attempt.mkdir(mode=0o700)
-            measurements = []
-            for case in contract['cases']:
-                # The private expectation NEVER enters the readable workspace,
-                # argv, input, environment or candidate process. Only actual
-                # task input and the reviewed observation adapter cross over.
-                measured = run_isolated(workspace, program, json.dumps(case['input']).encode(),
-                                        timeout=case['timeout_seconds'])
-                for stream in ('output', 'stderr'):
-                    log = attempt / (case['id'] + '.' + stream + '.log')
-                    log.write_bytes(measured.get(stream, b'')); log.chmod(0o600)
-                record = {'id': case['id'], 'task_sha256': digest(task), 'candidate': head,
-                          'probe_program_sha256': request['probe_program_sha256'],
-                          'acceptance_contract_sha256': request['acceptance_contract_sha256'],
-                          **{k:v for k,v in measured.items() if k not in ('output', 'stderr')}}
-                measurements.append(record)
-                observation = attempt / 'measurement.json'
-                observation.write_text(json.dumps(measurements, indent=2)+'\n'); observation.chmod(0o600)
-                assert_behavior(measured, case['expected'])
-            if any(sha((workspace / 'source' / p).read_bytes()) != value for p, value in files.items()):
-                raise GateClosed('Candidate snapshot changed during acceptance')
+            private_directory(attempt)
+            with ExitStack() as outputs:
+                # Validate every inherited file ACL before the first candidate starts.
+                logs={(case['id'],stream):outputs.enter_context(private_output(attempt/(case['id']+'.'+stream+'.log')))
+                      for case in contract['cases'] for stream in ('output','stderr')}
+                observation=outputs.enter_context(private_output(attempt/'measurement.json'))
+                measurements = []
+                cases = []
+                try:
+                    self.ledger.require_publishable(head)
+                    run_id = self.ledger.begin(head, 'host', request['acceptance_contract_sha256'])
+                except LedgerRefused as error:
+                    raise GateClosed(str(error)) from None
+                passed = False
+                try:
+                    for case in contract['cases']:
+                        # The private expectation NEVER enters the readable workspace,
+                        # argv, input, environment or candidate process. Only actual
+                        # task input and the reviewed observation adapter cross over.
+                        began = time.monotonic()
+                        case_status = 'error'
+                        try:
+                            measured = run_isolated(workspace, program, json.dumps(case['input']).encode(),
+                                                    timeout=case['timeout_seconds'])
+                            for stream in ('output', 'stderr'):
+                                log=logs[(case['id'],stream)]
+                                log.write(measured.get(stream,b''));log.flush();os.fsync(log.fileno())
+                            record = {'id': case['id'], 'task_sha256': digest(task), 'candidate': head,
+                                      'probe_program_sha256': request['probe_program_sha256'],
+                                      'acceptance_contract_sha256': request['acceptance_contract_sha256'],
+                                      **{k:v for k,v in measured.items() if k not in ('output', 'stderr')}}
+                            measurements.append(record)
+                            observation.seek(0);observation.truncate()
+                            observation.write((json.dumps(measurements,indent=2)+'\n').encode())
+                            observation.flush();os.fsync(observation.fileno())
+                            case_status = 'timeout' if measured.get('timed_out') else 'failure'
+                            assert_behavior(measured, case['expected'])
+                            case_status = 'success'
+                        finally:
+                            cases.append({'name': case['id'], 'file': 'probe.py', 'status': case_status,
+                                          'seconds': time.monotonic() - began})
+                    if any(sha((workspace / 'source' / p).read_bytes()) != value for p, value in files.items()):
+                        raise GateClosed('Candidate snapshot changed during acceptance')
+                    passed = True
+                finally:
+                    self.ledger.finish(run_id, cases, 0 if passed else 1, complete=passed)
         # Authority and request are re-read after candidate execution, before credentials.
         if self.authority() != config or self.request(task['id'], task, subject, review)[1] != request:
             raise GateClosed('Issuer authority changed during acceptance')
@@ -526,16 +604,22 @@ class HostIssuer:
                    'task_sha256': digest(task), 'acceptance_sha256': task['acceptance_sha256'],
                    'probe_program_sha256': request['probe_program_sha256'],
                    'acceptance_contract_sha256': request['acceptance_contract_sha256'],
-                   'review_sha256': request['review_sha256'],
+                   'review_sha256': request['review_sha256'], 'decision_history':decision_receipt,
                    'measured_behavior_sha256': digest([{k:v for k,v in item.items() if k != 'stderr_sha256'}
                                                       for item in measurements]),
-                   'app_id': config['app_id'], 'checks': {}}
+                   'app_id': config['app_id'], 'content_guard': content_receipt, 'checks': {}}
         runs = client.api(task['target'], 'commits/' + head + '/check-runs?filter=latest&per_page=100')
         if (not isinstance(runs, dict) or not isinstance(runs.get('check_runs'), list)
                 or type(runs.get('total_count')) is not int or runs['total_count'] != len(runs['check_runs'])
                 or not all(isinstance(r, dict) and isinstance(r.get('app'), dict) for r in runs['check_runs'])):
             raise GateClosed('Incomplete prior check readback; no blind reissue')
         for name in NAMES:
+            # Acceptance and server reads take time. A later negative or
+            # unfinished attempt must stop the next externally visible effect.
+            try:
+                self.ledger.require_publishable(head)
+            except LedgerRefused as error:
+                raise GateClosed(str(error)) from None
             matches = [r for r in runs['check_runs'] if r.get('name') == name
                        and r.get('app', {}).get('id') == config['app_id']]
             if len(matches) > 1:
@@ -554,6 +638,5 @@ class HostIssuer:
                     or type(run.get('id')) is not int or run['id'] <= 0):
                 raise GateClosed('Issued check differs from trusted task/candidate binding')
             receipt['checks'][name] = {'id': run['id'], 'app_id': config['app_id']}
-        (attempt / 'issued.json').write_text(json.dumps(receipt, indent=2)+'\n')
-        (attempt / 'issued.json').chmod(0o600)
+        write_owner(attempt/'issued.json',receipt)
         return receipt

@@ -186,7 +186,7 @@ def require_active_code():
 def revision():
     if os.environ.get('NR_CONFIG_SHA256'):
         return require_active_code()['runtime_revision']
-    return subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
+    return subprocess.check_output(['git', '--no-replace-objects', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
 
 
 def delegate(module, args):

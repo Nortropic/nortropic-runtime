@@ -11,7 +11,7 @@ from .targets import repository, origin
 
 
 def git(repository, *args, raw=False):
-    result = subprocess.run(['git', '-C', str(repository), *args], capture_output=True, check=True, timeout=30)
+    result = subprocess.run(['git', '--no-replace-objects', '-C', str(repository), *args], capture_output=True, check=True, timeout=30)
     return result.stdout if raw else result.stdout.decode().rstrip('\n')
 
 
@@ -25,7 +25,7 @@ def prepare(task, attempt, source):
     blobs = {name: read_regular(source, name) for name in task['allowed_paths']}
     workspace = task_directory(task['id']) / ('commit-' + str(attempt))
     if workspace.exists(): raise ValueError('Preserve previous candidate; reconcile instead of overwriting')
-    subprocess.run(['git', 'clone', '--no-hardlinks', '--no-checkout', str(repository(task['target'])), str(workspace)],
+    subprocess.run(['git', '--no-replace-objects', 'clone', '--no-hardlinks', '--no-checkout', str(repository(task['target'])), str(workspace)],
                    check=True, capture_output=True, timeout=30)
     git(workspace, 'checkout', '--detach', task['base'])
     git(workspace, 'remote', 'set-url', 'origin', origin(task['target']))

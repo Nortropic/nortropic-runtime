@@ -11,10 +11,13 @@ from unittest.mock import patch
 from runtime import run, candidate, task, targets, inspection
 from runtime.integration import Publisher, GateClosed, digest
 from runtime.profile import ROOT, sandbox_command, environment
-from scripts.test_integration import fixture, CountedPublisher
+from scripts.test_integration import fixture, CountedPublisher, private_content_policy
 
 
 class OfficeTests(unittest.TestCase):
+    def setUp(self):
+        private_content_policy(self)
+
     def test_named_target_scope_and_active_entry(self):
         value={'id':'office-test','target':targets.OFFICE,'base':'a'*40,
                'allowed_paths':['tools/kontor_result.py'],'attempt_seconds':120,
@@ -33,7 +36,7 @@ class OfficeTests(unittest.TestCase):
         with self.assertRaises(ValueError):targets.repository('https://example.invalid/repo')
 
     def test_input_binds_project_and_runtime_and_freezes_office_base(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'.runtime') as directory:
+        with tempfile.TemporaryDirectory(dir=ROOT/'.scratch') as directory:
             root=Path(directory); runtime=root/'runtime'; office=root/'office'; state=root/'state'; evidence=root/'evidence'
             for repo,name in ((runtime,targets.RUNTIME),(office,targets.OFFICE)):
                 repo.mkdir();candidate.git(repo,'init','-q');candidate.git(repo,'config','user.name','Test');candidate.git(repo,'config','user.email','test@invalid.example')
@@ -85,7 +88,7 @@ class OfficeTests(unittest.TestCase):
             self.assertEqual(publisher.mutations,[])
 
     def test_native_exact_file_boundary(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'.runtime') as directory:
+        with tempfile.TemporaryDirectory(dir=ROOT/'.scratch') as directory:
             root=Path(directory);ws=root/'candidate';(ws/'tools').mkdir(parents=True);(ws/'.scratch').mkdir()
             for name in ('AGENTS.md','tools/kontor.py','tools/kontor_result.py'):(ws/name).write_text('unchanged')
             outside=root/'acceptance.py';outside.write_text('host authority')
@@ -112,7 +115,7 @@ print(json.dumps(list(out.values())))
             self.assertFalse(report['verified_delivery'])
 
     def test_inspection_cross_checks_completed_receipts_without_effects(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'.runtime') as directory:
+        with tempfile.TemporaryDirectory(dir=ROOT/'.scratch') as directory:
             root=Path(directory);state=root/'state';state.mkdir();evidence=root/'evidence';evidence.mkdir()
             value,subject,tests,review=fixture();value['target']=targets.OFFICE
             verifier=b'host verifier';brief=b'accepted brief'

@@ -14,7 +14,7 @@ LABEL = 'se.nortropic.ap10-runtime'
 
 
 def git(repo, *args):
-    return subprocess.check_output(['git', '-C', str(repo), *args], timeout=30)
+    return subprocess.check_output(['git', '--no-replace-objects', '-C', str(repo), *args], timeout=30)
 
 
 def copy_code(repo, revision, dest):
@@ -22,7 +22,7 @@ def copy_code(repo, revision, dest):
         raise ValueError('Exact integrated revision required')
     git(repo, 'merge-base', '--is-ancestor', revision, 'origin/main')
     files = git(repo, 'ls-tree', '-r', '--name-only', revision).decode().splitlines()
-    selected = [n for n in files if n in ('AGENTS.md', 'docs/runtime-v0.1.md') or n.startswith(('runtime/', 'scripts/', 'tools/', 'acceptance/', 'config/'))]
+    selected = [n for n in files if n in ('AGENTS.md', 'docs/runtime-v0.1.md', 'evidence/v0.1/dependencies.json') or n.startswith(('runtime/', 'scripts/', 'tools/', 'acceptance/', 'config/'))]
     hashes = {}
     for name in selected:
         mode = git(repo, 'ls-tree', revision, '--', name).decode().split()[0]

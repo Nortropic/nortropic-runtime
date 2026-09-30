@@ -42,7 +42,7 @@ class ConnectedTests(unittest.TestCase):
                 with self.assertRaises((OSError, ValueError)): candidate.prepare(task,2,source)
 
     def test_review_missing_malformed_conflicting_or_duplicate(self):
-        good={'verdict':'approved','blocking_findings':[],'summary':'Brief fulfilled.'}
+        good={'verdict':'approved','blocking_findings':[],'summary':'Brief fulfilled.', 'limitations':['Synthetic fixture; no product execution.']}
         with tempfile.TemporaryDirectory(prefix='nr-review-') as temp:
             path=Path(temp)/'events.jsonl'
             def write(text):

@@ -25,17 +25,21 @@ class QueueCase(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve(); os.umask(0o022)
         (self.root / 'Shared').mkdir(); (self.root / 'provhem').mkdir(); (self.root / 'host/.runtime/ap10').mkdir(parents=True)
-        self.plats = fast.Plats(inkorg=self.root / 'Shared/nortropic-matning/in', provhem=self.root / 'provhem', prov=ME, agare=ME)
+        self.plats = fast.Plats(inkorg=self.root / 'Shared/nortropic-matning/in', provhem=self.root / 'provhem', prov=ME, agare=ME, agarhem=self.root / "owner")
         self.host = self.root / 'host'
         self.repo = self.root / 'repo'; self.repo.mkdir()
         for args in (['init', '-q', '-b', 'main'], ['commit', '-q', '--allow-empty', '-m', 'one']):
             subprocess.run(['git', '-C', str(self.repo), '-c', 'user.name=t', '-c', 'user.email=t@t', *args], check=True)
         self.calls = []
+        self.book = queue.Ledger(self.root / 'private-ledger', {'literals': []})
+        self.ledger_patch = patch.object(queue, 'Ledger', return_value=self.book)
+        self.ledger_patch.start(); self.addCleanup(self.ledger_patch.stop)
 
     def runner(self, code=0):
-        def run(argv, **kwargs):
-            self.calls.append((argv, kwargs))
-            return subprocess.CompletedProcess(argv, code, stdout='{"returncode": 0}', stderr='')
+        def run(plats, ident, request, bundle, run_id, fixed, **kwargs):
+            self.calls.append(((fixed, ident), {'request': request, 'run_id': run_id}))
+            # Synthetic observer interface only: incomplete observations stay red.
+            return {'returncode': code, 'cases': [], 'cleanup_verified': True}
         return run
 
     def queued(self):
@@ -43,6 +47,56 @@ class QueueCase(unittest.TestCase):
 
 
 class SessionSideTests(QueueCase):
+    def test_private_marker_sync_precedes_publication_and_failure_prevents_visibility(self):
+        original=queue.write_json;real_sync=queue.durable_exclusion;events=[]
+        def write(path,value,**kwargs):
+            if path.name=='begaran.json':events.append('published')
+            return original(path,value,**kwargs)
+        def sync(path):
+            real_sync(path);events.append('durable')
+        with patch.object(queue,'write_json',side_effect=write),patch.object(queue,'durable_exclusion',side_effect=sync):
+            queue.begar('runtime',self.repo,'refs/heads/main',3,plats=self.plats,qualification_run='a'*32)
+        self.assertEqual(events,['durable','published'])
+        subprocess.run(['git','-C',str(self.repo),'-c','user.name=t','-c','user.email=t@t','commit','-qm','second','--allow-empty'],check=True)
+        with patch.object(queue.os,'fsync',side_effect=OSError('synthetic marker sync failure')):
+            with self.assertRaisesRegex(OSError,'marker sync'):queue.begar('runtime',self.repo,'refs/heads/main',3,plats=self.plats,qualification_run='b'*32)
+        self.assertEqual(len(list(self.plats.inkorg.glob('*/begaran.json'))),1)
+        self.assertEqual(queue.pending(self.plats),[])
+
+    def test_private_qualification_is_excluded_before_the_request_is_visible(self):
+        original=queue.write_json;observed=[]
+        def write(path,value,**kwargs):
+            if path.name=='begaran.json':
+                observed.append(json.loads((path.parent/'agent.json').read_text()))
+                self.assertEqual(queue.pending(self.plats),[])
+            return original(path,value,**kwargs)
+        with patch.object(queue,'write_json',side_effect=write):
+            ident=queue.begar('runtime',self.repo,'refs/heads/main',3,plats=self.plats,qualification_run='a'*32)
+        self.assertEqual(observed,[{'id':ident,'ledger_run':'a'*32,'state':'qualification_reserved'}])
+        self.assertEqual(queue.pending(self.plats),[])
+
+    def test_lost_qualification_request_acknowledgement_cannot_enter_agent_queue(self):
+        original=queue.write_json
+        def write(path,value,**kwargs):
+            original(path,value,**kwargs)
+            if path.name=='begaran.json':raise OSError('synthetic lost request acknowledgement')
+        with patch.object(queue,'write_json',side_effect=write),self.assertRaises(OSError):
+            queue.begar('runtime',self.repo,'refs/heads/main',3,plats=self.plats,
+                        diagnostic_of='b'*32,qualification_run='a'*32)
+        self.assertEqual(queue.pending(self.plats),[])
+        self.assertEqual(len(list(self.plats.inkorg.glob('*/begaran.json'))),1)
+        self.assertEqual(len(list(self.plats.inkorg.glob('*/agent.json'))),1)
+
+    def test_failed_private_exclusion_never_publishes_a_request(self):
+        original=queue.write_json
+        def write(path,value,**kwargs):
+            if path.name=='agent.json':raise OSError('synthetic reservation loss')
+            return original(path,value,**kwargs)
+        with patch.object(queue,'write_json',side_effect=write),self.assertRaises(OSError):
+            queue.begar('runtime',self.repo,'refs/heads/main',3,plats=self.plats,qualification_run='a'*32)
+        self.assertEqual(queue.pending(self.plats),[])
+        self.assertEqual(list(self.plats.inkorg.glob('*/begaran.json')),[])
+
     def test_a_request_is_complete_before_it_is_visible_and_names_exactly_the_branch(self):
         ident = self.queued()
         self.assertRegex(ident, r'^runtime-[0-9a-f]{12}-\d{8}t\d{6}z$')
@@ -63,7 +117,7 @@ class SessionSideTests(QueueCase):
             self.queued()
 
     def test_waiting_returns_the_result_and_copies_what_sealing_needs(self):
-        ident = self.queued(); out = self.plats.ut / ident
+        ident = self.queued(); out = queue.observer.output_directory(self.plats, ident)
         def finish():
             time.sleep(.3); out.mkdir(parents=True)
             for name in ('suite.json', 'suite.log', 'gransprob.json'):
@@ -73,6 +127,25 @@ class SessionSideTests(QueueCase):
         value = queue.vanta(ident, tid=10, till=self.root / 'kopia', plats=self.plats, sov=.1)
         self.assertEqual(value, {'returncode': 0})
         self.assertEqual(sorted(p.name for p in (self.root / 'kopia').iterdir()), ['gransprob.json', 'klar.json', 'suite.json', 'suite.log'])
+        self.assertEqual((self.root/'kopia').stat().st_mode & 0o777, 0o700)
+        self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in (self.root/'kopia').iterdir()))
+
+    def test_private_copy_refuses_public_parent_and_foreign_file_acl_before_bytes(self):
+        ident=self.queued();out=queue.observer.output_directory(self.plats,ident);out.mkdir(parents=True)
+        (out/'klar.json').write_text('{"returncode":0}');(out/'suite.log').write_bytes(b'synthetic private log')
+        destination=self.root/'copy';destination.mkdir();destination.chmod(0o755)
+        with self.assertRaises(queue.observer.Refused):queue.vanta(ident,till=destination,plats=self.plats)
+        self.assertEqual(list(destination.iterdir()),[])
+        destination.chmod(0o700)
+        original=queue.observer.owner_node
+        def check(path,*args,**kwargs):
+            if Path(path)==destination/'suite.log':
+                subprocess.run(['/bin/chmod','+a','user:_spotlight allow read',str(path)],check=True)
+            return original(path,*args,**kwargs)
+        with patch.object(queue.observer,'owner_node',side_effect=check),self.assertRaises(queue.observer.Refused):
+            queue.vanta(ident,till=destination,plats=self.plats)
+        self.assertEqual((destination/'suite.log').read_bytes(),b'')
+        self.assertFalse((destination/'klar.json').exists())
 
     def test_waiting_stops_when_the_agent_tried_and_left_nothing_or_time_runs_out(self):
         ident = self.queued()
@@ -84,9 +157,23 @@ class SessionSideTests(QueueCase):
 
 
 class AgentSideTests(QueueCase):
+    def test_late_observer_error_keeps_observed_cases_and_stops_the_queue(self):
+        ident=self.queued()
+        cases=[{'name':'test_x.T.test_one','file':'tests/test_x.py','status':'failure','seconds':.125,'order':1}]
+        def interrupted(plats,identifier,request,bundle,run_id,fixed,**kwargs):
+            raise queue.observer.ObservationInterrupted({'candidate':request['candidate'],'tree':request['tree'],
+                    'ledger_run':run_id,'returncode':1,'cases':cases})
+        with patch.object(queue,'installed',return_value=True):
+            state=queue.run_pending(self.host,plats=self.plats,measure=interrupted)
+        record=json.loads((self.plats.inkorg/ident/'agent.json').read_text())
+        begin=self.book.begin_record(record['ledger_run']+'-begin.json');end=self.book.ending(begin)
+        self.assertEqual(end['returncode'],1);self.assertFalse(end['complete']);self.assertFalse(end['passed'])
+        self.assertEqual([(c['name'],c['seconds'],c['status']) for c in end['cases']],[('test_x.T.test_one',.125,'failure')])
+        self.assertIn('cleanup is unverified',state['reason'])
+
     def test_nothing_is_run_before_the_owner_installed_the_test_user_and_the_root_owned_script(self):
         ident = self.queued()
-        state = queue.run_pending(self.host, plats=self.plats, runner=self.runner(), skript=self.root / 'saknas')
+        state = queue.run_pending(self.host, plats=self.plats, measure=self.runner(), skript=self.root / 'saknas')
         self.assertEqual((state['state'], state['queued'], self.calls), ('not_installed', [ident], []))
         status = json.loads((self.host / '.runtime/ap10/measurement-status.json').read_text())
         self.assertEqual(status['schema'], 'measurement-queue-status/1')
@@ -96,43 +183,105 @@ class AgentSideTests(QueueCase):
         self.assertFalse(queue.installed(self.plats, own))
 
     def test_each_queued_request_runs_through_exactly_the_one_rule(self):
-        first = self.queued(); time.sleep(1.1); second = self.queued()
+        first = self.queued(); time.sleep(1.1)
+        subprocess.run(['git', '-C', str(self.repo), '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'two'], check=True)
+        second = self.queued()
         with patch.object(queue, 'installed', lambda plats, skript: True):
-            state = queue.run_pending(self.host, plats=self.plats, runner=self.runner(), skript=queue.SKRIPT)
-        self.assertEqual([c[0] for c in self.calls],
-                         [['/usr/bin/sudo', '-n', '-u', ME, '/usr/local/libexec/nortropic/matning', 'mat', ident]
-                          for ident in (first, second)])
-        self.assertEqual(self.calls[0][1]['stdin'], subprocess.DEVNULL)
+            state = queue.run_pending(self.host, plats=self.plats, measure=self.runner(), skript=queue.SKRIPT)
+        self.assertEqual([c[0] for c in self.calls], [(queue.SKRIPT, ident) for ident in (first, second)])
+        self.assertTrue(all(len(c[1]['run_id']) == 32 for c in self.calls))
         self.assertEqual(state['state'], 'measured')
         for ident in (first, second):
             record = json.loads((self.plats.inkorg / ident / 'agent.json').read_text())
             self.assertEqual(record['returncode'], 0)
         self.assertEqual(queue.pending(self.plats), [])             # tried once; the result or agent.json ends it
 
+    def test_negative_terminal_survives_successful_cases_and_zero_exit_through_queue_and_seal(self):
+        import hashlib
+        from runtime import measurement_observer as observer
+        ident=self.queued();captured={}
+        def measure(plats,ident,request,bundle,run_id,fixed,**kwargs):
+            rows=[{'name':'test_fixture.T.test_'+str(i),'file':'scripts/test_fixture.py'} for i in range(3)]
+            receiver=observer.Receiver(rows,lambda event:None)
+            for number in range(1,4):
+                receiver.feed({'schema':observer.EVENT_SCHEMA,'event':'start','id':number})
+                receiver.feed({'schema':observer.EVENT_SCHEMA,'event':'stop','id':number,'status':'success'})
+            receiver.feed({'schema':observer.EVENT_SCHEMA,'event':'terminal','count':3,'successful':False,
+                           'manifest_sha256':hashlib.sha256(observer.canonical(observer.manifest(rows))).hexdigest()})
+            report=receiver.finish(0,cleaned=True)
+            root=Path(queue.__file__).resolve().parents[1]
+            hashes={p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in
+                    ('scripts/matning_provanvandare.py','runtime/measurement_observer.py','scripts/measurement_queue.py')}
+            report.update(candidate=request['candidate'],tree=request['tree'],test_count=3,credential_free_execution=True,
+                          credential_boundary={'script_sha256':hashes['scripts/matning_provanvandare.py'],
+                          'observer_sha256':hashes['runtime/measurement_observer.py'],'queue_sha256':hashes['scripts/measurement_queue.py'],
+                          'owner_uid':501,'test_uid':502})
+            captured.update(report=report,hashes=hashes)
+            return report
+        with patch.object(queue,'installed',return_value=True):
+            queue.run_pending(self.host,plats=self.plats,measure=measure)
+        record=json.loads((self.plats.inkorg/ident/'agent.json').read_bytes())
+        self.assertFalse(record['measurement_passed'])
+        end=self.book.read(record['ledger_run']+'-finish.json')
+        self.assertTrue(end['complete']);self.assertIs(end['terminal_successful'],False)
+        self.assertFalse(end['passed']);self.assertTrue(all(c['status']=='success' for c in end['cases']))
+        report=captured['report'];self.assertFalse(self.book.publishable(report['candidate']))
+        from runtime.failure_ledger import Ledger as RealLedger
+        seal=RealLedger(self.root/'sealed-ledger',{'literals':[]})
+        with self.assertRaises(queue.LedgerRefused):
+            seal.consume(report['candidate'],'sealed','a'*64,report,captured['hashes'])
+        self.assertFalse(seal.publishable(report['candidate']))
+        self.assertFalse(queue.valid_observation(dict(report,passed=True),captured['hashes']))
+        self.assertFalse(queue.valid_observation(dict(report,terminal_successful=0),captured['hashes']))
+
+    def test_repeated_commit_needs_explicit_diagnostic_and_is_never_repair(self):
+        first = self.queued()
+        with patch.object(queue, 'installed', return_value=True):
+            queue.run_pending(self.host, plats=self.plats, measure=self.runner())
+        row = json.loads((self.plats.inkorg / first / 'agent.json').read_bytes())
+        self.assertFalse(row['measurement_passed'])  # fake process produced no timed suite
+        time.sleep(1.1); second = self.queued()
+        with patch.object(queue, 'installed', return_value=True):
+            queue.run_pending(self.host, plats=self.plats, measure=self.runner())
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(json.loads((self.plats.inkorg / second / 'agent.json').read_bytes())['state'], 'refused')
+        time.sleep(1.1)
+        third = queue.begar('runtime', self.repo, 'refs/heads/main', 3, plats=self.plats, diagnostic_of=row['ledger_run'])
+        with patch.object(queue, 'installed', return_value=True):
+            queue.run_pending(self.host, plats=self.plats, measure=self.runner())
+        self.assertEqual(len(self.calls), 2)
+        final = json.loads((self.plats.inkorg / third / 'agent.json').read_bytes())
+        begin = self.book.read(final['ledger_run'] + '-begin.json')
+        self.assertEqual(begin['phase'], 'diagnostic')
+        self.assertEqual(begin['diagnostic_of'], row['ledger_run'])
+        self.assertFalse(self.book.publishable(begin['commit']))
+
     def test_the_budget_ends_a_look_and_the_rest_waits(self):
         self.queued(); time.sleep(1.1); later = self.queued()
         with patch.object(queue, 'installed', lambda plats, skript: True):
-            state = queue.run_pending(self.host, plats=self.plats, runner=self.runner(), budget=-1, skript=queue.SKRIPT)
+            state = queue.run_pending(self.host, plats=self.plats, measure=self.runner(), budget=-1, skript=queue.SKRIPT)
         self.assertEqual(self.calls, []); self.assertEqual(state['state'], 'idle'); self.assertIn(later, state['queued'])
 
     def test_a_measurement_that_hangs_is_recorded_as_such(self):
         ident = self.queued()
-        def hang(argv, **kwargs):
-            raise subprocess.TimeoutExpired(argv, kwargs['timeout'])
+        def hang(*args, **kwargs):
+            raise subprocess.TimeoutExpired('synthetic fixed observer', queue.MEASURE_LIMIT)
         with patch.object(queue, 'installed', lambda plats, skript: True):
-            queue.run_pending(self.host, plats=self.plats, runner=hang, skript=queue.SKRIPT)
+            queue.run_pending(self.host, plats=self.plats, measure=hang, skript=queue.SKRIPT)
         record = json.loads((self.plats.inkorg / ident / 'agent.json').read_text())
         self.assertIsNone(record['returncode']); self.assertIn('exceeded', record['stderr_tail'])
 
     def test_each_measurement_starts_only_with_a_whole_measurement_of_room_before_the_watch(self):
-        first = self.queued(); time.sleep(1.1); second = self.queued()
+        first = self.queued(); time.sleep(1.1)
+        subprocess.run(['git', '-C', str(self.repo), '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'two'], check=True)
+        second = self.queued()
         asked = []
         def quiet(margin):
             asked.append(margin)
             if len(asked) == 2:
                 raise SystemExit('REFUSED: the next AP10 run is less than 20 minutes away (with room for heavy work: 5400 s)')
         with patch.object(queue, 'installed', lambda plats, skript: True):
-            state = queue.run_pending(self.host, plats=self.plats, runner=self.runner(), skript=queue.SKRIPT, quiet=quiet)
+            state = queue.run_pending(self.host, plats=self.plats, measure=self.runner(), skript=queue.SKRIPT, quiet=quiet)
         self.assertEqual(asked, [queue.MEASURE_LIMIT, queue.MEASURE_LIMIT])
         self.assertEqual([c[0][-1] for c in self.calls], [first])
         self.assertEqual((state['state'], state['queued']), ('measured', [second]))       # the first ran; the second waits
@@ -144,7 +293,7 @@ class AgentSideTests(QueueCase):
         def near(margin):
             raise RuntimeError('the next AP10 run is less than 20 minutes away')
         with patch.object(queue, 'installed', lambda plats, skript: True):
-            state = queue.run_pending(self.host, plats=self.plats, runner=self.runner(), skript=queue.SKRIPT, quiet=near)
+            state = queue.run_pending(self.host, plats=self.plats, measure=self.runner(), skript=queue.SKRIPT, quiet=near)
         self.assertEqual((state['state'], state['queued'], self.calls), ('waiting', [ident], []))
         self.assertIn('20 minutes', state['reason'])
 
@@ -182,7 +331,29 @@ class AgentSideTests(QueueCase):
         import fcntl
         with (self.host / '.runtime/ap10/measurement.lock').open('a') as held:
             fcntl.flock(held, fcntl.LOCK_EX)
-            self.assertIsNone(queue.run_pending(self.host, plats=self.plats, runner=self.runner()))
+            self.assertIsNone(queue.run_pending(self.host, plats=self.plats, measure=self.runner()))
+
+
+    def test_legacy_provider_green_is_not_an_owner_observation(self):
+        ident=self.queued();legacy=self.plats.ut/ident;legacy.mkdir(parents=True)
+        (legacy/'klar.json').write_text('{"returncode":0}')
+        self.assertEqual(queue.pending(self.plats),[ident])
+        with self.assertRaisesRegex(SystemExit,'no result'):
+            queue.vanta(ident,tid=0,plats=self.plats,sov=.01)
+
+    def test_lost_cleanup_stops_next_request_and_regression_cannot_rename_failure(self):
+        first=self.queued();time.sleep(1.1)
+        second=queue.begar('runtime',self.repo,'refs/heads/main',3,plats=self.plats,
+                           regression=True,names=['scripts.test_fixture'])
+        def lost(*args,**kwargs):return {'returncode':0,'cases':[],'cleanup_verified':False}
+        with patch.object(queue,'installed',return_value=True):
+            state=queue.run_pending(self.host,plats=self.plats,measure=lost)
+        self.assertEqual(state['queued'],[second]);self.assertIn('cleanup',state['reason'])
+        with patch.object(queue,'installed',return_value=True):
+            queue.run_pending(self.host,plats=self.plats,measure=self.runner())
+        self.assertEqual(self.calls,[])
+        self.assertEqual(json.loads((self.plats.inkorg/second/'agent.json').read_bytes())['state'],'refused')
+
 
 
 class QuietRuleTests(unittest.TestCase):

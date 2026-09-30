@@ -102,6 +102,49 @@ class HostPublicationTest(unittest.TestCase):
         self.assertEqual(self.issue(),self.receipt)
         self.assertEqual((self.home/'invoked').read_text(),str(self.host))
 
+    def test_foreign_file_acl_refuses_before_launcher_start(self):
+        for path in (self.entry,self.home/'launcher-adoption.json'):
+            for right in ('read','write'):
+                with self.subTest(path=path.name,right=right):
+                    subprocess.run(['/bin/chmod','+a','user:_spotlight allow '+right,str(path)],check=True)
+                    try:
+                        with patch.object(caller,'launch') as launched,self.assertRaises(GateClosed):self.issue()
+                        launched.assert_not_called()
+                    finally:subprocess.run(['/bin/chmod','-N',str(path)],check=True)
+        self.assertFalse((self.home/'invoked').exists())
+
+    def test_launcher_refuses_file_and_ancestor_acls_before_frozen_import(self):
+        for path,right in ((self.home/'authority.json','write'),
+                           (self.root/'runtime/check_issuer.py','read'),(self.home,'delete_child')):
+            with self.subTest(path=path.name,right=right):
+                subprocess.run(['/bin/chmod','+a','user:_spotlight allow '+right,str(path)],check=True)
+                try:
+                    result=self.invoke('digitala','--task','fixture')
+                    self.assertEqual(result.returncode,2,result.stderr)
+                    self.assertFalse((self.home/'invoked').exists())
+                finally:subprocess.run(['/bin/chmod','-N',str(path)],check=True)
+
+    def test_writable_parent_refuses_both_bootstrap_paths(self):
+        self.home.chmod(0o777)
+        with patch.object(caller,'launch') as launched,self.assertRaises(GateClosed):self.issue()
+        launched.assert_not_called()
+        self.assertEqual(self.invoke('digitala','--task','fixture').returncode,2)
+        self.assertFalse((self.home/'invoked').exists())
+
+    def test_changed_open_identity_refuses_both_bootstrap_paths(self):
+        target=self.home/'launcher-adoption.json';actual_open=os.open
+        for operation,error in ((self.issue,GateClosed),(lambda:launcher.qualified_root(self.entry),ValueError)):
+            swapped=[]
+            def changed(path,*args,**kwargs):
+                if Path(path)==target and not swapped:
+                    replacement=target.with_name('replacement.json');private(replacement,target.read_bytes())
+                    os.replace(replacement,target);swapped.append(True)
+                return actual_open(path,*args,**kwargs)
+            with self.subTest(operation=operation),patch.object(os,'open',side_effect=changed), \
+                 patch.object(caller,'launch') as launched,self.assertRaises(error):operation()
+            launched.assert_not_called();self.assertEqual(swapped,[True])
+        self.assertFalse((self.home/'invoked').exists())
+
     def test_digitala_operation_selects_only_sealed_task(self):
         result=self.invoke('digitala','--task','fixture')
         self.assertEqual(result.returncode,0,result.stderr)
@@ -134,11 +177,11 @@ class HostPublicationTest(unittest.TestCase):
     def test_self_reviewed_or_changed_launcher_is_not_executed_by_caller(self):
         self.adoption['reviewer_run']=self.adoption['implementation_run']
         private(self.home/'launcher-adoption.json',self.adoption)
-        with patch.object(caller.subprocess,'run') as run, self.assertRaises(GateClosed): self.issue()
+        with patch.object(caller,'launch') as run, self.assertRaises(GateClosed): self.issue()
         run.assert_not_called()
         self.adoption['reviewer_run']='separate';private(self.home/'launcher-adoption.json',self.adoption)
         private(self.entry,b'raise RuntimeError("wrong launcher")\n')
-        with patch.object(caller.subprocess,'run') as run, self.assertRaises(GateClosed): self.issue()
+        with patch.object(caller,'launch') as run, self.assertRaises(GateClosed): self.issue()
         run.assert_not_called()
 
     def test_wrong_receipt_binding_candidate_or_success_shape_is_refused(self):
@@ -170,7 +213,7 @@ class HostPublicationTest(unittest.TestCase):
         result=self.invoke('digitala','--task','fixture')
         self.assertEqual(result.returncode,2);self.assertFalse((self.home/'invoked').exists())
         self.entry.unlink()
-        with patch.object(caller.subprocess,'run') as run, self.assertRaises(GateClosed): self.issue()
+        with patch.object(caller,'launch') as run, self.assertRaises(GateClosed): self.issue()
         run.assert_not_called()
 
 

@@ -121,14 +121,18 @@ class ReadOnlyReviewerTest(unittest.TestCase):
 
 class VerdictNeverFromMissingEvidenceTest(unittest.TestCase):
     def test_measured_rejection_and_strict_approval(self):
-        measured = review.verdict(written(events()), 'claude')
+        # The preserved measured terminal predates G2 and must now fail schema validation.
+        with self.assertRaisesRegex(ValueError,'Invalid or unjudgeable'):
+            review.verdict(written(events()), 'claude')
+        adapted = {**SHAPE['result']['structured_output'], 'limitations':['Synthetic G2 adaptation of the measured terminal shape.']}
+        measured = review.verdict(written(both(adapted)), 'claude')
         self.assertEqual(measured['verdict'], 'rejected'); self.assertTrue(measured['blocking_findings'])
-        good = {'verdict': 'approved', 'blocking_findings': [], 'summary': 'Whole brief implemented.'}
+        good = {'verdict': 'approved', 'blocking_findings': [], 'summary': 'Whole brief implemented.', 'limitations': []}
         self.assertEqual(review.verdict(written(both(good)), 'claude'), good)
 
     def test_missing_interrupted_malformed_or_conflicting_is_never_a_verdict(self):
         init, result = events()
-        good = {'verdict': 'approved', 'blocking_findings': [], 'summary': 'ok'}
+        good = {'verdict': 'approved', 'blocking_findings': [], 'summary': 'ok', 'limitations': []}
         cases = {
             'interrupted: no terminal': ([init], 'Missing review response'),
             'no rows': ([], 'Missing review response'),
@@ -147,6 +151,9 @@ class VerdictNeverFromMissingEvidenceTest(unittest.TestCase):
             'approval with findings': (both({**good, 'blocking_findings': ['x']}), 'Conflicting approval'),
             'extra key': (both({**good, 'approved': True}), 'Invalid or unjudgeable'),
             'unknown verdict': (both({**good, 'verdict': 'APPROVED'}), 'Invalid or unjudgeable'),
+            'missing limitations': (both({k:v for k,v in good.items() if k!='limitations'}), 'Invalid or unjudgeable'),
+            'bad limitations': (both({**good,'limitations':'not a list'}), 'Invalid or unjudgeable'),
+            'blank limitation': (both({**good,'limitations':[' ']}), 'Invalid or unjudgeable'),
             'blank summary': (both({**good, 'summary': '  '}), 'Invalid or unjudgeable'),
             'blank finding': (both({'verdict': 'rejected', 'blocking_findings': [' '], 'summary': 's'}), 'Invalid or unjudgeable'),
         }
@@ -165,7 +172,7 @@ class VerdictNeverFromMissingEvidenceTest(unittest.TestCase):
             review.verdict(written([init, prose]), 'claude')
 
     def test_codex_review_reading_is_unchanged(self):
-        good = {'verdict': 'approved', 'blocking_findings': [], 'summary': 'ok'}
+        good = {'verdict': 'approved', 'blocking_findings': [], 'summary': 'ok', 'limitations': []}
         row = {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': json.dumps(good)}}
         self.assertEqual(review.verdict(written([row])), good)
         self.assertEqual(review.verdict(written([row]), 'codex'), good)

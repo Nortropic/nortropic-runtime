@@ -23,8 +23,9 @@ import time
 
 from . import web_common as common
 from .profile import ROOT
+from .review_policy import SECRET_INSTRUCTION
 
-CODE = ('runtime/web_critique.py', 'runtime/web_common.py', 'runtime/critique_format.py')
+CODE = ('runtime/web_critique.py', 'runtime/web_common.py', 'runtime/critique_format.py', 'runtime/review_policy.py')
 PLACE = re.compile(r'\A[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*\Z')
 IMAGE_SUFFIXES = ('.png', '.jpg', '.jpeg', '.webp', '.gif')
 FILE_LIMIT = 16 * 1024 * 1024
@@ -43,6 +44,7 @@ bedömer något{bilder}. Håll isär vad du ser i bilderna och vad du läser i t
 räcker. Svara bara i det format som frågan anger.
 """
 IMAGE_NOTE = {'claude': ', med verktyget Read', 'codex': '; bilderna är också bifogade till frågan'}
+AGENTS += '\n' + SECRET_INSTRUCTION + '\nNever claim an unrun check passed. Never lower the accepted requirements.\n'
 PREAMBLE = 'Börja med FILES.md.\n\n{question}\n\nSvara med ett enda JSON-objekt enligt det givna schemat.\n'
 
 
