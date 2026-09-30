@@ -22,12 +22,18 @@ blir val i releasen, modellvalets verktyg tar hela valet, och `auto` tillämpar 
 Integrationen aktiverar ingenting.
 
 Ordningen:
-1. Kandidaten (gren `runtime/modellval-steg2-20260930`) granskas separat och integreras skyddat.
-2. Kontorets del: Flödet sparar valet för Runtime och bevakningen, visar aktiveringens status, och startvakten följer
-   Runtimes ansträngning.
-3. Övergång 19 stegas med den nya Runtime-revisionen och med kontorets revision och valen oförändrade. Den prövas i en
+1. D040 granskades separat och är integrerad (PR 74, `bcbe63f`, 2026-09-30), med en sammansatt mätning efter ägarens val
+   1: 730 prov i den kredentialfria profilen och de tre som startar Codex sandlåda en gång utan sandlåda.
+2. Kontorets del är integrerad (kontorets PR 142): Flödet sparar valet för Runtime och bevakningen, visar aktiveringens
+   status, och startvakten följer Runtimes ansträngning.
+3. D041 (tillägg 2026-09-30, ägarens "fixa båda"): vakten binder Codex hemkonfiguration utan de två översta
+   nycklarna `model` och `model_reasoning_effort`, som varje körning i Runtime sätter själv. Ägarens eget val för sina
+   Codex-sessioner stoppar då inte längre Runtime. D041 granskas och integreras som D040, med samma sammansatta mätning
+   (ägarens val 1).
+4. Övergång 19 stegas med den nya Runtime-revisionen (D040 och D041) och med kontorets revision och valen oförändrade.
+   Den godtar den nya formen av just Codex-bindningen, bara när filen är oförändrad i den gamla formen. Den prövas i en
    isolerad startövning.
-4. Ägarens engångssteg, i hans egen Terminal: övergång 19:s `check` och `activate`, därefter `model_choice.py agent install`.
+5. Ägarens engångssteg, i hans egen Terminal: övergång 19:s `check` och `activate`, därefter `model_choice.py agent install`.
    Först därefter aktiveras ett val i arbetsplatsen av sig självt.
 
 Återupptagning: kontorets `evidence/nasta-uppdrag/local/modellkarta-20260929/LAGE.md`.

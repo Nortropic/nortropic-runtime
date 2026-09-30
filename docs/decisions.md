@@ -1827,3 +1827,50 @@ Limits:
 - A switch comes at most five minutes after Runtime becomes idle. The web profile check matches the documented
   invocation `-m runtime.web_…`.
 - Nothing is activated by this change.
+
+
+## D041 — 2026-09-30: the owner's own Codex model and effort no longer stop Runtime
+
+The owner's words, verbatim in the office's `evidence/nasta-uppdrag/local/modellkarta-20260929/owner-words-fixa-bada-20260930.md`,
+answering the drift below: "fixa båda".
+
+Measured on 2026-09-30: at 05:27:41Z the owner chose `gpt-6-astra` with effort `max` for his own Codex sessions in the
+workplace's Flödet, and the workplace wrote the two top-level lines `model` and `model_reasoning_effort` of
+`~/.codex/config.toml` (the office's MODELLKARTA-20260929, which the owner approved). That file is one of the native
+instruction inputs every release binds (D032), so the active release refused every new model call ("Native
+instruction/configuration inputs changed; inspect before a new model call"), the AP-10 watch at 07:00Z included. That
+line was the only difference; the owner set `ultra` back at 05:57:32Z, and the file was again the bound bytes.
+
+Why the two keys never reach a Runtime run: every Runtime command that runs a Codex model is built by
+`scripts/probe_bridge.worker_command`, which sets `-c model=…` and `-c model_reasoning_effort=…` on every run (the
+development and watch profile, the critique and visitor profiles), and a `-c` override outranks the configuration file.
+Runtime's other Codex invocations are `codex sandbox`, which runs no model.
+
+Decision:
+- `release.instruction_guards()` binds the Codex home configuration as `without-model-and-effort:` followed by the
+  sha256 of the file with its top-level `model` and `model_reasoning_effort` assignments removed. The top part is read up
+  to the first table header, with array depth, so the same key inside an array or in any table (a profile's own model,
+  for example) stays bound. A file the reading cannot be sure of, one that is not UTF-8 or has a multi-line string
+  before the first table, is hashed whole under the same prefix, so every change to it still counts. Every other input,
+  and every other part of this file (the notify command, the service tier, profiles, MCP servers), is bound as before.
+- `release.guard_differences(bound)` compares each input in the form its release bound it, and `inspect_installation`
+  uses it. A release staged before this decision bound the Codex home configuration whole and is still checked whole, so
+  nothing changes until a release staged with this code is active, and newer code reads an older release correctly.
+- The first release with this code is activated by a controlled transition that accepts the new form of exactly this one
+  binding, and only when the file is unchanged under the old form. Transition 19 does this together with D040.
+
+Tested (`scripts/test_codex_config_guard.py`): changing or removing the two top-level keys leaves the value unchanged;
+every other change changes it (the service tier, the notify array, a profile's own model and effort, a new top-level
+key, a comment, a single-quoted or commented value, another key); the same key inside an array or after the first table
+is bound; an uncertain file is hashed whole; the home configuration's new form, an absent file (None) and a link
+('unsafe'); a new release ignores the owner's choice and nothing else; an older release is checked whole; a file that
+appears where none was bound counts; `inspect_installation` reports only real drift. The premise is tested too: the
+bridge, the profile with and without a choice, and the critique and visitor commands all set both keys.
+
+Limits:
+- Nothing changes before a release with this code is active. Until then, a change of the owner's Codex model or effort,
+  in Flödet or in Codex's own `/model`, still stops every new model call.
+- Only the home configuration's two top-level keys are exempt. A project-level `.codex/config.toml` and every other
+  key stay bound whole.
+- The exemption rests on a property of the code. A future Runtime command that runs a Codex model without setting both
+  keys itself would have to end it; the premise test covers today's command builders.
