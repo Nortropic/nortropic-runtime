@@ -2085,3 +2085,27 @@ Limits:
   The copy's database and the closed AP-11 scope it carries lie in the rehearsal's own 0700 directory and are removed
   afterwards. The connection check is one sample per confirmed start, of port numbers.
 - launchctl in an automatic code activation has run only as model_choice's, which the owner ran for D029 and D040.
+
+## D044 — 2026-09-30: the test user's own suite never runs the real boundary probe
+
+The owner's words (same file as D042): "Målet: Runtimes, kontorets och Digitalas sviter mäts gröna utan sammansatta
+adaptrar och utan min inblandning."
+
+Measured: the first measurement of Runtime as the test user (main `a4fcdb3`, 2026-09-30 13:11-13:15Z, after transition
+20) ran 831 tests with one failure, `test_matning_provanvandare.SudoersTests.test_usage_is_refused_without_the_test_user`.
+It runs the fixed script's `gransprob` on the command line and expects a refusal because the runner is not the test
+user. Run by the test user itself, the probe passed instead, and wrote `gransprob-20260930T131415Z.json` into the test
+user's out directory.
+
+Decision: the test refuses the command line's usage for every runner, and `gransprob` on the command line only for a
+runner that is not the test user. Run as the test user it stops there: the real probe would pass and write. Who else is
+refused stays proven in-process for every runner (`IdentityTests`: a missing user, another user, root, a member of
+admin).
+
+Tested: the changed test as the owner (both refusals on the command line); the candidate's whole suite as the test
+user, the way D042 measures every change, is the evidence its sealed publication request carries.
+
+Limits:
+- Only a test changes; no file the owner approved once (D043's `OWNER_FILES`) changes, so the agent activates the
+  release carrying this by itself, after its chain proof, rehearsal and preconditions.
+- The fixed script is unchanged, and so is its digest in the rule.
