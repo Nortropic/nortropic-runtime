@@ -104,7 +104,7 @@ def paths(host):
 
 def git(host, *args, timeout=120):
     env = {**GIT_ENV, 'HOME': str(Path.home())}
-    return subprocess.check_output(['git', '-C', str(host), *args], timeout=timeout, env=env,
+    return subprocess.check_output(['git', '--no-replace-objects', '-C', str(host), *args], timeout=timeout, env=env,
                                    stderr=subprocess.PIPE).decode().strip()
 
 
@@ -308,7 +308,7 @@ def only_code_differs(old, new):
 
 
 def released(name):
-    return name in ('AGENTS.md', 'docs/runtime-v0.1.md') or name.startswith(('runtime/', 'scripts/', 'tools/', 'acceptance/', 'config/'))
+    return name in ('AGENTS.md', 'docs/runtime-v0.1.md', 'evidence/v0.1/dependencies.json') or name.startswith(('runtime/', 'scripts/', 'tools/', 'acceptance/', 'config/'))
 
 
 def changed_files(host, active, target):
@@ -327,7 +327,7 @@ def code_is_the_revision(host, revision, directory, files):
     staged = sorted(name for name in files if name.startswith('runtime/'))
     if sorted(listed) != staged:
         raise Refused('the staged release holds other Runtime files than the proven revision %s' % revision[:12])
-    done = subprocess.run(['git', '-C', str(host), 'hash-object', '--no-filters', '--stdin-paths'],
+    done = subprocess.run(['git', '--no-replace-objects', '-C', str(host), 'hash-object', '--no-filters', '--stdin-paths'],
                           input=''.join(str(Path(directory) / name) + '\n' for name in staged), capture_output=True,
                           text=True, timeout=300, env={**GIT_ENV, 'HOME': str(Path.home())})
     if done.returncode != 0 or done.stdout.split() != [listed[name] for name in staged]:

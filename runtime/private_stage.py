@@ -21,6 +21,10 @@ from .review import claude_response
 from .shared import process_identity
 from scripts.bounded import stop_group
 
+# Compatibility for existing activity imports. This is the owner's function,
+# not another handler: all process-group semantics remain in scripts/bounded.
+stop_private_group = stop_group
+
 HOME = ROOT/'.runtime/ap10/rounds'
 LIMIT_BYTES = 512*1024*1024
 LOG_BYTES = 2*1024*1024
@@ -129,7 +133,7 @@ def model(stage, workspace, prompt, schema, seconds, parent, choice=None):
     finally:
         for sig in old:signal.signal(sig,signal.SIG_IGN)
         try:
-            removed=proc is None or stop_private_group(proc)
+            removed=proc is None or stop_group(proc)
         finally:
             if proc is not None:
                 for stream in (proc.stdout,proc.stderr):
@@ -156,20 +160,6 @@ def model(stage, workspace, prompt, schema, seconds, parent, choice=None):
             'process_group_removed':removed,'answer':answer}
     write(stage/'result.json',result)
     return result
-
-
-def stop_private_group(proc):
-    try:return stop_group(proc)
-    except PermissionError:
-        # macOS can report EPERM during a just-exited group transition. Do not
-        # infer cleanup from that error: require a reaped leader AND no OS group.
-        if proc.poll() is None:
-            if not hasattr(proc,'wait'):raise
-            try:proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:raise
-        groups=subprocess.check_output(['ps','-axo','pgid='],text=True,timeout=5)
-        if str(proc.pid) in groups.split():raise
-        return True
 
 
 def private_size():
@@ -228,7 +218,7 @@ def cleanup_private_run(run_id):
             class Recorded:
                 def __init__(self,pid):self.pid=pid
                 def poll(self):return None if process_identity(self.pid)==identity else 0
-            if not stop_private_group(Recorded(pid)):raise ValueError('Private process group remains')
+            if not stop_group(Recorded(pid)):raise ValueError('Private process group remains')
         else:
             try:os.killpg(pid,0)
             except ProcessLookupError:pass

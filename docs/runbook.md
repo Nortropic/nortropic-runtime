@@ -404,8 +404,8 @@ files are the reviewed ones (the rule's digest is the script's sha256; D042's en
 
     R="$HOME/nortropic-repos/Nortropic Runtime"
     shasum -a 256 "$R/scripts/matning_provanvandare.py" "$R/config/nortropic-matning.sudoers"
-    sudo sysadminctl -addUser _nortropicprov -roleAccount -UID 470 -fullName "Nortropic provanvändare" -shell /usr/bin/false -home /Users/_nortropicprov -password "$(/usr/bin/openssl rand -base64 30)"
-    sudo install -d -o _nortropicprov -m 0755 /Users/_nortropicprov
+    sudo sysadminctl -addUser _nortropicprov -roleAccount -UID 470 -fullName "Nortropic provanvändare" -shell /usr/bin/false -home [REDACTED sha256=0a77e95661200f5263ccedaa1106d31c15595208c3b57f30d0f9604a3388dbc8] -password "$(/usr/bin/openssl rand -base64 30)"
+    sudo install -d -o _nortropicprov -m 0755 [REDACTED sha256=0a77e95661200f5263ccedaa1106d31c15595208c3b57f30d0f9604a3388dbc8]
     sudo install -d -o root -g wheel -m 0755 /usr/local/libexec/nortropic
     sudo install -o root -g wheel -m 0555 "$R/scripts/matning_provanvandare.py" /usr/local/libexec/nortropic/matning
     sudo visudo -cf "$R/config/nortropic-matning.sudoers" && sudo install -o root -g wheel -m 0440 "$R/config/nortropic-matning.sudoers" /etc/sudoers.d/nortropic-matning && sudo visudo -c
@@ -424,9 +424,9 @@ A session queues a candidate branch and waits for the result:
     python3 -B "$R/scripts/measurement_queue.py" vanta <id> --till <directory of the session's own>
     python3 -B "$R/scripts/measurement_queue.py" status
 
-The request lies in `/Users/Shared/nortropic-matning/in/<id>/` (the branch as a bundle of every branch, the request, and
+The request lies in `[REDACTED sha256=d80e34e7127e0b642fc0a76b7670ed3e3baf5f079b3fb742b8be328d2b7a0156]nortropic-matning/in/<id>/` (the branch as a bundle of every branch, the request, and
 for Digitala a view of the active Runtime release's code and configuration); the result in
-`/Users/_nortropicprov/ut/<id>/` (`suite.json` in the issuer's form, `suite.log`, `gransprob.json`, `klar.json`). The
+`[REDACTED sha256=61584c474670d2a2d570de638669ed77c1e61e2e6fd86a759957cfb49b313e3b]ut/<id>/` (`suite.json` in the issuer's form, `suite.log`, `gransprob.json`, `klar.json`). The
 agent looks every five minutes and starts a measurement only when the AP-10 watch is not running and at least 20 minutes
 plus one whole measurement (90 minutes) away, and none after the first 15 minutes of a look; it writes
 `.runtime/ap10/measurement-status.json`; `not_installed` means the owner's step above is
@@ -519,3 +519,107 @@ For native input drift, `python -B -m scripts.inspect_native_config` checks rele
 only differences and safe version/feature metadata. It never selects code or rewrites private settings.
 Do not copy a new guard hash into the active config. Requalification and a reviewed release transition
 with verified rollback are required.
+
+## Failure evidence and diagnostic reruns (1225ac F1–F2)
+
+Each failure keeps its exact commit, attempt, test/file order and observed
+duration, with classification fixtur, ordning, produkt, infrastruktur or okänd.
+Missing timing remains unknown. No test output or exception text belongs in the
+ledger. Diagnostic reruns require an explicitly named failed run and stop after
+two reruns on that commit. A green diagnostic does not prove a repair. Sealed
+suites and host checks cannot be called intermittent, and no known-flake list
+or automatic retry is allowed. Regression repetition under F3 verifies a new
+fix with its own exact revision; it is not a way to replace a failed whole suite.
+
+The prepared `runtime/failure_ledger.py` stores immutable private records outside
+repositories under the OS account's Library/Application Support/Nortropic/test-ledger.
+The prepared fixed measurement program records actual test boundaries and
+durations. The queue, publisher and issuer consumers are connected in the prepared
+source. **Activation is pending:** exact-byte separate review and Johnny must precede
+installation of the newly pinned
+measurement program and adopt the owner-code change. Existing installed programs
+and earlier suite receipts are not retroactively changed.
+
+
+### External observation qualification (1225ac guard-r1 corrections)
+
+The prepared schema-3 observer runs as the existing owner agent. It materializes
+an owner-owned immutable source snapshot and manifest in the existing inbox.
+The fixed root-owned program runs as the distinct existing test UID, with only
+`prepare ID`, `run ID` and `stop ID` operations through the existing digest-bound
+sudoers rule. No new root command or test UID is introduced. Normal fixtures,
+HOME, cache, npm dependencies and short temporary paths belong to the test UID;
+the source, tool-link parents, manifest, primary observations and failure ledger
+do not. The service account's login home is /var/empty; its existing D042 work
+home is the fixed Users directory named for that account. Only disposable
+synthetic secret fixtures use the runner's private HOME, with real UID/mode/path
+validation; authority paths never use HOME. The actual host tool trees, Unix group membership and ACLs are checked
+before preparation. In particular, Homebrew admin-group write bits do not grant
+write access to the non-admin test account; its own group or world writes refuse.
+The fixed probe must report those same actual groups and a keyless boundary.
+
+One unittest Suite runs in one interpreter, preserving module/class fixtures and
+shared state. The owner timestamps received numeric start/stop events, writes the
+private primary log/journal, and independently checks process absence with real
+ps. The fixed helper signals only exact owner-written process identities as the
+test UID. A missing helper, uncertain identity or leftover process refuses the
+run and stops the next request. Candidate clocks and file descriptors never own
+primary observations. Event intervals include transport and scheduling; they are
+not independently verified execution times inside a test body. Assertions and
+events remain candidate semantics that require source review. Inventory is a
+proposal, frozen by the owner and bound to reviewed source and expected count.
+A missing event remains unknown, never zero. Protocol errors do not discard later
+failures. Preparation and execution share a 5040-second deadline, with 360 seconds
+reserved for bounded fixed cleanup inside the queue's 5400-second quiet window.
+
+Schema-1 in-process and schema-2 per-case Seatbelt observations are historical
+methods and cannot satisfy the prepared issuer. Schema-3 consumption binds the
+exact adopted fixed program, owner observer and queue, the source-bound numeric
+manifest, ordered finite receipt intervals, distinct actual UIDs, successful
+cleanup and primary completeness. Stored ledger endings are revalidated against
+their beginnings and fields; a `passed` flag alone is never authority. The queue
+and `vanta` use owner-private measurement-results, never provider-owned fallback.
+An explicit `--regression [--provnamn scripts.test_module ...]` selects a planned
+F3 series. It cannot proceed after a red/unfinished attempt or rename a diagnostic.
+Only `--diagnostik-av RUN` can request one of at most two diagnostic reruns.
+
+The private architecture review f1-arkitektur-r1 and failed protected F3 attempt
+are preserved in backlog-plan-20260930/1225ac-runtime. Same-UID protocol fixtures
+are not installed isolation evidence. The exact reviewed root program, sudoers
+digest, owner-agent code and issuer/launcher closure need a concrete Johnny block
+before installation/adoption. Substitute NORTROPIC_OWNER with the fixed inbox's
+verified OS owner. After installation, qualify real cross-UID file/signal limits,
+key probing, helper loss and cleanup, then fresh F3 controls and 20 independent
+runs of each affected file plus three runs in original combined order. Stop on
+failure; preserve the prior failed attempts. No new installation or qualification
+is claimed by this prepared code.
+
+Content exceptions require `target`, `path`, exact `sha256` and a reason. Targets
+are one of the four qualified Nortropic repositories. An exception cannot cross
+repositories; missing target never applies an exception. Stream-shape checks
+cover every changed blob regardless of path or extension. Content scanning,
+snapshot and publication Git reads disable replacement objects consistently.
+No policy or installed component is changed by preparing these sources.
+
+### Permanent preserved-host attempts (guard-r2 correction)
+
+`run_host_checks.py OUTPUT` creates OUTPUT exclusively and reserves a private
+host attempt before test import. Source hashes, exact candidate, preserved scope
+and runner bytes bind the beginning; actual ordered cases bind the ending.
+A failure or interruption blocks publication for that commit, even if a later
+receipt is green. `--diagnostik-av FAILED_RUN` explicitly consumes one of the two
+diagnostic slots; its result cannot qualify publication or erase the first error.
+A lost output is never repaired by overwriting the old receipt. The publisher
+requires the original successful host-phase ending from the protected ledger.
+
+The ledger resolves the test account UID/groups for ACLs on records, its lock,
+directory and ancestors; private Unix mode alone is insufficient. Test-account
+access, untrusted mutation rights and unknown principals/rights refuse. Read-only
+ACEs for a different resolved OS principal do not grant test-account access and
+are accepted without any account-name exception. The observer uses the same rule. Root-owned sticky temporary parents are
+permitted for isolated fixtures, while the ledger itself must stay owner-private.
+Digest-masked identifiers remain stable during finish/read/classification; a
+collision between a display digest and private literal policy refuses safely.
+Historical documentation spans redacted with a digest are evidence, not executable
+installation commands. Use the separately reviewed concrete owner block for a
+future installation; none of these source changes installs itself.

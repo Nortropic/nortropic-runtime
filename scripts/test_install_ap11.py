@@ -28,6 +28,60 @@ class StageTests(unittest.TestCase):
         with patch.object(install_ap11,'ROOT',self.root),patch.object(install_ap11,'installed',return_value=self.config),patch.object(install_ap11,'stage',return_value=self.path):
             return install_ap11.stage_development(self.contract['runtime_revision'],self.contract['office_revision'],self.selected)
 
+    def test_release_includes_exact_binary_declaration_but_no_other_evidence(self):
+        files={'runtime/example.py':b'# synthetic code\n',
+               'evidence/v0.1/dependencies.json':b'{"files":{}}\n',
+               'evidence/private-log.jsonl':b'not selected'}
+        revision='a'*40
+        def git(repo,*args):
+            if args[0]=='merge-base':return b''
+            if args[:3]==('ls-tree','-r','--name-only'):return ('\n'.join(files)+'\n').encode()
+            if args[0]=='ls-tree':return b'100644 blob fixture\t'+args[-1].encode()
+            if args[0]=='show':return files[args[1].split(':',1)[1]]
+            raise AssertionError(args)
+        destination=self.root/'staged'
+        with patch.object(install_ap10,'git',side_effect=git):
+            hashes=install_ap10.copy_code(self.root,revision,destination)
+        self.assertEqual(set(hashes),{'runtime/example.py','evidence/v0.1/dependencies.json'})
+        self.assertEqual((destination/'evidence/v0.1/dependencies.json').read_bytes(),files['evidence/v0.1/dependencies.json'])
+        self.assertFalse((destination/'evidence/private-log.jsonl').exists())
+        self.assertEqual(hashes['evidence/v0.1/dependencies.json'],hashlib.sha256(files['evidence/v0.1/dependencies.json']).hexdigest())
+
+    def test_copied_release_passes_transition_binding_with_exact_declaration(self):
+        import subprocess
+        from scripts import code_transition
+        def git(*args):
+            return subprocess.check_output(['git','-C',str(self.root),'-c','user.name=Fixture',
+                '-c','user.email=fixture@example.invalid','-c','core.hooksPath=/dev/null',*args],stderr=subprocess.DEVNULL).decode().strip()
+        git('init','-q','-b','main')
+        selected=('AGENTS.md','docs/runtime-v0.1.md','runtime/example.py','scripts/example.py',
+                  'tools/example.py','acceptance/example.json','config/example.json',
+                  'evidence/v0.1/dependencies.json')
+        for name in (*selected,'evidence/private-log.jsonl','docs/other.md'):
+            path=self.root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('synthetic fixture\n')
+        git('add','--',*selected,'evidence/private-log.jsonl','docs/other.md')
+        git('commit','-qm','synthetic original')
+        before=git('rev-parse','HEAD')
+        (self.root/'evidence/v0.1/dependencies.json').write_text('{"files":{}}\n')
+        git('add','evidence/v0.1/dependencies.json');git('commit','-qm','synthetic declaration update')
+        revision=git('rev-parse','HEAD');git('update-ref','refs/remotes/origin/main',revision)
+        release=self.root.parent/'copy'
+        hashes=install_ap10.copy_code(self.root,revision,release/'runtime')
+        self.assertEqual(set(hashes),set(selected))
+        bound={'runtime/'+name:digest for name,digest in hashes.items()}
+        code_transition.code_is_the_revision(self.root,revision,release,bound)
+        self.assertEqual(code_transition.changed_files(self.root,before,revision),
+                         ['runtime/evidence/v0.1/dependencies.json'])
+        missing={name:digest for name,digest in bound.items() if not name.endswith('/dependencies.json')}
+        with self.assertRaisesRegex(code_transition.Refused,'other Runtime files'):
+            code_transition.code_is_the_revision(self.root,revision,release,missing)
+        with self.assertRaisesRegex(code_transition.Refused,'other Runtime files'):
+            code_transition.code_is_the_revision(self.root,revision,release,{**bound,'runtime/evidence/private-log.jsonl':'x'})
+        declaration=release/'runtime/evidence/v0.1/dependencies.json'
+        declaration.chmod(0o600);declaration.write_text('changed fixture\n')
+        with self.assertRaisesRegex(code_transition.Refused,'not byte for byte'):
+            code_transition.code_is_the_revision(self.root,revision,release,bound)
+
     def test_preserves_context_and_binds_only_selected_goal_without_activation(self):
         value=json.loads(self.stage().read_text())
         self.assertEqual((self.path.parent/'context/selected.md').read_bytes(),(self.prior/'context/selected.md').read_bytes())

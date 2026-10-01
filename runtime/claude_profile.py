@@ -43,7 +43,9 @@ def qualified_binary():
 # 2.1.285 starts two built-in plugins even under --restricted: cc-plugin-agents-md (automatic AGENTS.md loading, which
 # D019 replaced by --append-system-prompt-file) and cc-plugin-telemetry. The qualified shape has no plugins (the
 # terminal checks require plugins == []), so the profile turns both off; measured in D046's qualification.
-PLUGINS_OFF={'slack@claude-plugins-official':False,'cc-plugin-agents-md@builtin':False,'cc-plugin-telemetry@builtin':False}
+# G1 calibration observed cc-plugin-diff as another built-in; an unexpected plugin
+# is a refused terminal, never an accepted review. Disable it explicitly as well.
+PLUGINS_OFF={'slack@claude-plugins-official':False,'cc-plugin-agents-md@builtin':False,'cc-plugin-telemetry@builtin':False,'cc-plugin-diff@builtin':False}
 SETTINGS={'enabledPlugins':dict(PLUGINS_OFF),
           'autoMemoryEnabled':False,
           'permissions':{'defaultMode':'dontAsk','blockReadsOutsideWorkingDirectories':True}}

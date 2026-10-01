@@ -1,3 +1,196 @@
+Aktuellt: BACKLOG-BARNETS-STOPPSIGNALER-20261001 rättar en belagd
+signalregression i969e085. Föräldern skjuter nu upp avbrottet utan ärvd
+signalmask. Sju befintliga bounded-/maskprov och ett nytt verkligt
+barnstädningsprov är gröna. Ny exakt kandidat, hel-/native-/värdprov och
+separat fortsättnings-/helhetsdom krävs. Content-r3 gäller oförändrat
+kodområde på969, inte framtida helperbyte. Förseglaren är inte körklar.
+Källor: privata1225ac-runtime/SIGNAL-MASK-ORSAK-RATTNING-r1.json och
+granskning/guard-area-*-r3/review.json. Äldre lägen nedan är historik.
+
+Aktuellt: BACKLOG-SEN-PROVHISTORIK-OCH-PROCESSAVSLUT-20261001 rättar
+fortsättningsdomarnas tre kvarstående fel. Riktade18prov och därefter31
+utfärdar-/signalprov är gröna. Föregående aef98e9:s978grön hel tillhör
+föregående källa. Ny egen helsvit, beteende-/värdprov och separata domar
+krävs före inaktiv integration. Sealerutkast och ägarsteg är inte körklara.
+Källor: privata1225ac-runtime/granskning/guard-area-*-r2/review.json,
+late-effect-cleanup-targeted-r1.log och late-issuer-regression-r1.log.
+Äldre lägesnotiser nedan är historik.
+
+Aktuellt: BACKLOG-PUBLICERINGSLIGGARE-OCH-WEBBGRUPP-20261001 rättar
+content- och profiles-deldomarnas två blockerare. Mätningens deldom är
+godkänd för föregående exakta källa. Ny egen helsvit, native-/värdprov,
+skrivskydd och separata rättnings-/helhetsgranskningar krävs på nästa kandidat.
+Privat förseglare är separat underkänd i chain-r7 och får inte användas.
+Källor: privata1225ac-runtime/granskning/guard-area-*/review.json samt
+operator-granskning/chain-r7/review.json. Äldre lägen är historik.
+
+Aktuellt: BACKLOG-DIGITALA-PRIVAT-PUBLICERINGSKVITTO-20261001 rättar
+chain-r5:s kvittogräns också vid redan sammanfogad PR. Åtta riktade prov
+är gröna; helperns källmall har korrekt SHA enligt föregående rättning.
+Nästa: egen971hel,22nativegrupper,28värd och separata exakta granskningar.
+Privata PREPARED-hashar ska genereras från verkliga byte; inga gamla
+paket är körklara. Ingen installation, adoption, aktivering eller kvittens.
+Källa: privat1225ac-runtime/digitala-private-reconciliation-targeted-r1.log
+och operator-granskning/chain-r5/review.json. Äldre lägen är historik.
+
+Aktuellt: BACKLOG-FAST-HJALPARE-SHA-20261001 rättar den föråldrade
+program-pinnen i sudoers-mallen. ac8af23:s969hel är röd och bevarad med
+belagd produktorsak; mallen rättad, befintliga SudoersTests gröna.
+Nästa: ny egen969hel och exakta separata granskningar. Privata mallpaket
+måste omberedas; inget installerat program eller regel är ändrat.
+Källa: privata1225ac-runtime/HELPERPIN-ORSAK-OCH-RATTNING-r1.json.
+Äldre lägen nedan är historik.
+
+Aktuellt: BACKLOG-PROCESSSTADNING-OCH-LOGGKOPIOR-20261001 rättar de två
+blockerarna från faktisk chain-r4. Riktade92 metoder:91 gröna; en felaktig
+ny inventeringsfixtur rättad med grön explicit avgränsad diagnos, original
+bevarat. Nästa: egen969hel,21nativegrupper,28värd, skrivskydd och separat
+fullständig granskning. Ingen installation/adoption/aktivering eller ändrad
+partnerstatus. Ny fast hjälparbyte måste bindas i framtida Johnnyblock.
+Källa: privata1225ac-runtime/STREAM-CLEANUP-FIXTURE-DIAGNOSTIK-r1.json.
+Äldre lägen nedan är historik.
+
+Aktuellt: BACKLOG-PRIVATA-STARTVAGAR-20261001 rättar chain-r3:s två
+transitiva startgränser och de belagda fixturorsakerna till10852ef:s röda
+958hel.37 riktade prov gröna under umask077; originalets fel är bevarade.
+Nästa: egen964hel,20nativegrupper,28värdprov, skrivskyddsprov och separat
+fullständig granskning före skyddad inaktiv kodintegration. Ingen installation,
+adoption, aktivering eller partnerstatus ändras. Runtime-ägarsteg kräver Johnnyblock.
+Källa: privat backlog-plan-20260930/1225ac-runtime/bootstrap-private-targeted-r1.log
+och HOSTFIXTURE-ORSAK-OCH-RATTNING-r1.json. Äldre lägen nedan är historik.
+
+Aktuellt: BACKLOG-TERMINAL-OCH-PRIVATA-RAUTDATA-20261001 rättar två fynd
+från guard-r13: negativ terminal bevaras i kö/liggare och råloggvägar
+kontrollerar ACL före provstart/första skrivning. 111 riktade prov gröna
+efter explicit diagnostik av en bevarad symlänkfeltext och skild testliggare.
+Nästa är egen958hel,28värd,19nativegrupper och separat granskning före
+skyddad inaktiv integration. Inga installerade program, myndighetsfiler eller
+aktiva tjänster ändras. Johnnyblock krävs fortsatt för Runtime-ägarstegen.
+Källa: privat backlog-plan-20260930/1225ac-runtime/terminal-private-boundaries-targeted-r2.log.
+Äldre arbetsnoter nedan bevaras som historik.
+
+Aktuellt: BACKLOG-BESTANDIGA-PRIVATA-BEVIS-20261001 rättar reservationens
+katalogsynk, kömarkörens beständighet och privat ACL-gräns. 95 riktade prov
+gröna efter två explicita fixturdiagnostiker; separat delad verktygs-ACL
+rättad och sex riktade gränsprov gröna. Nästa är egen952hel,28värd,
+18nativegrupper och separat granskning före skyddad inaktiv kodintegration.
+Privat återupptagning: backlog-plan-20260930/1225ac-runtime. Ingen installation,
+adoption eller aktivering är gjord; Runtime-ägarstegen kräver Johnnyblock.
+Äldre siffernotiser nedan är historik.
+
+Aktuellt: publiceringsgrinden använder Gits boolparser för worktreeConfig
+och granskar därmed också värdelösa/numeriska aktiveringar. Ny923hel och
+separat granskning krävs (BACKLOG-GIT-WORKTREE-BOOL-20261001).
+
+Aktuellt: publiceringsprov använder egen privat policy genom oförändrad
+parser/scanner. Tidigare075ee4c:s921hel är röd och bevarad. Ny922hel
+och separat granskning krävs (BACKLOG-PROVPOLICY-HEM-20261001).
+
+Senaste rättning: policy-/litteral-ACL och diagnostikens ursprungliga provtyp
+kontrolleras enligt BACKLOG-POLICY-ACL-OCH-DIAGNOSTIKARV-20261001. Ny egen921hel,
+28värd och separat granskning återstår. Äldre siffernotiser nedan är historik.
+
+# Aktuell backlogrättning: deklarationens övergångsbindning
+
+Kodövergångens filurval omfattar nu samma namngivna beroendedeklaration som
+releasekopieringen (BACKLOG-DEKLARATION-OVERGANGSBINDNING-20261001).55riktade
+prov gröna. Nästa är egen918hel,28värd,elva frysta nativegrupper och separat
+granskning före skyddad inaktiv kodintegration. Ingen installation, adoption
+eller aktivering är gjord. code_transition är en ägarfil: Johnnyblock krävs.
+Privata bevis:backlog-plan-20260930/1225ac-runtime. Följande äldre arbetsnoter
+är historik; de ersätter inte detta aktuella nästa steg eller rådomarna.
+
+<!-- BACKLOG-GIT-AUTENTISERING-SNAPSHOT-20261001 -->
+Guard-r7:s två Git-integrationsfel är rättade: snäv snapshotkonfiguration följer
+värdprovsbarnet och publicerings-Git väljer uttryckligen befintlig gh-helper.
+Egen917hel/native/värd och ny separat granskning återstår. Ingen aktivering.
+Källa: BACKLOG-GIT-AUTENTISERING-SNAPSHOT-20261001 i decisions.md.
+
+<!-- BACKLOG-NATIVE-STROMHANDELSER-20261001 -->
+Råströmsvakten omfattar nu även verkliga Claude-init/result och lästa
+Codex-syskonformer. Egen915hel/native/värd och separat granskning krävs.
+Källa: BACKLOG-NATIVE-STROMHANDELSER-20261001 i decisions.md.
+
+<!-- BACKLOG-AGENT-UMASK-20261001 -->
+Senaste rättning: delade schema3-dokument, verktygskatalog och Git-metadata
+får uttryckliga rättigheter även under agentens umask077. Privata resultat
+behåller0600.21 riktade prov gröna; egen913hel, frysta kontrollprov, värdprov
+och separat granskning återstår (BACKLOG-AGENT-UMASK-20261001).
+
+<!-- BACKLOG-READONLY-FIXTURES-20261001 -->
+Senaste rättning: guard-r4 avvisade standardprovet som skrev under den skyddade
+källans .runtime. Samtliga sex liknande temporärplatsanrop i fyra provfiler
+flyttas till mätarens disponibla .scratch; nio berörda beteendeprov är gröna
+med oskrivbar syntetisk källrot. Exakt helsvit, fryst skrivskyddad källkontroll,
+värdprov och separat omgranskning återstår. Skyddet för .runtime ändras inte.
+Källa: BACKLOG-READONLY-FIXTURES-20261001 och privat readonly-fixtures-targeted-r1.json.
+
+<!-- BACKLOG-F107-I1-G2-20261001 -->
+Senaste arbetsläge: F-105–F-110 lästa. Kompletteringar enligt BACKLOG-F107-I1-G2-20261001 är under prov och separat granskning före kodintegration; ingen installation, aktivering eller partnerstatus ändrad.
+
+# Aktuell rättning efter guard-r2
+
+BACKLOG-1225AC-GUARD-R2-RATTNING-20261001 rättar maskidentitet, permanent
+värdprovshistorik, liggarens ACL-gräns och privata spann i ändrade dokument.
+Nästa: riktade prov, ny exakt helsvit och värdprov, separat granskning och
+skyddad kodintegration. Inget är installerat eller aktiverat av denna rättning.
+Privat återupptagning: backlog-plan-20260930/1225ac-runtime/.
+
+# Backlog1225ac — rättning efter guard-r1, ingen aktivering
+
+Basen innehåller nu skyddat integrerad PR82/D047 (3cbb00b). Dess centrala
+Codex-pin och issuer/launcher-closure bevaras; dess arbetsgren rörs inte.
+
+Den separata granskningen av42147ad avvisade sju kontrolluckor. Källor:
+privat backlog-plan-20260930/1225ac-runtime/granskning/guard-r1/review.json.
+Rättningar: Git utan ersättningsobjekt, repobundna undantag, strömspår
+oavsett filändelse, återvaliderad felliggare och OS-bunden ägarhemväg.
+F1-riktningen är nu schema3 efter fyra fynd i den separata designgranskningen
+f1-arkitektur-r1: en gemensam unittest-tolk som provkontot, numeriskt manifest,
+ägarmätt mottagningstid och privata primärfiler. Fast prepare/run/stop-program,
+kö, ägarobservatör och konsument binds tillsammans; inga kandidater körs som
+ägaren. Kvarvarande stopprocesser spärrar nästa begäran. SecretTests skriver
+privata fixturer utanför källan. Den äldre schema2-metoden och dess misslyckade
+F3-försök bevaras som historik, inte aktuell kvalificering. Riktad integration
+har89 gröna prov (privat f1-owner-integration-r2.log). Slutlig exakt helsvit,
+nya native-/värdprov och oberoende kodgranskning återstår. Fast program
+valideras dessutom som reguljär rootfil före läsning; två riktade modeprov är
+gröna (f1-fixed-file-r1.log). 4794d07:s värdprov sparade inget kvitto när
+anroparens utdataväg var felstavad; utfallet är okänt och försöket bevarat
+som ofullständigt i r6/HOSTCHECK-RECEIPT-FAILURE.json, inte ett grönt värdprov. Verkliga tvåkontoprov
+och ny F3-serie kräver ägarens installation av de exakt granskade bytena först.
+
+4794d07:s installerade899hel gav fem fel i SecretTests: provkontots loginhem
+är /var/empty, medan D042 har sitt fasta arbetshem under Users för provkontot.
+Rättningen behåller den fasta D042-platsen utan personkonto i koden. Enbart
+disponibla syntetiska hemlighetsfixturer använder löparens privata HOME med
+verkliga UID/mode/sökvägsprov; ingen auktoritet väljs så.26 riktade prov är
+gröna (f1-service-home-r1.log). Råfel och läsobservation F1-SERVICE-HEM-r1.json
+bevaras. Tidigare köad716c915 har samma gamla fixtur och kan inte kvalificera
+rättningen. Ny kandidat kräver egen901hel, värdprov och separat granskning.
+
+P är observerat aktivt genom konfiguration227d4ee; backlogsessionen gjorde
+ingen aktivering (privat AKTIV-P-OBSERVATION-r1.json). I2-original är privat
+bevarade och cleanup ligger på egen gren. Inga installerade ägarprogram ändras.
+Nästa är skyddad kodintegration efter granskning, sedan konkret Johnnyblock
+för ny mätprograminstallation, issuer/launcher-adoption, policy och aktivering.
+Tidigare förberedelser nedan är historik.
+
+# Backlog 1225ac — F1/F2 preparation, not active
+
+The separate backlog worktree additionally contains an immutable failure ledger
+and timed unittest instrumentation in the fixed measurement script. Local
+fixture probes: 26 pass after canonicalizing macOS temporary paths and updating
+the source sudoers hash; the six ledger probes pass after the stricter whole-suite
+rerun rule. Private evidence: backlog-plan-20260930/1225ac-runtime/f1-r1.log,
+f1-r2.log, f1-r3.log. No installed script or actual sudoers file changed.
+
+Wiring is prepared: queue measurement, sealed-suite consumption, dry run, publication and issuer paths use the ledger (59 targeted green, private f1-r4.log). F3 controls and20+3 file stability are preserved on frozen54e3bd9; the assessment of missing historical PR62/D034 failure identity is in BACKLOG-1225AC-FG-I4. I4's measured historical baseline and guard, and G1/G2 instructions/schema are prepared; G1 live calibration and I2 cleanup remain. Current base includes the other session's D046; its branch/worktree remains untouched. Final suite/review and protected integration remain, followed by concrete Johnny owner blocks for installed measurement, issuer/launcher adoption and activation. No installed component changed.
+
+D89 dependency support adds only the exact declared evidence/v0.1/dependencies.json
+to release copying, with an exclusion test for other evidence. Five local probes
+pass (private dependencies-copy-r1.log). Installation remains an owner step.
+
 # Backlog54c10b: heartbeat margin, preparation2026-09-30
 
 P1–P4 are implemented on a separate branch based on bbe2246 (D046). See
@@ -17,6 +210,30 @@ hämtar och jämför ingången med `origin/main` och varnar, men ändrar inget. 
 snabbspolas ingången om den är ren, annars redovisas avvikelsen i leveransbeskedet. Ingen arbetsgren lever bara lokalt:
 den slutar publicerad, arkiverad eller kvar med namngivet skäl i planen. `AGENTS.md` bär inte rutinen: den är en bunden
 instruktionsingång i den aktiva releasen (D032). Nästa steg står i den gällande posten nedan.
+
+---
+
+# Backlog 1225ac — innehållsvakt och Git-isolering förbereds
+
+Den direkta interaktiva beställningen 2026-09-30 omfattar autonom implementation av
+hela backloggen. Teknisk kravkälla är kontorets oförändrade
+`evidence/nasta-uppdrag/local/partner-OVL-20260930-1225ac/ARBETSORDER.md` (I1–I3).
+Arbetsyta `../nortropic-runtime-backlog-1225ac-20260930`, gren
+`backlog/1225ac-runtime-20260930`, bas `cddaf4993ebd86fbf5ecdf9e72acc7b3339a53a1`.
+D046:s gren och dess fem reserverade filer lämnas orörda; ingen aktiv release ändras.
+
+Förberedelse: modellfri helblobsvakt, privat policy med bytebundna undantag,
+upprepad kontroll hos utfärdaren och avstängda Git-krokar med kontrollerad push-URL.
+Riktade 40 prov gröna (privat `backlog-plan-20260930/1225ac-runtime/i1-i3-r1.log`).
+Läsinventeringen av exakta main-träd är privat i samma katalog. Den rapporterar
+bara fil/rad/kategori. Råloggar eller hemkatalogsökvägar är ännu inte rensade.
+
+Nästa: I2:s privata bevarande/rensning; I4:s historikmätning; F1–F3 och G1–G2.
+Exakt slutkandidat ska helprovas, granskas separat och integreras skyddat.
+`integration.py` och `check_issuer.py` är ägarfiler: aktivering kräver ett konkret
+Johnny-block. Ny utfärdarkod kräver dessutom separat granskad adoption och en
+launcher som binder den nya importmängden. En kodintegration ändrar ingen av dem.
+Originalbackloggens status, partnerns journal och kvittenser skrivs inte.
 
 ---
 
@@ -713,7 +930,7 @@ proofs and next action without owner retelling; no missing §1 evidence was foun
 This mandate is complete once the reviewed evidence/docs merge and v0.1.0 tag
 are present. Before that checkpoint, do only the final release action below.
 
-ARBETSYTA: /Users/elinhaggstrom/Nortropic Runtime, Nortropic/nortropic-runtime.
+ARBETSYTA: [REDACTED sha256=f14c66ca33b80e561cf6b8b35bee3dffeea0ad5d9b8b11a56693a72e11a05087]Nortropic Runtime, Nortropic/nortropic-runtime.
 Current branch work/runtime-v01-evidence, based on integrated main98b92a7 (PR12).
 Completed evidence commits were cherry-picked from preserved backup branch
 work/report-continuation, without rewriting that branch. Origin public by owner

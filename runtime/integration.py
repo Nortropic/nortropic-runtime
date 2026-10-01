@@ -5,6 +5,7 @@ completion and both mandatory decisions are checked before any remote mutation.
 """
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -16,6 +17,51 @@ class GateClosed(ValueError):
     pass
 
 
+def publication_git(repository, *args, text=True):
+    """No inherited Git redirection or candidate hooks; keep gh's existing login."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+    env.update(GIT_TERMINAL_PROMPT='0', GIT_LITERAL_PATHSPECS='1')
+    return subprocess.run(['git', '--no-replace-objects', '--no-optional-locks', '-c', 'core.hooksPath=/dev/null',
+                           '-c', 'core.fsmonitor=false', '-c', 'core.pager=cat',
+                           '-c', 'credential.helper=', '-c', 'credential.helper=!gh auth git-credential',
+                           '-C', str(repository), *args], env=env, check=True,
+                          text=text, capture_output=True, timeout=30).stdout
+
+
+def require_git_origin(repository, expected):
+    """Check actual push destinations and all effective URL rewrite settings."""
+    # A repository-local credential helper, proxy, remote helper or include can
+    # redirect execution/credentials even while get-url still names GitHub.
+    # Authentication settings may come from the account's existing global gh
+    # setup, never from a candidate repository. Worktree configuration is read
+    # separately when Git's own boolean parser says it is enabled.
+    allowed = re.compile(r'^(?:core\.(?:repositoryformatversion|filemode|bare|logallrefupdates|ignorecase|precomposeunicode|hookspath|fsmonitor)|user\.(?:name|email)|remote\.origin\.(?:url|fetch|pushurl)|branch\..+\.(?:remote|merge|vscode-merge-base)|diff\.renames|extensions\.worktreeconfig)$')
+    raw = publication_git(repository, 'config', '--null', '--list')
+    # Git's parser handles valueless keys and nonzero integers. Asking for
+    # --worktree while it is disabled can itself fail with linked worktrees.
+    active = publication_git(repository, 'config', '--type=bool', '--default=false',
+                             '--get', 'extensions.worktreeConfig').strip()
+    if active not in ('true', 'false'):
+        raise GateClosed('Unknown worktree configuration state')
+    scopes = ('--local', '--worktree') if active == 'true' else ('--local',)
+    for scope in scopes:
+        local = publication_git(repository, 'config', scope, '--includes', '--null', '--list')
+        if any(not allowed.fullmatch(entry.partition('\n')[0].lower()) for entry in local.split('\0') if entry):
+            raise GateClosed('Unsafe repository-local publication Git configuration')
+    for entry in raw.split('\0'):
+        key, _, value = entry.partition('\n')
+        key = key.lower()
+        if key.startswith('url.') and key.endswith(('.insteadof', '.pushinsteadof')):
+            # Fail closed even for an apparently redundant rewrite: interpreting
+            # longest-prefix and overlapping replacements is not this gate's job.
+            raise GateClosed('URL rewriting is not allowed in publication Git configuration')
+        if key == 'remote.origin.pushurl' and value != expected:
+            raise GateClosed('Unauthorized explicit push URL')
+    if (publication_git(repository, 'remote', 'get-url', '--all', 'origin').splitlines() != [expected]
+            or publication_git(repository, 'remote', 'get-url', '--push', '--all', 'origin').splitlines() != [expected]):
+        raise GateClosed('Unauthorized fetch or push destination')
+
+
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
@@ -23,6 +69,15 @@ def digest(value):
 def check_binding(task, subject, review):
     return 'nortropic-check/1:' + digest({'target': task['target'], 'task': digest(task),
                                         'subject': subject, 'review': digest(review)})
+
+
+def require_publication_history(candidate):
+    """The permanent owner ledger must permit this commit before remote effects."""
+    from .failure_ledger import Ledger
+    try:
+        Ledger().require_publishable(candidate)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise GateClosed('Permanent publication history refused: ' + str(error)) from None
 
 
 def require_gate(task, subject, tests, review, *, allowed_targets=TARGETS):
@@ -85,8 +140,9 @@ class Publisher:
 
     def git(self, *args):
         def invoke():
-            return subprocess.run(['git', '-C', str(self.repository), *args], check=True,
-                                  text=True, capture_output=True, timeout=30).stdout.rstrip("\n")
+            if args and args[0] == 'push':
+                require_git_origin(self.repository, self.ORIGIN)
+            return publication_git(self.repository, *args).rstrip("\n")
         if args and args[0] == 'push' and self.effect_guard:
             return self.effect_guard({'git': list(args)}, invoke)
         return invoke()
@@ -105,8 +161,7 @@ class Publisher:
     def inspect_candidate(self, task, subject):
         if task.get('target') != self.REPOSITORY:
             raise GateClosed('Publisher and accepted target differ')
-        if self.git('remote', 'get-url', 'origin') != self.ORIGIN:
-            raise GateClosed('Unauthorized origin')
+        require_git_origin(self.repository, self.ORIGIN)
         base, candidate = subject['base'], subject['candidate']
         parents = self.git('rev-list', '--parents', '-n', '1', candidate).split()
         if parents != [candidate, base]:
@@ -119,10 +174,20 @@ class Publisher:
         for path in paths:
             entry = self.git('ls-tree', '-z', candidate, '--', path)
             if not entry:
-                raise GateClosed('Deletion is not enabled for this publication profile')
+                from .content_guard import require_deletion, ContentRefused
+                try:require_deletion(self.repository,base,path,task['target'])
+                except ContentRefused as error:raise GateClosed(str(error)) from None
+                continue
             mode = entry.split()[0]
             if mode not in ('100644', '100755'):
                 raise GateClosed('Only regular source files may be published')
+        from .content_guard import require_content, ContentRefused
+        try:
+            self.content_receipt = require_content(self.repository, base, candidate, task['target'])
+            from .decision_guard import require_decisions
+            self.decision_receipt = require_decisions(self.repository, base, candidate, task['target'])
+        except ContentRefused as error:
+            raise GateClosed(str(error)) from None
         return self.git('rev-parse', candidate + '^{tree}')
 
     def require_protection(self):
@@ -220,6 +285,7 @@ class Publisher:
 
     def _publish(self, task, subject, tests, review):
         require_gate(task, subject, tests, review, allowed_targets=self.ALLOWED_TARGETS)  # MUST precede effects.
+        require_publication_history(subject['candidate'])
         tree = self.inspect_candidate(task, subject)
         issuers = self.require_protection()
         candidate = subject['candidate']
@@ -235,8 +301,10 @@ class Publisher:
         if pr and (pr.get('state') != 'open' or pr.get('head', {}).get('sha') != candidate):
             raise GateClosed('Existing PR is closed or has changed head')
         self.require_base(subject['base'])
+        require_publication_history(candidate)
         self.git('push', 'origin', candidate + ':refs/heads/' + branch)  # Ordinary, never force.
         if pr is None:
+            require_publication_history(candidate)
             pr = self.api('pulls', 'POST', {
                 'title': 'Runtime: ' + task['id'], 'head': branch, 'base': 'main',
                 'body': 'Accepted task: ' + task['id'] + '\n\nExact candidate: ' + candidate +
@@ -258,6 +326,7 @@ class Publisher:
         if self.require_protection() != issuers:
             raise GateClosed('Mandatory server issuers changed during issuance')
         checks = self.require_checks(candidate, issuers, check_binding(task, subject, review))
+        require_publication_history(candidate)
         merged = self.api('pulls/' + str(number) + '/merge', 'PUT', {'sha': candidate, 'merge_method': 'squash'})
         if merged.get('merged') is not True:
             raise GateClosed('Server did not confirm merge; reconcile before any retry')

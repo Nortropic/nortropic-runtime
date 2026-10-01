@@ -6,32 +6,72 @@ itself. The issuer's existing authority, acceptance and server gates stay intact
 """
 import argparse
 import hashlib
+import grp
 import json
 import os
 from pathlib import Path
 import pwd
 import re
 import stat
+import subprocess
 import sys
 
 CODE = ('runtime/__init__.py', 'runtime/check_issuer.py', 'runtime/integration.py',
+        'runtime/host_publication.py', 'runtime/decision_guard.py', 'runtime/content_guard.py', 'runtime/failure_ledger.py',
         'runtime/profile.py', 'runtime/release.py', 'runtime/targets.py',
         'runtime/construction_registration.py', 'runtime/development_binding.py',
         'runtime/development_scope.py', 'runtime/snapshot.py',
         'runtime/claude_profile.py', 'runtime/codex_pin.py',
         'scripts/probe_bridge.py', 'scripts/publish_construction.py',
-        'scripts/publish_digitala.py')
+        'scripts/publish_digitala.py', 'scripts/bounded.py', 'scripts/matning_provanvandare.py',
+        'runtime/measurement_observer.py', 'scripts/measurement_queue.py')
+
+
+def acl(path, *, private=False):
+    """Standalone stdlib-only bootstrap: never import an unqualified helper."""
+    result=subprocess.run(['/bin/ls','-lde',str(path)],capture_output=True,
+                          env={'PATH':'/usr/bin:/bin','LANG':'C','LC_ALL':'C'},timeout=10)
+    if result.returncode:raise ValueError('Host ACL observation unavailable')
+    for line in result.stdout.decode('utf-8','strict').splitlines()[1:]:
+        match=re.fullmatch(r'\s*\d+: (user|group):([^ ]+) (?:inherited )?(allow|deny) ([a-z_,]+)',line)
+        if not match:raise ValueError('Unknown host ACL')
+        kind,principal,effect,rights=match.groups()
+        if effect=='deny':continue
+        try:
+            test=pwd.getpwnam('_nortropicprov')
+            groups=set(os.getgrouplist(test.pw_name,test.pw_gid))|{test.pw_gid}
+            if kind=='user':
+                uid=pwd.getpwnam(principal).pw_uid;applies=uid==test.pw_uid
+                if uid in (0,os.getuid()) and not applies:continue
+            else:applies=principal=='everyone' or grp.getgrnam(principal).gr_gid in groups
+        except (KeyError,OSError):raise ValueError('Unresolved host ACL principal') from None
+        readonly={'read','list','search','execute','readattr','readextattr','readsecurity',
+                  'file_inherit','directory_inherit','only_inherit','limit_inherit'}
+        if private or applies or not set(rights.split(','))<=readonly:raise ValueError('Unsafe host ACL')
 
 
 def private(path):
-    path = Path(path).absolute()
-    if any(p.is_symlink() for p in (path, *path.parents)):
-        raise ValueError('Unsafe host path')
-    info = path.stat()
-    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
-            or stat.S_IMODE(info.st_mode) not in (0o400, 0o600)):
+    path=Path(path).absolute()
+    if any(p.is_symlink() for p in (path,*path.parents)):raise ValueError('Unsafe host path')
+    for parent in path.parents:
+        info=parent.lstat()
+        if (not stat.S_ISDIR(info.st_mode) or info.st_uid not in (0,os.getuid())
+                or info.st_mode&0o022 and not (info.st_uid==0 and info.st_mode&stat.S_ISVTX)):
+            raise ValueError('Unsafe host ancestor')
+        acl(parent)
+    info=path.lstat()
+    if (not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid()
+            or stat.S_IMODE(info.st_mode) not in (0o400,0o600)):
         raise ValueError('Host file is not private')
-    return path.read_bytes()
+    acl(path,private=True)
+    identity=lambda st:(st.st_dev,st.st_ino,st.st_size,st.st_mtime_ns,st.st_ctime_ns)
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    with os.fdopen(fd,'rb') as stream:
+        if identity(os.fstat(fd))!=identity(info):raise ValueError('Host identity changed before read')
+        raw=stream.read()
+        if identity(os.fstat(fd))!=identity(info) or identity(path.lstat())!=identity(info):
+            raise ValueError('Host identity changed during read')
+    return raw
 
 
 def sha(data):
@@ -98,7 +138,7 @@ def execute(arguments):
                       LANG='C', LC_ALL='C', PYTHONDONTWRITEBYTECODE='1', NR_HOST_ROOT=str(host))
     os.chdir(host)
     sys.path.insert(0, str(root))
-    # No runtime package was loaded in this isolated process before all 14 files
+    # No runtime package was loaded in this isolated process before the complete fixed closure
     # were checked against private authority. The old adopted issuer rechecks too.
     from runtime.check_issuer import HostIssuer, DigitalaPublisher, read_object, binding
     issuer = HostIssuer(host)

@@ -13,7 +13,7 @@ from runtime.profile import ROOT, sandbox_command, environment
 
 class AcceptanceBoundaryTest(unittest.TestCase):
     def test_stdin_does_not_follow_candidate_symlink(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/'.runtime', prefix='acceptance-regression-') as directory:
+        with tempfile.TemporaryDirectory(dir=ROOT/'.scratch', prefix='acceptance-regression-') as directory:
             root=Path(directory); candidate=root/'candidate'
             (candidate/'tools').mkdir(parents=True); (candidate/'.scratch').mkdir()
             outside=root/'host-canary'; outside.write_text('unchanged')

@@ -178,8 +178,8 @@ Runtime/Office. Digitala's ordinary entry is its integrated primary
 entry to the same `publish_sealed` gates remains:
 
 ```sh
-NR_HOST_ROOT='/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime' \
-  '/Users/elinhaggstrom/nortropic-repos/Nortropic Runtime/.runtime/temporal-venv/bin/python' \
+NR_HOST_ROOT='[REDACTED sha256=f14c66ca33b80e561cf6b8b35bee3dffeea0ad5d9b8b11a56693a72e11a05087]nortropic-repos/Nortropic Runtime' \
+  '[REDACTED sha256=f14c66ca33b80e561cf6b8b35bee3dffeea0ad5d9b8b11a56693a72e11a05087]nortropic-repos/Nortropic Runtime/.runtime/temporal-venv/bin/python' \
   -I -B ADOPTED_CODE_ROOT/scripts/publish_digitala.py --task ACCEPTED_TASK_ID
 ```
 
@@ -262,3 +262,14 @@ The real native-boundary probe uses a synthetic canary; it proves denied source
 writes, denied external reads/writes/network and permitted scratch output. Neither
 proves that GitHub accepts this App or rejects forged checks on a real protected
 branch. Those live positive/negative checks remain required after installation.
+
+
+## Backlog I1/I3: prepared next adoption
+
+The source launcher and issuer now declare one identical closure including
+`runtime/content_guard.py` and `runtime/host_publication.py`. This supersedes the
+fourteen-file *source* declaration above only for a separately reviewed future
+adoption. The installed 10c holder is unchanged. Preserve its authority, launcher,
+raw reviews and check receipts until Johnny approves the concrete replacement.
+The new closure's source integration alone does not enable the scanner on the
+existing frozen publisher. `docs/content-guard.md` describes the new checks.

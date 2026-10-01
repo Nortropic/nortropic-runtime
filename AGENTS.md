@@ -17,3 +17,10 @@ Fresh receivers first read and inspect without writes and verify old writers hav
 stopped. The living plan owns next actions and run state; do not duplicate it here.
 
 Instruction-loading probe identifier: `NR-CONTINUITY-7392`.
+
+F2 (OVL-20260930-1225ac): no automatic suite reruns. A rerun is an explicitly
+recorded diagnostic of one failed attempt, at most two on the same commit. A
+later green run never proves a repair or erases the failure. Sealed suites and
+host controls cannot be classified as intermittent. Do not maintain an allowlist
+of known flaky tests. See docs/runbook.md; deployment of the ledger is separate
+from these working rules.

@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from runtime import check_issuer as c
+from scripts.test_integration import private_content_policy
 from runtime.integration import digest, GateClosed, Publisher
 
 
@@ -39,9 +40,10 @@ def private(path, value):
 
 class IssuerTest(unittest.TestCase):
     def setUp(self):
+        private_content_policy(self)
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.host = Path(self.temp.name).resolve() / 'runtime'; self.host.mkdir()
-        self.issuer = c.HostIssuer(self.host)
+        self.issuer = c.HostIssuer(self.host, ledger=c.Ledger(self.host.parent / 'ledger', {'literals': []}))
         def git(*args): return c.git(self.host, *args).decode().strip()
         self.git = git
         git('init', '-q'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@invalid.test')
@@ -91,6 +93,50 @@ class IssuerTest(unittest.TestCase):
                            capture_output=True, input=input_data, timeout=timeout)
         return {'returncode':run.returncode,'timed_out':False,'output':run.stdout,'output_sha256':c.sha(run.stdout), 'stderr':run.stderr, 'stderr_sha256':c.sha(run.stderr)}
 
+    def test_private_authority_rejects_read_acl_and_parent_delete_child(self):
+        path=self.directory/'request.json'
+        subprocess.run(['/bin/chmod','+a','user:_spotlight allow read',str(path)],check=True)
+        with self.assertRaises(GateClosed):c.private_bytes(path)
+        subprocess.run(['/bin/chmod','-a#','0',str(path)],check=True)
+        subprocess.run(['/bin/chmod','+a','user:_spotlight allow delete_child',str(path.parent)],check=True)
+        with self.assertRaises(GateClosed):c.private_bytes(path)
+        self.assertFalse(self.client.authenticated)
+
+    def test_private_observation_directory_refuses_inherited_acl_before_acceptance(self):
+        from runtime.measurement_observer import Refused as OutputRefused
+        target=self.issuer.home/'observations';target.mkdir(mode=0o700)
+        subprocess.run(['/bin/chmod','+a','user:_spotlight allow read,file_inherit,directory_inherit',str(target)],check=True)
+        with patch.object(c,'run_isolated') as run,self.assertRaises(OutputRefused):self.issue()
+        run.assert_not_called();self.assertFalse(self.client.authenticated)
+        self.assertEqual(self.issuer.ledger.begins(self.subject['candidate']),[])
+
+    def test_private_raw_file_acl_is_checked_before_acceptance_and_first_write(self):
+        from runtime import measurement_observer as observer
+        original=os.open;created=[]
+        def opening(path,flags,*args,**kwargs):
+            fd=original(path,flags,*args,**kwargs)
+            if str(path).endswith('.stderr.log') and flags & os.O_CREAT:
+                created.append(Path(path))
+                subprocess.run(['/bin/chmod','+a','user:_spotlight allow read',str(path)],check=True)
+            return fd
+        with patch.object(observer.os,'open',side_effect=opening),patch.object(c,'run_isolated') as run, \
+             self.assertRaises(observer.Refused):self.issue()
+        run.assert_not_called();self.assertFalse(self.client.authenticated)
+        self.assertTrue(created);self.assertTrue(all(p.read_bytes()==b'' for p in created))
+        self.assertEqual(self.issuer.ledger.begins(self.subject['candidate']),[])
+
+    def test_review_limits_are_bound_without_lowering_or_blocking_acceptance(self):
+        from runtime.integration import require_gate
+        tests={k:self.subject[k] for k in ('task_id','task_sha256','candidate','acceptance_sha256')}
+        tests.update(scope='whole_task',terminal_status='completed',passed=True)
+        limited={**self.review,'limitations':['Live customer deployment not exercised.']}
+        self.assertTrue(require_gate(self.task,self.subject,tests,limited))
+        self.assertNotEqual(c.binding(self.task,self.subject,limited),c.binding(self.task,self.subject,{**limited,'limitations':[]}))
+        with self.assertRaises(c.GateClosed):
+            require_gate(self.task,self.subject,{**tests,'passed':False},limited)
+        with self.assertRaises(c.GateClosed):
+            self.issuer.request('fixture',self.task,self.subject,limited)
+
     def test_real_acceptance_issues_bound_checks_and_reconciles_without_duplicate(self):
         with patch.object(c,'run_isolated',self.local_runner):
             receipt=self.issue(); again=self.issue()
@@ -99,6 +145,32 @@ class IssuerTest(unittest.TestCase):
         self.assertEqual(receipt['binding'], c.binding(self.task,self.subject,self.review))
         self.assertTrue(self.client.authenticated)
 
+    def test_late_negative_history_stops_each_real_issuer_mutation(self):
+        # Each subcase has its own exact candidate and real durable ledger.
+        # The transport injects history only after acceptance has finished.
+        for when in ('authenticate','check-read','first-post'):
+            with self.subTest(when=when):
+                fixture=IssuerTest();fixture.setUp()
+                try:
+                    client=fixture.client;original_api=client.api;original_auth=client.authenticate
+                    def negative():
+                        book=fixture.issuer.ledger;ident=book.begin(fixture.subject['candidate'],'regression','a'*64)
+                        if when!='check-read':
+                            book.finish(ident,[{'name':'late-failure','status':'failure'}],1)
+                    def authenticate(repository):
+                        original_auth(repository)
+                        if when=='authenticate':negative()
+                    def api(repository,path,method='GET',body=None):
+                        result=original_api(repository,path,method,body)
+                        if when=='check-read' and '/check-runs?' in path:negative()
+                        if when=='first-post' and method=='POST' and len(client.posts)==1:negative()
+                        return result
+                    with patch.object(client,'authenticate',side_effect=authenticate),patch.object(client,'api',side_effect=api), \
+                         patch.object(c,'run_isolated',self.local_runner),self.assertRaises(GateClosed):
+                        fixture.issue()
+                    self.assertEqual(len(client.posts),1 if when=='first-post' else 0)
+                finally:fixture.doCleanups()
+
     def test_failed_actual_acceptance_never_authenticates_or_issues(self):
         program=b'raise SystemExit(3)\n'
         private(self.directory/'probe.py',program)
@@ -106,6 +178,58 @@ class IssuerTest(unittest.TestCase):
         with patch.object(c,'run_isolated',self.local_runner), self.assertRaisesRegex(GateClosed,'acceptance failed'):
             self.issue()
         self.assertFalse(self.client.authenticated);self.assertEqual(self.client.posts,[])
+
+    def test_acceptance_cleanup_uses_shared_zombie_handling(self):
+        import sys
+        workspace = self.host.parent / 'isolated'
+        (workspace / 'source').mkdir(parents=True); (workspace / '.scratch').mkdir()
+        program = workspace / 'probe.py'; program.write_text('print("{}")\n')
+        real_popen = subprocess.Popen
+        def local(argv, **kw):
+            # Substitute only the native sandbox launcher, not the shared
+            # cleanup helper's independent ps readback in this same process.
+            if argv and argv[0] == 'fixture':argv=[sys.executable, '-B', str(program)]
+            return real_popen(argv, **kw)
+        # Real completed child; only the sandbox launcher is substituted. The
+        # EPERM is the observed macOS zombie response already owned by D042.
+        with patch('runtime.profile.sandbox_command', return_value=['fixture', 'permissions.nr.filesystem={}']), \
+             patch.object(c.subprocess, 'Popen', side_effect=local), \
+             patch.object(c.os, 'killpg', side_effect=PermissionError(1, 'synthetic zombie')):
+            result = c.run_isolated(workspace, program)
+        self.assertEqual((result['returncode'], result['output']), (0, b'{}\n'))
+
+    def test_failed_host_attempt_blocks_later_green_and_records_case(self):
+        with patch.object(c, 'run_isolated', return_value={'returncode': 3, 'timed_out': False, 'output': b'', 'stderr': b''}), self.assertRaises(GateClosed):
+            self.issue()
+        runs = self.issuer.ledger.begins(self.subject['candidate'])
+        end = self.issuer.ledger.read(runs[0]['id'] + '-finish.json')
+        self.assertEqual(end['cases'][0]['name'], 'add-positive')
+        self.assertEqual(end['cases'][0]['status'], 'failure')
+        self.assertGreaterEqual(end['cases'][0]['seconds'], 0)
+        with patch.object(c, 'run_isolated', self.local_runner), self.assertRaisesRegex(GateClosed, 'earlier failed'):
+            self.issue()
+        self.assertFalse(self.client.authenticated)
+        self.assertEqual(len(self.issuer.ledger.begins(self.subject['candidate'])), 1)
+
+    def test_issuer_own_content_guard_rejects_all_categories_before_authentication(self):
+        from runtime import content_guard
+        self.task['allowed_paths'] += ['evidence/data.json','runtime/content_guard.py']
+        self.subject['task_sha256']=digest(self.task);self.review['task_sha256']=digest(self.task)
+        (self.host/'runtime').mkdir();(self.host/'evidence').mkdir()
+        (self.host/'runtime/content_guard.py').write_text('def scan_tree(*args): return {"passed":True}\n')
+        policy={'literals':[b'synthetic-private-literal'],'exceptions':{},'literal_status':'configured'}
+        for raw in (b'-----BEGIN '+content_guard.KEY+b'-----', b'/'+b'Users/synthetic/file',
+                    b'{"type":"tool_result","content":"synthetic"}', b'synthetic-private-literal'):
+            (self.host/'evidence/data.json').write_bytes(raw)
+            self.git('add','evidence/data.json','runtime/content_guard.py')
+            # Add only fixture source; host authority is never staged.
+            self.replace_candidate('VALUE=2\n')
+            with patch.object(content_guard,'load_policy',return_value=policy), \
+                 patch.object(c,'run_isolated',side_effect=AssertionError('must stop before acceptance')), \
+                 self.assertRaisesRegex(GateClosed,'Content guard') as error:
+                self.issue()
+            self.assertNotIn(raw.decode(),str(error.exception))
+            self.assertFalse(self.client.authenticated);self.assertEqual(self.client.posts,[])
 
     def replace_candidate(self, source):
         (self.host/'value.py').write_text(source)
@@ -197,15 +321,15 @@ class IssuerTest(unittest.TestCase):
         self.assertFalse(self.client.authenticated)
 
     def test_adopted_runtime_wrapper_dry_run_retains_hostcheck_and_preview_gates(self):
-        name='ap11-contract';build=self.host/'.runtime/ap11/build';build.mkdir(parents=True)
+        name='ap11-contract';build=self.host/'.runtime/ap11/build';build.mkdir(mode=0o700,parents=True)
         bound=('scripts/hostcheck_preserved_state.py','scripts/test_final_evidence.py')
-        for relative in bound:
+        for relative in (*bound, 'scripts/run_host_checks.py'):
             path=self.host/relative;path.parent.mkdir(exist_ok=True);path.write_text('# synthetic hostcheck fixture\n')
         self.git('add','scripts');self.git('commit','--amend','-qm','with hostcheck fixtures')
         candidate=self.git('rev-parse','HEAD');base=self.subject['base']
         worktree=self.host/'.runtime/ap11/integrations/bootstrap-fixture'
         self.git('worktree','add','--detach',str(worktree),candidate)
-        files={p:c.sha(c.git(worktree,'show',candidate+':'+p)) for p in ('value.py',*bound)}
+        files={p:c.sha(c.git(worktree,'show',candidate+':'+p)) for p in ('value.py',*bound,'scripts/run_host_checks.py')}
         manifest={'path':str(worktree),'candidate':candidate,'base':base,'files':files,'implementation_run':'author-fixture'}
         reviewed={'candidate':candidate,'source_sha256':files,'verdict':'approved','blocking_findings':[],
                   'reviewer_run':'separate-fixture','actual_reviewer':'Synthetic separate fixture',
@@ -219,23 +343,61 @@ class IssuerTest(unittest.TestCase):
             'source_sha256':{p:files[p] for p in bound},
             'imported':{p[:-3].replace('/','.'):str(worktree/p) for p in bound},
             'scope':str(scope),'host_root':str(self.host),'journal_head':{'head':'fixture'}}
+        from runtime.failure_ledger import Ledger, host_binding, digest
+        hostcheck['runner_sha256'] = c.sha((self.host/'scripts/run_host_checks.py').read_bytes())
+        book = Ledger(self.host.parent/'os-home/Library/Application Support/Nortropic/test-ledger', {'literals': []})
+        hostrun = book.begin(candidate, 'host', host_binding(hostcheck))
+        hostend = book.finish(hostrun, [{'name': 'test_fixture.T.test_host', 'seconds': .01, 'status': 'success'}], 0)
+        hostcheck.update(ledger_run=hostrun, ledger_finish_sha256=digest(hostend), cases=hostend['cases'])
         private(build/(name+'-hostcheck.json'),hostcheck)
         directory=self.issuer.home/'requests'/name;log=b'Ran 2 tests in 0.1s\n\nOK\n'
         suite={'schema':'nortropic-measured-suite/1','candidate':candidate,
             'tree':c.git(worktree,'rev-parse',candidate+'^{tree}').decode().strip(),
             'command':['python','-B','-m','unittest','discover','-s','scripts','-p','test_*.py','-v'],
-            'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True}
+            'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True,
+                'terminal_successful':True, 'passed':True, 'case_timing_schema':3, 'observation_kind':'owner-received-events/1',
+                'protected_primary_files':True, 'shared_interpreter_state':True,
+                'complete':True, 'cleanup_verified':True, 'timed_out':False, 'overflow':False, 'fixture_errors':[],
+                'credential_boundary':{**{field:c.sha((Path(c.__file__).resolve().parents[1]/path).read_bytes()) for field,path in
+                    [('script_sha256','scripts/matning_provanvandare.py'),('observer_sha256','runtime/measurement_observer.py'),('queue_sha256','scripts/measurement_queue.py')]},'owner_uid':501,'test_uid':502}, 'cases':[{'order':i+1,'name':'test_fixture.T.test_'+str(i),
+                   'file':'scripts/test_fixture.py','seconds':.05,'status':'success'} for i in range(2)]}
+        suite['manifest_sha256']=c.sha((json.dumps([{'id':r['order'],'name':r['name'],'file':r['file']} for r in suite['cases']],ensure_ascii=True,sort_keys=True,separators=(',',':'))+'\n').encode())
         private(directory/'suite.json',suite);private(directory/'suite.log',log)
         private(directory/'request.json',{'suite_sha256':c.sha((directory/'suite.json').read_bytes()),'subject':{'candidate':candidate}})
         adopted=self.adopted_copy()
-        command=['/opt/homebrew/bin/python3.12','-I','-B',str(adopted/'scripts/publish_construction.py'),name,'2','--dry-run']
+        # This actual child process has a synthetic OS account home outside the
+        # fixture Git repo. Production still ignores HOME and uses pwd.
+        bootstrap = ('import pwd,runpy,sys,types; '
+                     'pwd.getpwuid=lambda uid:types.SimpleNamespace(pw_dir='+repr(str(self.host.parent/'os-home'))+'); '
+                     'sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0],run_name="__main__")')
+        command=['/opt/homebrew/bin/python3.12','-I','-B','-c',bootstrap,
+                 str(adopted/'scripts/publish_construction.py'),name,'2','--dry-run']
         env={'PATH':'/opt/homebrew/bin:/usr/bin:/bin','HOME':str(self.host/'.empty-home'),
              'NR_HOST_ROOT':str(self.host)}
+        build.chmod(0o755)
+        result=subprocess.run(command,capture_output=True,env=env)
+        self.assertNotEqual(result.returncode,0);self.assertFalse(list(build.glob('*publication*')))
+        build.chmod(0o700)
+        # Inject a real read ACL at the exclusive output open in the real
+        # wrapper process. The verified directory alone must not authorize it.
+        acl_bootstrap = ('import os,subprocess;original=os.open\n'
+            'def opening(path,*args,**kwargs):\n'
+            ' fd=original(path,*args,**kwargs)\n'
+            ' if "-publication-suite-" in str(path):subprocess.run(["/bin/chmod","+a","user:_spotlight allow read",str(path)],check=True)\n'
+            ' return fd\n'
+            'os.open=opening\n')+bootstrap
+        negative=command.copy();negative[4]=acl_bootstrap
+        result=subprocess.run(negative,capture_output=True,env=env)
+        self.assertNotEqual(result.returncode,0,result.stdout.decode())
+        refused_logs=list(build.glob('*publication-suite-*.log'))
+        self.assertEqual(len(refused_logs),1);self.assertEqual(refused_logs[0].read_bytes(),b'')
+        refused_logs[0].unlink()
         result=subprocess.run(command,capture_output=True,env=env)
         self.assertEqual(result.returncode,0,result.stderr.decode())
         self.assertIn(b'Publisher NOT called; no remote access',result.stdout)
         previews=list(build.glob(name+'-publication-invocation-*-dryrun.json'))
         self.assertEqual(len(previews),1)
+        self.assertTrue(all(p.stat().st_mode&0o777==0o600 for p in build.glob('*publication*')))
         hostcheck['successful']=False;private(build/(name+'-hostcheck.json'),hostcheck)
         result=subprocess.run(command,capture_output=True,env=env)
         self.assertNotEqual(result.returncode,0);self.assertIn(b'complete green run',result.stderr)
@@ -267,7 +429,14 @@ class IssuerTest(unittest.TestCase):
         suite={'schema':'nortropic-measured-suite/1','candidate':self.subject['candidate'],
             'tree':git('rev-parse','HEAD^{tree}'),
             'command':['python','-B','-m','unittest','discover','-s','verktyg','-p','test_*.py'],
-            'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True}
+            'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True,
+                'terminal_successful':True, 'passed':True, 'case_timing_schema':3, 'observation_kind':'owner-received-events/1',
+                'protected_primary_files':True, 'shared_interpreter_state':True,
+                'complete':True, 'cleanup_verified':True, 'timed_out':False, 'overflow':False, 'fixture_errors':[],
+                'credential_boundary':{**{field:c.sha((Path(c.__file__).resolve().parents[1]/path).read_bytes()) for field,path in
+                    [('script_sha256','scripts/matning_provanvandare.py'),('observer_sha256','runtime/measurement_observer.py'),('queue_sha256','scripts/measurement_queue.py')]},'owner_uid':501,'test_uid':502}, 'cases':[{'order':i+1,'name':'test_fixture.T.test_'+str(i),
+                   'file':'scripts/test_fixture.py','seconds':.05,'status':'success'} for i in range(2)]}
+        suite['manifest_sha256']=c.sha((json.dumps([{'id':r['order'],'name':r['name'],'file':r['file']} for r in suite['cases']],ensure_ascii=True,sort_keys=True,separators=(',',':'))+'\n').encode())
         private(self.directory/'suite.json',suite);private(self.directory/'suite.log',log)
         self.record['suite_sha256']=c.sha((self.directory/'suite.json').read_bytes())
         private(self.directory/'request.json',self.record)
@@ -318,6 +487,46 @@ class IssuerTest(unittest.TestCase):
         with patch.object(publisher,'api') as api, self.assertRaisesRegex(GateClosed,'Sealed suite'):
             publisher.publish_sealed('fixture')
         api.assert_not_called();self.assertFalse(self.client.authenticated)
+
+    def test_digitala_reconciliation_refuses_public_directory_and_file_acl_before_content(self):
+        from runtime import measurement_observer as observer
+        publisher=self.digitala_fixture();folder=self.issuer.home/'observations'
+        folder.mkdir(mode=0o755);folder.chmod(0o755)
+        with patch.object(publisher,'api') as api,self.assertRaises(observer.Refused):
+            publisher.publish_sealed('fixture')
+        api.assert_not_called();self.assertEqual(list(folder.iterdir()),[])
+        folder.chmod(0o700);original=observer.owner_node
+        def check(path,*args,**kwargs):
+            if Path(path).name.startswith('digitala-publication-'):
+                subprocess.run(['/bin/chmod','+a','user:_spotlight allow read',str(path)],check=True)
+            return original(path,*args,**kwargs)
+        with patch.object(observer,'owner_node',side_effect=check),patch.object(publisher,'api') as api, \
+             self.assertRaises(observer.Refused):
+            publisher.publish_sealed('fixture')
+        api.assert_not_called();files=list(folder.iterdir());self.assertEqual(len(files),1)
+        self.assertEqual(files[0].read_bytes(),b'')
+
+    def test_digitala_already_merged_path_records_private_receipt_without_reissuing(self):
+        from scripts.test_integration import protection_fixture
+        publisher=self.digitala_fixture();protection=protection_fixture()
+        def api(path,method='GET',body=None):
+            self.assertEqual(method,'GET')
+            if path=='branches/main/protection':return protection
+            if path.startswith('pulls?'):return [{'number':7}]
+            if path=='pulls/7':return {'number':7,'merged':True,'head':{'sha':self.subject['candidate']},'base':{'ref':'main'}}
+            raise AssertionError(path)
+        # Real _publish reconciliation branch and Git inspection. Only the
+        # external GitHub observations/reconcile result are synthetic.
+        with patch.object(publisher,'api',side_effect=api), \
+             patch.object(publisher,'require_checks',return_value={'runtime/tests':1,'runtime/review':2}), \
+             patch.object(publisher,'reconcile',return_value={'merged':True,'candidate':self.subject['candidate']}), \
+             patch.object(publisher,'issue_checks',side_effect=AssertionError('checks must not be reissued')):
+            receipt=publisher.publish_sealed('fixture')
+        files=list((self.issuer.home/'observations').glob('digitala-publication-*.json'))
+        self.assertEqual(len(files),1);self.assertEqual(json.loads(files[0].read_text()),receipt)
+        self.assertTrue(receipt['merged']);self.assertEqual(files[0].stat().st_mode&0o777,0o600)
+        self.assertEqual(files[0].parent.stat().st_mode&0o777,0o700)
+        self.assertEqual(self.client.posts,[])
 
     def test_digitala_private_reviewer_path_never_enters_public_pr(self):
         publisher=self.digitala_fixture()
@@ -402,7 +611,14 @@ class IssuerTest(unittest.TestCase):
         record={'schema':'nortropic-measured-suite/1','candidate':self.subject['candidate'],
                 'tree':self.git('rev-parse','HEAD^{tree}'),
                 'command':['python','-B','-m','unittest','discover','-s','scripts','-p','test_*.py','-v'],
-                'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True}
+                'log_sha256':c.sha(log),'returncode':0,'test_count':2,'credential_free_execution':True,
+                'terminal_successful':True, 'passed':True, 'case_timing_schema':3, 'observation_kind':'owner-received-events/1',
+                'protected_primary_files':True, 'shared_interpreter_state':True,
+                'complete':True, 'cleanup_verified':True, 'timed_out':False, 'overflow':False, 'fixture_errors':[],
+                'credential_boundary':{**{field:c.sha((Path(c.__file__).resolve().parents[1]/path).read_bytes()) for field,path in
+                    [('script_sha256','scripts/matning_provanvandare.py'),('observer_sha256','runtime/measurement_observer.py'),('queue_sha256','scripts/measurement_queue.py')]},'owner_uid':501,'test_uid':502}, 'cases':[{'order':i+1,'name':'test_fixture.T.test_'+str(i),
+                   'file':'scripts/test_fixture.py','seconds':.05,'status':'success'} for i in range(2)]}
+        record['manifest_sha256']=c.sha((json.dumps([{'id':r['order'],'name':r['name'],'file':r['file']} for r in record['cases']],ensure_ascii=True,sort_keys=True,separators=(',',':'))+'\n').encode())
         private(self.directory/'suite.json',record);private(self.directory/'suite.log',log)
         self.record['suite_sha256']=c.sha((self.directory/'suite.json').read_bytes())
         private(self.directory/'request.json',self.record)

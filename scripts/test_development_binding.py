@@ -3,6 +3,7 @@ import asyncio
 from contextlib import redirect_stdout
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -95,7 +96,11 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(self.scope.inspect()['started'], [])
 
     def test_scoped_cleanup_reuses_verified_group_readback_on_eperm(self):
-        with patch('runtime.private_stage.stop_group', side_effect=PermissionError('synthetic macOS exit transition')):
+        actual = os.killpg
+        def eperm_probe(pid, sig):
+            if sig == 0:raise PermissionError('synthetic macOS exit transition')
+            return actual(pid, sig)
+        with patch('scripts.bounded.os.killpg', side_effect=eperm_probe):
             code,report=self.run_process('pass',fail_started_record=True)
         self.assertEqual(code,1)
         self.assertTrue(report['process_group_removed'])

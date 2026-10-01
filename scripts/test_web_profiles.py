@@ -311,8 +311,17 @@ class GuardTests(unittest.TestCase):
 class SecretTests(unittest.TestCase):
     def setUp(self):
         # Not under /tmp or /var/folders: those are refused by design.
-        self.directory = CODE_ROOT / '.runtime' / ('test-hemlighet-%d' % os.getpid())
-        self.directory.mkdir(parents=True)
+        # This is only a disposable synthetic fixture, never an authority path.
+        # The fixed runner supplies its private fixture HOME; the service UID's
+        # login home is /var/empty. Keep read_secret's real UID/mode/path checks.
+        home = Path(os.environ['HOME'])
+        if home.is_symlink() or not home.is_dir() or home.stat().st_uid != os.getuid() or home.stat().st_mode & 0o022:
+            raise ValueError('Synthetic fixture HOME must belong to this UID')
+        base = home / 'Library/Application Support/Nortropic/secret-fixtures'
+        base.mkdir(mode=0o700, parents=True, exist_ok=True)
+        if base.is_symlink() or base.stat().st_uid != os.getuid() or base.stat().st_mode & 0o077:
+            raise ValueError('Secret fixture parent must be private')
+        self.directory = Path(tempfile.mkdtemp(prefix='test-', dir=base))
 
     def tearDown(self):
         shutil.rmtree(self.directory)
@@ -733,13 +742,14 @@ class ChildProcessTests(unittest.TestCase):
                 self.assertEqual({signal.getsignal(s) for s in common.STOP_SIGNALS}, {signal.SIG_IGN})
             self.assertEqual({s: signal.getsignal(s) for s in common.STOP_SIGNALS}, before)
 
+    @mock.patch.dict(os.environ, {'LANG': 'C', 'LC_ALL': 'C'})
     def test_only_the_processes_of_the_named_chrome_profile_are_ended(self):
         profile = self.parent / 'kör ning' / '.chrome-profil'
         other = self.parent / 'kör ning' / '.chrome-profil-2'
         started = [subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(300)', '--user-data-dir=' + str(p)],
                                     start_new_session=True) for p in (profile, other)]
         try:
-            self.assertEqual(common.chrome_processes(profile), [started[0].pid])
+            self.assertEqual(common.chrome_processes(profile), [started[0].pid], 'F3_CHROME_PROFILE_NOT_FOUND')
             self.assertEqual(common.end_chrome(profile, grace=0.2), 1)
             self.assertIsNotNone(started[0].wait(timeout=10))
             self.assertIsNone(started[1].poll())
@@ -759,11 +769,21 @@ class ChildProcessTests(unittest.TestCase):
             self.assertEqual({s: signal.getsignal(s) for s in common.STOP_SIGNALS}, armed)
         self.assertEqual({s: signal.getsignal(s) for s in common.STOP_SIGNALS}, before)
 
-    def test_the_chrome_sweep_never_raises_over_the_exception_a_cleanup_runs_under(self):
+    def test_unknown_chrome_cleanup_cannot_be_a_successful_profile(self):
         with mock.patch.object(common.subprocess, 'run', side_effect=OSError('ps saknas')):
-            self.assertIsNone(common.end_chrome(self.parent / '.chrome-profil', grace=0))
+            with self.assertRaisesRegex(RuntimeError,'could not be verified'):
+                common.end_chrome(self.parent / '.chrome-profil', grace=0)
         with mock.patch.object(common.subprocess, 'run', side_effect=subprocess.TimeoutExpired('ps', 20)):
-            self.assertIsNone(common.end_chrome(self.parent / '.chrome-profil', grace=0))
+            with self.assertRaisesRegex(RuntimeError,'could not be verified'):
+                common.end_chrome(self.parent / '.chrome-profil', grace=0)
+
+    def test_surviving_chrome_cannot_be_reported_as_cleaned(self):
+        # OS refusal is synthetic; no actual unrelated PID is signalled.
+        with mock.patch.object(common,'chrome_processes',return_value=[424242]), \
+             mock.patch.object(common.os,'kill',side_effect=PermissionError()), \
+             mock.patch.object(common.time,'monotonic',side_effect=range(0,1000,10)):
+            with self.assertRaisesRegex(RuntimeError,'left processes running'):
+                common.end_chrome(self.parent/'.chrome-profil',grace=0)
 
     def test_a_holder_interrupted_while_it_starts_ends_at_once_with_its_profile(self):
         # A stand-in holder that never becomes ready; the interrupt comes while start_holder waits for it.

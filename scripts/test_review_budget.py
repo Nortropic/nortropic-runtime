@@ -205,9 +205,12 @@ class ReviewActivityTests(unittest.TestCase):
                     for child in evidence.iterdir():
                         child.unlink()
                 evidence.mkdir(parents=True, exist_ok=True)
-                with patch.object(activities, 'verdict', return_value={'verdict': 'approved', 'blocking_findings': [], 'summary': 's'}):
+                with patch.object(activities, 'verdict', return_value={'verdict': 'approved', 'blocking_findings': [], 'summary': 's', 'limitations':['No live credentials or external service tested.']}):
                     seen, outcome = self.review(task, request, completed=True)
                 decision = json.loads((evidence / 'decision.json').read_text())
+                self.assertEqual(decision['limitations'],['No live credentials or external service tested.'])
+                self.assertIn('Never claim an unrun check passed',seen['call']['prompt'])
+                self.assertIn('without reproducing their values',seen['call']['prompt'])
                 self.assertEqual(decision.get('binding', {}).get('review_seconds'), expected)
                 self.assertEqual(outcome.get('binding', {}).get('review_seconds'), expected)
 
@@ -495,7 +498,7 @@ class ContinuationSignalTests(unittest.TestCase):
             async def __aexit__(self, *exc):
                 return False
         # The operator reports its evidence relative to the host root, so the fixture lives under it.
-        with tempfile.TemporaryDirectory(dir=run.ROOT / '.runtime') as directory:
+        with tempfile.TemporaryDirectory(dir=run.ROOT / '.scratch') as directory:
             path = Path(directory) / 'task.json'; path.write_text(json.dumps(task))
             with patch.object(run, 'load', return_value=task), patch.object(run, 'check_unfinished_writers'), \
                  patch.object(run, 'evidence_directory', return_value=Path(directory) / 'evidence'), \

@@ -10,9 +10,32 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from runtime.integration import GateClosed, Publisher, digest, require_gate, check_binding
+
+
+
+def private_content_policy(testcase):
+    """Real private policy parsing, independent of the process account's home.
+
+    Only path selection is adapted. Mode/ACL/ancestor/JSON checks and the
+    publication scanner remain real; this is not a mocked successful scan.
+    """
+    from runtime import content_guard, failure_ledger
+    folder=tempfile.TemporaryDirectory(prefix='nortropic-policy-fixture-')
+    testcase.addCleanup(folder.cleanup)
+    policy=Path(folder.name).resolve()/'policy.json'
+    policy.write_text('{"schema":1}\n');policy.chmod(0o600)
+    original=content_guard.load_policy
+    selector=patch.object(content_guard,'load_policy',side_effect=lambda path=None:original(policy if path is None else path))
+    selector.start();testcase.addCleanup(selector.stop)
+    ledger_policy=patch.object(failure_ledger,'load_policy',side_effect=lambda path=None:original(policy if path is None else path))
+    ledger_policy.start();testcase.addCleanup(ledger_policy.stop)
+    ledger_selector=patch.object(failure_ledger,'default_directory',return_value=policy.parent/'ledger')
+    ledger_selector.start();testcase.addCleanup(ledger_selector.stop)
+    return policy
 
 
 def fixture():
@@ -88,6 +111,68 @@ class CountedPublisher(Publisher):
 
 
 class IntegrationTest(unittest.TestCase):
+    def setUp(self):
+        private_content_policy(self)
+
+    def test_failed_or_unfinished_history_refuses_before_push_or_post(self):
+        from runtime.failure_ledger import Ledger
+        for completed in (False, True):
+            with self.subTest(completed=completed), tempfile.TemporaryDirectory() as directory:
+                with patch('runtime.failure_ledger.default_directory',return_value=Path(directory).resolve()/'ledger'):
+                    book=Ledger();run=book.begin('b'*40,'regression','c'*64)
+                    if completed:
+                        book.finish(run,[{'name':'test_fixture.T.test_failure','seconds':.01,'status':'failure'}],1)
+                    publisher=CountedPublisher()
+                    with self.assertRaisesRegex(GateClosed,'Permanent publication history refused'):
+                        publisher.publish(*fixture())
+                    self.assertEqual(publisher.mutations,[])
+
+    def test_green_diagnostic_cannot_publish_over_permanent_failure(self):
+        from runtime.failure_ledger import Ledger
+        book=Ledger();original=book.begin('b'*40,'regression','c'*64)
+        book.finish(original,[{'name':'test_fixture.T.test_failure','seconds':.01,'status':'failure'}],1)
+        diagnostic=book.begin('b'*40,'diagnostic','d'*64,diagnostic_of=original)
+        book.finish(diagnostic,[{'name':'test_fixture.T.test_failure','seconds':.01,'status':'success'}],0)
+        publisher=CountedPublisher()
+        with self.assertRaisesRegex(GateClosed,'Permanent publication history refused'):
+            publisher.publish(*fixture())
+        self.assertEqual(publisher.mutations,[])
+        self.assertFalse(book.ending(book.begin_record(original+'-begin.json'))['passed'])
+
+    def test_unreadable_ledger_refuses_before_remote_effects(self):
+        from runtime.failure_ledger import Ledger
+        book=Ledger();book.directory.chmod(0o755)
+        publisher=CountedPublisher()
+        with self.assertRaisesRegex(GateClosed,'Permanent publication history refused'):
+            publisher.publish(*fixture())
+        self.assertEqual(publisher.mutations,[])
+
+    def test_history_is_rechecked_before_each_push_create_and_merge(self):
+        from runtime.failure_ledger import Ledger
+        for point in ('push','create','merge'):
+            with self.subTest(point=point), tempfile.TemporaryDirectory() as directory:
+                with patch('runtime.failure_ledger.default_directory',return_value=Path(directory).resolve()/'ledger'):
+                    book=Ledger();publisher=CountedPublisher()
+                    def negative():
+                        run=book.begin('b'*40,'regression','c'*64)
+                        book.finish(run,[{'name':'test_fixture.T.test_failure','seconds':.01,'status':'failure'}],1)
+                    if point=='push':
+                        original=publisher.require_base
+                        def changed(base):original(base);negative()
+                        publisher.require_base=changed
+                    elif point=='create':
+                        original=publisher.git
+                        def changed(*args):value=original(*args);negative();return value
+                        publisher.git=changed
+                    else:
+                        original=publisher.require_checks
+                        def changed(*args):value=original(*args);negative();return value
+                        publisher.require_checks=changed
+                    with self.assertRaisesRegex(GateClosed,'Permanent publication history refused'):
+                        publisher.publish(*fixture())
+                    self.assertFalse(publisher.merged)
+                    self.assertEqual(len(publisher.mutations),{'push':0,'create':1,'merge':2}[point])
+
     def test_required_evidence_blocks_before_publication(self):
         changes=[(0,lambda e:e.update(target='other/project')),
                  (2,lambda e:e.update(passed=False)),

@@ -10,6 +10,9 @@ import subprocess
 from .release import ROOT
 from .integration import GateClosed, check_binding, digest
 
+# Keep launcher execution distinct from the read-only ACL subprocesses.
+launch = subprocess.run
+
 
 def issue(task, subject, review):
     identifier = task.get('id')
@@ -20,14 +23,7 @@ def issue(task, subject, review):
     expected = check_binding(task, subject, review)
     launcher = ROOT / '.runtime/ap11/check-issuer/launch.py'
     try:
-        def private(path):
-            if any(p.is_symlink() for p in (path, *path.parents)):
-                raise ValueError('Unsafe host launcher path')
-            info = path.stat()
-            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
-                    or stat.S_IMODE(info.st_mode) not in (0o400, 0o600)):
-                raise ValueError('Host launcher is not a private owner file')
-            return path.read_bytes()
+        from .check_issuer import private_bytes as private
         adoption = json.loads(private(launcher.with_name('launcher-adoption.json')))
         if (adoption.get('schema') != 'nortropic-launcher-adoption/1'
                 or adoption.get('launcher_sha256') != hashlib.sha256(private(launcher)).hexdigest()
@@ -35,7 +31,7 @@ def issue(task, subject, review):
                 or not adoption.get('reviewer_run') or not adoption.get('implementation_run')
                 or adoption['reviewer_run'] == adoption['implementation_run']):
             raise ValueError('Launcher adoption differs')
-        result = subprocess.run([str(ROOT / '.runtime/temporal-venv/bin/python'), '-I', '-B',
+        result = launch([str(ROOT / '.runtime/temporal-venv/bin/python'), '-I', '-B',
                                  str(launcher), 'issue', '--task', identifier,
                                  '--candidate', candidate, '--binding', expected],
                                 cwd=ROOT, env={'PATH': '/opt/homebrew/bin:/usr/bin:/bin'},

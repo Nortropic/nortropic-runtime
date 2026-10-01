@@ -198,7 +198,7 @@ for variable in ('PYTHONOPTIMIZE', 'PYTHONPATH', 'PYTHONHOME'):
 
 def git(where, *args, raw=False):
     try:
-        out = subprocess.run(['git', '-C', str(where), *args], check=True, capture_output=True, timeout=60).stdout
+        out = subprocess.run(['git', '--no-replace-objects', '-C', str(where), *args], check=True, capture_output=True, timeout=60).stdout
     except subprocess.CalledProcessError:
         refuse('required integrated Git object is unavailable; bootstrap is a separate reviewed holder transition')
     return out if raw else out.decode().rstrip('\n')
@@ -210,6 +210,8 @@ def sha(data):
 
 # The existing Publisher, pinned to integrated main or separate holder adoption.
 import runtime.integration as integration  # noqa: E402
+from runtime.measurement_observer import private_directory, private_output, write_owner
+private_directory(build)
 module = Path(integration.__file__).resolve()
 if module != import_root / 'runtime/integration.py':
     refuse('Publisher was not imported from the qualified holder copy')
@@ -297,7 +299,8 @@ environment['PYTHONDONTWRITEBYTECODE'] = '1'
 interpreter = (str(root / '.runtime/temporal-venv/bin/python') if PROFILE['where'] == 'runtime'
                else '/opt/homebrew/bin/python3.12')
 from runtime.check_issuer import sealed_construction_suite
-suite = sealed_construction_suite(path, head, PROFILE['discover'], name, expected)
+suite = sealed_construction_suite(path, head, PROFILE['discover'], name, expected,
+                                  phase='dry-run' if '--dry-run' in sys.argv else 'publication')
 log = suite.stdout.decode(errors='replace')
 exact_candidate('after the suite')
 if PROFILE['where'] == 'office' and (not scratch.is_dir() or scratch.is_symlink() or any(scratch.iterdir())):
@@ -332,6 +335,15 @@ if PROFILE['where'] == 'runtime':
             or host.get('errors') or not isinstance(host.get('run'), int) or host['run'] < 1):
         refuse('host-check receipt does not record a complete green run: ' + json.dumps(
             {k: host.get(k) for k in ('run', 'failures', 'errors', 'skipped', 'successful')}))
+    from runtime.failure_ledger import Ledger, Refused as LedgerRefused
+    try:
+        Ledger().require_host(head, host)
+    except (LedgerRefused, OSError, ValueError, KeyError, TypeError):
+        refuse('host-check receipt lacks a matching permanent successful attempt; prior failures remain binding')
+    runner_blob = subprocess.run(['git', '--no-replace-objects', '-C', str(path), 'show',
+                                  head + ':scripts/run_host_checks.py'], capture_output=True, check=True).stdout
+    if host.get('runner_sha256') != sha(runner_blob):
+        refuse('host-check attempt used another runner')
     # EXACTLY the bound files, not whatever keys the receipt chose to supply: an empty or trimmed map
     # would otherwise satisfy the loop by having nothing to disagree with.
     bound = {'scripts/hostcheck_preserved_state.py', 'scripts/test_final_evidence.py'}
@@ -339,7 +351,7 @@ if PROFILE['where'] == 'runtime':
     if not isinstance(recorded, dict) or set(recorded) != bound:
         refuse('host-check receipt must name exactly %s; it names %r' % (sorted(bound), sorted(recorded or {})))
     for rel, expected_sha in recorded.items():
-        blob = subprocess.run(['git', '-C', str(path), 'show', head + ':' + rel],
+        blob = subprocess.run(['git', '--no-replace-objects', '-C', str(path), 'show', head + ':' + rel],
                               capture_output=True, check=True).stdout
         if sha(blob) != expected_sha:
             refuse('host-check receipt names %s at a different content than this candidate carries' % rel)
@@ -366,8 +378,8 @@ if PROFILE['where'] == 'runtime':
 
 stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 log_path = build / ('%s-publication-suite-%s%s.log' % (name, stamp, '-dryrun' if dry_run else ''))
-with log_path.open('x') as stream:
-    stream.write(log)
+with private_output(log_path) as stream:
+    stream.write(log.encode())
 
 task = {'id': name, 'target': TARGET, 'base': base, 'allowed_paths': changed,
         'steps': [{'provider': 'claude', 'prompt': accept}], 'acceptance_sha256': sha(accept.encode())}
@@ -405,8 +417,7 @@ if not dry_run:
             or (preview.get('suite') or {}).get('test_count') != tests['test_count']):
         refuse('the newest dry-run preview differs from this run; preview again before publishing')
     invocation['preview'] = previews[-1].name
-with (build / ('%s-publication-invocation-%s%s.json' % (name, stamp, '-dryrun' if dry_run else ''))).open('x') as stream:
-    json.dump(invocation, stream, indent=2); stream.write('\n')
+write_owner(build / ('%s-publication-invocation-%s%s.json' % (name, stamp, '-dryrun' if dry_run else '')), invocation)
 if dry_run:
     print('EXACT PUBLIC NOTE THAT WOULD BE POSTED ON THE PR:\n' + note_body(tests['test_count']) + '\n')
     print(json.dumps({'dry_run': True, 'would_publish': head, 'public_note_sha256': invocation['public_note_sha256'], 'on_base': base, 'to': TARGET, **invocation['suite'],
@@ -414,13 +425,13 @@ if dry_run:
     raise SystemExit(0)
 
 for label, value in (('task', task), ('subject', subject), ('tests', tests), ('review', review)):
-    (build / (name + '-' + label + '.json')).write_text(json.dumps(value, indent=2) + '\n')
+    write_owner(build / (name + '-' + label + '.json'), value, replace=True)
 os.environ.update(GIT_TERMINAL_PROMPT='0', GIT_CONFIG_COUNT='2', GIT_CONFIG_KEY_0='credential.helper',
                   GIT_CONFIG_VALUE_0='', GIT_CONFIG_KEY_1='credential.helper',
                   GIT_CONFIG_VALUE_1='!gh auth git-credential')
 publisher = integration.Publisher(path, TARGET)
 receipt = publisher.publish(task, subject, tests, review)
-(build / (name + '-integration.json')).write_text(json.dumps(receipt, indent=2) + '\n')
+write_owner(build / (name + '-integration.json'), receipt, replace=True)
 # The Publisher's fixed public text says "independent review". State the ACTUAL limitation publicly,
 # taken from this candidate's own review receipt (never a fixed claim about who reviewed).
 note = {'posted': False}
@@ -434,5 +445,5 @@ try:
         note = {'posted': True}
 except Exception as error:  # the integration receipt stands; a missing note is reported, not hidden
     note = {'posted': False, 'error': type(error).__name__, 'detail': str(error)[:300]}
-(build / (name + '-limitation-note.json')).write_text(json.dumps(note, indent=2) + '\n')
+write_owner(build / (name + '-limitation-note.json'), note, replace=True)
 print(json.dumps({'integration': receipt, 'limitation_note': note}, indent=2))

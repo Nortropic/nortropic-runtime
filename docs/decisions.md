@@ -2,7 +2,7 @@
 
 ## D001 — 2026-09-19: clean project and engine-first compatibility probe
 
-Observed: `/Users/elinhaggstrom/Nortropic Runtime` was empty and not a Git repo.
+Observed: `[REDACTED sha256=f14c66ca33b80e561cf6b8b35bee3dffeea0ad5d9b8b11a56693a72e11a05087]Nortropic Runtime` was empty and not a Git repo.
 The requested private remote is `Nortropic/nortropic-runtime`; authenticated lookup
 found no accessible repository with that name. Create new history, never overwrite.
 Keep original mandate once in this directory. No older project imported.
@@ -271,7 +271,7 @@ is needed, not for routine continuation.
 
 Concrete need: reject stale/missing/failed review or test evidence at the actual
 candidate publication boundary. Read only selected files in
-/Users/elinhaggstrom/kernel-arbete at clean revision
+[REDACTED sha256=f14c66ca33b80e561cf6b8b35bee3dffeea0ad5d9b8b11a56693a72e11a05087]kernel-arbete at clean revision
 2dfc58f362db100c179b7b738e9a720dae39a256:
 - tests/scripts/nortropic-codex-autopilot/publication-callers.py
 - scripts/nortropic-codex-autopilot.py publish/publication_authority sections.
@@ -1900,14 +1900,14 @@ sudo deny altogether, since it cannot be narrowed to one command; that is not pr
 
 Decision:
 - The test user is a hidden role account `_nortropicprov` (UID 470, shell `/usr/bin/false`, home
-  `/Users/_nortropicprov`, not in admin); this Mac's own `sysadminctl` says a role account needs a name starting with `_`
+  `[REDACTED sha256=691206beca42a12257493e2605445b74aaa6d4707888f208068f900ad1adddd1] not in admin); this Mac's own `sysadminctl` says a role account needs a name starting with `_`
   and a UID in 450-499. No key, login or secret is copied to it; it has no keychain of its own.
 - The fixed script is `scripts/matning_provanvandare.py`, installed root-owned as `/usr/local/libexec/nortropic/matning`
   and run by the Command Line Tools' root-owned Python 3.9, which no session can change. The one rule,
   `config/nortropic-matning.sudoers`, lets the owner's account run exactly that file, pinned by its sha256, as
   `_nortropicprov`, with no other command and no other target user. The script refuses to run as anyone else, as root
   or as a member of admin, and judges its arguments itself: `gransprob`, or `mat ID` for a request in the owner-only
-  inbox `/Users/Shared/nortropic-matning/in/ID` (a bounded request of exactly the recorded shape and a git bundle, both
+  inbox `[REDACTED sha256=d80e34e7127e0b642fc0a76b7670ed3e3baf5f079b3fb742b8be328d2b7a0156]nortropic-matning/in/ID` (a bounded request of exactly the recorded shape and a git bundle, both
   written by the owner's account in directories only it can write).
 - `mat` runs the boundary probe first and never runs code when it finds a key. Then it clones exactly the requested
   candidate from the bundle (commit, tree and branch checked), gives it a fresh home, temp directory and git identity,
@@ -2049,7 +2049,7 @@ Rehearsed in isolation before any use, on the reviewed candidate's own bytes (th
 each receipt ran), nothing live touched:
 - The profile's boundary: a child under the candidate's own profile could not reach an address beyond this Mac or look
   up a name, bind the live engine's port, write in the live `.runtime`, the Runtime checkout, the office repository,
-  the owner's home, `~/Library/LaunchAgents`, `/Users/Shared` or `/private/tmp`, or run launchctl, sudo or su; it could
+  the owner's home, `~/Library/LaunchAgents`, `[REDACTED sha256=654cea41a7720aad69139630b36f6ef477bbee89c0c36ab0c8d1d56a5106923b] or `/private/tmp`, or run launchctl, sudo or su; it could
   write in its own directory, run ps and use a listener of its own. A connection it held to a port that was listening
   before it started was allowed by the profile and found by the connection check.
 - The rehearsal itself (the candidate's `code_rehearsal.rehearse`) on this host's real pair, the active release and a
@@ -2283,3 +2283,699 @@ Limits:
   `runtime/check_issuer.py`) and the AP-10 command (its binary), so the owner activates it in an owner-run transition.
   `scripts/host_publication.py` is the source of the separately adopted launcher; its change, like `check_issuer.py`'s
   code list, takes effect only at the next adoption.
+
+## BACKLOG-1225AC-I1-I3 — 2026-09-30: preparation, not activation
+
+Source: unchanged Office order `partner-OVL-20260930-1225ac/ARBETSORDER.md`, I1/I3,
+and the interactive mandate to implement the complete backlog autonomously.
+`runtime/content_guard.py` scans full changed Git blobs using host code. Pattern
+matches carry only relative path, line and category; sensitive filenames are
+represented by a path digest. The fixed OS-account policy is outside repositories.
+Configured unreadable/empty/linked literal lists refuse. Per-path exceptions bind
+exact SHA-256 and a reason; the receipt exposes only the reason digest. No policy
+has been installed. No list configured is explicitly reported, never silently
+claimed checked. Patterns cover named key/token families, home paths and session
+streams; unrecognized, encoded, compressed or arbitrary personal data is not
+claimed detected. Source principles: original order's preserved OpenClaw source
+excerpts 18 and 19; no external code copied or executed. Vercel's five prefixes
+were verified at https://vercel.com/changelog/new-token-formats-and-secret-scanning
+on 2026-09-30. Policy details are in `docs/content-guard.md`.
+
+Publisher and issuer each scan before effects; the issuer import closure includes
+the scanner. Their Git commands disable hooks and filesystem monitors, remove
+inherited Git environment overrides and validate all effective push URLs. Any URL
+rewrite rule refuses, even a redundant one; the narrower profile avoids ambiguous
+longest-prefix behavior. Existing gh authentication remains available.
+
+Actual isolated targeted result: 40 tests OK, including real local bare-remote
+push without hook execution, redirected push refusal, all four poison categories
+for Runtime/Office/Digitala and independent issuer refusal of a self-disabling
+candidate. Source: private backlog-plan-20260930/1225ac-runtime/i1-i3-r1.log.
+No live publication, host adoption or active release is claimed for this work.
+I2/F1–F3/G1–G2 and exact final whole-suite/review remain pending in docs/plan.md.
+
+## BACKLOG-1225AC-FG-I4 — 2026-09-30: prepared controls and measured limits
+
+Source: Office order OVL-20260930-1225ac F1–F3/G1–G2/I4. The prepared failure ledger is now wired into queue measurements, sealed-suite consumption, dry runs, publication and native issuer execution. Each physical run or consumption has an immutable identity, commit, source binding, case order and available measured case times. Missing evidence remains unknown; no later success erases a failure. Targeted wiring59 tests passed (private backlog-plan-20260930/1225ac-runtime/f1-r4.log). Fixed measurement source and its sudoers source hash are prepared; neither installed program nor sudoers nor issuer adoption changed.
+
+F3a–c: the issuer uses scripts.bounded.stop_group, the private-stage compatibility name aliases that same owner, ps uses an explicit UTF-8 locale, and the private-watch fixtures use their own readiness signals. Against the old functions, the three regression probes fail both in their original relative order and separately (one explicit diagnostic of the failed control). Classification: product, fixture, product. On frozen54e3bd9 the four affected files pass20 runs each and three combined runs in their original relative order:83 runs,2369 case executions (private F3-STABILITET.json and append-only external F3 ledger). These are not three complete repository suites and are ordinary host process probes with temporary empty HOME; they are not claimed credential-free. D046 and later G2/I4 additions require their own final integrated measurement.
+
+F3d assessment: the preserved PR62 diagnostic note (Office evidence/granskningsbudget/local/runtime-publication-DIAGNOSTIC-NOTE.md) records two failed direct dry runs at13:49:31 and13:54:13 on2026-09-25 but no failing test identity or retained failed stdout/stderr. The subsequently preserved green outputs cannot recover the absent failure. The searched preserved D034 suite logs likewise contain no retained failing-test record. Cause therefore remains unknown; neither F3a nor F3b is asserted to explain those historical failures. The above controlled experiments establish their own specific defects only. No allowance for flakiness is introduced. The new ledger records future identities and failures before reruns; lost runs remain visible. Historical evidence has not been rewritten to imply a diagnosis.
+
+G1: the activity reviewer and fixed critique reader share runtime/review_policy.py. Suspected real secrets/private data in candidate publication content must block without reproducing values; documented placeholders and synthetic fixtures are distinguished. The reader's instruction comes from web_critique.AGENTS, included in its workspace and receipt; private review evidence is distinguished from candidate publication content. Live calibration of both executors remains pending.
+
+G2: limitations is a required list in the activity review schema. Missing/invalid lists refuse, each valid decision carries it, and the existing whole-review digest binds it at the issuer. Nonempty limitations neither block an otherwise valid approval nor waive acceptance. Existing historical terminal fixtures remain unaltered; a labeled synthetic adaptation tests the new schema. Targeted70 tests passed (private g2-r1.log).
+
+I4 historical measurement before enforcement: Runtime's50 first-parent commits touching docs/decisions.md through bbe2246f9b9418a18d71871f8181da9d8b6c8161 removed no lines; Office's111 through d22ef4de77c680f9a3921fbf92c9a1fd8afc4071 include three single-line replacements. They clarified a publication note (06217b6), marked a completed mandate (fcc2d45) and replaced a review placeholder (77ada97). Source: private I4-HISTORIK-r1.json. This is a prospective rule: those existing bytes stay the baseline. Future such corrections use an explicit new named correction instead of silent replacement. Whitespace wrapping and additions remain valid. Both publisher and independent issuer enforce retained decision text; new SUPERSEDED or a new named correction is explicit. Exact hash-bound redactions of scanner matches retain the remaining text. Targeted22 tests passed (private i4-r1.log). No historical exception or general status-line bypass is inferred.
+
+All source changes above await final whole-suite, independent review and protected integration. Owner files, issuer closure/launcher, fixed measurement adoption and Runtime activation require Johnny's concrete block. No original partner state or receipt has been changed.
+
+## BACKLOG-G1-DIFF-PLUGIN-20260930 — newly observed built-in, preparation
+
+The actual Claude G1 calibration on the D046-derived profile reported `cc-plugin-diff@builtin` in system/init.plugins. The existing terminal contract correctly refused it, despite a completed process and structured output. It is not counted as a valid review or calibration. Source: private backlog-plan-20260930/1225ac-runtime/g1/claude-planted-r2.log and its bound Runtime profiler receipt/stream. The prepared PLUGINS_OFF map additionally disables that named built-in. Requalification of the isolated calibration is required before any valid result is claimed. No active profile, daemon or other session's D046 branch is changed.
+
+G1 calibration after the named plugin fix: Codex and Claude each rejected the plausible but invalid planted credential without reproducing its value, and each approved the documented placeholder. Runtime receipts report valid terminals. Source: private backlog-plan-20260930/1225ac-runtime/g1/KALIBRERING.json, bound receipts and both immutable fixture pairs. Durations: Codex18.9s/18.0s, Claude19.4s/32.1s (planted/placeholder). Actual usage fields are preserved in that source; no monetary charge is inferred. The earlier X-only candidate and the invalid-plugin terminal remain failed calibration evidence and consume quota in the later U1 accounting. These isolated subscription calls do not start a partner or change an active release.
+
+## BACKLOG-1225AC-I2-ARCHIVE — 2026-09-30: exact originals preserved privately
+
+Read-only scan at Runtime bbe2246 found159 flagged files among936 regular files; Office d22ef4d10 among264, Digitala179f2c7 zero among156, Kundstartd554777 one among95. These are bounded scanner findings, not a guarantee against all private data. The exact flagged Runtime blobs were copied to a private content-addressed archive outside every repository and each SHA-256 checked. Source: Office private backlog-plan-20260930/1225ac-runtime/I2-ARKIV-r2.json and individual main-scan-r2 reports. No primary file or history changed.
+
+Cleanup preparation will be a separate candidate. The publisher previously refused every deletion. Its prepared narrow replacement permits only an exact host-policy entry (target, base, path, original SHA-256, archival reason), repeated by the independent issuer. This is not a candidate-controlled deletion capability.42 targeted tests passed before the final invalid-container check; its separate result is i2-deletions-r2.log. Actual policy installation and issuer adoption still require Johnny; no policy or authority file was written. Main cleanup is not claimed complete.
+
+
+## BACKLOG-1225AC-GUARD-R1-RATTNING-20261001
+
+Source: OVL-20260930-1225ac I1/I3/F1–F3 and the separate private guard-r1 review. All seven findings remain in preserved evidence. The prepared external observer, exact adopted measurement-program binding, validated ledger endings, replacement-free Git reads, repository-bound exceptions, extension-independent stream detection and OS-account-derived owner paths address those findings. No previous suite is relabelled as protected external observation. The existing same-process F3 histories remain historical; new qualification and final separate review precede integration. The installed holder, measurement program, sudoers and active release stay under separate concrete owner blocks.
+
+Targeted fixture control guard-r2-targeted-02 exposed a product error: reusing the OS-wide temporary root overlapped protected fixture files. The observer now receives a private child directory under that OS temporary root. The corrected failure-ledger/measurement subset passes30 cases in guard-r2-targeted-03; these are targeted local probes, not the final whole suite or installed-program qualification.
+
+
+## BACKLOG-1225AC-F1-SCHEMA3-20261001 — korrigerad förberedd mätgräns
+
+Ersätter den förberedda schema2-metodens anspråk för F1/F3, inte bevarade beslut
+eller äldre observationer. Faktisk Codex-designgranskning f1-arkitektur-r1 fann
+fyra luckor: UID-väg för städning, namnmaskeringens tappade senare fall,
+snapshot/fixturskydd och producent/kö/konsumentens schema- och kodbindning.
+Källa: privat backlog-plan-20260930/1225ac-runtime/granskning/f1-arkitektur-r1/review.json.
+
+Implementationsval: en sammanhängande unittest-tolk som provkontot, ägarmätt
+händelsemottagning, numeriskt manifest och ägarägda primärfiler utanför repon.
+Det befintliga fasta programmet får prepare/run/stop ID; stoppmål är exakta
+ägarskrivna UID/PID/grupp/startidentiteter och ägaren läser verklig processfrånvaro.
+Inga nya root-kommandon eller konton. Snapshot, verktygsföräldrar och ACL:er
+kontrolleras; privata fixturer är separata. Schema3 binds till adopterad mätare,
+ägarmottagare och kö. Kandidatens assertions/händelser kräver fortsatt separat
+källgranskning. Tidsmåttet omfattar transport/schemaläggning. En senare grön
+körning tar inte bort ett tidigare fel. Regresionsetikett kan inte kringgå detta.
+
+89 riktade integrationsprov är gröna (f1-owner-integration-r2.log); den tidigare
+r1-loggens enda gamla köfixturanrop bevaras med felet. Detta är förberedelse,
+ingen installerad kors-UID- eller F3-kvalificering. Slutlig granskning och
+skyddad kodintegration föregår konkret Johnnyblock för installation/adoption.
+Därefter krävs verkliga gränsprov och F3:s nya kontroll-, 20+3-serier enligt
+beställningen OVL-20260930-1225ac. Ingen partnerdata eller drift ändras här.
+
+## BACKLOG-1225AC-GUARD-R2-RATTNING-20261001
+
+Den separata granskningen guard-r2 av 3d4f44c4e265 avvisade fyra luckor: en
+maskerad fallidentitet omhashades vid återläsning, värdprov kunde försvinna ur
+försökshistoriken, liggarens ACL granskades inte och ändrade dokumentblobbar bar
+äldre personliga hemreferenser. Ursprunglig dom och misslyckade riktade försök
+bevaras privat i `backlog-plan-20260930/1225ac-runtime/`.
+
+Rättningen gör masknamnet idempotent; en kollision med privat policy vägras.
+Liggaren kontrollerar ägare/mode och ACL i katalog, föräldrar, lås och poster;
+provkontots faktiska UID/grupper avgör ACL-tillämplighet, och okända principaler
+eller rättigheter vägras. Skrivande ACL för en obetrodd principal vägras också.
+Endast läsande ACL för en annan upplöst OS-principal tillåts; ingen kontonamnslista används. En rootägd sticky temporärkatalog är tillåten
+som förälder, men inte som privat liggare. Värdprovet reserverar sitt försök före
+provimport, tidsätter faktiska fall och bevarar ofullständighet vid avbrott.
+Utdata skapas exklusivt. Publiceraren binder exakt fallutfall, runner-SHA,
+bevarad värd och källa till det permanenta försöket; ett senare grönt diagnostiskt
+försök tar aldrig bort det röda. Provets medvetet misslyckade testfixtur har en
+uttryckligt syntetisk OS-hemrot och skriver aldrig i den riktiga liggaren.
+
+I2:s dokumentdel för de fyra redan ändrade Markdownfilerna förs fram i denna
+kodomgång: bara exakt matchade privata spann ersätts av digestmarkörer.
+Originalbyten bevaras utanför repona med SHA, och beslutens tokenordning efter
+samma redaktion verifieras. Git-historiken skrivs inte om. Övrig I2-rensning och
+exakta framtida undantag är fortfarande en separat kandidat; detta är inget
+undantag från innehållskontrollen. En historisk kommandorad med digestmarkör är
+bevistext, inte ett körbart operatörsblock. Nytt ägarblock måste använda den
+faktiskt granskade installationens sökvägar.
+
+Ingen installation, adoption, aktiv release, provkontobehörighet eller tjänst
+ändras här. Verklig schema3-gränskvalificering och F3-serien kräver fortfarande
+ägarsteget i runbooken. Nya provutfall påstås först när deras kvitton finns.
+
+Värdförkontrollen på b6af361 stoppade före provimport: OS:ets ärvda läs-ACL för
+indexering gav inte provkontot rättigheter men avvisades av den första alltför
+breda kontrollen. Privat LEDGER-ACL-OBSERVATION.json bevarar faktisk UID/mode/ACL.
+Den senare kontrollen löser principaler och provgrupper, utan att ändra installerade
+ACL:er eller ge något konto ny åtkomst. Den nya principen provas också mot ett
+annat kontonamn med samma prov-UID, gruppåtkomst och delete_child.
+
+
+## BACKLOG-F107-I1-G2-20261001
+
+F-107 punkt4/7 preciserar OVL-20260930-1225ac I1/G2. Innehållsvakten upptäcker faktiska nollbredds-, bidi-, tagg- och variationsväljarkodpunkter i hela blobben; kvittot visar rad/kategori och maskerar sådana filnamn. Tryckbar escape-notation är inte samma sak som ett osynligt tecken. Befintliga exakta repo/path/SHA-undantag består. scripts/test_review_isolation.py kör som standard en verklig modellfri Codex-sandbox med andra granskarens rättigheter: första granskarens syntetiska resultat och länk till det nekas, kandidatens skrivning nekas, avsedd läsning och scratch fungerar. Detta bevisar Codex-filsystemgränsen, inte Claudes verktygsgräns eller en ny modellkörning. Privata f107-targeted-r1.log:12 prov gröna. Kandidatens nya hel, värdprov och separat granskning återstår. F-107:s P3 samt nya Kundstart-/Digitalabeställningar ingår inte som redan beställda krav. F-109/F-110 är lästa; originalens vilande status är oförändrad, och kodintegration är inte driftaktivering eller partnerkvittens.
+
+
+## BACKLOG-READONLY-FIXTURES-20261001
+
+Separata Codex-granskningen guard-r4 av0146dde avvisade kodintegration:
+standardprovet skrev sin fixtur under ROOT/.runtime, som schema3-observatören
+skapar ägarägd och oskrivbar för provkontot. Samma antagande fanns i totalt
+sex TemporaryDirectory-anrop: test_review_isolation (ett),
+test_acceptance_boundary (ett), test_office_target (tre) och test_review_budget
+(ett, delat av fyra testmetoder). Källor: dessa anrop och privat
+backlog-plan-20260930/1225ac-runtime/granskning/guard-r4/review.json.
+
+Alla sex använder nu ROOT/.scratch, som measurement_observer.materialize_snapshot
+redan binder till provägd disponibel yta. Inga rättigheter på källan eller
+.runtime ändras. Nio berörda testmetoder har körts med oskrivbar syntetisk
+källrot och kontrollerat skrivavslag i .runtime: nio gröna, inget hoppat prov
+(privat readonly-fixtures-targeted-r1.json). Det är ett lokalt kontrollprov,
+inte installerad tvåkontoisolering. Egen exakt helsvit, fryst skrivskyddad
+före/efter-källkontroll, värdprov och separat omgranskning krävs före integration.
+Tidigare911hel genom äldre mätaren raderar inte guard-r4:s avslag; dess källa
+ligger kvar på archive/runtime-guard-before-readonly-fixtures-20261001.
+
+
+## BACKLOG-AGENT-UMASK-20261001
+
+Separata guard-r5 av8a66fda fann att agentens umask077 ströp läsningen
+för provkontot: observation/stop skapades som0600 och source/.runtime
+som0700. Agenten anropar run_pending direkt från model_choice.tick,
+så köns CLI-umask022 gäller inte där. Samma skapandeantagande granskades
+för Git-metadata i den klonade källan. Källa: privat granskning/guard-r5,
+scripts/model_choice.py och runtime/measurement_observer.py.
+
+write_owner sätter nu mode explicit via öppnad filbeskrivare och verifierar
+typ, UID, exakt mode och ACL: delade protokolldokument0644, privata
+primärresultat0600. Den delade .runtime-katalogen sätts och verifieras0755.
+Git-metadata får läsrätt men ingen skrivrätt för provkontot, också när
+Git skapade filerna under077; länk/annan nodtyp vägras. Källfiler och
+kataloger behåller tidigare exakta644/755, disponibla länkar är oförändrade.
+
+Två nya prov använder verkliga filer/Git-kloning under077, inklusive
+ersättning av protokolldokument, privata resultat, verktygslänkar och
+Git-metadata. Samtliga21 observerprov är gröna (privat agent-umask-targeted-r1.log).
+Det är lokala mode-/protokollprov, inte installerad tvåkontoisolering.
+Egen ny helsvit, fryst före/efterkontroll, värdprov och separat granskning
+återstår; tidigare911grön på8a66 raderar inte det faktiska avslaget.
+Ingen agent, installerad mätare, konto eller filrättighet utanför provytor
+ändras av denna kodförberedelse.
+
+
+## BACKLOG-NATIVE-STROMHANDELSER-20261001
+
+Guard-r6 avvisade c26ff13:s I1: omdöpta Claude-init- och result-terminaler
+träffade inte råströmsmönstret. Kontrollen omfattar nu system/result och
+syskonformer som redan konsumeras i provider_result, review och
+development_interactive: error, turn.failed, item.updated, session_meta,
+event_msg, task_complete, turn_failed samt agent_message/command_execution.
+Typvärdenas struktur granskas oavsett filnamn och även i terminalutdrag;
+kuraterade strömliknande kvitton kräver fortsatt exakt repo/path/SHA-undantag.
+Det är en begränsad mönsterkontroll, ingen garanti att godtycklig privat data
+saknas. Källor: runtime/content_guard.py, runtime/provider_result.py,
+runtime/review.py, runtime/development_interactive.py och det faktiska
+avslaget i privat backlog-plan-20260930/1225ac-runtime/granskning/guard-r6.
+
+Två regressionsprov täcker nio eventformer i tre filnamn, kompakt/indragen
+JSON, terminalutdrag och exakt undantagsbindning. Nya prov/native/värd, egen
+915hel och separat granskning krävs före skyddad integration. Tidigare913grön
+på c26 bevaras och upphäver inte granskningsfyndet. Ingen installation,
+adoption eller aktiv release ändras.
+
+
+## BACKLOG-GIT-AUTENTISERING-SNAPSHOT-20261001
+
+Guard-r7 avbc2222b avvisade två integrationer trots915 grön äldre helsvit:
+värdprovsfixturen tog bort GIT_CONFIG_GLOBAL/GIT_CONFIG_NOSYSTEM, och
+publication_git tog bort anroparens fasta gh-helper. Fixturen bevarar nu
+mätarens exakta snapshotkonfiguration i barnets miljö. Ett nytt prov utlöser
+Gits verkliga ägarkontroll med dess provflagga, observerar vägran, lägger till
+bara den exakta källroten och mäter därefter värdprovsbarnets avsedda röda
+kvitto. Provflaggan är en simulerad ägarskillnad, inget verkligt två-UID-bevis;
+den kommande installerade helkvalificeringen måste pröva verklig källägare.
+
+Publiceringsprofilen tömmer ärvda Git-omstyrningar och väljer därefter explicit
+en tom credential.helper följd av !gh auth git-credential. Ett faktiskt lokalt
+Git-credential-fill-prov använder en syntetisk gh på provets PATH och visar
+att varken tidigare generell, URL-specifik eller miljöangiven annan helper
+körs. Det gör inget nätanrop och läser ingen verklig nyckel. Den befintliga
+värdens gh-inloggning behålls; inga nya konton eller rättigheter tillkommer.
+Två riktade prov gröna. Alla tidigare felposter och granskningar bevaras.
+
+Källor: OVL-20260930-1225ac F1/I3; privat backlog-plan-20260930/
+1225ac-runtime/granskning/guard-r7/review.json och guard-r7-git-targeted-r1.log.
+Nya byten kräver egen helsvit, frysta kontrollprov och separat granskning;
+ingen installation, adoption, aktivering eller ändring av partnerdata görs här.
+
+
+## BACKLOG-DEKLARATION-OVERGANGSBINDNING-20261001
+
+Guard-r9 av50deb3f fann att install_ap10.copy_code inkluderade den exakta
+evidence/v0.1/dependencies.json medan code_transition.released uteslöt den.
+Kodövergångens bytekontroll kunde därmed vägra en korrekt kopierad release.
+Båda urvalen omfattar nu denna namngivna fil; inget annat evidence släpps in.
+Ett verkligt temporärt Gitprov följer copy_code till code_is_the_revision,
+kontrollerar ändringslistan och vägrar saknad deklaration, extra evidence samt
+ändrade deklarationsbyte.55riktade installations-/övergångsprov är gröna.
+Ingen release stegas eller aktiveras av dessa syntetiska prov. Ändringen i
+code_transition är en ägarfil och kräver fortsatt konkret Johnnyblock.
+
+Källor:original D89 K1–K4 och1225ac, privat1225ac-runtime/granskning/guard-r9/
+review.json och guard-r9-release-targeted-r1.log. Tidigare917hel/28värd/10native
+på50deb3f täckte inte denna kedja och är inte godkännande. Nya918hel,
+värdprov, elva nativegrupper och separat granskning krävs på rättade byte.
+Guard-r8:s inconclusive utan läst underlag förblir bevarad separat.
+
+
+### BACKLOG-POLICY-ACL-OCH-DIAGNOSTIKARV-20261001
+
+OVL-20260930-1225ac I1/F2: den faktiska separata guard-r10-granskningen
+underkände eb843b7 på två kvarvarande kontrolluckor. Diagnostik följer nu
+sitt diagnostic_of till den ursprungliga provtypen och behåller förbudet att
+klassificera värd-/förseglade-/hela prov som fladdrande. Kedjan kräver samma
+commit, tidigare försöksnummer och ett faktiskt misslyckat föräldraförsök;
+cykler och fler än två diagnostikled vägras. Vanlig sakklassning fungerar,
+och ursprungligt rött förblir publiceringshinder.
+Innehållsvakten läser nu Darwin-ACL för policy, litteralfiler och föräldrar
+före läsning. Faktiska provkontots UID/grupper avgör åtkomst; okända principaler,
+rättigheter och obetrodd mutation vägras, liksom skrivbara föräldrar.
+Policyfrånvaro som inte går att avgöra räknas inte som okonfigurerad. Modulen
+är självständig även när kroken laddar dess absoluta fil utan Pythonpaket;
+inget godtyckligt kandidatval av ACL-modul införs. Öppning blockerar inte på FIFO.
+Källor: runtime/content_guard.py:_acl/_parents/_private/load_policy och
+runtime/failure_ledger.py:Ledger.classify.30 riktade modellfria prov gröna
+(guard-r10-targeted-r1.log); ACL-raderna är simulerade, ingen befintlig ACL
+ändrades. Den installerade två-UID-gränsen är fortfarande inte kvalificerad.
+Separata cross-uid-git-r3:s enda verkliga ytterprov blev grönt med UID470 mot
+ägare501 och ett fullständigt värdprovsbarn, men gäller de tre SHA-bundna äldre
+50deb3f-filerna. Det ersätter inte ny policy-ACL-, signal-, bortfalls- eller F3-kvalificering.
+Ny egen921hel,28värd,acceptans och separat granskning krävs före kodintegration;
+äldre918kvitto kvarstår som historik. Inget adopteras, installeras eller aktiveras.
+
+
+### BACKLOG-PROVPOLICY-HEM-20261001
+
+Exakt075ee4c gav921hel med6assertionsfel/7fel;11provmetoder berördes.
+Publiceringsproven läste processkontots verkliga policyplats. ProvUID470:s
+OS-hem är /var/empty och /var är en systemlänk; den nya föräldrakontrollen
+vägrade korrekt före de avsedda publiceringskontrollerna. Fixturerna i
+test_check_issuer, test_integration och test_office_target väljer nu en egen
+privat tillfällig policy utanför Git. Faktisk policyparser, fil-/ACL-/föräldrakontroll
+och scanner körs oförändrade. Ett nytt prov verifierar att trasig JSON, offentlig
+fil och saknad fil fortfarande vägras. Ingen verklig policy eller OS-rättighet
+ändras, ingen produktregel försvagas. Ny exakt922hel och separat granskning krävs.
+Källor: scripts/test_integration.py:private_content_policy och privata
+1225ac-runtime/r20/suite.log, suite.json, LEGACY-POLICYHEM-BOK.json.
+Rött har efterimporterats i permanenta liggaren som ofullständigt med okända
+falltider, run4b069b656a8e40388ec40ea8d720db5b; detta är inte ursprunglig begin-tid.
+Två riktade60fallsförsök bevaras: r1 hade ett saknat lokalt Codex-binärställe,
+r2 pekade tre scratch-prov mot värdroten utan scratch. Båda är röda miljöfixturer,
+inte gröna helprov. Exakt ny fryst källmätning återstår.
+
+
+### BACKLOG-GIT-WORKTREE-BOOL-20261001
+
+OVL-20260930-1225ac I3: faktisk guard-r11 underkände bb57f10 trots922grönhel.
+Git godtar även en värdelös worktreeConfig-nyckel och andra icke-nolltal,
+vilka den egna listan över sanna värden missade. Därmed kunde proxy/TLS-
+inställning i config.worktree passera utan granskning trots rätt get-url.
+Vakterna använder nu Gits egen boolparser med uttrycklig standard false
+och granskar separat worktree-konfiguration när Git anger true.
+31riktade prov gröna; nya regressionen skapar huvud- och länkad arbetskopia,
+prövar tolv booleska former och observerar den verkliga effektiva transport-
+inställningen innan vägran. Falska former fortsätter fungera.
+Första rättningsförsöket läste --worktree även vid avstängt stöd; Git vägrade
+det i länkade arbetskopior. Dess31fallslogg med10subtestfel är bevarad.
+Källor: scripts/test_content_guard.py:test_all_git_boolean_forms_receive_worktree_transport_checks,
+privat1225ac-runtime/worktree-bool-targeted-r1.log/r2.log och
+granskning/guard-r11/review.json. Ny exakt923hel, acceptans och separat
+granskning krävs före kodintegration. Ingen transport, policy eller
+installerad auktoritet ändras av dessa disponibla lokala Gitprov.
+
+
+### BACKLOG-KVALIFICERING-OBSERVATION-20261001
+
+OVL-20260930-1225ac F1/F3: separat granskning av det privata
+kvalificeringsutkastet identifierade luckor i föregångarbindning,
+primärbevis, slutlig städning och orsaksverifiering. Den permanenta liggarens
+avslut kan nu bära en validerad observation_sha256 för den exakta primärkartan.
+Äldre avslut blir inte i efterhand nya kvalificeringsbevis. Den privata
+kontrollern ska kräva och återverifiera kartan innan nästa jobb eller adoption.
+
+Observatören bevarar faktiska processidentiteter utan kommandorader vid
+start-, städ- och slutkontroller. Varje faktisk stop-begäran får dessutom en
+egen privat oföränderlig kopia; den delade senaste stop-filen ersätter inte
+historiken. Det är observationer vid dessa kontrollpunkter, inte ett anspråk
+på att varje kortlivad process har observerats kontinuerligt.
+En grön namngiven nyckelkontroll godtas inte när svepet har träffar, saknade
+fält eller är avbrutet. Ingen automatisk rättighetsändring eller tillåtlista
+för svepträffar införs.
+
+Readinessregressionen kör nu de faktiska start-/stoppmetoderna med en riktig
+engångspipe och syntetisk Popen. Ett återställt tidsväntande beteende ger
+orsaksspecifika fel; AST-läsning används inte som orsaksbevis. Chromeprovet
+har en särskild felmarkör för att rätt profilmängd inte hittades. Detta
+ersätter inte kommande verklig kvalificering över två UID eller F3-serien.
+Källor: scripts/test_failure_ledger.py:test_primary_observation_digest_is_retained_and_malformed_binding_refused,
+scripts/test_measurement_observer.py:QualificationEvidenceTests,
+scripts/test_private_watch.py:test_fixture_readiness_uses_no_elapsed_sleep,
+scripts/test_web_profiles.py:test_only_the_processes_of_the_named_chrome_profile_are_ended,
+privat operator-granskning/qualification-r1/review.json,
+operator-granskning/installation-r8/review.json och
+1225ac-runtime/F3-READINESS-BEHAVIOR-r1.json.
+Egen helsvit, värdprov, separata nativeprov och slutgranskning återstår.
+Ingen installerad helper, issuer, policy, aktiv release eller tjänst ändras.
+
+
+## BACKLOG-PROB-PRODUCENT-20261001
+
+Separat installation-r9 fann att fil-/kommando-/listningsfel och symboliska
+lankar kunde ge skenbart ren nyckelprob. Producenten skiljer nu faktisk
+OS-atkomstvagran och franvaro fran okanda I/O-fel och timeout. Icke-nollkod
+ensam ar inte bevis: bara namngivna nyckelrings-/GitHub-franvaroutfall godtas.
+Inga kommandoresultat eller undantagsmeddelanden med mojligt innehall skrivs
+till probrapporten.
+
+Svepet anvander explicit scandir/stat sa att fel per katalogpost inte doljs.
+Lasbara fil- och kataloglankar undersoks, inodebesok hindrar cykler, och
+namngivna specialfiler vagrar som okant utan blockerande FIFO-oppning.
+Tids-/postgrans, okant undersokningsutfall eller sveptraff ger aldrig
+kredentialfri=true. Befintligt avgransat namn-/katalogurval andras inte.
+
+Sju nya producentprov anvander disponibla lankar/FIFO och injicerade fel;
+51 riktade helper-/observatorsprov ar grona med Python3.12 och de sju nya
+producentproven ar grona med fasta programmets Python3.9. Kallans sudoersmall
+pinnar de nya helperbytena. Installation/adoption/kvalificering ar fortfarande
+separata konkreta agarsteg; ingen installerad fil eller rattighet andrades.
+
+
+## BACKLOG-KVALIFICERING-SLUTPROTOKOLL-20261001
+
+Qualification-r2 avvisade sena kvittofel efter gron finish och tappade
+observationer vid fel. Liggaren forbereder nu data/fsync/ACL fore atomisk
+exklusiv hardlank till slutnamnet. Den tidigare posten skrivs aldrig over,
+och stagingstadning kan inte gora ett redan genomfort commit till avbrott.
+Krasch kan fortfarande forlora katalogposten; da ar forsoket ofullstandigt.
+
+Processidentiteter sparas i egna skyddade primarfiler vid varje kontrollpunkt
+innan transporten/parsern fortsatter, aven nar ingen suite.json kan skapas.
+Readinessprovet skriver PID/launch-filer tidigt och levererar L och R separat
+genom verklig pipe. Retur och stoppsignal maste vanta pa bada handelserna;
+ursprungliga kroppar och en mutation utan vantan ger samma orsaksbestamda
+F3_READINESS_BEFORE_PROVIDER. Inga sleep-fel injiceras i den kontrollen.
+
+42 riktade liggar-/observators-/readinessprov ar grona. Forsta uppstallningen
+saknade json-import i ett nytt prov; dess ettfelade42-logg bevaras. Separat
+lokal jamforelse r2 hade indenteringsfel i mutationsberedningen; en explicit
+diagnostik r3 rattade bara det och bevarar gamla tracebacken. Inga installerade
+UID-, helper-, policy- eller adoptionsbevis pastas for dessa lokala kontroller.
+
+
+## BACKLOG-SENA-OBSERVATIONER-OCH-KOPUBLICERING-20261001
+
+Installation-r10 fann att ett kommando som inte kunde startas felaktigt kunde
+räknas som bevis på saknad nyckel. Alla startfel ger nu okänt utfall, även
+ENOENT/EACCES/EPERM. Qualification-r3 fann att redan observerade fall kunde
+tappas vid ett sent kvittofel och att privata jobb kunde bli synliga för den
+ordinarie agenten innan de markerats. Observatören bär nu verkliga fall och
+returkod genom sena läs-/skrivfel; kön bevarar dem i ett ofullständigt avslut
+och stoppar när städning inte är verifierad. Detta gör aldrig försöket grönt.
+Privata kvalificeringsjobb får sin permanenta uteslutningsmarkering innan
+begäran publiceras, också om anroparen sedan förlorar kvittot.
+
+81 riktade helper-/observatörs-/köprov är gröna. Rålogg:
+privat1225ac-runtime/late-observation-queue-targeted-r1.log. Sju nya prov
+kräver egen943hel, värdprov, fryst nativeacceptans och separat granskning.
+Installation, kvalificering och adoption är fortfarande separata ägarsteg;
+inga installerade program, tjänster eller ursprungliga partnerposter ändras.
+
+
+## BACKLOG-BESTANDIGA-PRIVATA-BEVIS-20261001
+
+Qualification-r4 avvisade tre luckor: osynkad privat kömarkör, osynkad
+permanent reservation och alltför bred läs-ACL i privata bevisvägar.
+Begäran blir nu synlig först efter fil- och katalogsynk av agentmarkören.
+Ledger.begin synkar reservationens katalog innan transport kan tillåtas;
+nyskapad liggarkatalog och dess förälder synkas också. Ett synkfel lämnar
+en ofullständig reservation och tillåter ingen transport.
+
+Privata liggarposter, primärströmmar och innehållspolicy vägrar andra kontons
+läsande allow-ACL. Avsiktligt delade descriptors och fasta verktyg har kvar
+sin delade gräns. Observatören kontrollerar privat katalog, filidentitet,
+mode och ACL före råskrivning. Den privata operatörskedjans motsvarande
+kvalificerings- och granskningsläsare bereds och granskas separat.
+
+95 riktade prov är gröna i durability-private-targeted-r3.log. Två tidigare
+loggar med fyra respektive ett fixturfel bevaras; explicita diagnostiker
+rättade enbart macOS temporärkatalogalias till kanoniska sökvägar. Senare
+källgenomläsning fann ett odefinierat namn i delad verktygs-ACL, infört i
+arbetskopian vid rättningen. Det är rättat; shared-tool-acl-targeted-r1.log
+har sex gröna gränsprov inklusive verklig läs-/skriv-ACL på disponibel fil.
+Källa: privat backlog-plan-20260930/1225ac-runtime och
+operator-granskning/qualification-r4/review.json. Egen952hel och separat
+kodgranskning återstår; lokala prov är inte installerad två-UID-kvalificering.
+
+
+## BACKLOG-TERMINAL-OCH-PRIVATA-RAUTDATA-20261001
+
+Status: kandidaträttning efter faktisk separat guard-r13, ingen aktivering.
+
+F1/F2 bevarar nu `terminal_successful` från observatören genom kö, förseglad
+konsumtion och permanent liggare. Strukturellt giltig negativ terminal kan
+vara komplett men aldrig godkänd, även med lyckade delfall och exitkod noll.
+Konsumenten validerar också att rapportens passed stämmer med primärfälten;
+saknade/otypade terminalfält kvalificerar inte ett schema3-bevis.
+
+Värdprovsutdata använder samma privata katalog-/filkontrakt som observatören.
+Utfärdaren kontrollerar arbets-/observationskataloger och öppnar samtliga
+råloggar med verifierad privat ACL före första kandidatprocessen. Kontrollen
+sker före första byteskrivning, inte genom efterföljande chmod. Privata
+auktoritetsläsningar kontrollerar dessutom föräldrars ACL och den öppnade
+filens identitet före/efter läsning. Ingen verklig auktoritetsfil ändras.
+
+Sex nya regressionsprov ger egen planerad958hel.111 riktade prov är gröna
+i terminal-private-boundaries-targeted-r2.log. R1:s enda fel var den äldre
+symlänkfeltext som koden ersatte trots korrekt vägran; explicit diagnostik1
+återställde den ursprungliga feltexten utan ändrad förväntning. Samma diagnos
+rättade nya köprovets skilda liggarfixtur så att verklig consume också körs.
+R1-loggen och diagnosen bevaras. Källor: privat1225ac-runtime/granskning/guard-r13/review.json,
+TERMINAL-PRIVATE-DIAGNOSTIK-r1.json samt båda riktade loggarna.
+
+Egen helsvit, frysta native-/värdprov och ny separat granskning återstår.
+Detta är inaktiv kodberedning, inte installerad två-UID-kvalificering eller adoption.
+
+
+## BACKLOG-PRIVATA-STARTVAGAR-20261001
+
+Status: inaktiv kandidaträttning efter faktisk operatörsgranskning chain-r3.
+
+F1:s förberedelse öppnar och ACL-kontrollerar både rålogg och protokollfil
+före transportstart och behåller filbeskrivarna. Bootstrapläsningen i
+båda host_publication-vägarna kontrollerar föräldrar, ACL och samma öppnade
+filidentitet före/efter läsning. Den fristående launchern använder bara
+standardbibliotek fram till verifierad kodrot; anroparen återanvänder
+utfärdarens privata läskontrakt. Inga verkliga auktoritetsfiler ändras.
+
+Sex nya regressionsmetoder täcker öppnings-/ACL-fel före förberedelsestart,
+verklig lyckad transport med städning, främmande fil-/föräldra-ACL, skrivbar
+förälder och filbyte före öppning i båda bootstrapvägarna.37 riktade prov
+är gröna under umask077 (privat bootstrap-private-targeted-r1.log).
+
+Föregående10852ef:s958hel är röd och bevarad: två kvittofixturer skickade
+Darwins /var-alias till det skyddade utdatakontraktet; en negativ offentlig
+katalogfixtur blev i verkligheten0700 under agentens umask077. Den första
+bokförda diagnosen av exakt gammal kandidat reproducerade samtliga fel och
+bevarade barnens stderr samt verkligt mode. Endast dessa disponibla fixturer
+rättas, med kanonisk temporärrot respektive uttrycklig0755. Inga förväntningar
+eller produktionsskydd lättas. Originalet förblir rött i den permanenta
+liggaren; klassningen fixtur gör det inte publicerbart. Källa: privat
+1225ac-runtime/r29/LEGACY-HOSTFIXTURE-BOK.json, hostfixture-diagnostik-r1 och
+HOSTFIXTURE-ORSAK-OCH-RATTNING-r1.json; chain-r3/review.json är faktisk dom.
+
+Egen964hel,20nativegrupper,28värdprov, skrivskyddsprov och separat fullständig
+granskning krävs före skyddad kodintegration. Verklig installation/adoption
+och kvalificering är fortsatt ett separat Johnnyblock.
+
+
+## BACKLOG-PROCESSSTADNING-OCH-LOGGKOPIOR-20261001
+
+Status: inaktiv kandidaträttning av de två blockerarna i faktisk
+operatörsgranskning chain-r4 (privat backlog-plan-20260930/operator-granskning).
+
+Mottagaren, acceptansköraren och den äldre observationshjälparen skyddar
+hela selektorstarten efter Popen med städning och väntan. Alla öppnade
+rör stängs också när selektorn inte kan skapas eller registrera ett rör.
+Förberedelsevägens motsvarande städning stänger rören även efter ett
+städnings- eller stängningsfel. Den fasta hjälparen ändras och måste
+omfattas av det separata framtida Johnnyblocket. Inget installeras här.
+
+Köns kopiering och publicerarens rålogg använder den privata utmatningens
+katalog-, ACL- och filidentitetskontroll före första skrivningen. Publicerarens
+övriga egna kvitton använder samma privata skrivkontrakt; ersättningar sker
+via kontrollerad ny fil. Byggkatalogen måste redan uppfylla den privata
+kataloggränsen. Ingen befintlig verklig katalog eller behörighet ändras.
+
+Fem nya unittestmetoder tillförs. De täcker selektorfabrik och varje
+registrering med verkliga disponibla barn, stängda rör och återläst försvunnen
+processgrupp, samt kopior till offentlig katalog eller fil med främmande
+läs-ACL. Det befintliga publicerarprovet prövar dessutom dessa nekanden
+i en verklig wrapperprocess och privata mode i den lyckade torrvägen.
+
+Den riktade körningen körde92 metoder:91 passerade, den nya mottagarfixturen
+föll i sina tre underfall på en tom inventering före processstart. Explicit
+diagnos ändrade bara fixturen till en giltig syntetisk rad och provet blev
+grönt med samma felinjektioner och förväntningar. Originalet är bevarat.
+Källor: privata stream-cleanup-private-copy-targeted-r1.log,
+STREAM-CLEANUP-FIXTURE-DIAGNOSTIK-r1.json och
+stream-cleanup-private-copy-diagnostic-r1.log under1225ac-runtime.
+
+Egen969hel,21nativegrupper,28värdprov, skrivskyddsprov och separat fullständig
+granskning krävs före skyddad kodintegration.5294711:s gröna964hel gäller
+den äldre kandidaten; chain-r4 blockerade dess fortsättning. Ingen faktisk
+kvalificering, adoption, policyändring, aktivering eller partnerkvittens.
+
+
+## BACKLOG-FAST-HJALPARE-SHA-20261001
+
+Status: inaktiv rättning efter ac8af23:s röda969hel. Ett prov fällde
+att config/nortropic-matning.sudoers behöll tidigare hjälpar-SHA medan
+scripts/matning_provanvandare.py fått nya byte. Den exakta Gitjämförelsen
+och den ursprungliga assertionen binder orsaken till produktkonfiguration,
+inte fladder. Mallens enda program-pin uppdateras till den befintliga
+hjälparens nya SHA; användare, kommando och behörighetsomfattning ändras inte.
+Ingen installerad regel eller hjälpare ändras.
+
+Original969hel och dess exakta enda fel är permanent bokförda som
+6dd4476390ae4702be634047f294b959. Okänd första klassning och senare
+produktklassning bevaras; originalet blir aldrig grönt av denna rättning.
+Källa: privata1225ac-runtime/r31/LEGACY-HELPERPIN-BOK.json och
+HELPERPIN-ORSAK-OCH-RATTNING-r1.json. Ingen omkörning på gamla kandidaten.
+Befintliga SudoersTests passerar efter rättningen (helperpin-targeted-r2.log);
+första riktade anropet använde fel arbetskatalog och kunde inte importera
+scripts, utan att någon originalmetod kördes. Även det råfelet är bevarat.
+
+Ny egen969hel och separata exakta granskningar krävs. Operatörspaketen måste
+omberedas från den rättade mallen före framtida Johnnyblock; tidigare
+privata mallkopior gäller inte. Installation/adoption/kvalificering återstår.
+
+
+## BACKLOG-DIGITALA-PRIVAT-PUBLICERINGSKVITTO-20261001
+
+Status: inaktiv rättning efter faktisk chain-r5. DigitalaPublisher öppnar
+nu sitt privata publiceringskvitto genom private_output före _publish,
+med privat katalog, ACL-/identitetskontroll och kvarhållen filbeskrivare.
+Det gäller även redan sammanfogad PR, vars återavstämning i Publisher
+med rätta hoppar över issue_checks och därför inte etablerar kvittogränsen.
+Kvittoinnehållet skrivs och synkas genom den verifierade deskriptorn.
+
+Två nya unittestmetoder prövar offentlig katalog och främmande råfil-ACL
+före innehåll/effekter samt verklig _publish-gren för redan sammanfogad PR
+utan ny utfärdning, med syntetiska externa GitHub-observationer. Befintlig
+normal publicering, pin-/svitspärr och privat granskaridentitet är fortsatt
+gröna. Åtta riktade prov inklusive hjälparens tre sudoersprov är gröna:
+privata1225ac-runtime/digitala-private-reconciliation-targeted-r1.log.
+
+Chain-r5 läste hela buntade aktuella Pythonkedjan men avvisade även I16:s
+inkonsekventa PREPARED-hashar för sudoersfilerna. Nästa privata paket måste
+genereras från exakta Gitbyte och varje manifesthash verifieras före ny
+granskning. Avvisande preflight behålls. Ingen installation eller READY.
+
+31f0bb4:s nyköade mätbegäran togs ur kön under samma lås som agenten
+håller genom mätning, utan agentkvitto eller utdata. Skälet var detta nya
+fynd; ingen tjänst eller pågående agentkörning stoppades. Bevarad begäran
+och åtgärd: HELPERPIN-BEGARAN-ATERKALLAD-r1.json. Den ger inget provutfall.
+
+Ny egen971hel,22nativegrupper,28värd och separat exakt granskning krävs
+före skyddad inaktiv integration. ac8af23:s röda969hel står kvar. Verklig
+kvalificering, adoption, policy och stegad release är fortsatt separata steg
+med konkret Johnnyblock för ägarhandlingarna.
+
+
+## BACKLOG-PUBLICERINGSLIGGARE-OCH-WEBBGRUPP-20261001
+
+Status: inaktiv rättning av två faktiska avgränsade granskningsfynd.
+Källor: privata1225ac-runtime/granskning/guard-area-content-r1/review.json
+och guard-area-profiles-r1/review.json. Measurement-deldomen godkände sitt
+kodområde för föregående kandidat; det är ingen integrationsaccept.
+
+Den gemensamma Publisher-gränsen kontrollerar nu den permanenta provliggaren
+före första publicering och på nytt före push, skapande av PR och merge.
+En tidigare röd eller oavslutad körning, också följd av grön diagnos, stoppar
+före fjärrmutation. Otillgänglig eller felaktig liggare stänger grinden.
+Riktade prov använder verkliga privata liggarposter och räknade syntetiska
+GitHub/Git-effekter. Sen tillkommen negativ historik stoppar även nästa effekt.
+
+Webbprofilernas end_group återanvänder bounded.stop_group och kräver verifierad
+frånvaro av hela gruppen. Att ledaren skördats räcker inte när dess barn lever.
+SIGTERM följt av SIGKILL behåller webbprofilens tidsramar; om frånvaro inte kan
+fastställas rapporteras fel. Tre nya prov omfattar skördad ledare med kvarvarande
+barn, timeout med SIGTERM-ignorerande barn och uttryckligt städningsmisslyckande.
+Elva städnings-/boundedprov och tio befintliga webbprocessprov är gröna, enligt
+web-group-cleanup-targeted-r1.log och web-profile-process-targeted-r1.log.
+
+Första publiceringsprovgruppen var röd: fixturens importerade policyfunktion
+behöll en bortstädad temporär katalog, och ett separat sandboxprov saknade
+arbetsytans ignorerade verktygslänk. Båda är belagda i originalets traceback;
+policybindningarna rättades och befintlig verktygskopia länkades, utan ändrad
+produktionspolicy eller binär. Explicit avgränsad diagnos gav18gröna prov;
+originalets38metodersutfall är fortfarande rött, inte omskrivet till grönt.
+Källor: PUBLICATION-HISTORY-TARGETED-DIAGNOS-r1.json och
+publication-history-targeted-r1/r2.log. Ingen helsvit har körts om här.
+
+Ny exakt helsvit, native-/värdprov, skrivskydd, separat rättningsgranskning och
+helhetsbedömning återstår. Förseglarens egna gransknings- och värdbindningar
+rättas separat efter chain-r7; den har inte körts. Ingen installation, adoption,
+policyändring, partneråtgärd eller aktivering ingår. Runtime-ägarstegen kräver
+fortsatt konkret Johnnyblock.
+
+
+## BACKLOG-SEN-PROVHISTORIK-OCH-PROCESSAVSLUT-20261001
+
+Status: inaktiv rättning av tre fortsatta granskningsfynd, ingen publicering.
+Källor: privata1225ac-runtime/granskning/guard-area-content-r2/review.json
+(ett fynd) och guard-area-profiles-r2/review.json (två fynd). De tidigare
+fynden i Publisher och end_group bedömdes rättade av samma domar.
+
+HostIssuer kontrollerar den permanenta provhistoriken före varje check-run.
+Verkliga liggarposter som tillkommer under autentisering, serverläsning och
+efter första POST stoppar nästa utfärdarmutation. Ett redan skickat anrop
+återtas inte och ett senare grönt värdprov raderar ingen tidigare röd historik.
+
+bounded.main äger barnet i try/finally från start och genom metadatafilens
+skrivning. Stoppsignaler blockeras under Popen tills processreferensen är
+sparad, och återställs innanför städningsgränsen. Loggfel eller stoppsignal
+före väntan städar därför den verkliga gruppen. PID bevaras även om signalen
+kommer direkt efter start; tidigare signalhanterare återställs vid städfel.
+
+end_chrome returnerar ett antal först efter verifierad frånvaro. Kvarstående
+processer, oläsbar lista, timeout eller felaktig processrepresentation ger
+fel som förhindrar ett lyckat profilavslut. Befintligt prov med verkliga
+processer bevarar gränsen till en annan Chrome-profil; nya prov täcker
+okänd listning och kvarstående processer efter signalstegen.
+
+Riktade18prov är gröna i late-effect-cleanup-targeted-r1.log. Efter att även
+PID-kvittot bundits ger hela check_issuer-modulen och signalgränsprovet31gröna
+prov i late-issuer-regression-r1.log. Inga verkliga GitHub-checks utfärdades.
+Föregående aef98e9 har978grön helsvit,24nativegrupper,28värdprov och9skrivskydd;
+dessa gäller föregående kandidat, inte denna rättning. Källor: privata
+r33/suite.json, r34/obs-kandidat.json, r33/hostcheck.json och
+r33/readonly-snapshot.json. R33:s23/24-fixturutfall förblir bevarat.
+
+Nästa kandidat behöver egen helsvit, beteende-/värdprov och separat aktuell
+gransknings- samt helhetsdom. Förseglaren har ett oprövat privat utkast efter
+chain-r7; dess första42metodersprov har ett belagt fixturfel och en grön
+avgränsad diagnos, inte ett grönt helutfall. Inga ägarsteg, installationer,
+adoptioner, policyändringar, serviceåtgärder eller partnerkvittenser här.
+
+
+## BACKLOG-BARNETS-STOPPSIGNALER-20261001
+
+Status: inaktiv produktreparation efter profiles-r3, samma ändringsomfång.
+Content-r3 godkände sitt område på969e085; profiles-r3 fann att den nya
+föräldramasken ärvdes av Popen/exec och hindrade barnets SIGTERM-städning.
+Källor: privata1225ac-runtime/granskning/guard-area-content-r3/review.json,
+guard-area-profiles-r3/review.json och SIGNAL-MASK-ORSAK-RATTNING-r1.json.
+
+Två direkta regressionsprov belägger felet på969e085: barnet läste både
+SIGINT och SIGTERM som blockerade; ett annat barn kvitterade installerad
+SIGTERM-hanterare men dess städningsfil uteblev och barnet tvångsdödades.
+Källor: child-signal-mask-before-r1.log och child-sigterm-cleanup-before-r1.log.
+Dessa röda utfall består, oavsett resultatet i969e085:s äldre982hel.
+
+Startskyddet registrerar nu en väntande stoppsignal i förälderns egen
+Python-hanterare medan Popen pågår. Först när processreferensen finns
+kastas StopRequested inom befintlig finally-städning. Ingen signalmask
+ändras eller lämnas blockerad i barnet. Sju boundedprov är gröna efter
+rättningen, och det tillagda kvitterade barnets verkliga SIGTERM-städning
+är grönt separat. Källor: child-signal-mask-after-r1.log och
+child-sigterm-cleanup-after-r1.log. Ingen gammal helsvit körs om.
+
+Separat aktuell rättnings- och helhetsgranskning samt egen helsvit och
+beteende-/värdprov krävs fortfarande. Privat förseglare granskas separat;
+ingen försegling, installation, adoption, policyändring eller aktivering.

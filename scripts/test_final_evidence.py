@@ -932,10 +932,22 @@ class HostChecksAreStillBoundTests(unittest.TestCase):
         runner = Path(__file__).resolve().with_name('run_host_checks.py')
         root = runner.parents[1]
         with tempfile.TemporaryDirectory() as empty:
+            # Darwin's /var alias must not make this positive private-output
+            # fixture traverse a symlink; production keeps refusing aliases.
+            empty = str(Path(empty).resolve())
             receipt = Path(empty) / 'receipt.json'
-            environment = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'LANG', 'TMPDIR')}
+            # The fixed test runner's global file binds exactly this owner-owned
+            # snapshot as safe.directory. Do not lose it in this child fixture.
+            environment = {k: v for k, v in os.environ.items() if k in
+                           ('PATH', 'HOME', 'LANG', 'TMPDIR', 'GIT_CONFIG_GLOBAL', 'GIT_CONFIG_NOSYSTEM',
+                            'GIT_TEST_ASSUME_DIFFERENT_OWNER')}
             environment.update(NR_HOST_ROOT=empty, PYTHONDONTWRITEBYTECODE='1')
-            done = subprocess.run([sys.executable, '-B', str(runner), str(receipt)], env=environment,
+            # This intentional red host fixture uses an isolated synthetic OS
+            # account home, never the real host's permanent attempt history.
+            bootstrap = ('import pwd,runpy,sys,types; '
+                         'pwd.getpwuid=lambda uid:types.SimpleNamespace(pw_dir='+repr(str(Path(empty).resolve()/'os-home'))+'); '
+                         'sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0],run_name="__main__")')
+            done = subprocess.run([sys.executable, '-B', '-c', bootstrap, str(runner), str(receipt)], env=environment,
                                   capture_output=True, timeout=300)
             self.assertEqual(done.returncode, 1, done.stdout.decode(errors='replace')[-2000:])
             value = json.loads(receipt.read_text())
@@ -948,6 +960,38 @@ class HostChecksAreStillBoundTests(unittest.TestCase):
         for name, file in value['imported'].items():
             with self.subTest(module=name):
                 self.assertTrue(Path(file).is_relative_to(root), file)
+
+    def test_host_fixture_preserves_exact_snapshot_trust_with_git_ownership_gate(self):
+        import os
+        import subprocess
+        import tempfile
+        root=Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            config=Path(temporary)/'snapshot-gitconfig'
+            config.write_text('')
+            environment={**os.environ,'GIT_CONFIG_GLOBAL':str(config),'GIT_CONFIG_NOSYSTEM':'1',
+                         'GIT_TEST_ASSUME_DIFFERENT_OWNER':'1'}
+            for key in list(environment):
+                if key.startswith(('GIT_CONFIG_KEY_','GIT_CONFIG_VALUE_')) or key in ('GIT_CONFIG_COUNT','GIT_CONFIG_PARAMETERS'):
+                    environment.pop(key)
+            denied=subprocess.run(['git','-C',str(root),'rev-parse','HEAD'],env=environment,capture_output=True)
+            self.assertNotEqual(denied.returncode,0)
+            self.assertIn(b'dubious ownership',denied.stderr)
+            subprocess.run(['git','config','--file',str(config),'--add','safe.directory',str(root)],
+                           env=environment,check=True,capture_output=True)
+            allowed=subprocess.run(['git','-C',str(root),'rev-parse','HEAD'],env=environment,capture_output=True)
+            self.assertEqual(allowed.returncode,0,allowed.stderr.decode(errors='replace'))
+            actual_run=subprocess.run
+            def child(*args,**kwargs):
+                command=args[0]
+                if any(str(x).endswith('/run_host_checks.py') for x in command):
+                    self.assertEqual(kwargs['env']['GIT_CONFIG_GLOBAL'],str(config))
+                    self.assertEqual(kwargs['env']['GIT_CONFIG_NOSYSTEM'],'1')
+                    self.assertEqual(kwargs['env']['GIT_TEST_ASSUME_DIFFERENT_OWNER'],'1')
+                return actual_run(*args,**kwargs)
+            with patch.dict(os.environ,environment,clear=True),patch.object(subprocess,'run',side_effect=child):
+                self.test_the_runner_without_the_preserved_state_writes_a_failing_receipt_naming_its_imports()
+            self.assertNotIn('*',config.read_text())
 
     def test_it_still_imports_the_classes_it_extends(self):
         """If those were renamed or split, the host run would error rather than quietly cover less."""

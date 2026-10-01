@@ -26,8 +26,9 @@ SCHEMA = {
         'verdict': {'type': 'string', 'enum': ['approved', 'rejected', 'inconclusive']},
         'blocking_findings': {'type': 'array', 'items': {'type': 'string'}},
         'summary': {'type': 'string'},
+        'limitations': {'type': 'array', 'items': {'type': 'string'}},
     },
-    'required': ['verdict', 'blocking_findings', 'summary'],
+    'required': ['verdict', 'blocking_findings', 'summary', 'limitations'],
 }
 
 
@@ -81,6 +82,8 @@ def validated(result):
             or result['verdict'] not in ('approved', 'rejected', 'inconclusive')
             or not isinstance(result['blocking_findings'], list)
             or not all(isinstance(x, str) and x.strip() for x in result['blocking_findings'])
+            or not isinstance(result['limitations'], list)
+            or not all(isinstance(x,str) and x.strip() for x in result['limitations'])
             or not isinstance(result['summary'], str) or not result['summary'].strip()):
         raise ValueError('Invalid or unjudgeable review response')
     if result['verdict'] == 'approved' and result['blocking_findings']:

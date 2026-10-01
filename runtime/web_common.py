@@ -236,19 +236,12 @@ def shielded():
 
 
 def end_group(process, grace=30):
-    """End a child started in its own session together with its process group: SIGTERM, then SIGKILL."""
-    for number, wait in ((signal.SIGTERM, grace), (signal.SIGKILL, 10)):
-        if process.poll() is not None:
-            return process.returncode
-        try:
-            os.killpg(process.pid, number)
-        except ProcessLookupError:
-            pass
-        try:
-            return process.wait(timeout=wait)
-        except subprocess.TimeoutExpired:
-            pass
-    return process.poll()
+    """Reap the leader and verify absence of its whole group, including surviving children."""
+    from scripts.bounded import stop_group
+    with shielded():
+        if not stop_group(process, term_grace=grace, kill_grace=10):
+            raise RuntimeError('Model process group removal could not be verified')
+    return process.returncode
 
 
 def run_session(argv, cwd, env, prompt, stream, seconds_limit):
@@ -275,7 +268,8 @@ def chrome_processes(profile_directory):
     Node process that launched it does not end it; the profile path is unique to the run."""
     marker = '--user-data-dir=' + str(profile_directory)
     listing = subprocess.run(['/bin/ps', '-axww', '-o', 'pid=,command='], capture_output=True, text=True,
-                             timeout=20, check=True).stdout
+                             timeout=20, check=True,
+                             env=dict(os.environ, LANG='en_US.UTF-8', LC_ALL='en_US.UTF-8')).stdout
     found = []
     for line in listing.splitlines():
         pid, _, command = line.strip().partition(' ')
@@ -285,9 +279,11 @@ def chrome_processes(profile_directory):
 
 
 def end_chrome(profile_directory, grace=3):
-    """End every process of this run's Chrome still running `grace` seconds after whatever launched it stopped:
-    SIGTERM, then SIGKILL. The count of processes that had to be ended (0 when Chrome closed as it should), or None when
-    the processes could not be listed: it runs inside cleanups and never raises over the exception they run under."""
+    """Return a count only after verified absence of this run's Chrome.
+
+    Unknown listing or remaining processes is an error, including in a cleanup:
+    a successful profile outcome must never conceal unverified cleanup.
+    """
     try:
         deadline = time.monotonic() + grace
         while chrome_processes(profile_directory) and time.monotonic() < deadline:
@@ -302,9 +298,11 @@ def end_chrome(profile_directory, grace=3):
             deadline = time.monotonic() + 5
             while chrome_processes(profile_directory) and time.monotonic() < deadline:
                 time.sleep(0.2)
+        if chrome_processes(profile_directory):
+            raise RuntimeError('Chrome cleanup left processes running')
         return len(found)
-    except (OSError, subprocess.SubprocessError):
-        return None
+    except (OSError, subprocess.SubprocessError, ValueError) as error:
+        raise RuntimeError('Chrome cleanup could not be verified') from error
 
 
 def load_grammar():

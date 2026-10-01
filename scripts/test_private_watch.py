@@ -19,6 +19,63 @@ from runtime.obligation import definition
 from temporalio.client import ScheduleOverlapPolicy
 
 class PrivateTests(unittest.TestCase):
+    def test_fixture_readiness_uses_no_elapsed_sleep(self):
+        # PID/launch files are deliberately ready early. Real pipe readiness
+        # arrives as two separately controlled events; neither return nor the
+        # stop signal may precede the second event. No elapsed sleep is mocked.
+        import select,subprocess,threading
+        from unittest.mock import Mock
+        harness=StageSignalTests('test_a_termination_signal_ends_the_waiting_call_within_the_activitys_grace')
+        self.addCleanup(harness.doCleanups)
+        child=Mock();child.poll.return_value=0;child.wait.return_value=0
+        condition=threading.Condition();state={'waits':0,'finished':False,'returned':False,'ready':False,'writer':None}
+        real_select=select.select
+        def launch(argv,**kwargs):
+            Path(argv[7]).write_text('{"provider": 101, "child": 102}')
+            (Path(argv[5])/'launch.json').write_text('{}')
+            if kwargs.get('pass_fds'):state['writer']=os.dup(kwargs['pass_fds'][0])
+            return child
+        def wait_ready(*args,**kwargs):
+            with condition:
+                state['waits']+=1;condition.notify_all()
+            return real_select(*args,**kwargs)
+        def signal_child(*args):
+            if not state['ready']:raise AssertionError('F3_READINESS_BEFORE_PROVIDER')
+        child.send_signal.side_effect=signal_child
+        def work():
+            try:
+                state['pids']=harness.run_guardian(SILENT);state['returned']=True
+                state['elapsed']=harness.stop_as_the_activity_does()
+            except BaseException as error:state['error']=error
+            finally:
+                with condition:state['finished']=True;condition.notify_all()
+        with patch.object(subprocess,'Popen',side_effect=launch),patch.object(select,'select',side_effect=wait_ready):
+            worker=threading.Thread(target=work,daemon=True);worker.start()
+            try:
+                with condition:
+                    if not condition.wait_for(lambda:state['waits']>=1 or state['finished'],timeout=3):
+                        self.fail('F3_READINESS_HANDSHAKE_MISSING')
+                    if state['returned'] or state['finished'] or child.send_signal.called:
+                        self.fail('F3_READINESS_BEFORE_PROVIDER')
+                    os.write(state['writer'],b'L')
+                    if not condition.wait_for(lambda:state['waits']>=2 or state['finished'],timeout=3):
+                        self.fail('F3_READINESS_SECOND_EVENT_MISSING')
+                    if state['returned'] or state['finished'] or child.send_signal.called:
+                        self.fail('F3_READINESS_BEFORE_PROVIDER')
+                    state['ready']=True;os.write(state['writer'],b'R')
+                worker.join(timeout=3)
+                self.assertFalse(worker.is_alive(),'readiness fixture did not finish')
+                if 'error' in state:raise state['error']
+                self.assertEqual(state['pids'],{'provider':101,'child':102})
+                child.send_signal.assert_called_once();child.wait.assert_called_once_with(timeout=6)
+            finally:
+                writer=state['writer']
+                if writer is not None:
+                    try:os.write(writer,b'LR')
+                    except OSError:pass
+                    os.close(writer)
+                worker.join(timeout=3)
+
     def test_fixed_native_budget_and_daily_schedule(self):
         s=definition({'config_sha256':'a'*64})
         self.assertTrue(s.state.paused)
@@ -113,7 +170,7 @@ class PrivateTests(unittest.TestCase):
     def test_parent_loss_cleans_real_synthetic_child(self):
         with tempfile.TemporaryDirectory() as d:
             stage=Path(d).resolve()/'analysis';stage.mkdir();work=stage/'work';work.mkdir()
-            code="import sys,time;sys.stdin.read();time.sleep(20)"
+            code="import sys,signal;sys.stdin.read();signal.pause()"
             with patch.object(ps,'command',return_value=[sys.executable,'-c',code,'-']),patch.object(ps,'require_workspace_instructions'):
                 result=ps.model(stage,work,'synthetic',{},2,-1)
             self.assertFalse(result['completed']);self.assertTrue(result['process_group_removed'])
@@ -163,7 +220,7 @@ class PrivateTests(unittest.TestCase):
         children=[]
         def launch(argv,**kw):
             if 'runtime.private_stage' not in argv:return real_popen(argv,**kw)
-            proc=real_popen([sys.executable,'-c','import time;time.sleep(20)'],**kw);children.append(proc);return proc
+            proc=real_popen([sys.executable,'-c','import signal;signal.pause()'],**kw);children.append(proc);return proc
         with tempfile.TemporaryDirectory() as d:
             root=Path(d).resolve()
             with patch.object(pa,'ROOT',root),patch.object(pa,'require_active_code'),patch.object(pa,'check_private_processes'),patch.object(pa,'cleanup_private_run'),patch.object(pa,'private_size',return_value=0),patch.object(pa.activity,'heartbeat'),patch.object(pa.activity,'is_cancelled',return_value=True),patch.object(pa.subprocess,'Popen',side_effect=launch):
@@ -175,8 +232,10 @@ class PrivateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d).resolve();home=root/'rounds';run='00000000-0000-0000-0000-000000000001'
             stage=home/run/'analysis';stage.mkdir(parents=True)
-            proc=subprocess.Popen([sys.executable,'-c','import time;time.sleep(.1)'],start_new_session=True)
-            identity=ps.process_identity(proc.pid);proc.wait(timeout=2)
+            proc=subprocess.Popen([sys.executable,'-c','import sys;print("ready",flush=True);sys.stdin.readline()'],
+                                  stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True,start_new_session=True)
+            self.assertEqual(proc.stdout.readline(), 'ready\n')
+            identity=ps.process_identity(proc.pid);proc.communicate('end\n', timeout=2)
             (stage/'launch.json').write_text(json.dumps({'provider_pid':proc.pid,'provider_identity':identity}))
             self.assertFalse(ps.process_identity(proc.pid))
             with patch.object(ps,'ROOT',root),patch.object(ps,'HOME',home):
@@ -201,15 +260,23 @@ class PrivateTests(unittest.TestCase):
 GUARDIAN = r"""
 import json, os, sys
 from pathlib import Path
-code, stage, work, pids, provider, seconds = sys.argv[1:7]; sys.path.insert(0, code)
+code, stage, work, pids, provider, seconds, ready = sys.argv[1:8]; sys.path.insert(0, code)
+ready = int(ready); provider = provider.replace('__READY__', 'printf R >&' + str(ready))
 from unittest.mock import patch
 from runtime import private_stage as ps
 argv = ['/bin/sh', '-c', provider, 'provider', pids, '-']
-with patch.object(ps, 'command', return_value=argv), patch.object(ps, 'require_workspace_instructions'), \
+real_popen, real_write = ps.subprocess.Popen, ps.write
+def launch(*args, **kwargs):
+    return real_popen(*args, **kwargs, pass_fds=(ready,))
+def write(path, value):
+    real_write(path, value)
+    if Path(path).name == 'launch.json': os.write(ready, b'L')
+with patch.object(ps.subprocess, 'Popen', side_effect=launch), patch.object(ps, 'write', side_effect=write), \
+     patch.object(ps, 'command', return_value=argv), patch.object(ps, 'require_workspace_instructions'), \
      patch.object(ps, 'private_size', return_value=0):
     print(json.dumps(ps.model(Path(stage), Path(work), 'synthetic', {}, int(seconds), os.getppid())))
 """
-SILENT = 'sleep 60 & printf \'{"provider": %d, "child": %d}\' $$ $! > "$1"; wait'
+SILENT = 'mkfifo "$1.block"; cat < "$1.block" & printf \'{"provider": %d, "child": %d}\' $$ $! > "$1"; __READY__; wait'
 SPOKE_THEN_SILENT = ('printf \'{"type":"thread.started","thread_id":"t"}\\n{"type":"item.completed","item":{"type":"agent_message",'
                      '"text":"{}"}}\\n\'; ' + SILENT)
 # A provider that answers: its exact events are written by the test and replayed by the shell.
@@ -228,14 +295,28 @@ class StageSignalTests(unittest.TestCase):
         self.pids = root / 'pids.json'
         code = str(Path(ps.__file__).resolve().parents[1])
         environment = dict(os.environ, PYTHONDONTWRITEBYTECODE='1'); environment.pop('NR_CONFIG_SHA256', None)
-        self.proc = subprocess.Popen([sys.executable, '-B', '-c', GUARDIAN, code, str(self.stage), str(work), str(self.pids),
-                                      provider, str(seconds)], env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                     text=True, start_new_session=True)
+        ready_read, ready_write = os.pipe()
+        try:
+            self.proc = subprocess.Popen([sys.executable, '-B', '-c', GUARDIAN, code, str(self.stage), str(work), str(self.pids),
+                                          provider, str(seconds), str(ready_write)], env=environment,
+                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                         start_new_session=True, pass_fds=(ready_write,))
+        finally:
+            os.close(ready_write)
         self.addCleanup(lambda: self.proc.poll() is None and self.proc.kill())
-        import time
-        end = time.monotonic() + 20
-        while not ((self.stage / 'launch.json').exists() and self.pids.exists()) and time.monotonic() < end:
-            time.sleep(.05)
+        import select, time
+        try:
+            ready = b''; end = time.monotonic() + 20
+            while len(ready) < 2:
+                remaining = end - time.monotonic()
+                if remaining <= 0 or not select.select([ready_read], [], [], remaining)[0]:
+                    self.fail('fixture did not report both launch and provider readiness')
+                chunk = os.read(ready_read, 2 - len(ready))
+                if not chunk: self.fail('fixture exited before readiness')
+                ready += chunk
+            self.assertEqual(set(ready), {ord('L'), ord('R')})
+        finally:
+            os.close(ready_read)
         return json.loads(self.pids.read_text())
 
     def gone(self, pid):
@@ -248,7 +329,7 @@ class StageSignalTests(unittest.TestCase):
     def stop_as_the_activity_does(self):
         """private_activity's finally: SIGTERM, then at most 6 s for the guardian to end by itself."""
         import signal, subprocess, time
-        time.sleep(.3); sent = time.monotonic(); self.proc.send_signal(signal.SIGTERM)
+        sent = time.monotonic(); self.proc.send_signal(signal.SIGTERM)
         try:
             self.proc.wait(timeout=6)
         except subprocess.TimeoutExpired:
@@ -285,7 +366,7 @@ class StageSignalTests(unittest.TestCase):
     def test_a_normal_call_still_completes_with_its_answer(self):
         events = Path(tempfile.mkdtemp()) / 'events.jsonl'; self.addCleanup(lambda: events.unlink(missing_ok=True))
         events.write_text(''.join(json.dumps(e) + '\n' for e in ANSWER_EVENTS))
-        self.run_guardian('printf \'{"provider": %%d, "child": 0}\' $$ > "$1"; cat \'%s\'' % events)
+        self.run_guardian('printf \'{"provider": %%d, "child": 0}\' $$ > "$1"; __READY__; cat \'%s\'' % events)
         self.proc.wait(timeout=10)
         result = json.loads((self.stage / 'result.json').read_text())
         self.assertTrue(result['completed'], result); self.assertEqual(result['answer'], {'decision': 'hold'})
